@@ -21,5 +21,37 @@ jobs:
       - name: CLI smoke test
         run: python desktop/personaspeak.py --list
 
+  patchnote-gate:
+    name: PATCHNOTES.md touched
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      # Escape hatch: a PR carrying the `no-patchnote` label skips the check.
+      # The skip is announced loudly — house rule is "loud skips, never silent ones."
+      - name: Announce escape-hatch skip
+        if: contains(github.event.pull_request.labels.*.name, 'no-patchnote')
+        run: |
+          echo "::notice::Patch-note gate intentionally skipped — this PR carries the 'no-patchnote' label. A loud skip, not a silent one."
+      - name: Checkout (full history so we can diff against the base)
+        if: ${{ !contains(github.event.pull_request.labels.*.name, 'no-patchnote') }}
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Require PATCHNOTES.md in the diff
+        if: ${{ !contains(github.event.pull_request.labels.*.name, 'no-patchnote') }}
+        run: |
+          set -euo pipefail
+          base="origin/${{ github.base_ref }}"
+          # Capture the diff first, then match — piping straight into `grep -q`
+          # lets grep close the pipe on its first match, which under `pipefail`
+          # turns git's SIGPIPE (141) into a false negative on large diffs.
+          changed="$(git diff --name-only "${base}...HEAD")"
+          if printf '%s\n' "$changed" | grep -qx 'PATCHNOTES.md'; then
+            echo "::notice::PATCHNOTES.md is in the diff — gate satisfied."
+          else
+            echo "::error::This PR doesn't touch PATCHNOTES.md. Every merged PR adds a one-line entry at the top of PATCHNOTES.md, in the VOICE.md register — true thing first, joke second. If this PR genuinely ships without one (pure revert, meta-fix on the gate itself, etc.), apply the 'no-patchnote' label and push again. The skip is loud, never silent."
+            exit 1
+          fi
+
   # Android jobs join in Phase 1 (assembleDebug + unit tests per PR,
   # APK artifact on tags). See ROADMAP.md.
