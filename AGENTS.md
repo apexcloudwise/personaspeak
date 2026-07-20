@@ -63,3 +63,15 @@ Dependency arrows point inward only. If `core-personas` ever imports
 - When creating a new persona, follow the schema in `docs/persona-schema.md`
   and match the tone-density of existing files: ~7 speech patterns, ~7
   vocabulary items, 3-4 sample lines.
+
+## Agent skills
+
+### Issue tracker
+
+Issues live in GitHub Issues for `apexcloudwise/personaspeak`, via the `gh`
+CLI. See `docs/agents/issue-tracker.md`.
+
+### Domain docs
+
+Single-context — one `CONTEXT.md` + `docs/adr/` at the repo root. See
+`docs/agents/domain.md`.
