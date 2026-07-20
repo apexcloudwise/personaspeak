@@ -11,8 +11,8 @@ we built a thin keyboard instead of forking a 100k-line one.
 
 - [x] Git init, v0 commit, monorepo restructure
 - [x] VOICE.md, README.md, AGENTS.md, CONTRIBUTING.md, ROADMAP.md, GTM.md
-- [ ] docs/persona-schema.md + schema validator in CI
-- [ ] ADR-0001 (thin IME over fork), ADR-0002 (provider registry)
+- [x] docs/persona-schema.md + schema validator in CI
+- [x] ADR-0001 (thin IME over fork), ADR-0002 (provider registry)
 - [ ] Pick licenses (leaning Apache-2.0 code / CC-BY personas)
 
 ## Phase 1 — PersonaBoard MVP 🚧
@@ -20,10 +20,10 @@ we built a thin keyboard instead of forking a 100k-line one.
 A thin Android keyboard (Kotlin + Compose, min SDK 26) that does one thing:
 turn your words into a persona's words, inside any chat app.
 
-- [ ] Gradle scaffold: `core-personas`, `core-providers`, `keyboard`, `app`
-- [ ] Walking skeleton: static panel IME, hardcoded persona, fake provider
-- [ ] core-personas: YAML parsing + prompt builder + golden tests
-      (must produce byte-identical prompts to `desktop/personaspeak.py`)
+- [x] Gradle scaffold: `core-personas`, `core-providers`, `keyboard`, `app`
+- [x] Walking skeleton: static panel IME, hardcoded persona, fake provider
+- [x] core-personas: YAML parsing + prompt builder + golden tests
+      (byte-identical prompts to `desktop/personaspeak.py` — verified)
 - [ ] core-providers: `CompletionProvider` interface; Gemini free tier
       (default), Anthropic, OpenAI, OpenRouter via BYOK; keys in Keystore
 - [ ] Keyboard panel: persona chips, tone chips (witty/funny/polite),
