@@ -55,7 +55,7 @@ quality**.
 - **ASK builds clean; FlorisBoard doesn't.** FlorisBoard needs off-repo
   intervention (a purged `jetpref` snapshot, a missing Rust toolchain) — the
   "maintainer says it stalled" risk from the checkpoint, confirmed hands-on.
-- **ASK's replace mechanism is the most robust of the three.** Its
+- **ASK's replace mechanism held up best of the three.** Its
   `deleteSurroundingText` path never hit the composing-state bug that HeliBoard
   and FlorisBoard both did. Its one crash was a one-line fix in our own code
   (`TextUtils.isEmpty`), not a hostile host.
