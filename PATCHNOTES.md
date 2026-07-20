@@ -44,6 +44,16 @@ Newest first, like all respectable patch notes.
   human session are the two things still standing between this harness and
   an actual answer to issue #5.
 
+## 2026-07-21 — The gate that watches the gate's more dangerous cousin (PR #10)
+
+- Speced the editor-identity guard that stops a slow provider from rewriting the
+  wrong field — or the right field with somebody else's freshly-typed words. The
+  race was always there; `FakeProvider`'s brisk 400ms just kept it politely
+  off-stage. No code lands here, and no base is picked — the fork-base ADR still
+  owns that — but the contract is now written down where the implementation
+  ticket can't misplace it. `FakeProvider`, for its part, remains a committed
+  thespian and an unreliable witness.
+
 ## 2026-07-21 — The gate that watches the gate (PR #8)
 
 - CI now refuses to merge a PR that leaves `PATCHNOTES.md` untouched — including, with great self-referential ceremony, this one. Carry the `no-patchnote` label for the rare genuine exception; the skip is announced loudly, never silently. The gate checks that the file was *touched*, not that the line was *good*. The last mile stays with the reviewer, where it belongs.
