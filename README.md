@@ -1,0 +1,75 @@
+# PersonaSpeak
+
+**You type "can't come to the party". Jeeves regretfully declines on your
+behalf, with honor. That's it. That's the app.**
+
+PersonaSpeak turns any text into the voice of a character — the impeccable
+valet, the verbose civil servant, the alarmingly polite bounty hunter — and
+**PersonaBoard** (in development) puts that power where you actually text
+people: an Android keyboard for WhatsApp, Telegram, and anywhere else words
+go to be misunderstood.
+
+## What exists today
+
+| Thing | Status | What it does |
+|---|---|---|
+| `personas/*.yaml` | ✅ Works | The persona library. One YAML per character: speech patterns, vocabulary, sample lines. This is the single source of truth for everything below. |
+| `desktop/personaspeak.py` | ✅ Works | CLI. `personaspeak.py --as jeeves "grab me a coffee"` → butler-grade coffee request. Brings your own API key. |
+| `.claude/skills/personaspeak/` | ✅ Works | Claude Code skill — same trick, in your editor session, on your subscription, no API bill. |
+| `android/` | 🚧 Phase 1 | The keyboard. A thin, special-purpose IME: persona chips, tone chips, suggested replies. You keep Gboard for normal typing; you summon us when the reply needs *style*. |
+
+## The cast
+
+- 🎩 **Jeeves** — "I endeavour to give satisfaction, sir."
+- 🏛️ **Sir Humphrey Appleby** — will neither confirm nor deny, at length.
+- 🤠 **Dr. King Schultz** — extravagantly courteous, even about the bad news.
+- 🎬 **Amitabh Bachchan** — every reply delivered to a full house.
+
+Add your own: drop a YAML in `personas/` (schema in
+[docs/persona-schema.md](docs/persona-schema.md)). If it makes us laugh in
+review, it ships.
+
+## Quick start (desktop CLI)
+
+```bash
+cd desktop
+python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
+export ANTHROPIC_API_KEY=sk-ant-...
+.venv/bin/python personaspeak.py --as sir-humphrey "no, we're not doing that"
+```
+
+## The plan
+
+The full roadmap lives in [ROADMAP.md](ROADMAP.md). The short version:
+
+1. **Phase 0** *(you are here)* — repo goes public, docs get funny, CI gets serious.
+2. **Phase 1** — PersonaBoard MVP: the thin keyboard, pluggable AI providers
+   (bring your own key, use a free tier, or — later — run a model on your phone).
+3. **Phase 2** — Suggested replies: opt in, and the keyboard reads the message
+   you're replying to (from the notification, on-device, forgotten immediately)
+   and drafts three responses before you've typed a word.
+4. **Phase 3** — On-device models, community persona packs, F-Droid.
+
+## Privacy, briefly
+
+Your API keys live in Android's Keystore. Message text goes only to the
+provider *you* configured, only when you ask for a rewrite. Nothing is stored,
+logged, or "used to improve our services." This repo is public specifically so
+you don't have to trust that paragraph — read the code. Sir Humphrey would be
+appalled at this level of transparency.
+
+## Maintained by robots (supervised)
+
+This repo is a showcase of AI-agent-driven engineering: agents write the
+features, the tests, and yes, these very docs — a human reviews and merges.
+House rules for agents are in [AGENTS.md](AGENTS.md). Style rules for prose
+are in [VOICE.md](VOICE.md). Both are enforced with the seriousness of a
+butler inspecting cutlery.
+
+## License & money
+
+FOSS (license TBD in Phase 0 — leaning Apache-2.0 for the app, CC-BY for
+personas). If this project ever earns a coin it'll be through donations and
+an optional hosted-key convenience tier — never ads. A keyboard that shows
+you ads is a keyboard that reads your texts for a living, and we are not
+that kind of establishment.
