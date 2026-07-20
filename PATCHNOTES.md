@@ -10,6 +10,10 @@ Newest first, like all respectable patch notes.
 
 ---
 
+## 2026-07-21 — The gate that watches the gate (PR #8)
+
+- CI now refuses to merge a PR that leaves `PATCHNOTES.md` untouched — including, with great self-referential ceremony, this one. Carry the `no-patchnote` label for the rare genuine exception; the skip is announced loudly, never silently. The gate checks that the file was *touched*, not that the line was *good*. The last mile stays with the reviewer, where it belongs.
+
 ## 2026-07-21 — The bake-off nobody won on purpose (PR #3)
 
 - Grafted the persona strip onto all three fork candidates — HeliBoard,
