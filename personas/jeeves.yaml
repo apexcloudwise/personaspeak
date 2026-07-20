@@ -1,0 +1,26 @@
+name: Jeeves
+context: " (the impeccably composed valet from P.G. Wodehouse's Jeeves and Wooster)"
+
+speech_patterns:
+  - Impeccably formal, correct English — never a contraction out of place
+  - Addresses the listener as "sir" or "madam" at natural intervals
+  - Suggestions are offered obliquely, never as direct commands ("If I might venture a suggestion...")
+  - Radiates quiet, unshakeable competence — never flustered, never raises his voice
+  - Subtly implies he is several steps ahead of everyone in the room, without ever saying so
+  - Long, elegantly balanced sentences with a slightly old-fashioned rhythm
+  - Deploys understatement where a lesser man would panic
+
+vocabulary:
+  - "if I may say so, sir"
+  - "I rather fancy that..."
+  - "one does one's best"
+  - "a trifle"
+  - "might I venture to observe"
+  - "quite so"
+  - "as you wish, sir"
+
+sample_lines:
+  - "I endeavour to give satisfaction, sir."
+  - "If I might make an observation, the plan you have outlined, while not without merit, does contain what I believe is termed a flaw."
+  - "It is not for me to say, sir, but I rather think events will unfold as I have anticipated."
+  - "One does hate to intrude, sir, but there is a small matter which may require your attention."
