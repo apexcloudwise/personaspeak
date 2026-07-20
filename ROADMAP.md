@@ -13,10 +13,11 @@ decisions — including the one we later reversed, which is the useful kind.
 - [x] VOICE.md, README.md, AGENTS.md, CONTRIBUTING.md, ROADMAP.md, GTM.md
 - [x] docs/persona-schema.md + schema validator in CI
 - [x] ADR-0001 (thin IME over fork), ADR-0002 (provider registry)
-- [ ] Pick licenses (leaning Apache-2.0 code / CC-BY personas) — **now
-      constrained by the fork base.** HeliBoard is GPL-3.0 and would relicense
-      the whole app; AnySoftKeyboard and FlorisBoard are Apache-2.0. Decide
-      this *with* the base, not after.
+- [x] Pick licenses — **decided in
+      [ADR-0003](docs/adr/0003-fork-anysoftkeyboard-apache.md):** the app is
+      **Apache-2.0**, following the AnySoftKeyboard base; personas stay CC-BY as
+      planned. GPL-3.0 (HeliBoard) was ruled out precisely because it would have
+      relicensed the whole app.
 
 ## Phase 1 — PersonaBoard MVP 🚧
 
@@ -35,9 +36,16 @@ persona strip above the keys that rewrites what you've typed.
       (byte-identical prompts to `desktop/personaspeak.py` — verified)
 - [x] UX design: strip, persona picker, result card, onboarding, settings
       (`docs/superpowers/specs/2026-07-20-keyboard-ux-design.md`)
-- [ ] **Fork base decided** — HeliBoard / AnySoftKeyboard / FlorisBoard, via
-      the graft spike. Decides the licence; see Phase 0.
-- [ ] ADR superseding ADR-0001, with the spike evidence attached
+- [x] **Fork base decided** — **AnySoftKeyboard**, via the graft spike
+      ([ADR-0003](docs/adr/0003-fork-anysoftkeyboard-apache.md)). Decides the
+      licence; see Phase 0.
+- [x] ADR superseding ADR-0001, with the spike evidence attached — ADR-0003.
+- [ ] **Ingest ASK** (ADR-0004): pin an upstream revision, reproducible
+      unmodified build, package/license baseline, documented update procedure.
+      Gates the graft.
+- [ ] **Privacy audit** of what an ASK fork stores/sends by default (learned
+      words, dictionaries, clipboard, backups, diagnostics) — its own ADR,
+      before the "we store nothing" copy can ship.
 - [ ] Persona strip grafted onto the chosen base: persona chip + mood chip +
       transform, reading the draft and replacing it in place
 - [ ] core-providers: `CompletionProvider` interface; Gemini free tier

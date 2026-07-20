@@ -1,9 +1,12 @@
 # ADR-0003: Fork AnySoftKeyboard, under Apache-2.0
 
-**Status:** Proposed (2026-07-21) — the replacement ADR that
+**Status:** Accepted (2026-07-21) — the replacement ADR that
 [ADR-0001](0001-thin-ime-over-keyboard-fork.md) said was pending the fork-base
-spike. Base adoption is **provisional**, pending the two conditions in
-Consequences. Merging this PR records it as Accepted.
+spike. Base adoption remains **provisional** on one open gate: the stale-field
+race guard (see Consequences) must be implemented before any real provider
+replaces `FakeProvider`. The typing sanity check (#5) was closed as the
+non-blocker this ADR declared it; the race-guard design (#6) is specced and
+merged, and its implementation is the remaining gate.
 
 ## Context
 
