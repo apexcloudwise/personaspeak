@@ -1,0 +1,31 @@
+# The three inherited candidates, as stock F-Droid builds.
+#
+# `ime_id` is what `adb shell ime set` expects. Package names are stable across
+# stores; the service suffix can drift between versions. Before a real run,
+# confirm each id on the device with:
+#
+#     adb shell ime list -s
+#
+# and update here if a build moved the service. These were resolved from the
+# upstream repos at the tags pinned in docs/superpowers/specs/2026-07-20-fork-spike-results.md.
+
+heliboard:
+  display_name: HeliBoard
+  package: helium314.keyboard
+  ime_id: helium314.keyboard/.LatinIME
+  license: GPL-3.0
+  f_droid_id: helium314.keyboard
+
+anysoftkeyboard:
+  display_name: AnySoftKeyboard
+  package: com.menny.android.anysoftkeyboard
+  ime_id: com.menny.android.anysoftkeyboard/.SoftKeyboard
+  license: Apache-2.0
+  f_droid_id: com.menny.android.anysoftkeyboard
+
+florisboard:
+  display_name: FlorisBoard
+  package: dev.patrickgold.florisboard
+  ime_id: dev.patrickgold.florisboard/.FlorisImeService
+  license: Apache-2.0
+  f_droid_id: dev.patrickgold.florisboard

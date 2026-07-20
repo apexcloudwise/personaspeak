@@ -10,6 +10,21 @@ Newest first, like all respectable patch notes.
 
 ---
 
+## 2026-07-21 — A tape measure for the inherited engines (PR #4)
+
+- Built the harness for the typing bake-off issue #5 asked for — corpus,
+  adb replay, Soukoreff-MacKenzie metrics, empty results template — and
+  stopped there. No numbers. A measurement nobody ran is not a measurement,
+  and the harness is honest about that in every doc it ships.
+- The metrics calculator is pinned by hand-computed unit tests, because
+  "tests are the spec" applies even to test tooling. The adb replay script
+  is pinned by honesty: it says plainly which signals it can't reach
+  (autocorrect firing, prediction acceptance, gestures) and routes those to
+  a scripted human session rather than inventing telemetry.
+- Did not pick the base. Did not even measure the base. Handed the human
+  staff a stopwatch and a clipboard; the stopwatch and clipboard are
+  checked in.
+
 ## 2026-07-21 — The bake-off nobody won on purpose (PR #3)
 
 - Grafted the persona strip onto all three fork candidates — HeliBoard,
