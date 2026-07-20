@@ -15,10 +15,9 @@ Newest first, like all respectable patch notes.
 - Reversed ADR-0001 the same day it was accepted, setting a repo speed record
   we would prefer nobody breaks.
 - PersonaSpeak will now fork an entire open-source keyboard rather than
-  politely coexist with yours. The thin IME could not be typed into, which
-  for a keyboard is what doctors call "a finding."
-- Fixed the keyboard-switching UX by removing the switching, the second
-  keyboard, and the concept of leaving.
+  politely coexist with yours. The switching model — flip to us, flip back —
+  was judged unshippable, so we removed the switching, the second keyboard,
+  and the concept of leaving.
 - Added 13 UX mockups, including one rejected design and one superseded
   design, retained because failure is evidence and storage is cheap.
 - Four persona emoji circles were rendered illegibly twice, independently, and

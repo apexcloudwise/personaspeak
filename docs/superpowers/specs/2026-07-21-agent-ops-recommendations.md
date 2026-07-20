@@ -138,9 +138,14 @@ The owner wants e2e journey coverage with evidence: goldens, screenshots, mp4,
 and agents that can verify "no regressions" without a human replaying flows.
 Recommendation: four rungs, cheapest first, each with a defined home in CI.
 The design doc's Testing section set this up already — the strip, picker, and
-result card are plain-state Compose components, and every result-card state is
-reachable from a fake provider with no network and no key. Build on exactly
-that seam.
+result card are *designed* as plain-state Compose components. One honest
+caveat before building on it: the seam is designed, not yet built. Today's
+`FakeProvider` only returns `Result.success(...)`, and the panel models no
+distinct offline / quota / rejected-key / malformed-response states. So the
+error states the ladder wants to pin are *product work first, test setup
+second* — building them is part of the slice, not a precondition someone else
+already met. Budget for that; don't inherit the design doc's future tense as
+present fact.
 
 | Rung | What | Tool | Where it runs |
 |---|---|---|---|
@@ -152,25 +157,40 @@ that seam.
 Notes that make this actually work:
 
 - **Rung 2 is the regression backbone.** Paparazzi renders Compose on the JVM
-  and diffs against committed PNGs — hermetic, fast, CI-runnable on every PR,
-  and it directly covers the review's known gaps (dark-mode chip contrast,
-  "Sir Humphrey Appleby" in a fixed-width chip) as *pinned test cases* instead
-  of open questions. Small PNGs live in the repo like any golden.
+  through LayoutLib and diffs against committed PNGs — fast, CI-runnable on
+  every PR with no emulator, and it directly covers the review's known gaps
+  (dark-mode chip contrast, "Sir Humphrey Appleby" in a fixed-width chip) as
+  *pinned test cases* instead of open questions. "Hermetic" with an asterisk:
+  the pixels are only stable if the rendering inputs are pinned — LayoutLib /
+  SDK / AGP versions and bundled fonts — so lock those in CI or goldens drift
+  for reasons that aren't the code. And decide a golden-management policy up
+  front: how they're recorded, reviewed, and stored. They're PNGs; enough of
+  them and the repo notices, so either keep the set small and in-tree or put
+  them behind Git LFS (Paparazzi's own recommendation).
 - **Rung 3 must produce machine-checkable evidence,** not vibes. The spike
   spec already has the right rules — keep them for all journey tests: the APK
   installs; `uiautomator dump` XML contains the expected nodes; a scripted
   before/after shows the field text changed. **No agent may conclude "it
   works" from a screenshot it took itself** (rungs 3–4 produce artifacts; the
   *verdict* comes from the XML asserts plus a non-author viewing pass).
-- **IME caveat, stated honestly:** Maestro is excellent for the app surfaces
-  (onboarding, settings) but drives the IME window less reliably than plain
-  `adb`/uiautomator, which does see IME windows. Expect journeys to be a mix.
-  One emulator, one active IME: journey runs serialize; builds parallelize.
+- **IME caveat, to be verified not asserted:** uiautomator *can* inspect IME
+  windows — `UiDevice.dumpWindowHierarchy` dumps every window — which is why
+  the app surfaces (onboarding, settings) and the keyboard alike are
+  scriptable with `adb` + uiautomator. Whether Maestro drives the IME window
+  as reliably is plausible but unproven here; treat "Maestro for app screens,
+  `adb`/uiautomator for the keys" as a hypothesis the first journey spike
+  confirms or kills, not a settled fact. One emulator, one active IME: journey
+  runs serialize; builds parallelize.
 - **Evidence storage:** borrow darkmill ADR-0026 — an orphan, append-only
-  `evidence` branch, path per PR (`pr-<n>/<artifact>`), never force-pushed.
-  mp4s and full-page screenshots go there and get linked from the PR body;
-  `main`'s history stays lean. Committed Paparazzi goldens are the exception:
-  they're small and belong with the code they pin.
+  `evidence` branch, never force-pushed — *including* the part that makes it
+  work. ADR-0026's load-bearing detail is a per-run/attempt path segment: two
+  attempts of one check can each emit `home.png`, and without a unique segment
+  the retry silently overwrites the first at the branch tip, losing attempt
+  history. So the path is `pr-<n>/<run-id>/<artifact>` (a re-run gets a fresh
+  `run-id`), never `pr-<n>/<artifact>`. mp4s and full-page screenshots go
+  there and get linked from the PR body; `main`'s history stays lean.
+  Committed Paparazzi goldens are the exception: they're small and belong with
+  the code they pin.
 - **CI staging (makes the crash gate real):** enable the Android jobs now —
   `assembleDebug` + unit tests + Paparazzi verify per PR; emulator journeys
   nightly and on-label; APK artifact on tags. The fork will make PR builds
@@ -193,7 +213,19 @@ The loop that ties it together, per task:
 5. **Patch note + PR template filled**; merge; the patch note becomes the
    day's GTM post draft.
 
-Suggested first slice (demoable, per prime directive #1): enable the Android
-CI jobs, add Paparazzi with goldens for the result-card states from the fake
-provider, and land the PR template + PATCHNOTES.md. That is one PR that makes
-every future PR more trustworthy — infrastructure that pays rent immediately.
+Suggested first slices — **plural, because one-concern-per-PR is house law**
+(AGENTS.md), and bundling these into one PR would be the trench-coat move the
+same law forbids. In dependency order, each demoable on its own:
+
+1. **Process, no code:** land the PR template + `PATCHNOTES.md` + the AGENTS.md
+   voice/DoD sections. Pure docs; makes every *later* PR more trustworthy.
+2. **CI enablement:** turn on the Android jobs (`assembleDebug` + unit tests
+   per PR). This is what makes the crash gate real, and it stands alone.
+3. **Error states, then goldens:** first build the missing product states —
+   teach `FakeProvider` to yield offline / quota / rejected / malformed, and
+   the panel to render them — because they don't exist yet (see Rung 2's
+   caveat). *Then* a follow-up adds Paparazzi and pins those states as
+   screenshot goldens. That's genuinely two concerns and reads as two PRs.
+
+Sequenced this way, the infrastructure pays rent immediately without any
+single PR wearing three hats.

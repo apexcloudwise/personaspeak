@@ -21,7 +21,9 @@
 
 ## Patch note
 
-<!-- One line for PATCHNOTES.md, in VOICE.md register. True first, funny second. -->
+<!-- Add the entry to PATCHNOTES.md in this PR (in the VOICE.md register, true
+     first, funny second), then paste it here. A line in this box that never
+     lands in the file is a draft, not a patch note. -->
 
 ## Checklist
 
@@ -29,4 +31,7 @@
 - [ ] Goldens updated and explained (never silently changed)
 - [ ] Docs in this PR (ADR if architectural; schema consumers if schema moved)
 - [ ] `desktop/personaspeak.py --list` + golden tests pass, if `personas/` or prompt code was touched
+- [ ] Patch-note entry committed to `PATCHNOTES.md` (not just pasted above)
+- [ ] Graded by a non-author (or "review skipped: <reason>" stated above)
+- [ ] CI is green
 - [ ] Nothing here stores what a user typed

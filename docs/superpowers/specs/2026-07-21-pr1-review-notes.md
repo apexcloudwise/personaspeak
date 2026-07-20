@@ -31,8 +31,10 @@ now the repo's schedule and its architecture disagree in public.
 
 ROADMAP.md currently compresses the reversal into "an IME window never gets
 real input focus, so the keyless panel could not be typed into" — stated like
-physics. The checkpoint doc is more honest: the draft was always readable via
-`getExtractedText()` (that fix was already identified), and the empty state
+physics. The checkpoint doc is more honest: reading the draft via
+`getExtractedText()` was the *intended* fix (never implemented — the current
+IME calls it nowhere, and Android permits it to return `null` when the editor
+can't comply, so it was a candidate, not a proven escape), and the empty state
 was patchable. What actually killed the thin IME was a judgment call: **the
 switching UX was not acceptable.** Flip to a keyless keyboard, flip back,
 dead-end on first launch — patchable individually, unshippable as a whole.
@@ -51,13 +53,29 @@ story is "we store nothing." Nobody has yet asked how those two learn about
 each other. A crash in the field currently reports itself to no one.
 
 **Recommendation:** decide crash reporting *in the fork ADR*, because it is a
-privacy-posture decision (AGENTS.md says those get ADRs). The FOSS-keyboard
-standard answer — HeliBoard and AnySoftKeyboard both do this — is ACRA-style
-**opt-in, user-initiated** reports: the crash is caught, the report is shown
-to the user in full, and nothing leaves the device unless they choose to send
-it. That is compatible with "we store nothing" because *we* still store
-nothing; the user mails us their own stack trace. The privacy page then gets
-one more line instead of an asterisk.
+privacy-posture decision (AGENTS.md says those get ADRs). Don't hand-wave it —
+the honest version has three constraints, and "we store nothing" does *not*
+survive intact:
+
+- **Opt-in, user-initiated, shown-in-full.** The crash is caught locally; the
+  full report is shown to the user; nothing leaves the device unless they
+  choose to send it. This is the shape ACRA supports, but ACRA is not magic —
+  by default it can attach logs, shared-prefs, device identifiers, and more,
+  so the report contents must be *deliberately minimized* to stack trace +
+  app version + a coarse device model, and that minimization is the actual
+  design work.
+- **Someone receives it, so someone stores it.** The moment a report reaches
+  a mailbox or issue tracker, "we store nothing" is no longer literally true.
+  The claim has to narrow to something defensible: "the keyboard stores
+  nothing you type; crash reports are opt-in, contain no message text, and are
+  kept only as long as it takes to fix the bug." Write the retention answer
+  down; don't let it be discovered.
+- **Don't overstate the precedent.** AnySoftKeyboard ships a crash-report
+  path (email); HeliBoard's public guidance points at GitHub issues and its
+  build carries no ACRA. So "the FOSS keyboards all do ACRA" is not a fact to
+  lean on — cite what each base actually does once the base is chosen.
+
+The privacy page then gets an honest paragraph, not an asterisk.
 
 Also part of the gate having eyes: the Android CI jobs are still a comment in
 `ci.yml`. A release gate that no machine checks is a wish. (Concrete staging
@@ -78,7 +96,9 @@ Two facts that change the HeliBoard calculus, one in each direction:
   glide typing requires a closed-source Google blob the *user* must obtain —
   which is a rough first-run promise and an F-Droid complication (ROADMAP
   Phase 3 targets F-Droid). AnySoftKeyboard has glide built in; FlorisBoard's
-  is in progress.
+  is *unavailable* — its roadmap parks a glide reimplementation at 0.7+,
+  behind a predictive-text core that still hasn't shipped, so "planned," not
+  "in progress."
 
 **Action for the spike:** alongside diffstat and build time, each graft report
 records the candidate's glide story (built-in / blob / absent) and its F-Droid
