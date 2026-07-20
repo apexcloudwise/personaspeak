@@ -137,7 +137,12 @@ the result is discarded — never committed.
   newer request, or an explicit focus-change bump, makes it stale.
 - **P3 — content still matches.** A fresh hash of the field's current text +
   selection equals `contentHash`. Any keystroke invalidates the snapshot by
-  default (the tolerance question is in §5).
+  default (the tolerance question is open question 2 in §4). Because this
+  predicate authorizes a *destructive* commit, the implementation may compare the
+  captured draft text directly — it is already in hand as the `text` argument —
+  rather than trust a 64-bit hash on the match direction: hash inequality is
+  conclusive ("definitely changed → discard"), but hash equality is exactly where
+  an exact compare is strictly safer.
 - **P4 — connection still valid.** The `InputConnection` the keyboard holds is
   non-null and still accepting text (`isAcceptingText()` true, where the base
   exposes it). Catches dismissal, app backgrounding, configuration changes.
@@ -224,8 +229,15 @@ interface EditorAuthority {
      * Is [snapshot] still the live editor? True iff P1, P3, P4 hold:
      * fieldId matches the focused field, contentHash matches current text,
      * and the connection is accepting text. Evaluated on the IME main thread.
+     * P2 (supersession) is checked separately, against [currentGeneration].
      */
     fun isStillValid(snapshot: EditorSnapshot): Boolean
+
+    /**
+     * The latest generation. guardedRewrite compares snapshot.generation against
+     * this to evaluate P2 (SUPERSEDED) — isStillValid deliberately does not.
+     */
+    fun currentGeneration(): Long
 
     /** Bump generation; any in-flight rewrite against an older generation is stale. */
     fun bumpGeneration()
@@ -239,26 +251,37 @@ enum class DiscardReason {
 }
 
 sealed interface GuardedRewrite {
-    /** Predicates held. The keyboard may commit [text] to the captured field. */
+    /** Predicates held and [commit] was invoked with [text] inside the validated
+     *  turn. Returned so the caller can settle its own UI (dismiss loading). */
     data class Commit(val text: String) : GuardedRewrite
 
-    /** A predicate failed. The keyboard must NOT commit; surface the error card. */
+    /** A predicate failed. Nothing was committed; surface the error card. */
     data class Discard(val reason: DiscardReason) : GuardedRewrite
 }
 
 /**
- * The guard. Captures a snapshot, awaits the provider, re-validates, and
- * returns either Commit or Discard. Never touches the field itself — the
- * keyboard performs the commit, and only on Commit.
+ * The guard. Captures a snapshot, awaits the provider, then in a single
+ * main-thread turn re-validates (P1–P4) and — only if all hold — invokes
+ * [commit] with the rewritten text, returning Commit. Otherwise returns
+ * Discard and invokes nothing. The guard never touches the field directly;
+ * [commit] is the keyboard's InputConnection write.
  *
- * The [authority] calls (currentSnapshot, isStillValid) execute on the IME
- * main thread; the provider call is awaited off that thread. See invariant I2.
+ * Crucially, [commit] runs in the SAME synchronous main-thread turn as the
+ * final validation, with no suspension point between the check and the write —
+ * so no focus-change or keystroke event can be dispatched into the gap
+ * (invariant I6). This is why the guard calls [commit] itself rather than
+ * returning Commit for the keyboard to act on in some later turn: returning it
+ * would reopen the check-then-act window the guard exists to close.
+ *
+ * The [authority] calls and [commit] execute on the IME main thread; the
+ * provider call is awaited off that thread. See invariants I2 and I6.
  */
 suspend fun guardedRewrite(
     provider: CompletionProvider,
     system: String,
     text: String,
     authority: EditorAuthority,
+    commit: (String) -> Unit,
 ): GuardedRewrite
 ```
 
@@ -266,22 +289,32 @@ suspend fun guardedRewrite(
 
 Load-bearing. Stated plainly, kept that way.
 
-- **I1 — commit is unreachable on a stale snapshot.** The keyboard's commit step
-  is only entered on `GuardedRewrite.Commit`. There is no code path that commits
-  on a `Discard`, and no path that skips the guard.
+- **I1 — commit is unreachable on a stale snapshot.** The `commit` callback is
+  invoked only after a passing re-validation, inside the guard. There is no code
+  path that commits on a `Discard`, and no path that skips the guard.
 - **I2 — re-validation and commit run on the same thread.** Both the
-  `isStillValid` call and the subsequent InputConnection commit execute on the
-  IME main looper, so the validation cannot be stale-by-thread. (Android
-  marshals InputConnection calls on a single thread; the implementation honours
-  that, and the test plan asserts it.)
-- **I3 — a discarded result never mutates the field.** `Discard` returns a value;
-  it performs no InputConnection writes. The keyboard's reaction is to surface
-  the error card, nothing else.
+  `isStillValid` call and the InputConnection commit execute on the IME main
+  looper, so the validation cannot be stale-by-thread. (Android marshals
+  InputConnection calls on a single thread; the implementation honours that, and
+  the test plan asserts it.) Necessary, but not sufficient on its own — see I6.
+- **I3 — a discarded result never mutates the field.** `Discard` invokes no
+  `commit` and performs no InputConnection writes. The keyboard's reaction is to
+  surface the error card, nothing else.
 - **I4 — the draft survives every discard.** Whatever the reason, the user's
-  field is left exactly as it was at the moment of discard. The UX rule ("never
-  destroyed without a tap") holds by construction, not by hope.
-- **I5 — generation is monotonic per keyboard session.** A request is superseded
-  iff a strictly-higher generation exists when its result lands.
+  field is left exactly as it was at the moment of discard. Backed by I6, this
+  holds by construction, not by hope.
+- **I5 — generation is monotonic within a keyboard session.** A request is
+  superseded iff a strictly-higher generation exists when its result lands. (This
+  assumes the session-global scope recommended in open question 5; a per-field
+  scope would reset the counter, and this invariant would then hold per field
+  rather than per session.)
+- **I6 — validation and commit are atomic within one main-thread turn.** The
+  final `isStillValid` / `currentGeneration` check and the `commit` write happen
+  in a single synchronous main-looper turn, with no suspension point between
+  them, so no focus-change or keystroke event can be dispatched into the gap.
+  Same thread (I2) prevents stale-by-thread; same *turn* is what closes the
+  check-then-act (TOCTOU) window. This is why `guardedRewrite` invokes `commit`
+  itself rather than returning `Commit` for the keyboard to act on later.
 
 ## 3. Where the seam lives
 
