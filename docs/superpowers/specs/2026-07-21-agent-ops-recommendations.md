@@ -1,0 +1,233 @@
+# Agent ops: the voice, the evidence, and the definition of done
+
+**Date:** 2026-07-21
+**Status:** Partly adopted. Part 1 (the house voice) and Part 2's Definition
+of Done landed in AGENTS.md on this branch — those are now law. The evidence
+ladder (Part 3), CI enablement, and the dev loop (Part 4) remain
+recommendations pending their own slices.
+**Related:** [PR #1 review notes](2026-07-21-pr1-review-notes.md) ·
+borrows heavily from `~/workspace/ext/darkmill/docs/adr/` (cited inline)
+
+The owner asked for three things: an agent persona — the staff itself writes
+docs, guides, and conversation in a whimsical TF2 register instead of stuffy
+official notes — a maintenance practice where agents prove their work instead
+of describing it, and PRs that arrive *finished*. This doc
+recommends how. The short version: the voice already exists (VOICE.md), the
+evidence discipline already exists next door (darkmill), and the missing piece
+is wiring both into AGENTS.md so a fresh agent inherits them without being
+told.
+
+## Part 1 — The persona: the agent speaks in the house voice
+
+The owner's actual request, clarified: the persona is for **the agent
+itself** — everything it writes for humans, including docs, guides, PR
+bodies, session summaries, and conversation with the owner. Not a
+patch-notes gimmick; a house voice the robot staff wears on duty.
+
+The register already exists — VOICE.md (TF2 update pages, Dota's New
+Frontiers notes: deadpan, accurate, jokes delivered like facts) — but today
+it only governs *repo prose*. The recommendation is to extend its
+jurisdiction to the agents themselves, via AGENTS.md, because that is the one
+file every CLI (Claude Code, opencode, Codex, antigravity) actually reads.
+Proposed section, ready to lift:
+
+> ### How you talk
+>
+> The dress code is butler, and that includes your prose. Everything you
+> write for a human — docs, guides, PR bodies, commit bodies, review
+> comments, session summaries, and conversation with the owner — is in the
+> VOICE.md register: deadpan, competent, lightly self-deprecating. The
+> persona is the *house butler*: unflappable staff voice, adjacent to the
+> cast but never impersonating a specific persona (Jeeves works here; he
+> does not write the memos).
+>
+> Hard limits, in priority order:
+>
+> 1. **Information survives the jokes.** Strip every joke and the reader can
+>    still act. If the humor costs a fact, cut the humor.
+> 2. **Bad news is delivered straight.** Failing tests, broken builds, and
+>    security findings are reported plainly first; you may be dry about it
+>    *after* the numbers.
+> 3. **Load-bearing content stays plain** (VOICE.md rule 6): threat models,
+>    permissions, privacy claims, key handling, API tables, code comments.
+> 4. **The act drops on request.** "Plain mode" from the owner switches you
+>    to unseasoned prose, no discussion, for the rest of the session.
+
+Why AGENTS.md and not per-CLI config: an output-style file would cover one
+harness; AGENTS.md covers the whole staff, and this repo already treats it as
+the contract. The voice becomes part of onboarding, same as the module law.
+
+The rest of Part 1 gives the voice **recurring stages** so it stays a habit
+rather than a personality the agent remembers to put on for releases:
+
+1. **`PATCHNOTES.md` at the repo root** — created on this branch with the
+   history so far, as a demonstration. One dated entry per merged PR, TF2
+   style: every line is a true change, described with a straight face. Rules
+   ride VOICE.md rule 1 — strip the jokes and the entry still tells you
+   exactly what merged.
+2. **The PR author writes the patch note, in the PR.** The PR template (also
+   on this branch) has a "Patch note" field. Reviewing the joke is part of
+   reviewing the PR. This is deliberately cheap: one line, already in voice,
+   written while the context is hot.
+3. **Patch notes feed GTM.** GTM.md wants one post draft per day; a good
+   patch-note entry *is* the post draft, or at least its first line. One
+   artifact, two jobs.
+4. **Release notes are hosted by a persona.** When a tagged release ships,
+   one of the cast announces it — Jeeves regrets to inform you that v0.2
+   contains a keyboard. Rotate the cast. This is the product's own gimmick
+   pointed at its own changelog, and it generates exactly the kind of asset
+   the GTM ladder needs. Keep VOICE.md's guardrail: anything load-bearing
+   (permissions, privacy, key handling) stays plain.
+5. **One new calibration row in VOICE.md** for patch notes specifically, so
+   the register is pinned by example, not vibes.
+
+What we do **not** recommend: a named repo-narrator character separate from
+the product cast. The cast is the brand; a second fictional entity dilutes it
+and doubles the voice-maintenance surface.
+
+## Part 2 — AGENTS.md upgrades: the definition of a fully complete PR
+
+The owner's phrase was "I want to review fully complete PRs." Today AGENTS.md
+says what gets a PR *returned*; it never says what makes one *done*. darkmill
+solved this with "done is spec-declared" (ADR-0002) and it is the single
+highest-leverage line to steal. Proposed AGENTS.md section, ready to lift:
+
+> ### Definition of done (what "fully complete PR" means)
+>
+> A PR is reviewable when every box below is true. A PR missing one is a
+> draft, whatever its label says.
+>
+> - [ ] **Code + tests ride together.** New behaviour has tests; a bugfix has
+>   its regression test in the same PR.
+> - [ ] **Goldens updated, not deleted.** Prompt goldens and screenshot
+>   goldens both. A golden changed without an explanation in the PR body is a
+>   red flag, not a diff.
+> - [ ] **Evidence attached** per the evidence ladder (Part 3): commands run
+>   with their output, screenshots for UI, a journey recording for flows.
+> - [ ] **Nothing graded by its author.** The agent that wrote the code did
+>   not produce the verdict that it works (see separation of duties, below).
+> - [ ] **Docs in the same PR:** ADR if the change is architectural, schema
+>   docs if the schema moved, VOICE.md-compliant prose throughout.
+> - [ ] **Patch note written** (one line, in voice, in the PR template).
+> - [ ] **CI green.**
+
+Two practices to codify alongside it, both proven elsewhere:
+
+- **Separation of duties.** darkmill ADR-0016: implementers never write
+  verification records; self-reports are advisory, not evidence. The fork
+  spike already adopted this shape (GLM workers build, Claude grades). Make it
+  a house rule: *the agent that writes the code never grades its own work* —
+  a different session, model, or at minimum a fresh context produces the
+  evidence verdict. An author's screenshot proves the author took a
+  screenshot.
+- **Cross-family review.** darkmill ADR-0031 calls this the single
+  highest-yield quality practice in that repo's history: a different model
+  family reads every diff before merge, and it catches criticals in both
+  directions. The machinery already exists here (`oc-bg` with GLM, the Codex
+  plugin, `/code-review`). Recommendation: every non-trivial PR gets one
+  cross-family review pass; the review lands as a PR comment so it's part of
+  the record. Skips are allowed but stated in the PR body — loud skips, never
+  silent ones (ADR-0031's rule, worth keeping intact).
+
+And one inherited principle to write down because it is already true in
+practice: **a decision that lives only in chat does not exist** (darkmill
+ADR-0020). The fork-spike checkpoint is this rule working. AGENTS.md should
+state it so the next session doesn't need the example.
+
+## Part 3 — The evidence ladder: goldens → screenshots → journeys → film
+
+The owner wants e2e journey coverage with evidence: goldens, screenshots, mp4,
+and agents that can verify "no regressions" without a human replaying flows.
+Recommendation: four rungs, cheapest first, each with a defined home in CI.
+The design doc's Testing section set this up already — the strip, picker, and
+result card are *designed* as plain-state Compose components. One honest
+caveat before building on it: the seam is designed, not yet built. Today's
+`FakeProvider` only returns `Result.success(...)`, and the panel models no
+distinct offline / quota / rejected-key / malformed-response states. So the
+error states the ladder wants to pin are *product work first, test setup
+second* — building them is part of the slice, not a precondition someone else
+already met. Budget for that; don't inherit the design doc's future tense as
+present fact.
+
+| Rung | What | Tool | Where it runs |
+|---|---|---|---|
+| 1 | Prompt goldens (exist) | pytest / Kotlin golden tests | Every PR, seconds |
+| 2 | **Screenshot goldens** of every Compose state — strip (light/dark/long names), picker, result card (loading/result/each error) | Paparazzi (JVM render, no emulator) | Every PR, no device needed |
+| 3 | **Journey flows** — onboarding e2e, type→tap→rewrite→replace, error recovery | Maestro flows and/or scripted `adb` + `uiautomator dump` | Emulator: nightly + on a `journey` label; not every PR |
+| 4 | **The film** — `adb screenrecord` mp4 of each journey | same emulator run | Attached as evidence; doubles as the GTM demo asset |
+
+Notes that make this actually work:
+
+- **Rung 2 is the regression backbone.** Paparazzi renders Compose on the JVM
+  through LayoutLib and diffs against committed PNGs — fast, CI-runnable on
+  every PR with no emulator, and it directly covers the review's known gaps
+  (dark-mode chip contrast, "Sir Humphrey Appleby" in a fixed-width chip) as
+  *pinned test cases* instead of open questions. "Hermetic" with an asterisk:
+  the pixels are only stable if the rendering inputs are pinned — LayoutLib /
+  SDK / AGP versions and bundled fonts — so lock those in CI or goldens drift
+  for reasons that aren't the code. And decide a golden-management policy up
+  front: how they're recorded, reviewed, and stored. They're PNGs; enough of
+  them and the repo notices, so either keep the set small and in-tree or put
+  them behind Git LFS (Paparazzi's own recommendation).
+- **Rung 3 must produce machine-checkable evidence,** not vibes. The spike
+  spec already has the right rules — keep them for all journey tests: the APK
+  installs; `uiautomator dump` XML contains the expected nodes; a scripted
+  before/after shows the field text changed. **No agent may conclude "it
+  works" from a screenshot it took itself** (rungs 3–4 produce artifacts; the
+  *verdict* comes from the XML asserts plus a non-author viewing pass).
+- **IME caveat, to be verified not asserted:** uiautomator *can* inspect IME
+  windows — `UiDevice.dumpWindowHierarchy` dumps every window — which is why
+  the app surfaces (onboarding, settings) and the keyboard alike are
+  scriptable with `adb` + uiautomator. Whether Maestro drives the IME window
+  as reliably is plausible but unproven here; treat "Maestro for app screens,
+  `adb`/uiautomator for the keys" as a hypothesis the first journey spike
+  confirms or kills, not a settled fact. One emulator, one active IME: journey
+  runs serialize; builds parallelize.
+- **Evidence storage:** borrow darkmill ADR-0026 — an orphan, append-only
+  `evidence` branch, never force-pushed — *including* the part that makes it
+  work. ADR-0026's load-bearing detail is a per-run/attempt path segment: two
+  attempts of one check can each emit `home.png`, and without a unique segment
+  the retry silently overwrites the first at the branch tip, losing attempt
+  history. So the path is `pr-<n>/<run-id>/<artifact>` (a re-run gets a fresh
+  `run-id`), never `pr-<n>/<artifact>`. mp4s and full-page screenshots go
+  there and get linked from the PR body; `main`'s history stays lean.
+  Committed Paparazzi goldens are the exception: they're small and belong with
+  the code they pin.
+- **CI staging (makes the crash gate real):** enable the Android jobs now —
+  `assembleDebug` + unit tests + Paparazzi verify per PR; emulator journeys
+  nightly and on-label; APK artifact on tags. The fork will make PR builds
+  slower; that is a price of the fork, not a reason to keep CI commented out.
+- **Chore already on the books:** `personaspeak.py` still has no
+  print-a-prompt flag, so the "fixtures are generated by the Python
+  reference" claim in the schema doc is aspirational. Small, independent,
+  do-any-time.
+
+## Part 4 — The dev loop, end to end
+
+The loop that ties it together, per task:
+
+1. **Spec → plan → implement** (the superpowers cycle already in use; the
+   checkpoint docs prove it survives session boundaries).
+2. **Implement on a branch/worktree** with tests and goldens riding along.
+3. **Evidence pass by a non-author:** run the ladder rungs the change
+   touches; artifacts to the evidence branch; verdict into the PR body.
+4. **Cross-family review** as a PR comment; findings fixed or answered.
+5. **Patch note + PR template filled**; merge; the patch note becomes the
+   day's GTM post draft.
+
+Suggested first slices — **plural, because one-concern-per-PR is house law**
+(AGENTS.md), and bundling these into one PR would be the trench-coat move the
+same law forbids. In dependency order, each demoable on its own:
+
+1. **Process, no code:** land the PR template + `PATCHNOTES.md` + the AGENTS.md
+   voice/DoD sections. Pure docs; makes every *later* PR more trustworthy.
+2. **CI enablement:** turn on the Android jobs (`assembleDebug` + unit tests
+   per PR). This is what makes the crash gate real, and it stands alone.
+3. **Error states, then goldens:** first build the missing product states —
+   teach `FakeProvider` to yield offline / quota / rejected / malformed, and
+   the panel to render them — because they don't exist yet (see Rung 2's
+   caveat). *Then* a follow-up adds Paparazzi and pins those states as
+   screenshot goldens. That's genuinely two concerns and reads as two PRs.
+
+Sequenced this way, the infrastructure pays rent immediately without any
+single PR wearing three hats.
