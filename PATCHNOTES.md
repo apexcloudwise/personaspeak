@@ -10,6 +10,20 @@ Newest first, like all respectable patch notes.
 
 ---
 
+## 2026-07-21 — Reading our own privacy promise back to ourselves
+
+- ADR-0005 catches a claim that quietly stopped being true: "Nothing is stored,
+  logged" was honest for the thin IME we owned entirely, and is an overclaim for
+  a forked predictive keyboard that keeps a learned-words dictionary to do its
+  job. The fix is not to store less than a keyboard must — it is to stop
+  conflating "stays on your phone" with "does not exist," and to say which is
+  which.
+- The privacy copy is now frozen until an inventory of what the vendored ASK tree
+  actually stores and sends is done on-device — default posture: anything that
+  leaves the phone is off, and proven off. No accusation against ASK; it is a
+  keyboard doing keyboard things. The overpromise was ours.
+- This is load-bearing text, so the entry above is the only joke you get.
+
 ## 2026-07-21 — Deciding how to move a keyboard into the house
 
 - ADR-0004 settles how AnySoftKeyboard's tree enters the repo: a **vendored
