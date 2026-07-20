@@ -10,6 +10,21 @@ Newest first, like all respectable patch notes.
 
 ---
 
+## 2026-07-21 — Deciding how to move a keyboard into the house
+
+- ADR-0004 settles how AnySoftKeyboard's tree enters the repo: a **vendored
+  snapshot** at a pinned tag, edited in place, with the upstream diff kept as a
+  hand-written manifest. Not a submodule (it fights the fact that we edit
+  upstream files), and — after a reviewer caught the first draft's reasoning —
+  not a subtree either, because our squash-merge plus linear-history policy
+  flattens the merge ancestry that `git subtree pull --squash` needs, so its one
+  trick works exactly once.
+- The point of the manifest is the rent ledger: regenerate the pristine tree,
+  diff it against ours, and "lines modified are rent paid forever" becomes a
+  checklist instead of an excavation.
+- No code moved yet — this decides the mechanism so the graft PR doesn't have to
+  argue with itself mid-move.
+
 ## 2026-07-21 — The records catch up to the decision
 
 - ADR-0003 merged, so the paperwork stopped lying: its status is now Accepted,
