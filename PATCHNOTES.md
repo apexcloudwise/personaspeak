@@ -10,7 +10,7 @@ Newest first, like all respectable patch notes.
 
 ---
 
-## 2026-07-21 — A tape measure for the inherited engines (PR #4)
+## 2026-07-21 — A tape measure for the inherited engines (PR #9)
 
 - Built the harness for the typing bake-off issue #5 asked for — corpus,
   adb replay, Soukoreff-MacKenzie metrics, empty results template — and
