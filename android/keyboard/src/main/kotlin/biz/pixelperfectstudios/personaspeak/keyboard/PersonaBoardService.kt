@@ -40,8 +40,17 @@ class PersonaBoardService :
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_CREATE)
     }
 
-    override fun onCreateInputView(): View =
-        ComposeView(this).apply {
+    override fun onCreateInputView(): View {
+        // InputMethodService wraps this view in its own window hierarchy
+        // (a LinearLayout#parentPanel above us); Compose's recomposer looks
+        // for the lifecycle/saved-state owner by walking up from the
+        // window's root, not down into our view, so the tags have to live
+        // on the decor view, not just on the ComposeView itself.
+        window?.window?.decorView?.let { decor ->
+            decor.setViewTreeLifecycleOwner(this)
+            decor.setViewTreeSavedStateRegistryOwner(this)
+        }
+        return ComposeView(this).apply {
             setViewTreeLifecycleOwner(this@PersonaBoardService)
             setViewTreeSavedStateRegistryOwner(this@PersonaBoardService)
             setContent {
@@ -54,6 +63,7 @@ class PersonaBoardService :
                 )
             }
         }
+    }
 
     override fun onWindowShown() {
         super.onWindowShown()
