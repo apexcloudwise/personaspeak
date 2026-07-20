@@ -35,6 +35,14 @@ Newest first, like all respectable patch notes.
   Still no IME-quality numbers — `inject` mode's ~684 WPM is input-injection
   speed, not typing speed — but the pipe from device to metrics table now
   demonstrably carries water.
+- Swapped the fake placeholder phrases for the real ones. The genuine
+  MacKenzie & Soukoreff (2003) 500-phrase set, fetched straight from the
+  authors' own archive, replaces the "obviously fake" stand-in — and along
+  the way we caught our own citation pointing at the wrong 2003 paper by
+  the same two authors (the metrics paper, not the phrase-set paper). Fixed
+  the citation too. Corpus is real now; the tap-mode measurement and the
+  human session are the two things still standing between this harness and
+  an actual answer to issue #5.
 
 ## 2026-07-21 — The gate that watches the gate (PR #8)
 

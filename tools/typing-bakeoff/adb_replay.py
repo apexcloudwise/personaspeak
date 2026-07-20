@@ -8,7 +8,7 @@ phrase to an output file that compute_metrics.py can reduce.
 Usage (full flags in argparse; the short version):
 
     python adb_replay.py \\
-        --ime helium314.keyboard/.LatinIME \\
+        --ime helium314.keyboard/.latin.LatinIME \\
         --corpus corpus/domain-messages.csv \\
         --out runs/heliboard-domain.jsonl
 
@@ -304,7 +304,7 @@ def replay(
 
 def main() -> None:
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument("--ime", required=True, help="Target IME id, e.g. helium314.keyboard/.LatinIME")
+    p.add_argument("--ime", required=True, help="Target IME id, e.g. helium314.keyboard/.latin.LatinIME")
     p.add_argument("--corpus", required=True, type=Path, help="Corpus CSV (id,text[,category])")
     p.add_argument("--out", required=True, type=Path, help="Output JSONL path")
     p.add_argument("--method", choices=["inject", "tap"], default="inject",

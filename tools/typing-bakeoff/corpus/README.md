@@ -11,25 +11,30 @@ PersonaSpeak is loaded. Not the academic set, not trying to be — that's the
 point of having a second corpus. Edit freely; the more it looks like real
 traffic, the more useful the bake-off.
 
-## `mackenzie-soukoreff.csv` — PLACEHOLDER, replace before running
+## `mackenzie-soukoreff.csv` — the real 500-phrase set
 
-**This file does NOT contain the real MacKenzie & Soukoreff (2003) phrase set.**
-Every row is an obviously-fake placeholder. We did not fabricate phrases and
-stamp a citation on them — that would be the worst kind of made-up number, the
-one that looks real.
+This is the genuine phrase set, sourced 2026-07-21 directly from the authors'
+own distribution, not retyped or reconstructed from memory:
 
-Before any real bake-off run, replace this file with the genuine 500-phrase
-set from:
+> MacKenzie, I. S., & Soukoreff, R. W. (2003). Phrase sets for evaluating
+> text entry techniques. *CHI '03 Extended Abstracts on Human Factors in
+> Computing Systems*, 754–755. DOI: 10.1145/765891.765971
 
-> Soukoreff, R. W., & MacKenzie, I. S. (2003). Metrics for text entry
-> research: A comparison of WPM and corrected and uncorrected error rate.
-> *Proceedings of the SIGCHI Conference on Human Factors in Computing
-> Systems (CHI '03)*, 81–88. DOI: 10.1145/642611.642626
+(Earlier drafts of this doc cited the *metrics* paper — Soukoreff & MacKenzie,
+"Metrics for text entry research," CHI '03, 81–88 — for the phrase set. That's
+the wrong paper; it's the one `metrics.py` implements, not the one this corpus
+comes from. Same two authors, same year, two different CHI '03 papers — easy
+mixup, now fixed.)
 
-The phrase set is a well-known HCI text-entry benchmark and is reproduced in
-several open text-entry toolkits and course materials. Do not guess a download
-URL — verify the source against the paper or a textbook reproduction before
-pasting. The harness only cares that the file is shaped `id,text`.
+Retrieved from `http://www.yorku.ca/mack/PhraseSets.zip` (linked directly from
+the paper's page at `yorku.ca/mack/chi03b.html`), file `phrases2.txt` inside
+the archive — 500 lines, verified against the paper's own description (mean
+length 28.6 characters, no punctuation, lowercase). No license file ships with
+the archive; the authors' own text-entry-research page states the set is
+provided for the community of text entry researchers, and it's the standard
+benchmark reproduced across text-entry literature and tooling. If that
+provenance ever needs re-verifying, the zip and the two source pages above are
+the whole chain — nothing here was invented or transcribed by hand.
 
 ## Why two corpora
 

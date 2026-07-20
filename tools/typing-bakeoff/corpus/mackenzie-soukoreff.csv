@@ -1,17 +1,501 @@
 id,text
-ms-ph-WARNING,___THIS_FILE_IS_A_PLACEHOLDER___
-ms-ph-001,this is a placeholder phrase
-ms-ph-002,replace this file before running
-ms-ph-003,do not ship numbers from these
-ms-ph-004,the quick brown fox jumps
-ms-ph-005,see the corpus readme for source
-ms-ph-006,a short common english phrase
-ms-ph-007,another short placeholder row
-ms-ph-008,fetch the real set before grading
-ms-ph-009,type the presented text now
-ms-ph-010,keep phrases simple and lowercase
-ms-ph-011,do not invent the real corpus
-ms-ph-012,this row is not a real entry
-ms-ph-013,a representative simple sentence
-ms-ph-014,placeholder until the real set
-ms-ph-015,verify source before using
+ms-001,my watch fell in the water
+ms-002,prevailing wind from the east
+ms-003,never too rich and never too thin
+ms-004,breathing is difficult
+ms-005,I can see the rings on Saturn
+ms-006,physics and chemistry are hard
+ms-007,my bank account is overdrawn
+ms-008,elections bring out the best
+ms-009,we are having spaghetti
+ms-010,time to go shopping
+ms-011,a problem with the engine
+ms-012,elephants are afraid of mice
+ms-013,my favorite place to visit
+ms-014,three two one zero blast off
+ms-015,my favorite subject is psychology
+ms-016,circumstances are unacceptable
+ms-017,watch out for low flying objects
+ms-018,if at first you do not succeed
+ms-019,please provide your date of birth
+ms-020,we run the risk of failure
+ms-021,prayer in schools offends some
+ms-022,he is just like everyone else
+ms-023,great disturbance in the force
+ms-024,love means many things
+ms-025,you must be getting old
+ms-026,the world is a stage
+ms-027,can I skate with sister today
+ms-028,neither a borrower nor a lender be
+ms-029,one heck of a question
+ms-030,question that must be answered
+ms-031,beware the ides of March
+ms-032,double double toil and trouble
+ms-033,the power of denial
+ms-034,I agree with you
+ms-035,do not say anything
+ms-036,play it again Sam
+ms-037,the force is with you
+ms-038,you are not a jedi yet
+ms-039,an offer you cannot refuse
+ms-040,are you talking to me
+ms-041,yes you are very smart
+ms-042,all work and no play
+ms-043,hair gel is very greasy
+ms-044,Valium in the economy size
+ms-045,the facts get in the way
+ms-046,the dreamers of dreams
+ms-047,did you have a good time
+ms-048,space is a high priority
+ms-049,you are a wonderful example
+ms-050,do not squander your time
+ms-051,do not drink too much
+ms-052,take a coffee break
+ms-053,popularity is desired by all
+ms-054,the music is better than it sounds
+ms-055,starlight and dewdrop
+ms-056,the living is easy
+ms-057,fish are jumping
+ms-058,the cotton is high
+ms-059,drove my chevy to the levee
+ms-060,but the levee was dry
+ms-061,I took the rover from the shop
+ms-062,movie about a nutty professor
+ms-063,come and see our new car
+ms-064,coming up with killer sound bites
+ms-065,I am going to a music lesson
+ms-066,the opposing team is over there
+ms-067,soon we will return from the city
+ms-068,I am wearing a tie and a jacket
+ms-069,the quick brown fox jumped
+ms-070,all together in one big pile
+ms-071,wear a crown with many jewels
+ms-072,there will be some fog tonight
+ms-073,I am allergic to bees and peanuts
+ms-074,he is still on our team
+ms-075,the dow jones index has risen
+ms-076,my preferred treat is chocolate
+ms-077,the king sends you to the tower
+ms-078,we are subjects and must obey
+ms-079,mom made her a turtleneck
+ms-080,goldilocks and the three bears
+ms-081,we went grocery shopping
+ms-082,the assignment is due today
+ms-083,what you see is what you get
+ms-084,for your information only
+ms-085,a quarter of a century
+ms-086,the store will close at ten
+ms-087,head shoulders knees and toes
+ms-088,vanilla flavored ice cream
+ms-089,frequently asked questions
+ms-090,round robin scheduling
+ms-091,information super highway
+ms-092,my favorite web browser
+ms-093,the laser printer is jammed
+ms-094,all good boys deserve fudge
+ms-095,the second largest country
+ms-096,call for more details
+ms-097,just in time for the party
+ms-098,have a good weekend
+ms-099,video camera with a zoom lens
+ms-100,what a monkey sees a monkey will do
+ms-101,that is very unfortunate
+ms-102,the back yard of our house
+ms-103,this is a very good idea
+ms-104,reading week is just about here
+ms-105,our fax number has changed
+ms-106,thank you for your help
+ms-107,no exchange without a bill
+ms-108,the early bird gets the worm
+ms-109,buckle up for safety
+ms-110,this is too much to handle
+ms-111,protect your environment
+ms-112,world population is growing
+ms-113,the library is closed today
+ms-114,Mary had a little lamb
+ms-115,teaching services will help
+ms-116,we accept personal checks
+ms-117,this is a non profit organization
+ms-118,user friendly interface
+ms-119,healthy food is good for you
+ms-120,hands on experience with a job
+ms-121,this watch is too expensive
+ms-122,the postal service is very slow
+ms-123,communicate through email
+ms-124,the capital of our nation
+ms-125,travel at the speed of light
+ms-126,I do not fully agree with you
+ms-127,gas bills are sent monthly
+ms-128,earth quakes are predictable
+ms-129,life is but a dream
+ms-130,take it to the recycling depot
+ms-131,sent this by registered mail
+ms-132,fall is my favorite season
+ms-133,a fox is a very smart animal
+ms-134,the kids are very excited
+ms-135,parking lot is full of trucks
+ms-136,my bike has a flat tire
+ms-137,do not walk too quickly
+ms-138,a duck quacks to ask for food
+ms-139,limited warranty of two years
+ms-140,the four seasons will come
+ms-141,the sun rises in the east
+ms-142,it is very windy today
+ms-143,do not worry about this
+ms-144,dashing through the snow
+ms-145,want to join us for lunch
+ms-146,stay away from strangers
+ms-147,accompanied by an adult
+ms-148,see you later alligator
+ms-149,make my day you sucker
+ms-150,I can play much better now
+ms-151,she wears too much makeup
+ms-152,my bare face in the wind
+ms-153,batman wears a cape
+ms-154,I hate baking pies
+ms-155,lydia wants to go home
+ms-156,win first prize in the contest
+ms-157,freud wrote of the ego
+ms-158,I do not care if you do that
+ms-159,always cover all the bases
+ms-160,nobody cares anymore
+ms-161,can we play cards tonight
+ms-162,get rid of that immediately
+ms-163,I watched blazing saddles
+ms-164,the sum of the parts
+ms-165,they love to yap about nothing
+ms-166,peek out the window
+ms-167,be home before midnight
+ms-168,he played a pimp in that movie
+ms-169,I skimmed through your proposal
+ms-170,he was wearing a sweatshirt
+ms-171,no more war no more bloodshed
+ms-172,toss the ball around
+ms-173,I will meet you at noon
+ms-174,I want to hold your hand
+ms-175,the children are playing
+ms-176,superman never wore a mask
+ms-177,I listen to the tape everyday
+ms-178,he is shouting loudly
+ms-179,correct your diction immediately
+ms-180,seasoned golfers love the game
+ms-181,he cooled off after she left
+ms-182,my dog sheds his hair
+ms-183,join us on the patio
+ms-184,these cookies are so amazing
+ms-185,I can still feel your presence
+ms-186,the dog will bite you
+ms-187,a most ridiculous thing
+ms-188,where did you get that tie
+ms-189,what a lovely red jacket
+ms-190,do you like to shop on Sunday
+ms-191,I spilled coffee on the carpet
+ms-192,the largest of the five oceans
+ms-193,shall we play a round of cards
+ms-194,olympic athletes use drugs
+ms-195,my mother makes good cookies
+ms-196,do a good deed to someone
+ms-197,quick there is someone knocking
+ms-198,flashing red light means stop
+ms-199,sprawling subdivisions are bad
+ms-200,where did I leave my glasses
+ms-201,on the way to the cottage
+ms-202,a lot of chlorine in the water
+ms-203,do not drink the water
+ms-204,my car always breaks in the winter
+ms-205,santa claus got stuck
+ms-206,public transit is much faster
+ms-207,zero in on the facts
+ms-208,make up a few more phrases
+ms-209,my fingers are very cold
+ms-210,rain rain go away
+ms-211,bad for the environment
+ms-212,universities are too expensive
+ms-213,the price of gas is high
+ms-214,the winner of the race
+ms-215,we drive on parkways
+ms-216,we park in driveways
+ms-217,go out for some pizza and beer
+ms-218,effort is what it will take
+ms-219,where can my little dog be
+ms-220,if you were not so stupid
+ms-221,not quite so smart as you think
+ms-222,do you like to go camping
+ms-223,this person is a disaster
+ms-224,the imagination of the nation
+ms-225,universally understood to be wrong
+ms-226,listen to five hours of opera
+ms-227,an occasional taste of chocolate
+ms-228,victims deserve more redress
+ms-229,the protesters blocked all traffic
+ms-230,the acceptance speech was boring
+ms-231,work hard to reach the summit
+ms-232,a little encouragement is needed
+ms-233,stiff penalty for staying out late
+ms-234,the pen is mightier than the sword
+ms-235,exceed the maximum speed limit
+ms-236,in sharp contrast to your words
+ms-237,this leather jacket is too warm
+ms-238,consequences of a wrong turn
+ms-239,this mission statement is baloney
+ms-240,you will loose your voice
+ms-241,every apple from every tree
+ms-242,are you sure you want this
+ms-243,the fourth edition was better
+ms-244,this system of taxation
+ms-245,beautiful paintings in the gallery
+ms-246,a yard is almost as long as a meter
+ms-247,we missed your birthday
+ms-248,coalition governments never work
+ms-249,destruction of the rain forest
+ms-250,I like to play tennis
+ms-251,acutely aware of her good looks
+ms-252,you want to eat your cake
+ms-253,machinery is too complicated
+ms-254,a glance in the right direction
+ms-255,I just cannot figure this out
+ms-256,please follow the guidelines
+ms-257,an airport is a very busy place
+ms-258,mystery of the lost lagoon
+ms-259,is there any indication of this
+ms-260,the chamber makes important decisions
+ms-261,this phenomenon will never occur
+ms-262,obligations must be met first
+ms-263,valid until the end of the year
+ms-264,file all complaints in writing
+ms-265,tickets are very expensive
+ms-266,a picture is worth many words
+ms-267,this camera takes nice photographs
+ms-268,it looks like a shack
+ms-269,the dog buried the bone
+ms-270,the daring young man
+ms-271,this equation is too complicated
+ms-272,express delivery is very fast
+ms-273,I will put on my glasses
+ms-274,a touchdown in the last minute
+ms-275,the treasury department is broke
+ms-276,a good response to the question
+ms-277,well connected with people
+ms-278,the bathroom is good for reading
+ms-279,the generation gap gets wider
+ms-280,chemical spill took forever
+ms-281,prepare for the exam in advance
+ms-282,interesting observation was made
+ms-283,bank transaction was not registered
+ms-284,your etiquette needs some work
+ms-285,we better investigate this
+ms-286,stability of the nation
+ms-287,house with new electrical panel
+ms-288,our silver anniversary is coming
+ms-289,the presidential suite is very busy
+ms-290,the punishment should fit the crime
+ms-291,sharp cheese keeps the mind sharp
+ms-292,the registration period is over
+ms-293,you have my sympathy
+ms-294,the objective of the exercise
+ms-295,historic meeting without a result
+ms-296,very reluctant to enter
+ms-297,good at addition and subtraction
+ms-298,six daughters and seven sons
+ms-299,a thoroughly disgusting thing to say
+ms-300,sign the withdrawal slip
+ms-301,relations are very strained
+ms-302,the minimum amount of time
+ms-303,a very traditional way to dress
+ms-304,the aspirations of a nation
+ms-305,medieval times were very hard
+ms-306,a security force of eight thousand
+ms-307,there are winners and losers
+ms-308,the voters turfed him out
+ms-309,pay off a mortgage for a house
+ms-310,the collapse of the Roman empire
+ms-311,did you see that spectacular explosion
+ms-312,keep receipts for all your expenses
+ms-313,the assault took six months
+ms-314,get your priorities in order
+ms-315,traveling requires a lot of fuel
+ms-316,longer than a football field
+ms-317,a good joke deserves a good laugh
+ms-318,the union will go on strike
+ms-319,never mix religion and politics
+ms-320,interactions between men and women
+ms-321,where did you get such a silly idea
+ms-322,it should be sunny tomorrow
+ms-323,a psychiatrist will help you
+ms-324,you should visit to a doctor
+ms-325,you must make an appointment
+ms-326,the fax machine is broken
+ms-327,players must know all the rules
+ms-328,a dog is the best friend of a man
+ms-329,would you like to come to my house
+ms-330,February has an extra day
+ms-331,do not feel too bad about it
+ms-332,this library has many books
+ms-333,construction makes traveling difficult
+ms-334,he called seven times
+ms-335,that is a very odd question
+ms-336,a feeling of complete exasperation
+ms-337,we must redouble our efforts
+ms-338,no kissing in the library
+ms-339,that agreement is rife with problems
+ms-340,vote according to your conscience
+ms-341,my favourite sport is racketball
+ms-342,sad to hear that news
+ms-343,the gun discharged by accident
+ms-344,one of the poorest nations
+ms-345,the algorithm is too complicated
+ms-346,your presentation was inspiring
+ms-347,that land is owned by the government
+ms-348,burglars never leave their business card
+ms-349,the fire blazed all weekend
+ms-350,if diplomacy does not work
+ms-351,please keep this confidential
+ms-352,the rationale behind the decision
+ms-353,the cat has a pleasant temperament
+ms-354,our housekeeper does a thorough job
+ms-355,her majesty visited our country
+ms-356,handicapped persons need consideration
+ms-357,these barracks are big enough
+ms-358,sing the gospel and the blues
+ms-359,he underwent triple bypass surgery
+ms-360,the hopes of a new organization
+ms-361,peering through a small hole
+ms-362,rapidly running short on words
+ms-363,it is difficult to concentrate
+ms-364,give me one spoonful of coffee
+ms-365,two or three cups of coffee
+ms-366,just like it says on the can
+ms-367,companies announce a merger
+ms-368,electric cars need big fuel cells
+ms-369,the plug does not fit the socket
+ms-370,drugs should be avoided
+ms-371,the most beautiful sunset
+ms-372,we dine out on the weekends
+ms-373,get aboard the ship is leaving
+ms-374,the water was monitored daily
+ms-375,he watched in astonishment
+ms-376,a big scratch on the tabletop
+ms-377,salesmen must make their monthly quota
+ms-378,saving that child was an heroic effort
+ms-379,granite is the hardest of all rocks
+ms-380,bring the offenders to justice
+ms-381,every Saturday he folds the laundry
+ms-382,careless driving results in a fine
+ms-383,microscopes make small things look big
+ms-384,a coupon for a free sample
+ms-385,fine but only in moderation
+ms-386,a subject one can really enjoy
+ms-387,important for political parties
+ms-388,that sticker needs to be validated
+ms-389,the fire raged for an entire month
+ms-390,one never takes too many precautions
+ms-391,we have enough witnesses
+ms-392,labour unions know how to organize
+ms-393,people blow their horn a lot
+ms-394,a correction had to be published
+ms-395,I like baroque and classical music
+ms-396,the proprietor was unavailable
+ms-397,be discreet about your meeting
+ms-398,meet tomorrow in the lavatory
+ms-399,suburbs are sprawling up everywhere
+ms-400,shivering is one way to keep warm
+ms-401,dolphins leap high out of the water
+ms-402,try to enjoy your maternity leave
+ms-403,the ventilation system is broken
+ms-404,dinosaurs have been extinct for ages
+ms-405,an inefficient way to heat a house
+ms-406,the bus was very crowded
+ms-407,an injustice is committed every day
+ms-408,the coronation was very exciting
+ms-409,look in the syllabus for the course
+ms-410,rectangular objects have four sides
+ms-411,prescription drugs require a note
+ms-412,the insulation is not working
+ms-413,nothing finer than discovering a treasure
+ms-414,our life expectancy has increased
+ms-415,the cream rises to the top
+ms-416,the high waves will swamp us
+ms-417,the treasurer must balance her books
+ms-418,completely sold out of that
+ms-419,the location of the crime
+ms-420,the chancellor was very boring
+ms-421,the accident scene is a shrine for fans
+ms-422,a tumor is OK provided it is benign
+ms-423,please take a bath this month
+ms-424,rent is paid at the beginning of the month
+ms-425,for murder you get a long prison sentence
+ms-426,a much higher risk of getting cancer
+ms-427,quit while you are ahead
+ms-428,knee bone is connected to the thigh bone
+ms-429,safe to walk the streets in the evening
+ms-430,luckily my wallet was found
+ms-431,one hour is allotted for questions
+ms-432,so you think you deserve a raise
+ms-433,they watched the entire movie
+ms-434,good jobs for those with education
+ms-435,jumping right out of the water
+ms-436,the trains are always late
+ms-437,sit at the front of the bus
+ms-438,do you prefer a window seat
+ms-439,the food at this restaurant
+ms-440,Canada has ten provinces
+ms-441,the elevator door appears to be stuck
+ms-442,raindrops keep falling on my head
+ms-443,spill coffee on the carpet
+ms-444,an excellent way to communicate
+ms-445,with each step forward
+ms-446,faster than a speeding bullet
+ms-447,wishful thinking is fine
+ms-448,nothing wrong with his style
+ms-449,arguing with the boss is futile
+ms-450,taking the train is usually faster
+ms-451,what goes up must come down
+ms-452,be persistent to win a strike
+ms-453,presidents drive expensive cars
+ms-454,the stock exchange dipped
+ms-455,why do you ask silly questions
+ms-456,that is a very nasty cut
+ms-457,what to do when the oil runs dry
+ms-458,learn to walk before you run
+ms-459,insurance is important for bad drivers
+ms-460,traveling to conferences is fun
+ms-461,do you get nervous when you speak
+ms-462,pumping helps if the roads are slippery
+ms-463,parking tickets can be challenged
+ms-464,apartments are too expensive
+ms-465,find a nearby parking spot
+ms-466,gun powder must be handled with care
+ms-467,just what the doctor ordered
+ms-468,a rattle snake is very poisonous
+ms-469,weeping willows are found near water
+ms-470,I cannot believe I ate the whole thing
+ms-471,the biggest hamburger I have ever seen
+ms-472,gamblers eventually loose their shirts
+ms-473,exercise is good for the mind
+ms-474,irregular verbs are the hardest to learn
+ms-475,they might find your comment offensive
+ms-476,tell a lie and your nose will grow
+ms-477,an enlarged nose suggests you are a liar
+ms-478,lie detector tests never work
+ms-479,do not lie in court or else
+ms-480,most judges are very honest
+ms-481,only an idiot would lie in court
+ms-482,important news always seems to be late
+ms-483,please try to be home before midnight
+ms-484,if you come home late the doors are locked
+ms-485,dormitory doors are locked at midnight
+ms-486,staying up all night is a bad idea
+ms-487,you are a capitalist pig
+ms-488,motivational seminars make me sick
+ms-489,questioning the wisdom of the courts
+ms-490,rejection letters are discouraging
+ms-491,the first time he tried to swim
+ms-492,that referendum asked a silly question
+ms-493,a steep learning curve in riding a unicycle
+ms-494,a good stimulus deserves a good response
+ms-495,everybody looses in custody battles
+ms-496,put garbage in an abandoned mine
+ms-497,employee recruitment takes a lot of effort
+ms-498,experience is hard to come by
+ms-499,everyone wants to win the lottery
+ms-500,the picket line gives me the chills

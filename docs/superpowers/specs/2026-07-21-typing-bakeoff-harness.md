@@ -50,11 +50,12 @@ Two files, described in detail in
    bake-off: casual chat, slang, emoji, loose punctuation. The realistic-
    traffic stress test. A keyboard that aces the academic set and whiffs
    this one is the exact finding a chat product cares about.
-2. **`mackenzie-soukoreff.csv`** — **a placeholder.** Every row is an
-   obviously-fake stand-in. The genuine 500-phrase MacKenzie & Soukoreff
-   (2003) set must be sourced and pasted in before any real run; the
-   README cites the paper and refuses to invent a download URL. We do not
-   fabricate phrases and stamp a citation on them.
+2. **`mackenzie-soukoreff.csv`** — the genuine 500-phrase MacKenzie &
+   Soukoreff (2003) set, sourced 2026-07-21 directly from the authors'
+   own distribution (not retyped or reconstructed from memory). Full
+   provenance and the correct citation — an earlier draft of this doc
+   cited the wrong 2003 CHI paper — are in
+   [`corpus/README.md`](../../../tools/typing-bakeoff/corpus/README.md).
 
 ## Metrics
 
@@ -90,9 +91,9 @@ fake them.
 3. **Confirm IME ids** with `adb shell ime list -s` against
    [`imes.yaml`](../../../tools/typing-bakeoff/imes.yaml). Service suffixes
    drift between releases; update the YAML if a build moved one.
-4. **Replace the placeholder corpus.** See
-   [`corpus/README.md`](../../../tools/typing-bakeoff/corpus/README.md).
-   No real run on the placeholder file.
+4. **Corpus is real, no substitution needed.** See
+   [`corpus/README.md`](../../../tools/typing-bakeoff/corpus/README.md)
+   for provenance if it ever needs re-verifying.
 
 ### Counterbalanced ordering
 
@@ -228,6 +229,8 @@ pipeline entirely (see the module docstring) — the ~684 WPM it reports is
 input-injection speed, not typing speed, and must never be read as engine
 quality. Getting real numbers needs `--method tap`, which still requires
 the per-IME key-coordinate discovery tooling this harness has not built yet
-(the empty `key_lookup` map in `adb_replay.py`). That, the real
-MacKenzie & Soukoreff corpus (still a placeholder), and the human session
-remain open work before issue #5 has an answer.
+(the empty `key_lookup` map in `adb_replay.py`). That and the human session
+remain open work before issue #5 has an answer. The corpus itself is no
+longer a gap: `mackenzie-soukoreff.csv` now holds the genuine 500-phrase
+set (see `corpus/README.md` for provenance), sourced the same day as this
+verification pass.

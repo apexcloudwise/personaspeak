@@ -16,9 +16,9 @@ tools/typing-bakeoff/
 ├── adb_replay.py          switch IME, replay a corpus, capture commits
 ├── compute_metrics.py     reduce a run JSONL into a per-keyboard metric table
 └── corpus/
-    ├── README.md          what each corpus is (and what the placeholder isn't)
+    ├── README.md          what each corpus is, and the real one's provenance
     ├── domain-messages.csv      ~50 original casual-chat messages
-    └── mackenzie-soukoreff.csv  PLACEHOLDER — replace before any real run
+    └── mackenzie-soukoreff.csv  the genuine 500-phrase MacKenzie & Soukoreff set
 ```
 
 ## The harness in one paragraph
@@ -37,17 +37,17 @@ device before it's trusted.
 # 1. Sanity-check the metrics math against the hand-computed cases.
 python -m unittest test_metrics
 
-# 2. Make sure the corpus is real. The MacKenzie-Soukoreff file is a placeholder.
-#    See corpus/README.md for where to source the genuine 500-phrase set.
+# 2. Corpus is real as of 2026-07-21 -- see corpus/README.md for provenance.
 
-# 3. Confirm the target IME is enabled on the device.
+# 3. Confirm the target IME is enabled on the device (ids drift between
+#    releases -- verify against imes.yaml, don't assume).
 adb shell ime list -s | grep helium314
 
 # 4. Open a plain text field (any notes app will do) on the device, focus it.
 
 # 5. Run a short smoke pass against one IME -- 5 phrases, baseline method.
 python adb_replay.py \
-    --ime helium314.keyboard/.LatinIME \
+    --ime helium314.keyboard/.latin.LatinIME \
     --corpus corpus/domain-messages.csv \
     --out runs/heliboard-smoke.jsonl \
     --method inject \
