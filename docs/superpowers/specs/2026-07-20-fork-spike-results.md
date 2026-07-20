@@ -1,11 +1,13 @@
 # Fork spike: which base — results log
 
-**Date:** 2026-07-20
+**Date:** 2026-07-20 (updated 2026-07-21 — first-pass fixes, on-device
+re-verification, and two independent reviews all landed the next day)
 **Status:** Grading complete, and all bugs found in the first pass have been
 fixed and independently re-verified on-device — all three candidates now
-have a working end-to-end flow. Working log, not a spec. Base-and-license
-decision and the ADR superseding ADR-0001 are next, owner's call — not
-decided in this file.
+have a working end-to-end flow. Working log, not a spec. The full-fork
+decision itself is already made (ADR-0001 superseded 2026-07-20); what's
+still open is the base-and-license pick and the follow-up ADR that records
+it — owner's call, not decided in this file.
 **Branch:** `docs/fork-spike-results`
 **Related:** [fork-spike checkpoint](2026-07-20-fork-spike-checkpoint.md) ·
 [keyboard UX design](2026-07-20-keyboard-ux-design.md) ·
@@ -23,7 +25,7 @@ graft + commit + report, one per candidate, in its own scratch clone under
 `~/workspace/scratch/fork-spike/<name>/` on branch `spike/personaspeak-graft`.
 Claude (main session) takes the one AVD (`CityZen_Dev`) serially to install,
 drive, screenshot, and grade — one candidate at a time, per the "one emulator,
-one active IME" constraint. Workers were staggered by ~1 (each launched once
+one active IME" constraint. Workers were staggered by ~1 minute (each launched once
 the prior clone/config was underway) rather than launched fully concurrently,
 to avoid three simultaneous Gradle/NDK toolchain downloads thrashing this
 machine at once.
@@ -146,19 +148,34 @@ the composing region before sending replaced cleanly. This looks like a
 shared, fixable pattern across candidates using this replace approach, not
 something specific to either graft.
 
-**Net read:** with both bugs fixed, HeliBoard is now the only candidate
-verified working core-flow end-to-end on this pass, with the cheapest
-upstream diff (4 files) and the most correct spec compliance (real persona
-names, working 2×2 picker). The composing-state replace bug remains
-open here exactly as it does on FlorisBoard — a fix belongs at the shared
-pattern level (check for a live composing region before `selectAll`, or
-clear composing text explicitly first), not as a one-off patch.
+#### Follow-up: composing-state fix commissioned and verified (2026-07-21)
+
+Same shared fix shape as FlorisBoard below: call `ic.finishComposingText()`
+before `performContextMenuAction(selectAll)` + `commitText`, so any pending
+composing span is committed as regular text first and `selectAll` has nothing
+ambiguous left to grab. Landed on the same `spike/personaspeak-graft` branch as
+the touch fix; the throwaway clone has since been removed, so the surviving
+in-repo evidence is the on-device re-verification rather than the diff — unlike
+the earlier fixes, no commit SHA is recorded here for that reason.
+
+**Verified on-device (Claude, `CityZen_Dev`):** retested the exact repro — a
+draft ending in an active composing/underlined word, send tapped immediately —
+and the replace was completely clean, no leftover fragment
+(`11-composing-fix-typed`, `12-composing-fix-result`).
+
+**Net read:** with all three bugs fixed (touch-inset, silent controller-attach,
+and now composing-state replace), HeliBoard is verified working core-flow
+end-to-end on this pass, with the cheapest upstream diff (4 files) and the most
+correct spec compliance (real persona names, working 2×2 picker). The
+composing-state fix is the shared pattern-level one (clear composing text before
+`selectAll`), applied identically here and on FlorisBoard — not a one-off patch.
 - Screenshots: `docs/design/mockups/spike/heliboard/`
   (00-settings-launched, 01-strip-idle, 02-draft-typed, 03-persona-picker
   \[shows the picker failing to open], 04-suggestion-tap-control;
   05-fix-strip-idle through 08-fix-result are the post-fix picker/selection
   working; 09-fix-clean-draft/10-fix-result-clean are the clean end-to-end
-  transform with a fully-committed draft).
+  transform with a fully-committed draft; 11-composing-fix-typed/12-composing-fix-result
+  are the composing-state fix re-verified against the exact composing repro).
 
 ### AnySoftKeyboard
 
@@ -240,9 +257,10 @@ turned out to matter.
 lines — the crash fix touched none), with the interop cost concentrated in
 one predictable place (Java↔Kotlin bridging) rather than spread out. With
 the crash fixed, **this candidate now also has a verified, working
-end-to-end flow**, and its replace mechanism turned out to be more robust
-than the other two against the composing-state bug, without anyone
-targeting that specifically.
+end-to-end flow**, and its replace mechanism sidesteps the composing-state
+bug the other two hit — though, as the independent review below found, its
+`deleteSurroundingText` path carries a stale-length race of its own, so the
+honest claim is "not susceptible on the tested path," not "immune."
 - Screenshots: `docs/design/mockups/spike/anysoftkeyboard/` (00-strip-idle
   through 08-result; see 02-persona-picker for the picker working, 08-result
   for the pre-fix crash's unchanged draft; 09-fix-strip-idle through
@@ -354,7 +372,7 @@ the default IME after each pass; no candidate was left installed as default.
 | Vendoring friction | Low (no catalog) | Medium (Java↔Kotlin bridge) | Low (Compose, catalog) |
 | Picker works on-device | ✅ (after fix — 2×2 grid, correct persona names) | ✅ | ✅ (placeholder persona names) |
 | Transform works on-device | ✅ (after fix) | ✅ (after fix) | ✅ (after fix) |
-| Composing-state replace bug | Fixed (`finishComposingText()` before `selectAll`) | **Immune by construction** — uses `deleteSurroundingText`, not `selectAll` | Fixed (`finishComposingText()` before `selectAll`) |
+| Composing-state replace bug | Fixed (`finishComposingText()` before `selectAll`) | Not susceptible on the tested path — uses `deleteSurroundingText`, not `selectAll` (but carries its own stale-length race, see Independent review) | Fixed (`finishComposingText()` before `selectAll`) |
 | Builds clean out of the box | Yes | Yes | **No** — purged dependency + missing Rust toolchain, unrelated to the spike |
 | Suggestion-row competition | Real, populated — strips stack, ~doubles chrome height | Real, populated — strips stack | **Dormant** — v0.5.2's word suggestions are stubbed, so no real competition yet |
 
@@ -380,10 +398,12 @@ pattern**, not a one-off: both HeliBoard and FlorisBoard's `selectAll` +
 `commitText` approach left a leftover text fragment when the last word was
 still in an active composing/autocorrect-pending state at send-time —
 fixed identically in both (`finishComposingText()` first). AnySoftKeyboard
-never had this bug at all, because its replace mechanism
+didn't hit this bug on the tested path, because its replace mechanism
 (`deleteSurroundingText`-based) doesn't go through `selectAll` in the first
-place. That's a real, if secondary, data point in favor of ASK's specific
-implementation approach, independent of the base decision.
+place. That's a real, if secondary, data point on ASK's approach — but not an
+unqualified win: the same `deleteSurroundingText` path has a stale-length race
+of its own (see Independent review), so it trades one replace-correctness risk
+for another rather than avoiding the class entirely.
 
 Reading the three against each other, now that all three work:
 
@@ -403,8 +423,10 @@ Reading the three against each other, now that all three work:
   (Java↔Kotlin bridge) and the only crash, but the crash fix was a one-line,
   zero-upstream-cost change (`TextUtils.isEmpty`) — cheaper to fix than
   either of HeliBoard's bugs. **Verified working end-to-end**, and its
-  replace mechanism is the only one of the three immune to the
-  composing-state bug by construction.
+  replace mechanism is the only one of the three that sidesteps the
+  composing-state bug on the tested path — though its own `deleteSurroundingText`
+  path carries a separate stale-length race (see Independent review), so "immune
+  by construction" overstates it.
 - **FlorisBoard** is the best stack and license match and produced the
   cheapest diff (4 files, +11/-1, only 2 real code-seam lines). **Verified
   working end-to-end** after the composing-state fix. Two things still
@@ -503,7 +525,15 @@ pipelines have an unguarded async race. Each captures the draft text (and,
 for HeliBoard/FlorisBoard, the `InputConnection` reference) *before*
 awaiting the provider call, then commits the result *unconditionally*
 afterward — no check that the same field is still focused, that its
-contents haven't changed, or that the connection is still valid.
+contents haven't changed, or that the connection is still valid. For
+AnySoftKeyboard the variant is if anything sharper: it *re-resolves* the
+current connection after the await, but replaces via
+`deleteSurroundingText(beforeLength, afterLength)` using lengths captured from
+the *old* draft — so if focus moved to another field it can delete from that
+new field using stale lengths. The same `deleteSurroundingText` mechanism that
+dodges the composing bug is what makes this race worse, not better, which is why
+"immune by construction" was softened to "not susceptible on the tested path"
+throughout this doc.
 `FakeProvider`'s fixed 400ms delay made this invisible in every on-device
 test run here; a real network provider's multi-second, variable latency
 would make it an ordinary occurrence, not an edge case. This directly
