@@ -24,15 +24,23 @@ choice:
    `main_keyboard_layout.xml`, `.gitignore`) to wire in the vendored modules and
    the strip. A mechanism that forbids editing upstream-tracked files does not
    fit what the graft actually does.
-2. **ASK moves slowly.** Latest stable is `1.13-r1` (Feb 2026). The upstream we
-   are subscribing to publishes on the order of once a year, not once a week.
+2. **ASK moves slowly.** The selected stable release as of 2026-07-21 is
+   `1.13-r1` (published Feb 2026). The upstream we are subscribing to publishes
+   on the order of once a year, not once a week.
+
+And one fact about *our* repo, which turns out to decide the question:
+
+3. **`main` enforces `required_linear_history` and we squash-merge PRs.**
+   (Confirmed against the `nomain` ruleset.) No merge commit ever survives on
+   `main`; every PR lands as one squashed commit.
 
 Mechanisms considered:
 
 - **A. git submodule** — ASK stays its own repo at a pinned SHA; our changes
   live as an overlay/patches.
-- **B. git subtree** — ASK merged into a subdirectory, upstream history preserved,
-  `git subtree pull` to update.
+- **B. git subtree (`--squash`)** — ASK merged into a subdirectory as a single
+  squashed commit (not its full history), updated with `git subtree pull
+  --squash`, which 3-way-merges new upstream against our edits.
 - **C. Vendored snapshot** — ASK's source copied in at a pinned revision, its
   history dropped, tracked thereafter as files in our tree.
 
@@ -46,14 +54,24 @@ Concretely:
 - The ASK tree lands under `android/keyboard/` — the module slot the stub
   already reserves — at tag `1.13-r1`, commit
   `8c1db51c8f23d1923d0eb05f70f1bb41d614fb6d` (the spike's pin).
-- The snapshot is copied in as a single, message-tagged import commit. Upstream
-  git history is **not** imported.
+- The snapshot is produced reproducibly: `git archive` of the pinned tag from
+  the upstream repo, extracted into `android/keyboard/`, excluding upstream CI
+  and repo-management dirs (`.git`, `.github/`, upstream `fastlane/` metadata) —
+  the exclusion list itself recorded in `UPSTREAM.md`. Anyone can regenerate the
+  identical pristine tree from the recorded tag + exclusion list and `git diff`
+  it against our import to see exactly our changes. Committed as a single,
+  message-tagged import commit; upstream git history is **not** imported.
 - ASK's `LICENSE`, `NOTICE`, and per-file Apache headers are preserved verbatim.
   A top-level `android/keyboard/UPSTREAM.md` records the source repo, the pinned
-  tag + SHA, the date, and the re-vendor procedure.
+  tag + SHA, the date, the exclusion list, and the re-vendor procedure.
 - Our modifications to upstream-tracked files are listed in
   `android/keyboard/UPSTREAM-MODIFIED.md` — one line per touched file, with the
-  reason. This is the rent ledger, kept by hand and small on purpose.
+  reason. It describes the **current** delta from the vendored base, not a
+  changelog: a file edited several times still has one entry (its net diff), and
+  a file whose edit we later revert to pristine has its entry **removed**. The
+  invariant the manifest asserts: `git diff <pristine tag> -- android/keyboard/`
+  touches exactly the files it lists, no more. This is the rent ledger, kept by
+  hand and small on purpose.
 - PersonaSpeak code lives in **new** files under
   `biz.pixelperfectstudios.personaspeak.*` packages, never edited into ASK's own
   files beyond the wiring seam the manifest tracks.
@@ -70,11 +88,20 @@ this ADR fixes the mechanism and the discipline, not the build wiring.
   vendored snapshot again, plus a second repo to run and a `--recursive` clone
   every contributor must remember. It buys clean separation we do not need and
   charges ergonomics we do.
-- **A subtree overpays for fact 2.** `git subtree pull` is genuinely nicer *when
-  you update often*. We update roughly yearly, and importing 8,870 commits of
-  someone else's history to save a once-a-year manual merge is a bad trade —
-  permanent repo bloat for occasional convenience, plus subtree's own
-  merge-conflict sharp edges.
+- **A subtree's update model fights our merge policy — and that, not history
+  bloat, is the reason.** An earlier draft of this ADR rejected subtree for
+  "importing ~8,870 commits of history." That was wrong, and the non-author
+  review (codex) caught it: `git subtree add --squash` collapses upstream to a
+  single commit, exactly as vendoring does. The genuine problem is downstream.
+  `git subtree pull --squash` computes its 3-way merge base by finding the
+  *previous* subtree commit in history — and by fact 3, that commit never
+  survives. Every subtree merge is flattened when its PR squash-merges into a
+  linear `main`, destroying the ancestry the next `pull` needs. subtree would
+  work exactly once, at the initial add, then lose its own thread; its headline
+  benefit, the auto-merging pull, does not survive our workflow. We would take on
+  subtree's arcana (root-only invocation, exact `--prefix`, confusing merge
+  conflicts) for none of its payoff. A vendored snapshot depends on no history
+  shape at all, so the squash-merge policy costs it nothing.
 - **A snapshot makes the rent visible.** Our entire diff from upstream is
   `git diff` against one import commit, and the modified-file manifest states it
   in prose. "Upstream lines modified are rent paid forever" (ADR-0003) is only
