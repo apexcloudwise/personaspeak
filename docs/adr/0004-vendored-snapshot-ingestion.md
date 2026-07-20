@@ -69,9 +69,13 @@ Concretely:
   reason. It describes the **current** delta from the vendored base, not a
   changelog: a file edited several times still has one entry (its net diff), and
   a file whose edit we later revert to pristine has its entry **removed**. The
-  invariant the manifest asserts: `git diff <pristine tag> -- android/keyboard/`
-  touches exactly the files it lists, no more. This is the rent ledger, kept by
-  hand and small on purpose.
+  invariant the manifest asserts: regenerate the pristine tree (the recorded
+  `git archive` + exclusion list into a scratch dir) and
+  `git diff --no-index <scratch> android/keyboard/` touches exactly the files it
+  lists, no more. A bare `git diff <tag>` will not do this — upstream's tree is
+  rooted where ours is relocated under `android/keyboard/`, so the comparison
+  must be prefix-aware (`--no-index` against the regenerated tree, or an
+  equivalent). This is the rent ledger, kept by hand and small on purpose.
 - PersonaSpeak code lives in **new** files under
   `biz.pixelperfectstudios.personaspeak.*` packages, never edited into ASK's own
   files beyond the wiring seam the manifest tracks.
