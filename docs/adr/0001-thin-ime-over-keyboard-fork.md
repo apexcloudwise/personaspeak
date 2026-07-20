@@ -2,9 +2,11 @@
 
 **Status:** **Superseded (2026-07-20)** — the decision below was reversed the
 same day it was accepted. PersonaSpeak forks a full keyboard; the thin IME is
-scrapped. The replacement ADR is pending the fork-base spike; the reasoning and
-evidence live in
-[`docs/superpowers/specs/2026-07-20-fork-spike-checkpoint.md`](../superpowers/specs/2026-07-20-fork-spike-checkpoint.md).
+scrapped. The replacement is [ADR-0003](0003-fork-anysoftkeyboard-apache.md)
+(fork AnySoftKeyboard, under Apache-2.0); the reasoning and evidence live in
+[`docs/superpowers/specs/2026-07-20-fork-spike-checkpoint.md`](../superpowers/specs/2026-07-20-fork-spike-checkpoint.md)
+and
+[`2026-07-20-fork-spike-results.md`](../superpowers/specs/2026-07-20-fork-spike-results.md).
 
 Kept because its arguments did not stop being true — we chose to pay them:
 

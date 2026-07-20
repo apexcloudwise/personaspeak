@@ -10,6 +10,17 @@ Newest first, like all respectable patch notes.
 
 ---
 
+## 2026-07-21 — We picked a keyboard (PR #11)
+
+- ADR-0003 lands the decision the whole fork spike was evidence for: fork
+  **AnySoftKeyboard**, license the app **Apache-2.0**. The license did most of
+  the picking — GPL-3.0 is a one-way door we chose not to walk through — and the
+  rest fell out of facts already in hand (FlorisBoard's prediction engine is
+  stubbed; ASK's is the grown-up of the three and actually builds). Adoption is
+  provisional pending a typing sanity check and the stale-field race guard, both
+  already ticketed. The three-way typing bake-off was retired before it could
+  eat a day confirming a real engine beats an empty one.
+
 ## 2026-07-21 — The gate that watches the gate's more dangerous cousin (PR #10)
 
 - Speced the editor-identity guard that stops a slow provider from rewriting the
