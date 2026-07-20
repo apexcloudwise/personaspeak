@@ -5,7 +5,7 @@ description: Rewrite a piece of text in the voice of a specific persona (Jeeves,
 
 # personaspeak
 
-Rewrite text in a persona's voice **directly in this conversation** — do not shell out to the Anthropic API or run `personaspeak.py`. You are the rewriting engine; this skill just tells you how.
+Rewrite text in a persona's voice **directly in this conversation** — do not shell out to the Anthropic API or run `desktop/personaspeak.py`. You are the rewriting engine; this skill just tells you how.
 
 ## Inputs
 

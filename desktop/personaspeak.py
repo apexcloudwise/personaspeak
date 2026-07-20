@@ -9,7 +9,7 @@ from pathlib import Path
 import anthropic
 import yaml
 
-PERSONAS_DIR = Path(__file__).parent / "personas"
+PERSONAS_DIR = Path(__file__).parent.parent / "personas"
 
 MODEL_ALIASES = {
     "haiku": "claude-haiku-4-5",
