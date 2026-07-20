@@ -10,6 +10,24 @@ Newest first, like all respectable patch notes.
 
 ---
 
+## 2026-07-21 — The bake-off nobody won on purpose (PR #3)
+
+- Grafted the persona strip onto all three fork candidates — HeliBoard,
+  AnySoftKeyboard, FlorisBoard — drove each on a real emulator, and graded how
+  much of somebody else's keyboard we'd be signing up to maintain. Answer: less
+  than feared, in all three cases.
+- Every candidate's first graft passed its unit tests and broke on the device,
+  in a different place each time. All fixed and re-verified on-device; none
+  taken on a worker's word. The moral — an on-device instrumentation test of the
+  capture→transform→replace path — is now written down where the next base
+  can't miss it.
+- Commissioned two independent reviews that reached opposite recommendations and
+  told this document where its own reasoning was thin. Both are on the PR; one
+  found an async stale-field race in all three pipelines that `FakeProvider` was
+  politely hiding. Filed as a pre-ADR blocker.
+- Did not pick the base. That's still the owner's call — this is the evidence,
+  not the verdict.
+
 ## 2026-07-21 — The staff writes its own rulebook (PR #2)
 
 - Reviewed the previous PR after it merged, wrote down the findings, then
