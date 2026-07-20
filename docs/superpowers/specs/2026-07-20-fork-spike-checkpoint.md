@@ -98,10 +98,56 @@ Costs that apply to **all three**:
   Android imports, they transplant into any host. This is ADR-0001's escape
   hatch working exactly as designed.
 
-## Decision: spike before committing
+## DECISION (2026-07-20, later the same session): we are forking
 
-The fork is a one-way door and the table above is secondhand. Agreed approach:
-**clone, build, and graft all three**, then decide from evidence.
+The owner has decided: **PersonaBoard becomes a full keyboard fork. The thin
+IME is scrapped.** ADR-0001 is superseded, not amended.
+
+This resolves the open question above. The spike below still runs, but its
+question changes from *"should we fork?"* to *"which base do we graft onto?"* —
+"none of them" is no longer a permitted verdict.
+
+### What the decision kills
+
+- **Keyboard switching.** No flip to us, no flip back, no `⌨ back` button.
+- **The empty-draft dead end.** There is always a keyboard, so there is always
+  a way to type.
+- **The untypeable-panel problem.** We own the keys; the panel can host real
+  input if it needs to.
+- **`ACTION_PROCESS_TEXT` as a second entry point.** Not needed — we are always
+  present.
+
+### What the decision adds
+
+- **The strip becomes permanent furniture.** It sits above the keys at all
+  times rather than being a mode you switch into. The compact strip mockup is
+  now the only panel design, not one of two candidates.
+- **Onboarding becomes a keyboard migration.** "Replace your keyboard" is a far
+  bigger ask than "add a second one," and needs different copy, different trust
+  framing, and a believable answer to "what about my autocorrect?"
+- **Settings grows a second half.** A daily-driver keyboard must expose
+  layouts, languages, dictionaries, glide typing, themes, and clipboard —
+  alongside the persona/provider settings.
+- **The failure mode changes category**, exactly as ADR-0001 warned: a crash
+  now means the user cannot type at all. Crash-freedom becomes a release gate.
+
+### Now urgent: the license
+
+The base choice decides the license. HeliBoard is GPL-3.0, which relicenses the
+whole app and ends the README's Apache-2.0 plan. AnySoftKeyboard and
+FlorisBoard are Apache-2.0. This is now a decision to make deliberately rather
+than discover.
+
+### AGENTS.md module law needs rewriting
+
+"`keyboard` → depends on core-*. The IME. Keep it thin" cannot survive. The
+`core-personas` / `core-providers` contracts stand; the `keyboard` module's
+does not.
+
+## The spike: which base
+
+The base choice is a one-way door and the table above is secondhand. Agreed
+approach: **clone, build, and graft all three**, then decide from evidence.
 
 ### What the spike must prove
 
@@ -129,16 +175,11 @@ engine? That is what tables cannot answer and what we would live with for years.
 upstream lines modified are rent paid forever, because each one is a future
 merge conflict. That number decides this.
 
-### "None of them" is a permitted verdict
+### The verdict space
 
-If all three grafts fight back, the honest outcome is that ADR-0001 was right,
-and we return to the thin IME — likely with a **basic QWERTY layout** (no
-autocorrect, no swipe, no dictionaries; ~500–1,500 lines of Compose we fully
-own) to fix the two things actually hurting: the untypeable panel and the
-forced switch. That would need an ADR-0001 amendment, since the ADR currently
-forbids adding layouts to `keyboard/`.
-
-A spike that can only conclude "fork" is not a spike, it is a rubber stamp.
+Superseded by the fork decision above. The spike now ranks three bases rather
+than deciding whether to fork at all. If all three graft badly, the answer is
+"pick the least bad and budget for the pain," not "go back to thin."
 
 ### Execution split
 
@@ -159,22 +200,20 @@ conclude "it works" from a screenshot.
 Hard constraint: **one emulator, one active IME.** Builds parallelise;
 install-and-drive serialises.
 
-## Why this is parked
+## Why UX still goes first
 
-UX is **fork-agnostic**. The persona strip and the app's onboarding/settings
-look the same whether they sit on HeliBoard, ASK, FlorisBoard, or our own thin
-IME — the fork decision is about the *typing substrate*, not the strip. So UX
-work survives every possible spike verdict, including "none of them." Lowest
-regret on the board.
+The **strip and result card are base-agnostic** — they look the same on
+HeliBoard, ASK, or FlorisBoard, so that work survives whichever base wins.
 
 It also makes the spike sharper. As specced above the graft plants a
 deliberately ugly four-chip row. With the strip already designed, each graft
 hosts the **real** UI, and the spike measures the honest question: not "can
 this codebase host a row of buttons" but "can this codebase host *our* UI."
 
-And the UX prototyping surface is a normal Activity — real focus, real text
-fields, trivially driveable and recordable, avoiding the IME-focus friction
-found in the previous session.
+**Onboarding is NOT base-agnostic and must be redone.** The screens generated
+before the fork decision pitch enabling a second keyboard alongside Gboard.
+That flow is now wrong: onboarding becomes a migration to a replacement daily
+keyboard. Settings likewise doubles in scope.
 
 ## Toolchain verified on this machine (2026-07-20)
 
