@@ -42,7 +42,11 @@ jobs:
         run: |
           set -euo pipefail
           base="origin/${{ github.base_ref }}"
-          if git diff --name-only "${base}...HEAD" | grep -qx 'PATCHNOTES.md'; then
+          # Capture the diff first, then match — piping straight into `grep -q`
+          # lets grep close the pipe on its first match, which under `pipefail`
+          # turns git's SIGPIPE (141) into a false negative on large diffs.
+          changed="$(git diff --name-only "${base}...HEAD")"
+          if printf '%s\n' "$changed" | grep -qx 'PATCHNOTES.md'; then
             echo "::notice::PATCHNOTES.md is in the diff — gate satisfied."
           else
             echo "::error::This PR doesn't touch PATCHNOTES.md. Every merged PR adds a one-line entry at the top of PATCHNOTES.md, in the VOICE.md register — true thing first, joke second. If this PR genuinely ships without one (pure revert, meta-fix on the gate itself, etc.), apply the 'no-patchnote' label and push again. The skip is loud, never silent."
