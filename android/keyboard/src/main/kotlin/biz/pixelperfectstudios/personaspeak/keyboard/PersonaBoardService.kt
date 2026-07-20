@@ -1,4 +1,4 @@
-package dev.personaspeak.keyboard
+package biz.pixelperfectstudios.personaspeak.keyboard
 
 import android.inputmethodservice.InputMethodService
 import android.os.Build
@@ -12,7 +12,7 @@ import androidx.savedstate.SavedStateRegistry
 import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
-import dev.personaspeak.providers.FakeProvider
+import biz.pixelperfectstudios.personaspeak.providers.FakeProvider
 
 /**
  * The thin persona keyboard (ADR-0001). Not a typing keyboard: a reply

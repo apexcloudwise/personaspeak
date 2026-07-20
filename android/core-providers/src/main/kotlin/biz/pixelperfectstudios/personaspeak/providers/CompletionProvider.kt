@@ -1,4 +1,4 @@
-package dev.personaspeak.providers
+package biz.pixelperfectstudios.personaspeak.providers
 
 /**
  * One brain in the provider registry (ADR-0002). Implementations at launch:

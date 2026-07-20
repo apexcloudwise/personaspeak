@@ -1,4 +1,4 @@
-package dev.personaspeak.personas
+package biz.pixelperfectstudios.personaspeak.personas
 
 /**
  * Builds the system prompt for a persona rewrite.

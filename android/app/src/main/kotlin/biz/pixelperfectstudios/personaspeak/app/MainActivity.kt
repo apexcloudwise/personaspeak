@@ -1,4 +1,4 @@
-package dev.personaspeak.app
+package biz.pixelperfectstudios.personaspeak.app
 
 import android.content.Context
 import android.content.Intent

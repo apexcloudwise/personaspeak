@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    namespace = "dev.personaspeak.app"
+    namespace = "biz.pixelperfectstudios.personaspeak.app"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "dev.personaspeak"
+        applicationId = "biz.pixelperfectstudios.personaspeak"
         minSdk = 26
         targetSdk = 35
         versionCode = 1

@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "dev.personaspeak.keyboard"
+    namespace = "biz.pixelperfectstudios.personaspeak.keyboard"
     compileSdk = 35
 
     defaultConfig {

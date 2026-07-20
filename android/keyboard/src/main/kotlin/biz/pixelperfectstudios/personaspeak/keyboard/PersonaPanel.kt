@@ -1,4 +1,4 @@
-package dev.personaspeak.keyboard
+package biz.pixelperfectstudios.personaspeak.keyboard
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -21,7 +21,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import dev.personaspeak.providers.CompletionProvider
+import biz.pixelperfectstudios.personaspeak.providers.CompletionProvider
 import kotlinx.coroutines.launch
 
 /**

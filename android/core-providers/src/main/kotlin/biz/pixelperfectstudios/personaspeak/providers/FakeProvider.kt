@@ -1,4 +1,4 @@
-package dev.personaspeak.providers
+package biz.pixelperfectstudios.personaspeak.providers
 
 import kotlinx.coroutines.delay
 

@@ -5,7 +5,7 @@
         android:label="@string/app_name"
         android:theme="@android:style/Theme.Material.Light.NoActionBar">
         <activity
-            android:name="dev.personaspeak.app.MainActivity"
+            android:name="biz.pixelperfectstudios.personaspeak.app.MainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

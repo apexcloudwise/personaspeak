@@ -1,4 +1,4 @@
-package dev.personaspeak.personas
+package biz.pixelperfectstudios.personaspeak.personas
 
 import org.yaml.snakeyaml.Yaml
 import java.io.InputStream
