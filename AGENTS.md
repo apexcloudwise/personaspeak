@@ -27,12 +27,30 @@ core-personas   → pure Kotlin. No Android imports. Ever.
 core-providers  → pure Kotlin + HTTP. No Android imports except where a
                   provider genuinely requires platform APIs (on-device model);
                   isolate those in their own source set.
-keyboard        → depends on core-*. The IME. Keep it thin.
+keyboard        → the IME. In flux — see below.
 app             → depends on core-*. Settings/onboarding.
 ```
 
 Dependency arrows point inward only. If `core-personas` ever imports
-`android.*`, the build should fail and so should the PR.
+`android.*`, the build should fail and so should the PR. **That rule is not
+negotiable and does not change with the fork** — those two modules are the
+project, and their portability is what makes the fork survivable.
+
+**`keyboard` is being replaced.** This module used to be a thin, keyless
+persona panel and the law read "keep it thin." As of 2026-07-20 PersonaSpeak
+forks a full open-source keyboard (ADR-0001 superseded), so `keyboard` becomes
+a large inherited codebase — the opposite of thin. The base is undecided;
+until it is, don't invest in `keyboard/` beyond what the fork spike needs.
+
+The replacement contract lands with the fork ADR. Until then, treat as binding:
+
+- `core-personas` and `core-providers` stay pure and stay ours.
+- PersonaSpeak-specific code in the fork lives in clearly separated packages,
+  never scattered through inherited files — **upstream lines modified are rent
+  paid forever**, one merge conflict each.
+- Current state:
+  [`docs/superpowers/specs/2026-07-20-fork-spike-checkpoint.md`](docs/superpowers/specs/2026-07-20-fork-spike-checkpoint.md)
+  and [`2026-07-20-keyboard-ux-design.md`](docs/superpowers/specs/2026-07-20-keyboard-ux-design.md).
 
 ## Workflow
 

@@ -1,6 +1,22 @@
 # ADR-0001: A thin persona keyboard, not a HeliBoard fork
 
-**Status:** Accepted (2026-07-20)
+**Status:** **Superseded (2026-07-20)** — the decision below was reversed the
+same day it was accepted. PersonaSpeak forks a full keyboard; the thin IME is
+scrapped. The replacement ADR is pending the fork-base spike; the reasoning and
+evidence live in
+[`docs/superpowers/specs/2026-07-20-fork-spike-checkpoint.md`](../superpowers/specs/2026-07-20-fork-spike-checkpoint.md).
+
+Kept because its arguments did not stop being true — we chose to pay them:
+
+- "Its worst failure mode is *the phone can't type*" is now **our** failure
+  mode, which is why crash-freedom becomes a release gate.
+- The escape hatch it designed for worked exactly as intended:
+  `core-personas` and `core-providers` are pure Kotlin and transplant into any
+  host untouched.
+
+What broke it: an IME window gets no real input focus, so the keyless panel
+could never be typed into, and its empty state was a dead end. Rather than work
+around both, the switching model itself was abandoned.
 
 ## Context
 

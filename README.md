@@ -16,7 +16,7 @@ go to be misunderstood.
 | `personas/*.yaml` | ✅ Works | The persona library. One YAML per character: speech patterns, vocabulary, sample lines. This is the single source of truth for everything below. |
 | `desktop/personaspeak.py` | ✅ Works | CLI. `personaspeak.py --as jeeves "grab me a coffee"` → butler-grade coffee request. Brings your own API key. |
 | `.claude/skills/personaspeak/` | ✅ Works | Claude Code skill — same trick, in your editor session, on your subscription, no API bill. |
-| `android/` | 🚧 Phase 1 | The keyboard. A thin, special-purpose IME: persona chips, tone chips, suggested replies. You keep Gboard for normal typing; you summon us when the reply needs *style*. |
+| `android/` | 🚧 Phase 1 | The keyboard. A full daily driver — autocorrect, glide, layouts, the lot — forked from an established open-source keyboard, with a persona strip above the keys. Type as normal; tap a character when the reply needs *style*. |
 
 ## The cast
 
@@ -43,7 +43,7 @@ export ANTHROPIC_API_KEY=sk-ant-...
 The full roadmap lives in [ROADMAP.md](ROADMAP.md). The short version:
 
 1. **Phase 0** *(you are here)* — repo goes public, docs get funny, CI gets serious.
-2. **Phase 1** — PersonaBoard MVP: the thin keyboard, pluggable AI providers
+2. **Phase 1** — PersonaBoard MVP: the keyboard itself, pluggable AI providers
    (bring your own key, use a free tier, or — later — run a model on your phone).
 3. **Phase 2** — Suggested replies: opt in, and the keyboard reads the message
    you're replying to (from the notification, on-device, forgotten immediately)
@@ -68,8 +68,10 @@ butler inspecting cutlery.
 
 ## License & money
 
-FOSS (license TBD in Phase 0 — leaning Apache-2.0 for the app, CC-BY for
-personas). If this project ever earns a coin it'll be through donations and
+FOSS (license TBD — leaning Apache-2.0 for the app, CC-BY for personas, but
+the app's license now depends on which keyboard we fork: one leading candidate
+is GPL-3.0, which would carry across. Decided alongside the base, and this
+paragraph updated the moment it is). If this project ever earns a coin it'll be through donations and
 an optional hosted-key convenience tier — never ads. A keyboard that shows
 you ads is a keyboard that reads your texts for a living, and we are not
 that kind of establishment.
