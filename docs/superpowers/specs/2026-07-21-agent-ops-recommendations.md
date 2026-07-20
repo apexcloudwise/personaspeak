@@ -6,20 +6,57 @@ lands in AGENTS.md or an ADR
 **Related:** [PR #1 review notes](2026-07-21-pr1-review-notes.md) ·
 borrows heavily from `~/workspace/ext/darkmill/docs/adr/` (cited inline)
 
-The owner asked for three things: a repo persona that writes patch notes
-instead of press releases, a maintenance practice where agents prove their
-work instead of describing it, and PRs that arrive *finished*. This doc
+The owner asked for three things: an agent persona — the staff itself writes
+docs, guides, and conversation in a whimsical TF2 register instead of stuffy
+official notes — a maintenance practice where agents prove their work instead
+of describing it, and PRs that arrive *finished*. This doc
 recommends how. The short version: the voice already exists (VOICE.md), the
 evidence discipline already exists next door (darkmill), and the missing piece
 is wiring both into AGENTS.md so a fresh agent inherits them without being
 told.
 
-## Part 1 — The persona: patch notes, not press releases
+## Part 1 — The persona: the agent speaks in the house voice
 
-VOICE.md already defines the register (TF2 update pages, Dota's New Frontiers
-notes: deadpan, accurate, jokes delivered like facts). What's missing is a
-**place the voice performs regularly**, so it stays a habit instead of a
-README novelty. Recommendations:
+The owner's actual request, clarified: the persona is for **the agent
+itself** — everything it writes for humans, including docs, guides, PR
+bodies, session summaries, and conversation with the owner. Not a
+patch-notes gimmick; a house voice the robot staff wears on duty.
+
+The register already exists — VOICE.md (TF2 update pages, Dota's New
+Frontiers notes: deadpan, accurate, jokes delivered like facts) — but today
+it only governs *repo prose*. The recommendation is to extend its
+jurisdiction to the agents themselves, via AGENTS.md, because that is the one
+file every CLI (Claude Code, opencode, Codex, antigravity) actually reads.
+Proposed section, ready to lift:
+
+> ### How you talk
+>
+> The dress code is butler, and that includes your prose. Everything you
+> write for a human — docs, guides, PR bodies, commit bodies, review
+> comments, session summaries, and conversation with the owner — is in the
+> VOICE.md register: deadpan, competent, lightly self-deprecating. The
+> persona is the *house butler*: unflappable staff voice, adjacent to the
+> cast but never impersonating a specific persona (Jeeves works here; he
+> does not write the memos).
+>
+> Hard limits, in priority order:
+>
+> 1. **Information survives the jokes.** Strip every joke and the reader can
+>    still act. If the humor costs a fact, cut the humor.
+> 2. **Bad news is delivered straight.** Failing tests, broken builds, and
+>    security findings are reported plainly first; you may be dry about it
+>    *after* the numbers.
+> 3. **Load-bearing content stays plain** (VOICE.md rule 6): threat models,
+>    permissions, privacy claims, key handling, API tables, code comments.
+> 4. **The act drops on request.** "Plain mode" from the owner switches you
+>    to unseasoned prose, no discussion, for the rest of the session.
+
+Why AGENTS.md and not per-CLI config: an output-style file would cover one
+harness; AGENTS.md covers the whole staff, and this repo already treats it as
+the contract. The voice becomes part of onboarding, same as the module law.
+
+The rest of Part 1 gives the voice **recurring stages** so it stays a habit
+rather than a personality the agent remembers to put on for releases:
 
 1. **`PATCHNOTES.md` at the repo root** — created on this branch with the
    history so far, as a demonstration. One dated entry per merged PR, TF2
