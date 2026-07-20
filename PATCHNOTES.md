@@ -10,6 +10,23 @@ Newest first, like all respectable patch notes.
 
 ---
 
+## 2026-07-21 — The staff writes its own rulebook (PR #2)
+
+- Reviewed the previous PR after it merged, wrote down the findings, then
+  proposed rules that would have forbidden reviewing your own previous PR.
+  The irony has been filed.
+- The robot staff now has a house voice on duty: docs, guides, PR bodies, and
+  conversation all wear the butler. Load-bearing prose — privacy, permissions,
+  keys — still comes plain, because nobody wants a joke in a threat model.
+- Added a Definition of Done, so "fully complete PR" is a checklist instead of
+  a mood. A PR now arrives graded by someone who didn't write it, with its
+  patch note already in this file.
+- Shipped a PR template that asks for evidence and a patch note, and refuses
+  to pretend a line pasted in the description counts as either.
+- Ran this branch past a different model family, which found a privacy
+  overclaim and made us rewrite it. That is the system working, and also
+  slightly embarrassing, which is the system working.
+
 ## 2026-07-20 — The keyboard eats a keyboard (PR #1)
 
 - Reversed ADR-0001 the same day it was accepted, setting a repo speed record

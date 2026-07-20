@@ -1,8 +1,10 @@
 # Agent ops: the voice, the evidence, and the definition of done
 
 **Date:** 2026-07-21
-**Status:** Recommendations — for owner review; nothing here is law until it
-lands in AGENTS.md or an ADR
+**Status:** Partly adopted. Part 1 (the house voice) and Part 2's Definition
+of Done landed in AGENTS.md on this branch — those are now law. The evidence
+ladder (Part 3), CI enablement, and the dev loop (Part 4) remain
+recommendations pending their own slices.
 **Related:** [PR #1 review notes](2026-07-21-pr1-review-notes.md) ·
 borrows heavily from `~/workspace/ext/darkmill/docs/adr/` (cited inline)
 
