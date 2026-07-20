@@ -41,8 +41,29 @@ APPEARANCE / PRIVACY. The TYPING group (languages, glide, autocorrect,
 dictionary) is the fork decision made visible; none of those rows could exist
 on the thin IME.
 
+## States
+
+| File | What it shows |
+|---|---|
+| `12-state-error-offline.png` | Offline error. Amber advisory (not a red destructive error), in-voice copy — "I am afraid the internet has deserted us, sir. Your words are untouched." — and, crucially, the draft visibly intact in the input field. Actions: Try again / Dismiss. |
+| `13-dark-mode-result.png` | Dark theme, result card visible. The teal accent survives inversion. **Finding:** the persona chip becomes a dark pill on a dark surface and its selected state reads noticeably weaker than in light mode — the strip needs an explicit dark-theme selected treatment, not just an inverted palette. |
+
 ## Still unmocked
 
-Loading/thinking state, provider and network errors, dark theme, small-screen
-and long-persona-name layouts, and the strip's behaviour when the host
-keyboard's suggestion row is also present.
+- **Loading / thinking state.** Attempted three times; Stitch timed out twice
+  and rejected once. Specified in prose in the design doc instead: skeleton
+  bars in the result card, spinner replacing the send arrow, in-voice caption,
+  and a Cancel affordance.
+- Small-screen layout and long persona names (e.g. "Sir Humphrey Appleby").
+- The strip coexisting with the host keyboard's own suggestion row — visible
+  in `07`, never designed. Two stacked strips is a real vertical-space problem
+  that only the fork surfaces.
+- Provider-rejects-key and quota-exceeded errors (distinct from offline).
+
+## A note on the Stitch project
+
+The Stitch MCP surface offers no delete, rename, or grouping of screens — only
+whole-project deletion. The project therefore still contains superseded
+thin-IME screens and three different screens all titled "Onboarding -
+Welcome". **This numbered directory, not the Stitch project, is the canonical
+ordered set.**
