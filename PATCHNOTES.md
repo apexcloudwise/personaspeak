@@ -10,6 +10,18 @@ Newest first, like all respectable patch notes.
 
 ---
 
+## 2026-07-21 — The records catch up to the decision
+
+- ADR-0003 merged, so the paperwork stopped lying: its status is now Accepted,
+  ROADMAP admits the base is AnySoftKeyboard and the licence is Apache-2.0, and
+  the UX doc's fork-base and licence open-questions are struck through.
+- Left one gate honestly open — the stale-field race guard still has to be
+  implemented before a real provider touches anybody's draft — because closing a
+  ticket is not the same as writing the code, and the roadmap should not pretend
+  otherwise.
+- No behaviour changed; the next agent just stops taking orders from a map that
+  predates the territory.
+
 ## 2026-07-21 — We picked a keyboard (PR #11)
 
 - ADR-0003 lands the decision the whole fork spike was evidence for: fork

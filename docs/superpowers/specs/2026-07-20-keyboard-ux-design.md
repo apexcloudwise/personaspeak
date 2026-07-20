@@ -166,15 +166,17 @@ deciding whether to trust a keyboard deserves a straight answer.
 
 ## Open questions
 
-1. **Fork base** — HeliBoard / AnySoftKeyboard / FlorisBoard. Decides the
-   licence. Spike specced in the checkpoint doc.
-2. **Strip vs the base's suggestion row** — vertical budget, resolved with the
-   base.
+1. ~~**Fork base**~~ — **resolved: AnySoftKeyboard**
+   ([ADR-0003](../../adr/0003-fork-anysoftkeyboard-apache.md)).
+2. **Strip vs the base's suggestion row** — vertical budget. Now *answerable*:
+   the spike found ASK's strips **stack** (persona row above the candidate row),
+   they don't merge. Deciding merge/collapse/accept is track-A work against the
+   real ASK tree.
 3. **Dark-mode selected state** for the persona chip.
 4. **Long persona names** ("Sir Humphrey Appleby") in a fixed-width chip.
 5. **Mood list contents** — the working set is polite / witty / blunt /
    apologetic / formal, unvalidated with real personas.
-6. **Licence** — follows from (1); README currently promises Apache-2.0.
+6. ~~**Licence**~~ — **resolved: Apache-2.0** (follows from 1; ADR-0003).
 
 ## Decisions this design records
 
