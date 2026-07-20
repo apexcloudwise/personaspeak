@@ -1,0 +1,25 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  personas-and-cli:
+    name: Validate personas & smoke-test CLI
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: pip install -r desktop/requirements.txt
+      - name: Validate persona schema
+        run: python desktop/validate_personas.py
+      - name: CLI smoke test
+        run: python desktop/personaspeak.py --list
+
+  # Android jobs join in Phase 1 (assembleDebug + unit tests per PR,
+  # APK artifact on tags). See ROADMAP.md.
