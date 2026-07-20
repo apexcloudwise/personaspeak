@@ -31,7 +31,7 @@ unmocked.
 | `07-strip-variant-a-CHOSEN.png` | **The chosen design.** Persona chip + mood chip + send. Three large legible targets. Renders the strip above the chat input, and shows it coexisting with the keyboard's own suggestion row. |
 | `08-strip-variant-b-rejected.png` | Rejected: labelled scrolling chips. One-tap switching and shows the cast, but only ~2.5 chips fit and the mood control was squeezed out entirely. |
 | `09-persona-picker-open.png` | Variant A's expander: 2×2 grid with names *and* descriptors, plus "Browse all characters". This is what makes A's extra tap worth paying. |
-| `10-result-card.png` | Result card floating above the strip, over the chat rather than over the keys — so the keyboard never moves or reflows. Actions: Use this / Again / dismiss. |
+| `10-result-card.png` | Result card floating above the strip, over the chat rather than over the keys — so the keyboard never moves or reflows. Actions: Use this / Again / dismiss. **Stale detail:** the strip beneath the card is the rejected four-circle variant, not the chosen one-chip design from `07`. The card is the point of this mockup; the design doc wins on the strip. |
 | `11-full-panel-superseded.png` | **Superseded.** The thin-IME full panel, kept as a record of what the fork decision replaced. Its cramping is instructive: so tall it still squeezed the result, and it could not fit a fourth persona chip. |
 
 ## Settings
