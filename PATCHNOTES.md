@@ -24,6 +24,17 @@ Newest first, like all respectable patch notes.
 - Did not pick the base. Did not even measure the base. Handed the human
   staff a stopwatch and a clipboard; the stopwatch and clipboard are
   checked in.
+- Then actually pointed the clipboard at an emulator. Installed real stock
+  F-Droid builds of all three keyboards (not the graft-spike debug builds
+  already sitting on the AVD — those would have measured our own graft, not
+  the base) and ran the harness for real. Found the clipboard's pen didn't
+  have ink: `read_field_text()` was dumping UI state to `/dev/tty`, which
+  doesn't exist for a non-interactive `adb shell`, so every captured
+  "transcribed" phrase had been silently blank. Fixed. HeliBoard's pinned
+  IME id was also stale against the current stock build; fixed that too.
+  Still no IME-quality numbers — `inject` mode's ~684 WPM is input-injection
+  speed, not typing speed — but the pipe from device to metrics table now
+  demonstrably carries water.
 
 ## 2026-07-21 — The gate that watches the gate (PR #8)
 

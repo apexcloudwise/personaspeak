@@ -186,3 +186,48 @@ That makes FlorisBoard's prediction and autocorrect score **effectively
 zero today** — not as a measurement (this harness doesn't need to spend the
 phrase set to reconfirm it), but as a documented pre-existing fact from the
 earlier spike. It is cited, not re-derived, in the results template.
+
+## Verification (2026-07-21) — plumbing confirmed, no IME numbers yet
+
+The harness above shipped in PR #9 untested against a real device. Before
+trusting it for the actual bake-off, it got a real smoke test on
+`emulator-5554`, and that surfaced two bugs, now fixed:
+
+- **`read_field_text()` never worked.** It dumped UI state to `/dev/tty`
+  and tried to capture the XML from adb's stdout — but a non-interactive
+  `adb shell` has no controlling tty, so the dump landed nowhere and adb's
+  stdout only ever got the tool's own confirmation line. Every
+  `transcribed` field the harness had produced up to that point was
+  silently empty. Fixed by dumping to a device-local file
+  (`/data/local/tmp/typing_bakeoff_ui_dump.xml`) and `cat`-ing it back.
+- **HeliBoard's pinned `ime_id` in `imes.yaml` was stale.** The real stock
+  v4.0 build (F-Droid versionCode 4005) exposes
+  `helium314.keyboard/.latin.LatinIME`, not the previously-recorded
+  `.LatinIME`. `adb shell ime list -a` is the source of truth; the file now
+  says so and cites the verified build.
+
+What was actually checked, with real stock F-Droid installs (not the
+graft-spike debug builds that happened to already be on the emulator —
+those were uninstalled first, since they'd contaminate exactly the graft
+noise this bake-off exists to isolate):
+
+- Downloaded and installed stock APKs: HeliBoard v4.0 (versionCode 4005),
+  AnySoftKeyboard v1.13.8175, FlorisBoard v0.5.2 (versionCode 117), all from
+  `f-droid.org/repo/`.
+- `adb_replay.py --method inject`, 3 phrases from `domain-messages.csv`,
+  run against all three IMEs in turn (switching the default IME with each
+  run, restoring Gboard as default afterward). Captured `transcribed` text
+  matched `presented` text exactly on all three, post-fix.
+- `compute_metrics.py` reduced a captured run into real WPM/error-rate/KSPC
+  numbers end-to-end — pipeline confirmed working, not just unit-tested in
+  isolation.
+
+**This is still not an IME-quality measurement.** `--method inject` uses
+`adb shell input text`, which bypasses the keyboard's composing/autocorrect
+pipeline entirely (see the module docstring) — the ~684 WPM it reports is
+input-injection speed, not typing speed, and must never be read as engine
+quality. Getting real numbers needs `--method tap`, which still requires
+the per-IME key-coordinate discovery tooling this harness has not built yet
+(the empty `key_lookup` map in `adb_replay.py`). That, the real
+MacKenzie & Soukoreff corpus (still a placeholder), and the human session
+remain open work before issue #5 has an answer.

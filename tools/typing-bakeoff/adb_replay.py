@@ -124,12 +124,21 @@ def set_ime(ime_id: str, device: str | None = None) -> None:
     adb("shell", "ime", "set", ime_id, device=device)
 
 
+_UI_DUMP_DEVICE_PATH = "/data/local/tmp/typing_bakeoff_ui_dump.xml"
+
+
 def read_field_text(device: str | None = None) -> str:
     """Best-effort capture of the focused EditText's current text via a
     uiautomator dump. Returns '' if no focused text node is found. This is
     a heuristic -- it looks for the node attribute that has focus and a
-    non-empty text field, falling back to the last EditText in the dump."""
-    xml = adb("shell", "uiautomator", "dump", "--compressed", "/dev/tty", device=device)
+    non-empty text field, falling back to the last EditText in the dump.
+
+    `uiautomator dump --compressed /dev/tty` only prints a confirmation
+    line over adb's stdout capture -- the XML itself goes to the device's
+    controlling tty, which a non-interactive `adb shell` has none of. Dump
+    to a device-local file and `cat` it back instead."""
+    adb("shell", "uiautomator", "dump", "--compressed", _UI_DUMP_DEVICE_PATH, device=device, capture=False)
+    xml = adb("shell", "cat", _UI_DUMP_DEVICE_PATH, device=device)
     m = re.search(r'text="([^"]*)"[^>]*focusable="true"[^>]*focused="true"', xml)
     if m:
         return m.group(1)
