@@ -10,6 +10,15 @@ Newest first, like all respectable patch notes.
 
 ---
 
+## 2026-07-21 — The FlorisBoard spike files its exit interview
+
+- Ran the full capture-to-commit loop on a real IME (FlorisBoard, throwaway
+  per ADR-0003/0004) and wrote down the receipts: the in-keyboard flow (strip,
+  pickers, loading, result, replace) works end to end, onboarding and settings
+  don't exist yet, and the stale-field race guard is still a spec, not code.
+  The recommendation lines up with ADR-0004 exactly — move the graft to
+  AnySoftKeyboard next.
+
 ## 2026-07-21 — Auditing the keyboard we're about to move in with
 
 - Static privacy inventory of AnySoftKeyboard `1.13-r1` (commit `8c1db51`) is
