@@ -42,4 +42,5 @@ dependencies {
     implementation(libs.activity.compose)
     implementation(libs.lifecycle.runtime)
     implementation(libs.savedstate)
+    implementation(libs.navigation.compose)
 }
