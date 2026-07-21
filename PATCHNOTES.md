@@ -10,6 +10,45 @@ Newest first, like all respectable patch notes.
 
 ---
 
+## 2026-07-21 — The hallway, before the rooms
+
+- The `:app` module has walls now: a Compose theme built from DESIGN.md's
+  tokens (every color val, the type scale, the radii) and a Navigation
+  Compose skeleton wiring eleven routes — five onboarding, six settings —
+  with the screens themselves pointedly absent. A placeholder reading "not
+  yet built" is the whole UI; the foundation is the deliverable, not a demo.
+- `navigation-compose:2.9.0` because the lifecycle line was already pinned
+  there and the transitive graph lines up without a fight. The start route is
+  `onboarding/welcome`; the only arg-bearing route is
+  `settings/persona-detail/{personaId}`. IME-window overlays are excluded on
+  purpose — those are states inside the keyboard, not destinations.
+- Dark-only for now because DESIGN.md is dark-only; the same `darkColorScheme`
+  feeds both slots until a light spec arrives. Real Outfit/Inter fonts are a
+  follow-up, and a status-bar seam against the dark surface is noted but not
+  fixed here.
+- `./gradlew :app:assembleDebug` is green. The screen-implementation workers
+  now have a route list to build against; this PR is the contract they sign.
+
+## 2026-07-21 — The keyboard returns, from the same drawer we evicted it from
+
+- The vendoring PR moved ASK into `android/keyboard/` and, as a side effect of
+  being an ingestion-only PR, left the `app` APK with no `InputMethodService`
+  at all — installable, unselectable. ADR-0006's independent review caught it
+  and called it a blocker regardless of which Gradle composition wins.
+- The old stub `PersonaBoardService` was recovered from `main` (it never made
+  it into the vendoring commit) and landed **inside `app`**, not back under
+  `android/keyboard/` — that path belongs to ASK now. The package
+  `…personaspeak.keyboard` sits beside `…personaspeak.app` in the same source
+  root, and the manifest/strings/method-xml came with it. No API drift; the
+  stub compiled clean against the current Compose BOM and lifecycle.
+- `:app:assembleDebug` is green, the APK installs, and
+  `adb shell ime list -a` shows
+  `biz.pixelperfectstudios.personaspeak/.keyboard.PersonaBoardService`
+  registered with `BIND_INPUT_METHOD`. The app launches without crashing.
+  Evidence: `docs/superpowers/specs/2026-07-21-stub-restoration-report.md`.
+  Wiring ASK's own `:ime:app` is still the graft PR's problem; this just gives
+  `main` a keyboard again in the meantime.
+
 ## 2026-07-21 — One build or two, before we cut a hole in the wall
 
 - ADR-0006 settles the question the vendoring PR's review exposed: the clever
