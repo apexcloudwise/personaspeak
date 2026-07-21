@@ -1,0 +1,30 @@
+apply plugin: 'com.android.library'
+
+apply from: "${rootDir}/gradle/android_general.gradle"
+
+dependencies {
+    implementation project(':ime:base')
+    implementation project(':ime:base-rx')
+    implementation project(':ime:pixel')
+
+    implementation libs.androidx.preference
+
+    api libs.junit
+    api libs.robolectric
+    api libs.mockito.core
+    api project(':junit-sharding')
+    api libs.androidx.test.core
+}
+
+android {
+    namespace 'com.anysoftkeyboard.test'
+}
+
+afterEvaluate {
+    tasks.withType(JavaCompile) { JavaCompile task ->
+        //robolectric shadows rely on hidden Android API classes.
+        //during compilation the compiler will scream about missing classes.
+        //these classes will be available during test due to robolectric's `android-all` deps.
+        task.options.compilerArgs << '-Xlint:-classfile'
+    }
+}

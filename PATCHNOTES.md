@@ -10,6 +10,25 @@ Newest first, like all respectable patch notes.
 
 ---
 
+## 2026-07-21 — Moved the keyboard in. Left it in its original boxes.
+
+- AnySoftKeyboard `1.13-r1` is now physically present at `android/keyboard/` —
+  5,966 upstream files, Apache-2.0 headers and `LICENSE` intact, dropped in via
+  `git archive` with `.github/` and the (absent) `fastlane/` dir excluded. The
+  stub `:keyboard` module that used to live there has been evicted; it was a
+  placeholder and it knew it.
+- `UPSTREAM.md` records the source repo, the pinned SHA, the exact archive
+  command, and the re-vendor procedure. `UPSTREAM-MODIFIED.md` is the rent
+  ledger: it lists every upstream-tracked file we have edited. It is currently
+  **empty**, because we used `includeBuild("keyboard")` and changed zero
+  upstream source. The plan is to keep that list short; this PR sets the bar
+  at zero.
+- `./gradlew :app:assembleDebug` from `android/` builds our host app.
+  `./gradlew :ime:app:assembleDebug` from `android/keyboard/` builds ASK
+  itself, producing a 42 MB debug APK with all 60-odd language packs and four
+  ABIs of JNI dictionary. The graft PR — where the persona strip actually
+  gets sewn in — is the follow-up. This PR is just the furniture delivery.
+
 ## 2026-07-21 — Reading our own privacy promise back to ourselves
 
 - ADR-0005 catches a claim that quietly stopped being true: "Nothing is stored,

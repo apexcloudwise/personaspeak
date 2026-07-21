@@ -31,8 +31,9 @@ kotlin {
 }
 
 dependencies {
-    implementation(project(":keyboard"))
-
+    // The legacy `:keyboard` stub was replaced by the vendored AnySoftKeyboard
+    // tree (ADR-0004). Wiring the app to ASK's :ime:app is the graft PR's
+    // concern; this PR is ingestion only, so the dependency is dropped for now.
     val composeBom = platform(libs.compose.bom)
     implementation(composeBom)
     implementation(libs.compose.ui)
