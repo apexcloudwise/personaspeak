@@ -31,7 +31,7 @@ kotlin {
 }
 
 dependencies {
-    implementation(project(":keyboard"))
+    implementation(project(":keyboard-stub"))
 
     val composeBom = platform(libs.compose.bom)
     implementation(composeBom)
