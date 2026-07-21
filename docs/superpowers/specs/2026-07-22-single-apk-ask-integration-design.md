@@ -92,6 +92,15 @@ adapter; the library never reaches back into ASK through a project dependency.
 The resulting direction is strictly
 `:ime:app -> :personaspeak-ui -> core-*`, with no reverse edge.
 
+ASK also owns the view-host seam. Its input-view hierarchy mounts the
+PersonaSpeak Compose surface and installs `ViewTreeLifecycleOwner`,
+`ViewTreeSavedStateRegistryOwner`, and `ViewTreeViewModelStoreOwner` on the IME
+window decor view before composition. Persona and mood pickers render inside
+that same input view; Compose dialogs or popups that create a focus-taking
+window are excluded because they can terminate or invalidate the host editor
+session. This seam is recorded in `android/keyboard/UPSTREAM-MODIFIED.md` with
+the editor adapter.
+
 ## The editor boundary
 
 This section is the ASK-specific implementation shape of the earlier
@@ -325,7 +334,8 @@ repository root.
 
 The root build adopts the toolchain proven by the convergence experiment and
 includes ASK modules directly. The root `settings.gradle.kts`, wrapper, version
-catalog, and root build logic are authoritative. ASK retains its logical
+catalog, `gradle.properties`, and root build logic are authoritative. ASK
+retains its logical
 project paths (`:ime:*`, `:addons:*`, and `:api`) while project directories map
 into `android/keyboard/`; this avoids rewriting ASK's internal dependency graph
 merely to match its physical nesting. Integration work must explicitly
@@ -333,6 +343,11 @@ reconcile:
 
 - ASK's `buildSrc` plugins into root-visible build logic;
 - ASK and PersonaSpeak aliases into one root version catalog;
+- ASK's build-wide properties into `android/gradle.properties`, resolving both
+  directions deliberately: inherited requirements such as Jetifier and
+  transitive/non-final `R` behavior remain explicit, while ASK defaults such as
+  disabled `BuildConfig` generation must not silently alter PersonaSpeak
+  modules;
 - root repository/plugin policy, including ASK scripts that currently declare
   repositories from `allprojects` while the root rejects project repositories;
 - scripts that assume ASK is `rootDir`, behind one explicit ASK source-root

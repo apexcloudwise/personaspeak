@@ -60,6 +60,10 @@ PersonaSpeak ships exactly one Android application: ASK's `:ime:app`.
 - PersonaSpeak-specific ASK additions live in clearly separated
   `biz.pixelperfectstudios.personaspeak.*` packages. Every modified upstream
   file is recorded in `android/keyboard/UPSTREAM-MODIFIED.md`.
+- ASK's input-view hierarchy is a second narrow integration seam. It hosts the
+  Compose strip and cards, installs lifecycle, saved-state, and view-model
+  owners on the IME window decor view, and keeps pickers inside the input view
+  instead of creating a focus-taking dialog window.
 
 The unified graph is accepted only when a device build proves that the ASK APK
 installs, registers as an IME, launches PersonaSpeak settings, calls `core-*`,
@@ -89,7 +93,8 @@ system escape hatch is not a PersonaSpeak workflow.
 - The old keyless-panel PR is not merged. Reusable visual components may be
   ported into the real ASK host after removing its local draft field and switch-
   back behavior.
-- Upstream upgrades pay rent only at the recorded adapter and build seams.
+- Upstream upgrades pay rent only at the recorded editor, view-host, and build
+  seams.
 - A crash in the IME can prevent typing, so install/registration, typing, and
   crash-free startup are release gates.
 
