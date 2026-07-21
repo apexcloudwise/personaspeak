@@ -10,6 +10,32 @@ Newest first, like all respectable patch notes.
 
 ---
 
+## 2026-07-21 — Auditing the keyboard we're about to move in with
+
+- Static privacy inventory of AnySoftKeyboard `1.13-r1` (commit `8c1db51`) is
+  in `docs/privacy/anysoftkeyboard-1.13-r1-inventory.md`. Three kinds, kept
+  separate: on-device local state, anything that leaves the device, and
+  on-device disclosure surfaces. Every finding cites `path:line` against the
+  pinned ASK tree.
+- What survives the README's "nothing is logged" and "not used to improve our
+  services" clauses: the release build's `NullLogProvider` gates every
+  `Logger.*` call and the in-memory ring buffer, so no typed text reaches
+  logcat in release; and no analytics/crash-upload SDK ships (no Firebase,
+  Crashlytics, Fabric, Flurry, Sentry, Amplitude — verified repo-wide), with
+  the crash path being a user-tapped email to a build-time address.
+- What does not survive as-shipped: "nothing is stored" — a predictive
+  keyboard keeps a learned-words DB, an auto-learn DB, and per-locale
+  next-word files, all default-on, all user-clearable. The honest restatement
+  is ADR-0005's "stays on your phone, user-clearable," not "does not exist."
+- The one fact the privacy copy did not account for: Android Auto Backup is
+  default-on (`allowBackup="true"`, no `fullBackupContent` or
+  `dataExtractionRules`), so the local state above backs up to the user's
+  Google Drive. Not a server we run — but also not "nothing leaves your
+  phone." The inventory lists this as the headline neutralization item.
+- Static analysis is necessary but not sufficient. On-device capture (TLS
+  proxy, `bmgr`, filesystem inspection) is the gating step before the privacy
+  copy unfreezes; the inventory's last section is that checklist.
+
 ## 2026-07-21 — Reading our own privacy promise back to ourselves
 
 - ADR-0005 catches a claim that quietly stopped being true: "Nothing is stored,
