@@ -1,0 +1,149 @@
+import java.util.regex.Pattern
+import java.util.stream.Collectors
+
+group 'net.evendanan'
+
+ext.override_app_id = 'com.menny.android.anysoftkeyboard'
+ext.shouldBePublished = true
+ext.override_release_key_alias = 'anysoftkeyboard'
+ext.closedTestingTrackName = 'alpha'
+ext.openTestingTrackName = 'beta'
+
+apply from: "${rootDir}/gradle/apk_module.gradle"
+
+apply plugin: 'androidx.navigation.safeargs'
+
+android {
+    defaultConfig {
+        //adding additional fields to the BuildConfig class.
+        String support_email_address = System.getenv("ANYSOFTKEYBOARD_CRASH_REPORT_EMAIL")
+        println 'crash report email is: ' + support_email_address
+
+        buildConfigField "String", "CRASH_REPORT_EMAIL_ADDRESS", '"' + support_email_address + '"'
+
+        multiDexEnabled true
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled true
+            proguardFiles 'proguard-android-optimize.txt', 'proguard-rules.txt', 'proguard-anysoftkeyboard.txt', 'proguard-dont-obs.txt'
+        }
+
+        canary {
+            initWith buildTypes.release
+
+            matchingFallbacks = ['release', 'debug']
+        }
+
+        allAddOns {
+            initWith buildTypes.debug
+
+            matchingFallbacks = ['debug']
+        }
+    }
+}
+
+//adding TESTING_BUILD
+android {
+    buildFeatures {
+        buildConfig = true
+    }
+    buildTypes {
+        release {
+            buildConfigField("boolean", "TESTING_BUILD", "false")
+
+            packagingOptions {
+                //since dictionary jni so files are coming from
+                //another module, they are stripped there and should
+                //not be stripped again.
+                //double-stripping causes crash stacktraces to look weird
+                //in play-store.
+                doNotStrip '**/anysoftkey*_jni.so'
+            }
+        }
+
+        debug {
+            buildConfigField("boolean", "TESTING_BUILD", "true")
+        }
+
+        canary {
+            buildConfigField("boolean", "TESTING_BUILD", "true")
+
+            packagingOptions {
+                //since dictionary jni so files are coming from
+                //another module, they are stripped there and should
+                //not be stripped again.
+                //double-stripping causes crash stacktraces to look weird
+                //in play-store.
+                doNotStrip '**/anysoftkey*_jni.so'
+            }
+        }
+
+        allAddOns {
+            buildConfigField("boolean", "TESTING_BUILD", "true")
+        }
+    }
+}
+
+android {
+    sourceSets.getByName('allAddOns') {
+        it.java.srcDirs += 'src/debug/java'
+        it.res.srcDirs += 'src/debug/res'
+    }
+    namespace 'com.menny.android.anysoftkeyboard'
+}
+
+dependencies {
+    implementation project(':api')
+    implementation project(':addons:base')
+    implementation project(':addons:languages:english:pack')
+    implementation project(':ime:base')
+    implementation project(':ime:base-rx')
+    implementation project(':ime:nextword')
+    implementation project(':ime:notification')
+    implementation project(':ime:releaseinfo')
+    implementation project(':ime:addons')
+    implementation project(':ime:dictionaries')
+    implementation project(':ime:dictionaries:jnidictionaryv1')
+    implementation project(':ime:dictionaries:jnidictionaryv2')
+    implementation project(':ime:prefs')
+    implementation project(':ime:overlay')
+    implementation project(':ime:pixel')
+    implementation project(':ime:remote')
+    implementation project(':ime:gesturetyping')
+    implementation project(':ime:voiceime')
+    implementation project(':ime:chewbacca')
+    implementation project(':ime:permissions')
+    implementation project(':ime:fileprovider')
+
+    implementation libs.androidx.fragment
+    implementation libs.androidx.appcompat
+    implementation libs.androidx.legacy.support.v13
+    implementation libs.androidx.recyclerview
+    implementation libs.androidx.cardview
+    implementation libs.androidx.annotation
+    implementation libs.androidx.palette
+    implementation libs.androidx.preference
+    implementation libs.material
+    implementation libs.materialtabstrip
+    implementation libs.androidx.autofill
+    implementation libs.androidx.viewpager2
+
+    implementation libs.androidx.navigation.fragment
+    implementation libs.androidx.navigation.ui
+    implementation libs.androidx.navigation.dynamic.features.fragment
+
+    implementation libs.androidx.multidex
+
+    testImplementation project(path: ':ime:base-test')
+    testImplementation libs.simpleprovider
+    testImplementation libs.androidx.test.junit
+
+    //allAddOns have all the add-ons packs as dependencies
+    rootProject.findProject(":addons").subprojects.forEach {
+        if (it.name == 'pack') {
+            allAddOnsImplementation it
+        }
+    }
+}

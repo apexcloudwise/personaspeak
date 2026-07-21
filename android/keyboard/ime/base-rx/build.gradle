@@ -1,0 +1,17 @@
+apply plugin: 'com.android.library'
+
+apply from: "${rootDir}/gradle/android_general.gradle"
+
+dependencies {
+    implementation project(':ime:base')
+    implementation libs.androidx.annotation
+
+    api libs.rxandroid
+    api libs.rxjava
+    api libs.rx2.broadcast.receiver
+    api libs.copper.rx2
+}
+
+android {
+    namespace 'com.anysoftkeyboard.rx'
+}

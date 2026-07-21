@@ -1,0 +1,19 @@
+apply plugin: 'com.android.library'
+
+apply from: "${rootDir}/gradle/android_general.gradle"
+
+
+dependencies {
+    implementation libs.androidx.legacy.support.core.utils
+    implementation project(':ime:base')
+    implementation project(':ime:prefs')
+
+    testImplementation project(':ime:base-test')
+}
+
+android {
+    buildFeatures {
+        buildConfig = true
+    }
+    namespace 'com.anysoftkeyboard.nextword'
+}

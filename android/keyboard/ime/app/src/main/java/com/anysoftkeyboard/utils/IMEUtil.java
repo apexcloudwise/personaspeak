@@ -1,0 +1,223 @@
+/*
+ * Copyright (c) 2013 Menny Even-Danan
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.anysoftkeyboard.utils;
+
+import android.text.TextUtils;
+import android.view.inputmethod.EditorInfo;
+import androidx.annotation.NonNull;
+import com.anysoftkeyboard.base.utils.Logger;
+import com.menny.android.anysoftkeyboard.BuildConfig;
+import java.util.List;
+
+public class IMEUtil {
+  public static final int IME_ACTION_CUSTOM_LABEL = EditorInfo.IME_MASK_ACTION + 1;
+
+  private static final String TAG = "ASKIMEUtils";
+
+  public static int editDistance(
+      @NonNull CharSequence lowerCaseWord,
+      @NonNull final char[] word,
+      final int offset,
+      final int length) {
+    return editDistance(lowerCaseWord, word, offset, length, null);
+  }
+
+  /* Damerau-Levenshtein distance */
+  public static int editDistance(
+      @NonNull CharSequence lowerCaseWord,
+      @NonNull final char[] word,
+      final int offset,
+      final int length,
+      int[] workspace) {
+    final int sl = lowerCaseWord.length();
+    final int tl = length;
+
+    // We only need 3 rows for Damerau-Levenshtein (Optimal String Alignment):
+    // current row (i), previous row (i-1), and pre-previous row (i-2).
+    // This reduces space from O(N*M) to O(M).
+    // We use a single flattened array to avoid allocation if workspace is provided.
+    // We need (tl + 1) * 3 ints.
+
+    final int width = tl + 1;
+    if (workspace == null || workspace.length < width * 3) {
+      workspace = new int[width * 3];
+    }
+
+    // Offsets for rows in the flattened array
+    int prevPrev = 0;
+    int prev = width;
+    int curr = width * 2;
+
+    // Initialize the first row (conceptually i=0, for empty source string)
+    for (int j = 0; j <= tl; j++) {
+      workspace[prev + j] = j;
+    }
+
+    for (int i = 0; i < sl; ++i) {
+      workspace[curr + 0] = i + 1;
+      final char sc = lowerCaseWord.charAt(i);
+      for (int j = 0; j < tl; ++j) {
+        final char tc = Character.toLowerCase(word[offset + j]);
+        final int cost = sc == tc ? 0 : 1;
+
+        int min = workspace[prev + j + 1] + 1; // deletion: dp[i][j+1] + 1
+        min = Math.min(min, workspace[curr + j] + 1); // insertion: dp[i+1][j] + 1
+        min = Math.min(min, workspace[prev + j] + cost); // substitution: dp[i][j] + cost
+        workspace[curr + j + 1] = min;
+
+        // Overwrite for transposition cases
+        if (i > 0
+            && j > 0
+            && sc == Character.toLowerCase(word[offset + j - 1])
+            && tc == lowerCaseWord.charAt(i - 1)) {
+          // dp[i + 1][j + 1] = Math.min(dp[i + 1][j + 1], dp[i - 1][j - 1] + cost);
+          // dp[i-1][j-1] is in prevPrev[j-1]
+          int prevPrevVal = workspace[prevPrev + j - 1];
+          workspace[curr + j + 1] = Math.min(workspace[curr + j + 1], prevPrevVal + cost);
+        }
+      }
+
+      // Rotate rows: prevPrev becomes prev, prev becomes curr, curr becomes recycled prevPrev
+      int temp = prevPrev;
+      prevPrev = prev;
+      prev = curr;
+      curr = temp;
+    }
+
+    // After the loop, the result is in prev[tl] because we rotated.
+    int result = workspace[prev + tl];
+    if (BuildConfig.DEBUG) {
+      Logger.d(
+          TAG,
+          "editDistance: %s, %s -> %d",
+          lowerCaseWord,
+          new String(word, offset, length),
+          result);
+    }
+    return result;
+  }
+
+  /**
+   * Remove duplicates from an array of strings.
+   *
+   * <p>This method will always keep the first occurrence of all strings at their position in the
+   * array, removing the subsequent ones.
+   */
+  public static void removeDupes(
+      final List<CharSequence> suggestions, List<CharSequence> stringsPool) {
+    if (suggestions.size() < 2) return;
+    int i = 1;
+    // Don't cache suggestions.size(), since we may be removing items
+    while (i < suggestions.size()) {
+      final CharSequence cur = suggestions.get(i);
+      // Compare each suggestion with each previous suggestion
+      for (int j = 0; j < i; j++) {
+        CharSequence previous = suggestions.get(j);
+        if (TextUtils.equals(cur, previous)) {
+          removeSuggestion(suggestions, i, stringsPool);
+          i--;
+          break;
+        }
+      }
+      i++;
+    }
+  }
+
+  public static void tripSuggestions(
+      List<CharSequence> suggestions, final int maxSuggestions, List<CharSequence> stringsPool) {
+    while (suggestions.size() > maxSuggestions) {
+      removeSuggestion(suggestions, maxSuggestions, stringsPool);
+    }
+  }
+
+  private static void removeSuggestion(
+      List<CharSequence> suggestions, int indexToRemove, List<CharSequence> stringsPool) {
+    CharSequence garbage = suggestions.remove(indexToRemove);
+    if (garbage instanceof StringBuilder) {
+      stringsPool.add(garbage);
+    }
+  }
+
+  public static int getImeOptionsActionIdFromEditorInfo(final EditorInfo editorInfo) {
+    if ((editorInfo.imeOptions & EditorInfo.IME_FLAG_NO_ENTER_ACTION) != 0) {
+      // IME_FLAG_NO_ENTER_ACTION:
+      // Flag of imeOptions: used in conjunction with one of the actions masked by
+      // IME_MASK_ACTION.
+      // If this flag is not set, IMEs will normally replace the "enter" key with the action
+      // supplied.
+      // This flag indicates that the action should not be available in-line as a replacement
+      // for the "enter" key.
+      // Typically this is because the action has such a significant impact or is not
+      // recoverable enough
+      // that accidentally hitting it should be avoided, such as sending a message.
+      // Note that TextView will automatically set this flag for you on multi-line text views.
+      return EditorInfo.IME_ACTION_NONE;
+    } else if (editorInfo.actionLabel != null) {
+      return IME_ACTION_CUSTOM_LABEL;
+    } else {
+      // Note: this is different from editorInfo.actionId, hence "ImeOptionsActionId"
+      return editorInfo.imeOptions & EditorInfo.IME_MASK_ACTION;
+    }
+  }
+
+  /**
+   * Determines whether the TYPE_TEXT_FLAG_NO_SUGGESTIONS flag should be honored based on other
+   * flags present.
+   *
+   * <p>Some apps (like Google Keep) incorrectly set contradictory flags:
+   * TYPE_TEXT_FLAG_NO_SUGGESTIONS along with TYPE_TEXT_FLAG_AUTO_CORRECT or
+   * TYPE_TEXT_FLAG_AUTO_COMPLETE. Since auto-correction and auto-completion require suggestions to
+   * function, we ignore NO_SUGGESTIONS when these flags are present.
+   *
+   * @param textFlags The input type flags from EditorInfo (use EditorInfo.TYPE_MASK_FLAGS to
+   *     extract)
+   * @return true if NO_SUGGESTIONS should be honored (disable suggestions), false if it should be
+   *     ignored
+   */
+  public static boolean shouldHonorNoSuggestionsFlag(int textFlags) {
+    final boolean hasNoSuggestions =
+        (textFlags & EditorInfo.TYPE_TEXT_FLAG_NO_SUGGESTIONS)
+            == EditorInfo.TYPE_TEXT_FLAG_NO_SUGGESTIONS;
+
+    if (!hasNoSuggestions) {
+      // NO_SUGGESTIONS is not set, nothing to honor
+      return false;
+    }
+
+    // Check for contradictory flags
+    final boolean hasAutoCorrect =
+        (textFlags & EditorInfo.TYPE_TEXT_FLAG_AUTO_CORRECT)
+            == EditorInfo.TYPE_TEXT_FLAG_AUTO_CORRECT;
+    final boolean hasAutoComplete =
+        (textFlags & EditorInfo.TYPE_TEXT_FLAG_AUTO_COMPLETE)
+            == EditorInfo.TYPE_TEXT_FLAG_AUTO_COMPLETE;
+
+    if (hasAutoCorrect || hasAutoComplete) {
+      // NO_SUGGESTIONS contradicts AUTO_CORRECT or AUTO_COMPLETE, ignore it
+      Logger.d(
+          TAG,
+          "Ignoring TYPE_TEXT_FLAG_NO_SUGGESTIONS due to contradictory flags: "
+              + "hasAutoCorrect=%s, hasAutoComplete=%s",
+          hasAutoCorrect,
+          hasAutoComplete);
+      return false;
+    }
+
+    // NO_SUGGESTIONS is set and not contradicted, honor it
+    return true;
+  }
+}
