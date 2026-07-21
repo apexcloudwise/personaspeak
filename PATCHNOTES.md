@@ -10,6 +10,10 @@ Newest first, like all respectable patch notes.
 
 ---
 
+## 2026-07-21 — Translating Stitch's HTML fever dream into Compose engineering specs
+
+- Mapped all 24 exported Google Stitch UI mockup folders against the 36-screen spec in `docs/superpowers/specs/2026-07-21-stitch-mockups-implementation-spec.md`. Unpacked component hierarchies, short copy text, navigation flows, state models, and Compose flags so an engineer can build Slices 4 and 5 without staring at raw HTML tailwind classes.
+
 ## 2026-07-21 — The paperwork catches up again
 
 - ADR-0004 and ADR-0005 flip from Proposed to Accepted. Both decisions were
