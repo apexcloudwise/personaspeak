@@ -10,6 +10,20 @@ Newest first, like all respectable patch notes.
 
 ---
 
+## 2026-07-22 — The keyboard and the product become the same application
+
+- ADR-0006 settles the part Gradle had been enjoying as an interpretive dance:
+  PersonaSpeak ships one ASK-based APK from one unified build. ASK owns the real
+  keyboard; first-party modules own the manners; a thin editor adapter validates
+  immediately before asking the host to replace text, without pretending
+  Android supplied a cross-process transaction or a second UI.
+- The discarded switcher model stays discarded. No flip to a keyless panel, no
+  flip back, and no local draft field waiting patiently for input an IME window
+  cannot receive.
+- Stitch exports become acceptance targets backed by screenshots and real
+  journeys. The portraits remain detained at customs until their redistribution
+  papers exist.
+
 ## 2026-07-21 — The paperwork catches up again
 
 - ADR-0004 and ADR-0005 flip from Proposed to Accepted. Both decisions were
