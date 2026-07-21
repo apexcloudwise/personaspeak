@@ -29,17 +29,46 @@ fun PersonaSpeakNavHost(navController: NavHostController) {
         composable(Screen.OnboardingApiKey.route) { Placeholder(Screen.OnboardingApiKey) }
         composable(Screen.OnboardingDemo.route) { Placeholder(Screen.OnboardingDemo) }
 
-        composable(Screen.SettingsHome.route) { Placeholder(Screen.SettingsHome) }
-        composable(Screen.PersonaBrowser.route) { Placeholder(Screen.PersonaBrowser) }
+        composable(Screen.SettingsHome.route) {
+            biz.pixelperfectstudios.personaspeak.app.ui.screens.settings.SettingsHomeScreen(
+                onNavigatePersonas = { navController.navigate(Screen.PersonaBrowser.route) },
+                onNavigateAiProviders = { navController.navigate(Screen.AiProviders.route) },
+                onNavigateRewriteBehaviour = { navController.navigate(Screen.RewriteBehaviour.route) },
+                onNavigatePrivacy = { navController.navigate(Screen.Privacy.route) },
+            )
+        }
+        composable(Screen.PersonaBrowser.route) {
+            biz.pixelperfectstudios.personaspeak.app.ui.screens.settings.PersonaBrowserScreen(
+                onPersonaSelected = { personaId ->
+                    navController.navigate(Screen.personaDetail(personaId))
+                },
+                onClose = { navController.popBackStack() },
+            )
+        }
         composable(
             route = Screen.PersonaDetail.route,
             arguments = listOf(navArgument(Screen.PERSONA_ID_ARG) { type = NavType.StringType }),
         ) { entry ->
-            Placeholder(Screen.PersonaDetail, entry.arguments?.getString(Screen.PERSONA_ID_ARG))
+            biz.pixelperfectstudios.personaspeak.app.ui.screens.settings.PersonaDetailScreen(
+                personaId = entry.arguments?.getString(Screen.PERSONA_ID_ARG),
+                onClose = { navController.popBackStack() },
+            )
         }
-        composable(Screen.AiProviders.route) { Placeholder(Screen.AiProviders) }
-        composable(Screen.RewriteBehaviour.route) { Placeholder(Screen.RewriteBehaviour) }
-        composable(Screen.Privacy.route) { Placeholder(Screen.Privacy) }
+        composable(Screen.AiProviders.route) {
+            biz.pixelperfectstudios.personaspeak.app.ui.screens.settings.AiProvidersScreen(
+                onClose = { navController.popBackStack() },
+            )
+        }
+        composable(Screen.RewriteBehaviour.route) {
+            biz.pixelperfectstudios.personaspeak.app.ui.screens.settings.RewriteBehaviourScreen(
+                onClose = { navController.popBackStack() },
+            )
+        }
+        composable(Screen.Privacy.route) {
+            biz.pixelperfectstudios.personaspeak.app.ui.screens.settings.PrivacyScreen(
+                onClose = { navController.popBackStack() },
+            )
+        }
     }
 }
 
