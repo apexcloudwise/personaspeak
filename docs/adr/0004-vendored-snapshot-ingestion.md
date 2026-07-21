@@ -1,9 +1,9 @@
 # ADR-0004: Ingest AnySoftKeyboard as a vendored snapshot
 
-**Status:** Proposed (2026-07-21) — the first build-phase ADR after
+**Status:** Accepted (2026-07-21) — the first build-phase ADR after
 [ADR-0003](0003-fork-anysoftkeyboard-apache.md) picked the base. Decides *how*
 AnySoftKeyboard's source physically enters this repo, before a single line of it
-is grafted. Merging this PR records it as Accepted.
+is grafted.
 
 ## Context
 

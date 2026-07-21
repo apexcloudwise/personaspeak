@@ -10,6 +10,13 @@ Newest first, like all respectable patch notes.
 
 ---
 
+## 2026-07-21 — The paperwork catches up again
+
+- ADR-0004 and ADR-0005 flip from Proposed to Accepted. Both decisions were
+  already load-bearing — #18 is vendoring against ADR-0004's ingestion
+  mechanism and #17 is the audit ADR-0005 mandated — the status line was just
+  the last one to find out.
+
 ## 2026-07-21 — The FlorisBoard spike files its exit interview
 
 - Ran the full capture-to-commit loop on a real IME (FlorisBoard, throwaway

@@ -1,8 +1,8 @@
 # ADR-0005: Privacy posture for the fork — default-private, audit-gated
 
-**Status:** Proposed (2026-07-21) — moves the privacy posture, so it gets an ADR
-(AGENTS.md). Records the decision; the inventory it mandates is follow-up work.
-Merging this PR records it as Accepted.
+**Status:** Accepted (2026-07-21) — moves the privacy posture, so it gets an ADR
+(AGENTS.md). Records the decision; the inventory it mandates is follow-up work,
+tracked in PR #17.
 
 ## Context
 
