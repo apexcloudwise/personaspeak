@@ -26,6 +26,9 @@ both the temporary root app and `:keyboard-stub` atomically.
   commit fails ingestion.
 - Preserve upstream source, build logic, tests, resources, `LICENSE`, and
   existing per-file license headers byte-for-byte.
+- Do not normalize upstream whitespace or line endings. Run Git's whitespace
+  gate only on PersonaSpeak-created or modified files; the pristine-archive
+  comparison is the integrity gate for unmodified upstream files.
 - Exclude only repository-control material: `.git` (implicit), `.github/`,
   `.claude/`, `.gemini/`, `.jules/`, `.devcontainer/`, root `AGENTS.md`, root
   `CLAUDE.md`, and `fastlane/`.
@@ -421,15 +424,22 @@ Add at the top of the current 2026-07-22 section in `PATCHNOTES.md`:
 - [ ] **Step 8: Force-add the faithful snapshot and commit it separately**
 
 ```bash
+set -euo pipefail
 git add PATCHNOTES.md
 git add -f android/keyboard
-git diff --cached --check
+git diff --cached --check -- \
+  PATCHNOTES.md \
+  android/keyboard/UPSTREAM.md \
+  android/keyboard/UPSTREAM-MODIFIED.md
 test "$(git diff --cached --name-only | wc -l | tr -d ' ')" = "5960"
 git commit -m "chore: vendor AnySoftKeyboard 1.13-r1"
 ```
 
 Expected: 5,959 snapshot/provenance files plus `PATCHNOTES.md`. Do not include
-build outputs, archives, clone metadata, or scratch directories.
+build outputs, archives, clone metadata, or scratch directories. Do not run an
+unscoped `git diff --cached --check`: the pristine upstream tree contains
+pre-existing whitespace and line-ending findings which must remain byte-for-byte
+identical. Step 6's archive comparison is the upstream-content gate.
 
 ### Task 3: Prove ASK is inert and the temporary baseline still installs
 
@@ -574,7 +584,10 @@ can no longer pair every old path with its stub destination.
 
 ```bash
 git status --short --branch
-git diff origin/main...HEAD --check
+git diff origin/main...HEAD --check -- \
+  .github/workflows/ci.yml PATCHNOTES.md android/settings.gradle.kts \
+  android/app/build.gradle.kts android/keyboard-stub \
+  android/keyboard/UPSTREAM.md android/keyboard/UPSTREAM-MODIFIED.md
 git log --oneline origin/main..HEAD
 git diff --name-status origin/main...HEAD -- \
   .github/workflows/ci.yml PATCHNOTES.md android/settings.gradle.kts \
@@ -590,7 +603,8 @@ find android/keyboard \( -name AGENTS.md -o -name CLAUDE.md \) -print
 Expected: clean worktree; two conventional commits; only planned first-party
 files outside the 5,959-file snapshot; no core changes; no oversized file,
 nested git directory, upstream agent-control directory, or nested agent
-instruction file.
+instruction file. The scoped whitespace check covers every first-party change;
+the Task 2 pristine-archive comparison covers the unchanged upstream snapshot.
 
 - [ ] **Step 2: Run repository documentation gates**
 
