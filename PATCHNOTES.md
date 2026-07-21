@@ -10,6 +10,22 @@ Newest first, like all respectable patch notes.
 
 ---
 
+## 2026-07-21 — One build or two, before we cut a hole in the wall
+
+- ADR-0006 settles the question the vendoring PR's review exposed: the clever
+  `includeBuild` that vendored ASK with zero rent also walled off the two modules
+  the fork exists to inject — a composite build's dependencies flow *inward*, so
+  ASK's `:ime:app` cannot depend "up" into our `core-*`. The graft has no seam
+  until this is fixed.
+- Lays out the options — one unified Gradle build vs. composite-with-`core-*`-
+  extracted — and recommends the unified build: the seam becomes a one-line
+  `project(...)` dependency instead of coordinate substitution, and we stop
+  paying the standing tax of two Gradle versions. Decision is the owner's; the
+  one experiment that could flip it (does converging on ASK's newer toolchain
+  break our modules?) is named.
+- No code moved. This is the amendment that makes ADR-0004's "wire ASK's modules
+  into settings.gradle" mean something specific.
+
 ## 2026-07-21 — Moved the keyboard in. Left it in its original boxes.
 
 - AnySoftKeyboard `1.13-r1` is now physically present at `android/keyboard/` —
