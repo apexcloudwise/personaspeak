@@ -10,6 +10,34 @@ Newest first, like all respectable patch notes.
 
 ---
 
+## 2026-07-21 — Five doors, with the hinges on
+
+- The five onboarding routes are no longer placeholders that say "not yet
+  built." Welcome, Setup, AI Selection, API Key, and Demo are real Compose
+  screens built from the Stitch mockups, wired into the existing nav graph
+  with zero routes added, renamed, or removed. The settings routes are still
+  placeholders; that is a different worker's problem and stays out of this PR.
+- Setup does the actual thing its copy promises: `Settings.ACTION_INPUT_METHOD_SETTINGS`
+  on step 1, `showInputMethodPicker()` on step 2, with `imeEnabled` recomputed
+  on every resume from `getEnabledInputMethodList()`. No faked toggles, no
+  pretend permission grants. Step 2 stays dimmed and disabled until step 1
+  reads true; Continue never dead-ends.
+- API Key is a real masked `OutlinedTextField` with an eye toggle and an
+  AI-Studio link that actually opens, and it does **not** persist the key —
+  Keystore wiring is ADR-0005's job and the TODO says so out loud. The Demo
+  screen is a fully canned before/after with a Jeeves rewrite, marked as the
+  swap point for a live `CompletionProvider` call. Nothing pretends to hit a
+  network it cannot reach.
+- Four shared atoms (`PrimaryButton`, `SecondaryTextButton`, `PillBadge`,
+  `PersonaSpeakTopAppBar`) factor the repeated patterns; everything used once
+  stays in its screen. `material-icons-extended` was not added — the missing
+  glyphs are emoji, because AGENTS.md frowns on a dependency where a 🤖 will do.
+- `./gradlew :app:assembleDebug` is green, checked after every screen.
+  Walked the full chain on `emulator-5554` — Welcome through Demo to
+  `settings/home` — with no crashes; Demo→home clears the back stack so Back
+  doesn't sneak anyone back into onboarding. Full receipts in
+  `docs/superpowers/specs/2026-07-21-onboarding-screens-report.md`.
+
 ## 2026-07-21 — The hallway, before the rooms
 
 - The `:app` module has walls now: a Compose theme built from DESIGN.md's
