@@ -84,15 +84,19 @@ system escape hatch is not a PersonaSpeak workflow.
 
 ## Consequences
 
-- Vendoring must preserve the currently demoable IME until the ASK integration
-  proof is ready. The existing stub moves to temporary module
-  `:keyboard-stub` at `android/keyboard-stub/` so the ASK tree can occupy
-  `android/keyboard/`; the stub is removed only by the proven integration slice.
+- The current ADR-0001 keyless panel is rejected, non-typing scaffolding — not a
+  demoable keyboard. Vendoring moves it byte-for-byte to temporary module
+  `:keyboard-stub` at `android/keyboard-stub/` solely to preserve the root APK's
+  build, install, and IME-registration baseline while the inert ASK tree occupies
+  `android/keyboard/`. No slice may improve it, present its switcher/local-draft
+  flow as product behavior, or use it as typing evidence. The proven ASK
+  integration deletes it.
 - The current root `:app` is not a second shipping APK. Its reusable Compose
   code moves into the first-party Android library; its application role ends.
-- The old keyless-panel PR is not merged. Reusable visual components may be
-  ported into the real ASK host after removing its local draft field and switch-
-  back behavior.
+- The old keyless-panel PR is not merged, and no source from the temporary stub
+  is ported as behavior. Independently reusable visual components may be
+  reimplemented in the real ASK host only after removing the local draft field,
+  switch-back behavior, and every dependency on the rejected topology.
 - Upstream upgrades pay rent only at the recorded editor, view-host, and build
   seams.
 - A crash in the IME can prevent typing, so install/registration, typing, and

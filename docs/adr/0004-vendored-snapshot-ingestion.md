@@ -56,12 +56,18 @@ Concretely:
   `8c1db51c8f23d1923d0eb05f70f1bb41d614fb6d` (the spike's pin).
 - The snapshot is produced reproducibly: `git archive` of the pinned tag from
   the upstream repo, extracted into `android/keyboard/`, excluding upstream CI
-  and repo-management dirs (`.git`, `.github/`, upstream `fastlane/` metadata) —
-  the exclusion list itself recorded in `UPSTREAM.md`. Anyone can regenerate the
-  identical pristine tree from the recorded tag + exclusion list and `git diff`
-  it against our import to see exactly our changes. Committed as a single,
-  message-tagged import commit; upstream git history is **not** imported.
-- ASK's `LICENSE`, `NOTICE`, and per-file Apache headers are preserved verbatim.
+  and repository-control material. The exact list covers `.git` (implicit),
+  `.github/`, `.claude/`, `.gemini/`, `.jules/`, `.devcontainer/`, root
+  `AGENTS.md` and `CLAUDE.md`, and upstream `fastlane/` metadata. Nested agent
+  instructions are repository management, not keyboard source; importing them
+  would let upstream workflow rules govern PersonaSpeak work below the vendored
+  directory. The exclusion list itself is recorded in `UPSTREAM.md`. Anyone can
+  regenerate the identical pristine tree from the recorded tag + exclusion list
+  and `git diff` it against our import to see exactly our changes. Committed as a
+  single, message-tagged import commit; upstream git history is **not** imported.
+- ASK's `LICENSE`, any upstream `NOTICE`, and per-file Apache headers are
+  preserved verbatim. The pinned `1.13-r1` tree contains `LICENSE` but no root
+  `NOTICE`; provenance records that absence rather than manufacturing one.
   A top-level `android/keyboard/UPSTREAM.md` records the source repo, the pinned
   tag + SHA, the date, the exclusion list, and the re-vendor procedure.
 - Our modifications to upstream-tracked files are listed in
@@ -133,9 +139,9 @@ wrong.
   upstream ASK file without adding a `UPSTREAM-MODIFIED.md` line has hidden rent,
   and gets returned. Keeping our code in new files under our own packages is what
   keeps that list short.
-- **License compliance is a checklist item, not a vibe.** Apache-2.0 requires the
-  retained `LICENSE`/`NOTICE` and preserved headers; the app's own license
-  (ADR-0003) and ASK's attribution coexist, and `UPSTREAM.md` is where a
+- **License compliance is a checklist item, not a vibe.** Preserve ASK's
+  `LICENSE`, any upstream `NOTICE`, and existing per-file headers; the app's own
+  license (ADR-0003) and ASK's attribution coexist, and `UPSTREAM.md` is where a
   downstream reader finds the provenance. This is plain, load-bearing text — no
   jokes in the attribution.
 - **`core-personas` and `core-providers` stay outside the vendored tree.** They
@@ -143,6 +149,10 @@ wrong.
   Platform seams the graft needs — editor identity, commit authority, Keystore —
   are ports in our modules with adapters in the vendored/Android layer, so
   vendoring ASK does not leak `android.*` back into the pure core.
-- **The stub `:keyboard` module is deleted in the graft PR, not this one.** This
-  ADR is docs-only; the code lands next, behind the walking-skeleton discipline
-  (ADR-0003's release gate: the keyboard must not crash).
+- **The superseded ADR-0001 panel is disposable scaffolding, not a product
+  demo.** The ingestion slice moves its files byte-for-byte to temporary module
+  `:keyboard-stub` only so the current root APK keeps its build, install, and IME
+  registration baseline while ASK occupies `android/keyboard/`. The slice does
+  not improve, exercise, or advertise the keyless switcher flow, and the stub
+  proves no typing behavior. The unified ASK integration deletes it; no release
+  may treat it as the product keyboard.

@@ -377,19 +377,24 @@ The current PR stack is repaired rather than merged in its present order:
    Keystore wording, privacy copy, module map, and simulated onboarding demo.
 2. Restack the toolchain experiment onto `main` and narrow its claim to the
    result it proves.
-3. Rewrite vendoring as an ingestion slice that leaves a working demo IME on
-   `main`: move the small existing stub to `android/keyboard-stub/` as
-   `:keyboard-stub`, update `settings.gradle.kts` and the temporary root app
-   dependency in the same slice, prove it still types, then place the inert ASK
-   snapshot at `android/keyboard/`. ASK modules are not included yet.
+3. Rewrite vendoring as an ingestion slice that names the rejected scaffold
+   honestly: move the existing ADR-0001 panel byte-for-byte to
+   `android/keyboard-stub/` as `:keyboard-stub`, update `settings.gradle.kts`,
+   the temporary root app dependency, and CI in the same slice, and prove only
+   that the existing root APK still builds, installs, and registers its legacy
+   IME service without crashing. Do not use the panel as a typing or product
+   journey. Place the inert ASK snapshot at `android/keyboard/`; ASK modules are
+   not included yet.
 4. Extract reusable root-app Compose code into `:personaspeak-ui` while the
-   temporary root app and `:keyboard-stub` continue to provide the demo APK.
+   temporary root app and `:keyboard-stub` preserve that build/install baseline.
+   No code or UX is extracted from the rejected panel.
 5. Land one atomic unified-build integration slice: root-owned build
    composition, ASK's `:ime:app` with PersonaSpeak's application ID, direct
    `:ime:app -> :personaspeak-ui -> core-*` dependencies, a minimal settings
    entry, and the real `EditorPort` adapter. Remove the temporary root
-   application and `:keyboard-stub` only after the ASK APK passes the typing and
-   editor-seam journey in that same slice.
+   application and `:keyboard-stub` in the same slice that makes the ASK APK pass
+   the typing and editor-seam journey. A release graph containing
+   `:keyboard-stub` fails acceptance even if every Gradle task is green.
 6. Port onboarding and settings into the first-party Android library one slice
    at a time.
 7. Supersede the old panel PR with a real ASK-hosted persona strip and stale-

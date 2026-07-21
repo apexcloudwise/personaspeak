@@ -12,6 +12,9 @@ Newest first, like all respectable patch notes.
 
 ## 2026-07-22 — The keyboard and the product become the same application
 
+- The old ADR-0001 panel has been promoted from “demo keyboard” to its accurate
+  title: disposable, non-typing build scaffolding. ASK ingestion may move it
+  unchanged; no journey may endorse it, and ASK integration deletes it.
 - The Android build now uses ASK's proven Gradle 9.2.1, AGP 8.13.2, Kotlin
   2.3.10, and JDK 21 baseline. CI checks every current module, because a
   convergence experiment is more useful after it stops being temporary.
