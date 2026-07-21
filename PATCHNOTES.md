@@ -10,6 +10,44 @@ Newest first, like all respectable patch notes.
 
 ---
 
+## 2026-07-21 — The panel puts on its tails
+
+- The walking skeleton is retired. `PersonaPanel` now wears the designed
+  strip: a persona chip, a mood chip, and a teal-to-cyan transform FAB docked
+  far-right where the mockup said to put it. The public signature
+  (`provider, onCommit, onSwitchBack`) is unchanged, because the
+  `InputMethodService` that calls it is unchanged, because that contract is
+  load-bearing.
+- Four personas, five moods, one parameterized result card. The persona picker
+  is a 2×2 grid; the mood picker is a vertical popover; the result card
+  handles every persona/mood combination instead of three near-duplicates.
+  "Use this" commits to the host field through the existing `onCommit` →
+  `commitText` wire; "↻ Again" re-runs the transform; "✕" dismisses and keeps
+  the draft.
+- Mood is UI-only. There is no `Mood` type in `core-personas` and there won't
+  be — module law keeps the core pure. It's a five-value `enum` scoped to the
+  keyboard package, threaded into the system prompt as a tone suffix on
+  `PromptBuilder`'s output. `FakeProvider` ignores the string anyway, but the
+  wiring is honest for the day a real provider lands.
+- The draft field is still a local `TextField`, and that's a known stub, not
+  an oversight. A real IME reads the host field through `InputConnection`;
+  this panel is a pure `@Composable` with no service access, and the boundary
+  stays frozen here. The `TODO(host-text-capture)` points at
+  `2026-07-21-stale-field-race-design.md`, where the `EditorAuthority` guard
+  that makes real capture safe is specified. Restoring the service/panel
+  boundary is that doc's job, not this PR's.
+- Blank draft produces an in-voice error, not a silent no-op: "Type something
+  first — even Jeeves needs material to work with." The other failure states
+  (no connection, bad key, quota exhausted) aren't built because `FakeProvider`
+  never fails; they wait for a real provider.
+- Loading is visible on purpose. The shimmer bars and the FAB spinner get the
+  full 400 ms `FakeProvider` delay rather than a shortcut, because a transform
+  that resolves instantly is a transform you can't film.
+- Verified live on emulator-5554: five states screenshotted (resting, persona
+  picker, mood picker, loading, result card), and "Use this" dropped the
+  FakeProvider's reply into the Settings search field end-to-end. Gboard is
+  back as the active IME; the emulator can type again.
+
 ## 2026-07-21 — The hallway, before the rooms
 
 - The `:app` module has walls now: a Compose theme built from DESIGN.md's
