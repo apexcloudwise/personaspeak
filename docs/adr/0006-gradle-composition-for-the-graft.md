@@ -129,3 +129,68 @@ should flip. That is the one experiment worth running before this ADR is accepte
 - **Whichever wins, ADR-0004's "wire ASK's modules into settings.gradle" line is
   now precise:** either literally (A) or via a shared included build (B). This
   ADR is the amendment that makes that sentence mean something.
+
+## Independent review (2026-07-21)
+
+Three different model families reviewed this ADR in parallel, each pointed at
+this file plus the live Gradle tree, none shown the others' output. 2 of 3
+land on Option A; the dissent surfaced a real Gradle mechanism the ADR's
+"never the reverse" wording missed, which the third opinion then verified and
+explained why it doesn't change the pick.
+
+- **agy / Gemini — agrees with A.** Confirms the root modules
+  (`core-personas`, `core-providers`, `app`) have no source-level obstacle to
+  the toolchain bump. Flags two omissions the ADR didn't cover: reconciling
+  ASK's own version catalog (`android/keyboard/gradle/libs.versions.toml`)
+  into the root's, and ASK's `apply from: "${rootDir}/..."` script imports
+  breaking once `rootDir` resolves to `android/` instead of
+  `android/keyboard/` under a unified build.
+- **codex (gpt-5.6-sol) — dissents.** Found that Gradle composite builds
+  support `includeBuild(".")` — a build can self-include itself, making its
+  own projects addressable by coordinate from other included builds. That
+  contradicts the ADR's "never the reverse" framing and opens a fourth
+  option: keep the two builds separate, self-include the root, give `core-*`
+  stable coordinates, let `:ime:app` depend on them by coordinate — no
+  unified build, no third shared build. Also measured real rent Option A's
+  writeup understates: 164 ASK Gradle files reference `rootDir`, 89 use
+  ASK-rooted project paths, and ASK carries its own `libs` catalog — folding
+  ASK's module tree into the root is not a clean settings-file merge. Flags
+  that Kotlin 2.1.21 (root) isn't officially supported on Gradle 9.2.1 (ASK),
+  so the toolchain bump is a real upgrade, not a wrapper-version edit. Also
+  raised a gap none of the ADR's options address: which module ships as the
+  PersonaSpeak APK — root `app` or ASK's `:ime:app` — is still undecided, and
+  composition doesn't answer it.
+- **opencode/GLM-5.2 — agrees with A, corrects the reasoning.** Independently
+  verified `includeBuild(".")` against Gradle's docs (codex's finding holds)
+  but shows it doesn't rescue Option B's premise: **a composite build
+  executes everything under the *including* build's single Gradle wrapper**
+  — the included build's own wrapper version is not used for that
+  invocation. Today that's the root's 8.14, and AGP 8.13.2 (ASK's) is not
+  reliably compatible with Gradle 8.14. So Option B (or codex's self-include
+  variant) either converges the root to 9.2.1 anyway — paying Option A's
+  toolchain cost while keeping extra indirection — or downgrades ASK's AGP,
+  which is rent paid at every future re-vendor. B's headline advantage
+  (`ASK keeps its own toolchain`) does not survive contact with how composite
+  builds actually execute. Separately confirms, with a source citation, that
+  the PR #18 stub-removal blocker is real: `android/app/build.gradle.kts:34-36`
+  drops the `:keyboard` dependency with a comment punting the wiring to "the
+  graft PR," so `main` currently has no `InputMethodService` in the APK at
+  all. Also sizes Option A's rent more precisely than the ADR does: ASK ships
+  a `buildSrc/` with three custom Gradle plugins and roughly 94 module
+  scripts that read SDK versions from `gradle/root_all_projects_ext.gradle`
+  — folding that into a Kotlin-DSL root is a real port, not "a few module
+  scripts."
+
+**Net effect on the decision:** unchanged. The dissenting mechanism
+(`includeBuild(".")`) is real, but the third opinion shows it doesn't
+preserve toolchain isolation once you account for single-wrapper composite
+execution — so it doesn't buy back Option B's one advantage. Recommendation
+stands at **Option A**, with two corrections carried into the record: the
+"never the reverse" wording above is imprecise (should read "no idiomatic
+reverse path without self-inclusion, which doesn't change the version-
+convergence requirement"), and Option A's rent includes ASK's `buildSrc` and
+~94-script `rootDir` dependency, not just a settings-file merge. The
+toolchain-convergence experiment this ADR flagged as decision-relevant is
+still unrun in a live environment — all three reviews reasoned from static
+inspection, none executed `./gradlew`. That experiment is the next thing to
+run before this ADR's status moves past Proposed.
