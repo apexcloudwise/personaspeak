@@ -10,6 +10,41 @@ Newest first, like all respectable patch notes.
 
 ---
 
+## 2026-07-21 — One build or two, before we cut a hole in the wall
+
+- ADR-0006 settles the question the vendoring PR's review exposed: the clever
+  `includeBuild` that vendored ASK with zero rent also walled off the two modules
+  the fork exists to inject — a composite build's dependencies flow *inward*, so
+  ASK's `:ime:app` cannot depend "up" into our `core-*`. The graft has no seam
+  until this is fixed.
+- Lays out the options — one unified Gradle build vs. composite-with-`core-*`-
+  extracted — and recommends the unified build: the seam becomes a one-line
+  `project(...)` dependency instead of coordinate substitution, and we stop
+  paying the standing tax of two Gradle versions. Decision is the owner's; the
+  one experiment that could flip it (does converging on ASK's newer toolchain
+  break our modules?) is named.
+- No code moved. This is the amendment that makes ADR-0004's "wire ASK's modules
+  into settings.gradle" mean something specific.
+
+## 2026-07-21 — Moved the keyboard in. Left it in its original boxes.
+
+- AnySoftKeyboard `1.13-r1` is now physically present at `android/keyboard/` —
+  5,966 upstream files, Apache-2.0 headers and `LICENSE` intact, dropped in via
+  `git archive` with `.github/` and the (absent) `fastlane/` dir excluded. The
+  stub `:keyboard` module that used to live there has been evicted; it was a
+  placeholder and it knew it.
+- `UPSTREAM.md` records the source repo, the pinned SHA, the exact archive
+  command, and the re-vendor procedure. `UPSTREAM-MODIFIED.md` is the rent
+  ledger: it lists every upstream-tracked file we have edited. It is currently
+  **empty**, because we used `includeBuild("keyboard")` and changed zero
+  upstream source. The plan is to keep that list short; this PR sets the bar
+  at zero.
+- `./gradlew :app:assembleDebug` from `android/` builds our host app.
+  `./gradlew :ime:app:assembleDebug` from `android/keyboard/` builds ASK
+  itself, producing a 42 MB debug APK with all 60-odd language packs and four
+  ABIs of JNI dictionary. The graft PR — where the persona strip actually
+  gets sewn in — is the follow-up. This PR is just the furniture delivery.
+
 ## 2026-07-21 — Reading our own privacy promise back to ourselves
 
 - ADR-0005 catches a claim that quietly stopped being true: "Nothing is stored,

@@ -1,0 +1,16 @@
+apply plugin: 'java'
+
+apply from: "${rootDir}/gradle/jacoco.gradle"
+apply from: "${rootDir}/gradle/errorprone.gradle"
+
+dependencies {
+    implementation libs.junit
+    implementation libs.guava
+
+    testImplementation libs.mockito.core
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+}
