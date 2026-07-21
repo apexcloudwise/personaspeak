@@ -26,6 +26,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.BlurredEdgeTreatment
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
@@ -270,15 +271,15 @@ private fun AtmosphericGlow() {
             modifier = Modifier
                 .size(320.dp)
                 .offset(x = (-80).dp, y = 40.dp)
-                .blur(90.dp)
-                .background(Primary.copy(alpha = 0.18f)),
+                .background(Primary.copy(alpha = 0.18f), CircleShape)
+                .blur(radius = 90.dp, edgeTreatment = BlurredEdgeTreatment.Unbounded),
         )
         Box(
             modifier = Modifier
                 .size(300.dp)
                 .offset(x = 200.dp, y = 500.dp)
-                .blur(100.dp)
-                .background(Secondary.copy(alpha = 0.14f)),
+                .background(Secondary.copy(alpha = 0.14f), CircleShape)
+                .blur(radius = 100.dp, edgeTreatment = BlurredEdgeTreatment.Unbounded),
         )
     }
 }

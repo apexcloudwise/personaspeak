@@ -234,7 +234,7 @@ private fun PrivacyCallout() {
             modifier = Modifier.size(20.dp),
         )
         Text(
-            text = "Android will warn that this keyboard can see what you type. We only process text locally for AI personas.",
+            text = "Android will warn that this keyboard can see what you type. Your text is sent only to the AI provider you choose, only when you ask for a rewrite — never in the background.",
             style = MaterialTheme.typography.bodyLarge,
             color = OnSurface,
         )

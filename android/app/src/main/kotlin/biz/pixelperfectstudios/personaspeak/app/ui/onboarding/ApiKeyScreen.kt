@@ -93,7 +93,7 @@ fun ApiKeyScreen(
                     color = OnSurface,
                 )
                 Text(
-                    text = "Paste your Gemini API key. It goes straight into Android's encrypted Keystore. We never see it, and it never leaves your device.",
+                    text = "Paste your Gemini API key. We never see it, and it never leaves your device. Keystore-backed storage is on its way (ADR-0005) — for now the key stays in memory for this session only.",
                     style = MaterialTheme.typography.bodyLarge,
                     color = OnSurfaceVariant,
                 )
@@ -285,11 +285,11 @@ private fun SecurityCallout(modifier: Modifier = Modifier) {
             modifier = Modifier.size(20.dp),
         )
         val text = buildAnnotatedString {
-            append("Stored in Android ")
+            append("Held in memory for ")
             withStyle(SpanStyle(fontWeight = FontWeight.Bold)) {
-                append("Keystore")
+                append("this session only")
             }
-            append(" using 256-bit AES encryption.")
+            append(" — cleared when the app closes. Encrypted on-device storage is coming (ADR-0005).")
         }
         Text(text = text, style = MaterialTheme.typography.bodyLarge, color = OnSurface)
     }
