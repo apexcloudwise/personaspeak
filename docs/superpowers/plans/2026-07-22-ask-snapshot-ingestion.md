@@ -501,7 +501,7 @@ With the repository's emulator running:
 ```bash
 set -euo pipefail
 APP_ID='biz.pixelperfectstudios.personaspeak'
-LEGACY_IME='biz.pixelperfectstudios.personaspeak/biz.pixelperfectstudios.personaspeak.keyboard.PersonaBoardService'
+LEGACY_IME='biz.pixelperfectstudios.personaspeak/.keyboard.PersonaBoardService'
 PREVIOUS_IME="$(adb shell settings get secure default_input_method | tr -d '\r')"
 if adb shell ime list -s | tr -d '\r' | rg -Fx "$LEGACY_IME" >/dev/null; then
   LEGACY_WAS_ENABLED=1
@@ -538,7 +538,9 @@ fi
 
 Expected: install succeeds, the service component is registered, switching it
 on for startup does not crash, the temporary activity launches, and the trap
-restores the previous IME. Do not tap the panel, type into its local field,
+restores the previous IME. The flattened component spelling above deliberately
+matches Android's `ime list` output while naming the same service as the fully
+qualified manifest class. Do not tap the panel, type into its local field,
 invoke Transform, use its back button, record it as a journey, or take product
 screenshots. This is a retirement-baseline smoke check, nothing more.
 
