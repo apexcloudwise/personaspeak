@@ -14,8 +14,9 @@ Newest first, like all respectable patch notes.
 
 - ADR-0006 settles the part Gradle had been enjoying as an interpretive dance:
   PersonaSpeak ships one ASK-based APK from one unified build. ASK owns the real
-  keyboard; first-party modules own the manners; a thin editor adapter captures
-  and conditionally replaces host text without becoming a second UI.
+  keyboard; first-party modules own the manners; a thin editor adapter validates
+  immediately before asking the host to replace text, without pretending
+  Android supplied a cross-process transaction or a second UI.
 - The discarded switcher model stays discarded. No flip to a keyless panel, no
   flip back, and no local draft field waiting patiently for input an IME window
   cannot receive.

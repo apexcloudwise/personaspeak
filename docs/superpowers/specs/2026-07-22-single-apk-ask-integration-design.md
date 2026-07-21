@@ -2,7 +2,7 @@
 
 **Date:** 2026-07-22
 
-**Status:** Proposed — owner decisions incorporated; written-spec approval pending
+**Status:** Owner-approved design (2026-07-22)
 
 **Decision:** [ADR-0006](../../adr/0006-gradle-composition-for-the-graft.md)
 
@@ -95,16 +95,30 @@ The resulting direction is strictly
 ## The editor boundary
 
 This section is the ASK-specific implementation shape of the earlier
-[stale-field race design](2026-07-21-stale-field-race-design.md). Its safety
-invariants and race tests remain binding; where its tentative
-`EditorAuthority` names or ownership differ, this `EditorPort` contract wins.
+[stale-field race design](2026-07-21-stale-field-race-design.md). Its threat
+model, discard behavior, and provider-await race tests remain binding. Its I2/I6
+claim that an IME-main-looper turn makes editor validation and mutation atomic
+is superseded: `InputConnection` crosses into an independently scheduled host
+editor, and Android exposes no generic compare-and-set transaction. Where the
+documents otherwise differ, this `EditorPort` contract wins.
 
 `EditorPort` is deliberately smaller than ASK's API surface. It provides:
 
 - `captureSnapshot()` — return an exact, bounded rewrite target plus opaque
   editor-session, selection, and request-generation tokens, or a typed refusal;
-- `replaceIfCurrent(snapshot, replacement)` — re-read and compare the target,
-  then replace it only if every authority check still passes.
+- `attemptReplace(snapshot, replacement)` — re-read and compare the target as
+  late as possible, attempt the least-destructive replacement sequence only if
+  every check passes, and return a typed `ReplaceResult`.
+
+`ReplaceResult` distinguishes:
+
+- `AppliedVerified` — a post-write read observed the expected replacement;
+- `Stale` — session, generation, text, or selection changed before any text
+  mutation command was sent;
+- `WriteRejected` — a required editor command returned failure;
+- `WriteUnconfirmed` — a mutation command was accepted but the final editor
+  text could not be read or did not match, so success and concurrent host edits
+  cannot be distinguished safely.
 
 The first-party library can therefore be tested against a fake port. ASK can be
 updated behind the adapter without teaching the product layer about inherited
@@ -125,11 +139,26 @@ points. Capture fails closed for password variations, editors marked with
 `IME_FLAG_NO_PERSONALIZED_LEARNING`, non-text editors, null or non-accepting
 connections, incomplete reads, and oversized drafts. Blank drafts map to
 `EmptyInput` without a provider call. The snapshot and provider result exist
-only in memory for the active request. `replaceIfCurrent` performs its final
-session/generation/text/selection validation and the `InputConnection` write in
-one synchronous IME-main-looper turn, with no suspension or caller-owned write
-between check and mutation. This closes the check-then-act gap left by a
-separate `isCurrent()` call.
+only in memory for the active request.
+
+`attemptReplace` performs final session/generation/text/selection validation on
+the IME main looper with no suspension before issuing the write. That closes the
+multi-second provider-await race and prevents IME-side callbacks from entering
+the gap. It does not make the cross-process read and write atomic: the host can
+still mutate its editor after the read response and before the write executes.
+This residual window is an Android platform limit for generic host editors, not
+a race the port can honestly declare impossible.
+
+On API 34+, the adapter prefers the single text-mutation command
+`InputConnection.replaceText`. On older supported releases it finishes
+composing text, requires `setSelection(0, snapshot UTF-16 end offset)` to
+succeed, and then uses one `commitText` call; it never deletes the draft and
+then attempts a separate insert. Every boolean return is checked. If the text
+command is rejected, any selection change is restored on a best-effort basis. A
+post-write re-read verifies the outcome where the editor permits it. Batch-edit
+bracketing may suppress intermediate callbacks or flicker, but is not treated
+as a lock or transaction. `WriteUnconfirmed` never triggers an automatic retry,
+because a retry could apply the replacement twice.
 
 Launching onboarding or settings is a separate Android navigation concern. The
 ASK application exposes explicit activities/intents from the library inside the
@@ -146,11 +175,13 @@ same package; `EditorPort` carries no navigation methods.
 5. The configured provider receives the request. The UI enters the Stitch
    loading state without moving the keys.
 6. A successful response renders in the floating result card.
-7. `Use this` calls `replaceIfCurrent` with the original snapshot.
-8. In one main-thread turn, the adapter revalidates and, if current, replaces
-   the captured editor target through the real `InputConnection`.
-9. If validation fails, no text is committed. The UI explains that the draft changed and
-   offers a fresh rewrite against a newly captured snapshot.
+7. `Use this` calls `attemptReplace` with the original snapshot.
+8. The adapter revalidates immediately before issuing the least-destructive
+   available replacement command through the real `InputConnection`.
+9. `Stale` sends no text mutation and offers a fresh rewrite against a newly
+   captured snapshot. `WriteRejected` reports that the editor refused the
+   change. `WriteUnconfirmed` asks the user to inspect the field and never
+   retries automatically. Only `AppliedVerified` is shown as confirmed success.
 
 `Again` starts a new request from a fresh snapshot. `Dismiss` changes no editor
 text. Moving to another field or closing the IME cancels or invalidates the
@@ -219,10 +250,11 @@ is not staged with architecture or integration work. The older committed
 contract governs new fidelity work.
 
 The current Stitch export has no dedicated target for `ProviderFailure`,
-`StaleEditor`, `SensitiveEditor`, or `UnsupportedEditor`. Those states must
-receive an approved target or a documented adaptation of the existing amber
-error-card system before their UI slice is graded; absence from the export is
-not permission to improvise silently.
+`StaleEditor`, `WriteRejected`, `WriteUnconfirmed`, `SensitiveEditor`, or
+`UnsupportedEditor`. Those states must receive an approved target or a
+documented adaptation of the existing amber error-card system before their UI
+slice is graded; absence from the export is not permission to improvise
+silently.
 
 ## State and persistence
 
@@ -274,6 +306,10 @@ The coordinator maps implementation failures into stable product states:
   keyboard;
 - `ProviderFailure` — retain the draft and provide a safe retry/dismiss path;
 - `StaleEditor` — never commit; recapture before retrying;
+- `WriteRejected` — explain that the editor refused the change; do not retry
+  automatically;
+- `WriteUnconfirmed` — ask the user to inspect the field; do not claim success
+  or retry automatically;
 - `EmptyInput` — do not call a provider; ask the user to type first;
 - `SensitiveEditor` — do not capture or send text from a protected field;
 - `UnsupportedEditor` — explain that the current field cannot be rewritten and
@@ -359,6 +395,13 @@ run in parallel in disposable worktrees.
   `EditorPort` and fake providers.
 - Stale editor identity, changed text, changed selection, field switch, and
   process/lifecycle cancellation have regression tests.
+- Fake-connection tests reject each pre-write operation in turn, verify that no
+  delete-then-insert path exists, and exercise every `ReplaceResult`.
+- Real-editor tests cover the API-34 single-command path and the older fallback,
+  post-write verification, and deliberately scheduled host mutations at the
+  final read/write boundary. They verify detected stale states never send a text
+  mutation and record `WriteUnconfirmed` where the platform cannot prove the
+  outcome; they do not assert nonexistent cross-process atomicity.
 - Password/sensitive fields, incomplete editor reads, null connections, and
   oversized targets fail without capture, network traffic, or mutation.
 - Provider errors map to the stable UI states above without leaking raw data.
@@ -383,7 +426,9 @@ On a real emulator:
 5. choose persona and mood;
 6. rewrite through a fake provider from the real host editor;
 7. verify the host field changes exactly once;
-8. reproduce the stale-editor race and verify no overwrite;
+8. reproduce provider-await stale-editor races and verify no mutation command
+   is sent; stress the final read/write boundary and record any unconfirmed
+   outcome without automatic retry;
 9. launch settings from the same package;
 10. restore the emulator's prior IME after grading.
 
@@ -399,7 +444,9 @@ The architecture is implemented only when:
 - no product switcher or keyless panel exists;
 - the unified build and direct module graph are real;
 - ASK keys and PersonaSpeak controls work in the same IME window;
-- capture-to-commit uses the host field and enforces stale-editor safety;
+- capture-to-commit uses the host field, blocks every detected stale write, and
+  exposes rejected or unconfirmed writes without claiming cross-process
+  atomicity;
 - onboarding, settings, keyboard states, fonts, and approved assets meet the
   Stitch evidence contract;
 - privacy copy matches verified behavior;

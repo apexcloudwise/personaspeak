@@ -50,9 +50,13 @@ PersonaSpeak ships exactly one Android application: ASK's `:ime:app`.
 - A narrow `EditorPort` interface belongs to first-party code. A thin adapter
   in ASK's application implements it with the real `InputConnection` and
   editor lifecycle. Capture can fail when an editor is sensitive, unreadable,
-  partial, or otherwise unsafe; replacement revalidates and writes in one
-  synchronous IME-main-thread turn. Settings navigation is not an editor
-  operation and does not travel through this port.
+  partial, or otherwise unsafe. Replacement revalidates immediately before the
+  write, uses the least-destructive available command sequence, and reports
+  stale, rejected, and unconfirmed outcomes separately. Android provides no
+  generic atomic compare-and-set across an IME and a host editor, so the guard
+  closes the provider-await race but cannot promise strict atomicity against a
+  host mutation in the final cross-process read/write window. Settings
+  navigation is not an editor operation and does not travel through this port.
 - PersonaSpeak-specific ASK additions live in clearly separated
   `biz.pixelperfectstudios.personaspeak.*` packages. Every modified upstream
   file is recorded in `android/keyboard/UPSTREAM-MODIFIED.md`.
