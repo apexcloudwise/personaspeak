@@ -17,24 +17,29 @@ Newest first, like all respectable patch notes.
   separate: on-device local state, anything that leaves the device, and
   on-device disclosure surfaces. Every finding cites `path:line` against the
   pinned ASK tree.
-- What survives the README's "nothing is logged" and "not used to improve our
-  services" clauses: the release build's `NullLogProvider` gates every
-  `Logger.*` call and the in-memory ring buffer, so no typed text reaches
-  logcat in release; and no analytics/crash-upload SDK ships (no Firebase,
-  Crashlytics, Fabric, Flurry, Sentry, Amplitude — verified repo-wide), with
-  the crash path being a user-tapped email to a build-time address.
+- What *provisionally* holds against the README's "nothing is logged" and "not
+  used to improve our services" clauses — clear from static reading, not yet
+  proven: the release build's `NullLogProvider` gates every `Logger.*` call and
+  the in-memory ring buffer, and no analytics/crash-upload SDK appears in source
+  or Gradle config (no Firebase, Crashlytics, Fabric, Flurry, Sentry, Amplitude),
+  the crash path being a user-tapped email. A source grep cannot see
+  shaded/transitive deps, native code, or runtime egress, so neither clause is
+  signed off until the release APK and per-UID network capture confirm it — a
+  false all-clear is the one thing a privacy claim cannot afford.
 - What does not survive as-shipped: "nothing is stored" — a predictive
   keyboard keeps a learned-words DB, an auto-learn DB, and per-locale
   next-word files, all default-on, all user-clearable. The honest restatement
   is ADR-0005's "stays on your phone, user-clearable," not "does not exist."
 - The one fact the privacy copy did not account for: Android Auto Backup is
   default-on (`allowBackup="true"`, no `fullBackupContent` or
-  `dataExtractionRules`), so the local state above backs up to the user's
-  Google Drive. Not a server we run — but also not "nothing leaves your
-  phone." The inventory lists this as the headline neutralization item.
-- Static analysis is necessary but not sufficient. On-device capture (TLS
-  proxy, `bmgr`, filesystem inspection) is the gating step before the privacy
-  copy unfreezes; the inventory's last section is that checklist.
+  `dataExtractionRules`), so the local state above is eligible for the device's
+  configured backup transport (commonly Google Drive). Not a server we run — but
+  also not "nothing leaves your phone." The inventory lists this as the headline
+  neutralization item.
+- Static analysis is necessary but not sufficient. On-device capture (per-UID
+  packet capture, `bmgr`, resolved dependency graph, decompiled release APK) is
+  the gating step before the privacy copy unfreezes; the inventory's last
+  section is that checklist.
 
 ## 2026-07-21 — Reading our own privacy promise back to ourselves
 

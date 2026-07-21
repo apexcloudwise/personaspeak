@@ -93,7 +93,7 @@ behaviours in the pinned snapshot do not meet that bar as-shipped.
 | Property | Value |
 |---|---|
 | Exists? | **Yes.** |
-| Data location leaving device | The app's entire private data dir (`/data/data/<pkg>/`) is eligible: `fallback.db`, `auto_dict_2.db`, `next_words_*.txt`, `shared_prefs/*.xml`, and `new_crash_details.log` / `crash_report_details_*.log`. Android Auto Backup transports this to the user's Google Drive backup under the device-wide backup credential. The app does not control the destination and cannot read the bytes back itself; nonetheless, **the bytes leave the device**, which is the boundary ADR-0005 draws. |
+| Data location leaving device | The app's entire private data dir (`/data/data/<pkg>/`) is eligible: `fallback.db`, `auto_dict_2.db`, `next_words_*.txt`, `shared_prefs/*.xml`, and `new_crash_details.log` / `crash_report_details_*.log`. Android Auto Backup makes this **eligible for whatever backup transport the device has configured** — commonly Google Drive, but the transport and its cloud/OEM behaviour (and any device-to-device transfer path) vary and are outside app control. The app controls neither destination nor timing and cannot read the bytes back itself; nonetheless, **the bytes are eligible to leave the device**, which is the boundary ADR-0005 draws. |
 | Leaves device? | **Yes**, when Android's backup transport fires (device idle + charging + network, per OS policy — not under app control). |
 | Default-on? | **Yes.** `android:allowBackup="true"` and `android:fullBackupOnly="true"` in `ime/app/src/main/AndroidManifest.xml:32-33`. Crucially, **no `android:fullBackupContent` and no `android:dataExtractionRules` attribute or XML resource exists anywhere in the audited tree** (verified by repo-wide search of `**/*.xml`), so Android's *default* Auto Backup rules apply — which include the whole `files/`, `databases/`, and `shared_prefs/` trees. A commented-out Google Backup `api_key` sits at `ime/app/src/main/AndroidManifest.xml:38-43`; it is inactive, and Auto Backup does not require it. |
 | User-clearable? | At the OS level (Settings → Backup), not from inside the app. There is no in-app control that turns Auto Backup off for this app's data. |
@@ -106,7 +106,7 @@ behaviours in the pinned snapshot do not meet that bar as-shipped.
 |---|---|
 | Exists? | **Yes.** |
 | Data location leaving device | A crash report file (see 1.5 / 3.2) is offered to the user via a notification + `SendBugReportUiActivity` (`ime/app/src/main/AndroidManifest.xml:97-103`, `ime/chewbacca/src/main/java/com/anysoftkeyboard/chewbacca/ChewbaccaUncaughtExceptionHandler.java:108-116,210-241`). The user must tap the notification, review, and explicitly send. The destination address is a build-time env var, `ANYSOFTKEYBOARD_CRASH_REPORT_EMAIL` (`ime/app/build.gradle:19-22`). |
-| Leaves device? | **Only on explicit user action**, and only to whatever email client the user picks. There is no background upload. **No crash/analytics SDK is present** in the runtime: confirmed by repo-wide search for `crashlytics|firebase|fabric|flurry|googleanalytics|amplitude|sentry|bugsense|bugsee` (zero source/manifest hits), by the absence of `google-services.json`, and by the absence of any `com.google.gms`/`com.google.firebase`/`io.fabric` Gradle plugin across all `*.gradle`/`*.toml`/`*.kts` files. The dependency catalog (`gradle/libs.versions.toml`) contains no HTTP/analytics client; the only HTTP libs are `httpclient`/`jsoup`, and both are confined to `buildSrc/build.gradle:17-21` (build-time dictionary generation, not shipped). |
+| Leaves device? | **Only on explicit user action**, and only to whatever email client the user picks. There is no background upload path in source. **No crash/analytics SDK appears in source or Gradle config**: repo-wide search for `crashlytics\|firebase\|fabric\|flurry\|googleanalytics\|amplitude\|sentry\|bugsense\|bugsee` returns zero source/manifest hits, there is no `google-services.json`, and no `com.google.gms`/`com.google.firebase`/`io.fabric` Gradle plugin appears in any `*.gradle`/`*.toml`/`*.kts`. The dependency catalog (`gradle/libs.versions.toml`) declares no HTTP/analytics client; the only HTTP libs (`httpclient`/`jsoup`) are confined to `buildSrc/build.gradle:17-21` (build-time dictionary generation, not shipped). **This is a source-level negative, not a proof of absence** — it cannot see transitive/resolved runtime deps, shaded SDKs, or native egress; per section 6, confirmation needs the resolved dependency graph and the decompiled release APK. |
 | Default-on? | The handler is installed **default-on** (`settings_default_show_chewbacca = true`, `ime/app/src/main/res/values/settings_defaults_dont_translate.xml:20`), but only the *file write + notification* half is automatic — the *send* half is never automatic. |
 | User-clearable? | The crash file lives in app private storage and is removed by the handler when archived (`ChewbaccaUncaughtExceptionHandler.java:104-106`) and by clearing app data. The handler itself can be disabled via `settings_key_show_chewbacca`. |
 | Evidence | `ime/app/build.gradle:19-22`, `ime/app/src/main/AndroidManifest.xml:97-103`, `ime/chewbacca/src/main/java/com/anysoftkeyboard/chewbacca/ChewbaccaUncaughtExceptionHandler.java:71-114,116-208`, `ime/app/src/main/res/values/settings_defaults_dont_translate.xml:20`; analytics-SDK absence per the searches cited above. |
@@ -149,7 +149,7 @@ never cross a network.
 | Property | Value |
 |---|---|
 | Risk? | **A disclosure surface, bounded.** |
-| Mechanism | On any uncaught exception (or RxJava error) the handler writes `new_crash_details.log` into app-private storage (`mApp.openFileOutput(NEW_CRASH_FILENAME, MODE_PRIVATE)`) containing: timestamp, app version, exception class + message + stack trace, device build/locale/configuration (`ChewbaccaUtils.getSysInfo` — `ime/chewbacca/src/main/java/com/anysoftkeyboard/chewbacca/ChewbaccaUtils.java:28-45`), and `Logger.getAllLogLines()` (`ChewbaccaUncaughtExceptionHandler.java:182-188`). Per 3.1, that last field is **empty in release builds** because the ring buffer is never populated. The crash file is therefore stack-trace + device-info in release, not typed text. The file is app-private (MODE_PRIVATE), but is reachable by `adb`, by a Google bug report, and — per 2.1 — by Auto Backup. |
+| Mechanism | On any uncaught exception (or RxJava error) the handler writes `new_crash_details.log` into app-private storage (`mApp.openFileOutput(NEW_CRASH_FILENAME, MODE_PRIVATE)`) containing: timestamp, app version, exception class + message + stack trace, device build/locale/configuration (`ChewbaccaUtils.getSysInfo` — `ime/chewbacca/src/main/java/com/anysoftkeyboard/chewbacca/ChewbaccaUtils.java:28-45`), and `Logger.getAllLogLines()` (`ChewbaccaUncaughtExceptionHandler.java:182-188`). Per 3.1, that last field is **empty in release builds** because the ring buffer is never populated. The crash file is therefore stack-trace + device-info in release. **Caveat:** it is not guaranteed to be free of user text — an exception *message* can carry user-controlled content (e.g. a string that was being processed when the throw occurred), so "no typed text" is a strong default, not a proof. The file is app-private (MODE_PRIVATE), but is reachable by `adb`, by a Google bug report, and — per 2.1 — by Auto Backup. |
 | Default-on? | **Yes** (`settings_default_show_chewbacca = true`). |
 | User-clearable? | **Yes** — disabling the handler via `settings_key_show_chewbacca`, dismissing/clearing the notification, or clearing app data. |
 | Evidence | `ime/chewbacca/src/main/java/com/anysoftkeyboard/chewbacca/ChewbaccaUncaughtExceptionHandler.java:46-49,71-114,116-208`, `ime/chewbacca/src/main/java/com/anysoftkeyboard/chewbacca/ChewbaccaUtils.java:28-45`. |
@@ -182,14 +182,24 @@ For the fork shipping ASK `1.13-r1` as the keyboard, this claim is
   `next_words_<locale>.txt` (prediction model), all default-on (1.1–1.3). The
   honest restatement is already in ADR-0005: "it stays on the device and is
   user-clearable" — not "it does not exist."
-- **"Nothing is logged"** — *true for typed text in release builds* (3.1):
-  `NullLogProvider` gates every `Logger.*` call and the in-memory ring buffer;
-  the only direct `Log.d` carries a static string. This half of the claim
-  survives the audit, *provided* the graft does not regress it.
-- **"Not used to improve our services"** — *true as-shipped.* No analytics,
-  telemetry, or crash-upload SDK is present, and crash reports are
-  user-initiated email (2.2). The local learned-words DBs improve *local*
-  prediction only; no server ever sees them from app code.
+- **"Nothing is logged"** — *provisionally holds in release; NOT confirmed.*
+  Static reading shows `NullLogProvider` gating every `Logger.*` call and the
+  in-memory ring buffer, with the only direct `Log.d` carrying a static string
+  (3.1). But a source read cannot see logging from transitive AAR/JAR
+  dependencies, native `.so` code, WebView, or reflection. Treat as provisional
+  until the assembled **release APK** is inspected and the graft is held to the
+  same rule — not signed off.
+- **"Not used to improve our services"** — *provisionally holds; NOT confirmed,
+  and this is the riskiest claim in the document.* No analytics / telemetry /
+  crash-upload SDK appears in source or the dependency catalog, and crash
+  reports are user-initiated email (2.2). But a source grep for named SDKs and
+  Gradle plugins cannot catch **transitive or resolved runtime dependencies,
+  shaded/renamed SDKs, `java.net`/raw sockets, WebView, DownloadManager or other
+  platform services, dynamically loaded code, or native egress**. Asserting this
+  clause requires inspecting the *resolved dependency graph* and the *decompiled
+  release APK*, plus per-UID network capture (section 6). A false all-clear here
+  is the worst possible outcome under ADR-0005, so it stays provisional until
+  that evidence exists.
 - **"Message text goes only to the provider you configured"** — *out of scope
   for this audit.* That half of the claim concerns PersonaSpeak's own
   provider path, which is *ours*, not ASK's. ASK has no provider path of its
@@ -197,18 +207,25 @@ For the fork shipping ASK `1.13-r1` as the keyboard, this claim is
   one. This inventory cannot sign that off; it can only confirm that ASK
   itself does not.
 - **One load-bearing addition the README does not make.** Android Auto Backup
-  (2.1) ships the local state above to the user's Google Drive, default-on,
-  with no in-tree exclusion rule. That is not "used to improve our services"
-  and it is not a server *we* control — but it is also not "nothing leaves
-  your phone." ADR-0005's egress boundary is "anywhere in the app's UID," and
-  the backup transport qualifies. The claim as written does not account for
-  this and must, before ship.
+  (2.1) makes the local state above *eligible for the device's configured backup
+  transport* (commonly Google Drive, but the transport and its cloud/OEM
+  behaviour vary and are outside app control), default-on, with no in-tree
+  exclusion rule. That is not "used to improve our services" and it is not a
+  server *we* control — but it is also not "nothing leaves your phone."
+  ADR-0005's egress boundary is "anywhere in the app's UID," and eligibility for
+  the backup transport qualifies. The claim as written does not account for this
+  and must, before ship.
 
-Headline verdict the PR body will carry: **"Nothing is stored" is false for
-the fork as-shipped; "nothing is logged" survives in release; "used to improve
-our services" survives; the README's blanket sentence must be rewritten per
-ADR-0005 before the privacy copy unfreezes.** On-device verification remains
-the gating step (section 6).
+Headline verdict the PR body will carry: **"Nothing is stored" is false for the
+fork as-shipped (a predictive keyboard stores by design). "Nothing is logged"
+and "not used to improve our services" are *provisionally* clear from static
+analysis but are NOT confirmed — a source read cannot see transitive/resolved
+dependencies, shaded SDKs, native code, or runtime egress, so both require
+release-APK inspection and per-UID network capture before they can be asserted.
+Auto Backup makes local state eligible to leave the device by default. The
+README's blanket sentence must be rewritten per ADR-0005 before the privacy copy
+unfreezes.** On-device verification is the gating step (section 6), not a
+formality.
 
 ---
 
@@ -221,18 +238,26 @@ fork's modified-file manifest per ADR-0004.
 
 1. **Auto Backup: exclude user-derived data.** As-shipped, `allowBackup="true"`
    plus the absence of any `fullBackupContent`/`dataExtractionRules` rule means
-   the learned-words DBs, next-word files, and crash logs back up to Google
-   Drive (2.1). Neutralization options, in increasing order of invasiveness:
-   - add a `dataExtractionRules` XML excluding `databases/`, `files/next_words_*`,
-     `files/*_dict_*.db`, `files/fallback.db`, `files/new_crash_details.log`,
-     `files/crash_report_details_*.log`;
-   - or set `android:allowBackup="false"` outright (heaviest — disables
-     settings backup too, which may be undesirable);
-   - or keep allowBackup but explicitly enumerate only `shared_prefs/` for
-     backup via `fullBackupContent`.
+   the learned-words DBs, next-word files, and crash logs are eligible for the
+   configured backup transport (2.1). Two Android-version regimes must **both**
+   be covered, or the exclusion has a hole on part of the supported range:
+   - **Android 12+ (`targetSdk` 35):** `android:dataExtractionRules` pointing at
+     an XML with **separate** `<cloud-backup>` and `<device-transfer>` sections
+     — a decision is owed for *each*; excluding cloud backup does not exclude
+     device-to-device transfer.
+   - **Android ≤ 11:** `android:fullBackupContent` pointing at a `<full-backup-content>`
+     XML. Shipping only one of the two files leaves the other regime on defaults.
+   - Exclusion paths are **not shell globs.** `<exclude>` matches a `domain` +
+     an exact `path` prefix (directory or file), so `files/next_words_*` will not
+     match — exclude the containing directory (`files/`) or enumerate exact
+     filenames. Validate each rule against the actual on-device paths (section 6).
+   - Heaviest alternative: `android:allowBackup="false"` outright (also disables
+     settings backup, likely undesirable), and note it is not a universal
+     device-transfer guarantee across all Android 12+ OEM implementations.
+
    Whichever is chosen, it is an upstream-tracked edit to
-   `ime/app/src/main/AndroidManifest.xml` plus a new XML resource, and must
-   appear in `UPSTREAM-MODIFIED.md`.
+   `ime/app/src/main/AndroidManifest.xml` plus one or two new XML resources, and
+   must appear in `UPSTREAM-MODIFIED.md`.
 2. **Confirm the auto-dictionary threshold default.** ASK ships it at `9`
    (1.2). The fork should decide whether default-on auto-learning is part of
    the pitch. If not, change `settings_default_auto_dictionary_add_threshold`
@@ -276,12 +301,28 @@ static pass. They are the on-device checklist.
    backup (or `adb shell bmgr`) that the audited default rules actually back
    up `fallback.db` / `auto_dict_2.db` / `next_words_*.txt` / crash logs, and
    that the chosen neutralization (5.1) excludes them.
-2. **Network capture.** No outbound HTTP client exists in source (2.2), but
-   the proof is on-device: run the keyboard under a TLS-intercepting proxy
-   across cold start, typing, suggestion-accept, language-switch, addon
-   install flow, and crash-trigger, and confirm zero unexpected egress.
-   (User-initiated `ACTION_VIEW` handoffs in 2.3 will appear as the browser's
-   traffic, not the app's.)
+2. **Network capture — per-UID, not just a proxy.** No outbound HTTP client
+   exists in source (2.2), but the proof is on-device and must use **per-UID
+   packet capture / firewall evidence** (e.g. `pcap` filtered on the app's UID),
+   not only a TLS-intercepting proxy — a proxy misses pinned TLS, raw sockets,
+   DNS/UDP, native traffic, and platform-mediated transfers. Exercise cold
+   start, typing, suggestion-accept, language-switch, addon install flow, and
+   crash-trigger, and confirm zero unexpected egress. Pair it with inspection of
+   the **resolved dependency graph** (`./gradlew :ime:app:dependencies`) and the
+   **decompiled release APK**, since those are where a shaded/transitive network
+   SDK would hide from source grep. (User-initiated `ACTION_VIEW` handoffs in 2.3
+   appear as the browser's traffic, not the app's.)
+7. **Addon / dictionary acquisition and `:ime:remote`.** Thinly covered by this
+   static pass. Trace on-device whether addon-pack or dictionary acquisition
+   uses `DownloadManager`, a background worker/service, a `WebView`, or a
+   content provider, and whether any addon package runs under a **separate UID**
+   (which would sit outside this audit's per-UID network capture). Confirm no
+   typed text or learned data is carried on any such path.
+8. **Clipboard listener lifecycle.** Confirm on-device *when* the
+   `OnPrimaryClipChangedListener` (1.4) registers and unregisters, what "panel in
+   use" means in practice, and whether the keyboard process's persistence makes
+   the 15-entry in-memory buffer effectively long-lived across app switches
+   rather than cleared promptly.
 3. **JNI / native storage.** `:ime:gesturetyping` and the JNI dictionary
    modules ship `.so` files that static Java analysis cannot see. Confirm by
    storage inspection (`adb shell run-as` where debuggable, or filesystem
