@@ -13,6 +13,11 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import biz.pixelperfectstudios.personaspeak.app.ui.onboarding.AiSelectionScreen
+import biz.pixelperfectstudios.personaspeak.app.ui.onboarding.ApiKeyScreen
+import biz.pixelperfectstudios.personaspeak.app.ui.onboarding.DemoScreen
+import biz.pixelperfectstudios.personaspeak.app.ui.onboarding.SetupScreen
+import biz.pixelperfectstudios.personaspeak.app.ui.onboarding.WelcomeScreen
 
 /**
  * The app-module nav graph. One composable destination per [Screen], each
@@ -23,11 +28,37 @@ import androidx.navigation.navArgument
 @Composable
 fun PersonaSpeakNavHost(navController: NavHostController) {
     NavHost(navController = navController, startDestination = Screen.startRoute) {
-        composable(Screen.OnboardingWelcome.route) { Placeholder(Screen.OnboardingWelcome) }
-        composable(Screen.OnboardingSetup.route) { Placeholder(Screen.OnboardingSetup) }
-        composable(Screen.OnboardingAiSelection.route) { Placeholder(Screen.OnboardingAiSelection) }
-        composable(Screen.OnboardingApiKey.route) { Placeholder(Screen.OnboardingApiKey) }
-        composable(Screen.OnboardingDemo.route) { Placeholder(Screen.OnboardingDemo) }
+        composable(Screen.OnboardingWelcome.route) {
+            WelcomeScreen(
+                onGetStarted = { navController.navigate(Screen.OnboardingSetup.route) },
+                onSkipSetup = { navController.navigate(Screen.SettingsHome.route) },
+            )
+        }
+        composable(Screen.OnboardingSetup.route) {
+            SetupScreen(onContinue = { navController.navigate(Screen.OnboardingAiSelection.route) })
+        }
+        composable(Screen.OnboardingAiSelection.route) {
+            AiSelectionScreen(onContinue = { navController.navigate(Screen.OnboardingApiKey.route) })
+        }
+        composable(Screen.OnboardingApiKey.route) {
+            ApiKeyScreen(
+                onContinue = { navController.navigate(Screen.OnboardingDemo.route) },
+                onSkip = { navController.navigate(Screen.OnboardingDemo.route) },
+            )
+        }
+        composable(Screen.OnboardingDemo.route) {
+            // Completing the demo finishes onboarding: pop the back stack down
+            // to the start destination so Back never returns the user into the
+            // onboarding flow once they're out.
+            DemoScreen(
+                onComplete = {
+                    navController.navigate(Screen.SettingsHome.route) {
+                        popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                        launchSingleTop = true
+                    }
+                },
+            )
+        }
 
         composable(Screen.SettingsHome.route) { Placeholder(Screen.SettingsHome) }
         composable(Screen.PersonaBrowser.route) { Placeholder(Screen.PersonaBrowser) }
