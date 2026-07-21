@@ -10,6 +10,38 @@ Newest first, like all respectable patch notes.
 
 ---
 
+## 2026-07-21 — Six rooms furnished, hallway intact
+
+- The six settings routes — home, persona browser, persona detail, AI
+  providers, rewrite behaviour, privacy — are no longer placeholders reading
+  "not yet built". They are real Compose screens with the dark theme, the
+  glass cards, the teal accents, and the ⌘ wordmark bar the mockups drew. The
+  route contract in `Routes.kt` is untouched; only the `Placeholder` calls
+  were swapped out. The onboarding placeholders stand untouched — that hallway
+  belongs to a different worker.
+- The persona browser is a two-column bento of four sample personas (Jeeves
+  wears the "Default" pill); a card opens its detail screen with the nav arg
+  the foundation already promised. Detail renders hero, speech patterns,
+  vocabulary pills, and sample lines, with a graceful "not found" panel if the
+  id is bogus.
+- Icons are mostly glyphs. The mockups use Material Symbols Outlined; the app
+  pulls only `compose.material3` and `material-icons-core`, and `Close` lives
+  in the extended set we don't ship. Glyphs match the emoji-forward mockup
+  aesthetic anyway and skip a chunky new dependency. A `✕` closes a screen as
+  well as a vector does.
+- State is local and forgetful. Toggles, the rewrite-behaviour radio, and the
+  masked API-key field are held in `remember` only — wiring them to real prefs
+  and the keystore is a follow-up, not this slice.
+- **Privacy screen, plainly:** the mockup's headline — "What we store:
+  Nothing." — is not shipped. ADR-0005 finds that copy unsafe for a fork that
+  now includes a predictive keyboard; the storage and security posture has not
+  been audited end to end. The screen that landed says, specifically, that
+  your text goes to the provider you chose (we run no servers), your key is
+  stored on-device without a hardware-backed claim we can't yet back, the
+  keyboard keeps learned words and persona choice locally, and telemetry is
+  off in this build with no stronger claim until the audit finishes. This
+  paragraph is intentionally not funny.
+
 ## 2026-07-21 — The hallway, before the rooms
 
 - The `:app` module has walls now: a Compose theme built from DESIGN.md's
