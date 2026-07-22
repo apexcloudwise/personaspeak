@@ -2,7 +2,7 @@
 
 **Date:** 2026-07-22
 
-**Status:** Owner-approved design
+**Status:** Owner-approved design (2026-07-22)
 
 **Tracker:** [issue #39](https://github.com/apexcloudwise/personaspeak/issues/39)
 

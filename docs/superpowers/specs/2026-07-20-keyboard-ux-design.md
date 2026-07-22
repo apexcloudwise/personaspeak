@@ -119,8 +119,8 @@ Five screens (`01`–`05`).
    beta feature is deliberately enabled and verified.
 2. **Make it your keyboard.** Two steps, both incomplete on true first run:
    enable, then set default. Meets Android's "this keyboard can collect what
-   you type" warning head-on rather than hiding it, and states the escape
-   hatch: switch back any time.
+   you type" warning head-on rather than hiding it. Android's system input-
+   method chooser remains the escape hatch.
 3. **Pick a brain.** Gemini (recommended), Claude, OpenAI, OpenRouter,
    on-device (disabled, SOON).
 4. **Add your key.** Link out to get one, masked field with reveal, validation,
