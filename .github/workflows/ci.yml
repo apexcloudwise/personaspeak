@@ -20,6 +20,8 @@ jobs:
         run: python desktop/validate_personas.py
       - name: CLI smoke test
         run: python desktop/personaspeak.py --list
+      - name: Persona validation unit tests
+        run: python -m unittest desktop/test_validate_personas.py
 
   patchnote-gate:
     name: PATCHNOTES.md touched
@@ -63,23 +65,53 @@ jobs:
           distribution: temurin
           java-version: "21"
           cache: gradle
+      - name: Install scan tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes ripgrep
+          command -v rg
+          rg --version
       - name: Build and test the current Android graph
         working-directory: android
         run: >-
           ./gradlew
           :core-personas:build
           :core-providers:build
+          :personaspeak-ui:testDebugUnitTest
+          :personaspeak-ui:assembleDebug
           :keyboard-stub:assembleDebug
           :app:assembleDebug
           :app:testDebugUnitTest
           --no-daemon
-      - name: Require the temporary app APK and keyboard-stub AAR
+      - name: Require the three current-graph artifacts
         working-directory: android
         shell: bash
         run: |
           set -euo pipefail
           mapfile -t artifacts < <(find . \( -path '*/build/outputs/apk/*/*.apk' -o -path '*/build/outputs/aar/*.aar' \) -type f -print | sort)
           printf '%s\n' "${artifacts[@]}"
-          test "${#artifacts[@]}" -eq 2
+          test "${#artifacts[@]}" -eq 3
           test "${artifacts[0]}" = "./app/build/outputs/apk/debug/app-debug.apk"
           test "${artifacts[1]}" = "./keyboard-stub/build/outputs/aar/keyboard-stub-debug.aar"
+          test "${artifacts[2]}" = "./personaspeak-ui/build/outputs/aar/personaspeak-ui-debug.aar"
+      - name: Forbid Android imports in core modules
+        shell: bash
+        run: |
+          set -euo pipefail
+          ! rg -n '^import android\.' android/core-personas/src android/core-providers/src
+      - name: Forbid AnySoftKeyboard imports in personaspeak-ui
+        shell: bash
+        run: |
+          set -euo pipefail
+          ! rg -n 'com\.anysoftkeyboard|com\.menny' android/personaspeak-ui/src
+      - name: Forbid rejected topology outside the quarantined modules
+        shell: bash
+        run: |
+          set -euo pipefail
+          ! rg -n \
+            'switchBackToPreviousKeyboard|PersonaPanel|fun[[:space:]]+Onboarding[[:space:]]*\(' \
+            android \
+            --glob '!android/app/**' \
+            --glob '!android/keyboard-stub/**' \
+            --glob '!android/keyboard/**' \
+            --glob '*.{kt,java}'
