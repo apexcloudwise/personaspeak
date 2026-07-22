@@ -5,9 +5,10 @@ scrapped the thin IME in favour of a full keyboard fork. Stitch project:
 "PersonaBoard — persona/mood/config flows".
 
 **These are exploration artefacts, not specifications.** Where a mockup and
-`../2026-07-20-keyboard-ux-design.md` disagree, the design doc wins. Numbers
-below are illustrative; the mockups are pixel-approximate and were rendered at
-thumbnail scale.
+the accepted
+[`Stitch screen contract`](../../superpowers/specs/2026-07-22-stitch-screen-contract.md)
+disagree, the screen contract wins. Numbers below are illustrative; the
+mockups are pixel-approximate and were rendered at thumbnail scale.
 
 ## Onboarding
 
@@ -65,5 +66,5 @@ on the thin IME.
 The Stitch MCP surface offers no delete, rename, or grouping of screens — only
 whole-project deletion. The project therefore still contains superseded
 thin-IME screens and three different screens all titled "Onboarding -
-Welcome". **This numbered directory, not the Stitch project, is the canonical
-ordered set.**
+Welcome". This numbered directory is the ordered historical set; the accepted
+screen contract is authoritative for implementation.

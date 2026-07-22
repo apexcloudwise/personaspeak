@@ -12,6 +12,9 @@ Newest first, like all respectable patch notes.
 
 ## 2026-07-22 — The keyboard and the product become the same application
 
+- The Stitch exports have acquired adult supervision: every requested screen
+  now has an explicit disposition, with truthful privacy copy and your words
+  still requiring one deliberate `Use this` before they move.
 - The post-ingestion roadmap now has an address: one tested UI boundary, one
   atomic ASK cutover, then the complete Stitch journey. The accepted plan also
   routes persona sources through a repository seam, so a future marketplace can

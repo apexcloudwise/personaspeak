@@ -8,13 +8,14 @@
 
 **Related:** [keyboard UX design](2026-07-20-keyboard-ux-design.md) ·
 [stale-field race design](2026-07-21-stale-field-race-design.md) ·
+[Stitch screen contract](2026-07-22-stitch-screen-contract.md) ·
 [privacy posture](../../adr/0005-privacy-posture-fork-audit.md)
 
 ## Outcome
 
 PersonaSpeak is one full, daily-driver keyboard built from ASK. ASK supplies
 the mature typing engine; PersonaSpeak supplies the branded experience and
-rewrite behavior. Users see the Stitch-designed onboarding, settings, persona
+explicit rewrite flow. Users see the Stitch-designed onboarding, settings, persona
 strip, pickers, results, and errors. They do not see an adapter, a second
 keyboard, or the superseded keyless panel.
 
@@ -252,8 +253,9 @@ not a simulated keyboard, local draft state machine, or alternate commit path.
 ### Settings
 
 The launcher activity and ASK's settings affordance open PersonaSpeak settings
-inside the same package. Persona, provider, rewrite, privacy, and inherited
+inside the same package. Persona, provider, privacy, appearance, and inherited
 typing settings share one navigation surface and one persistent state store.
+Review-before-replace is fixed product behavior, not a settings route.
 
 ## Stitch fidelity contract
 
@@ -265,17 +267,18 @@ inspiration. Before a UI slice is complete:
   that do not exist;
 - Outfit and Inter are bundled with their OFL notices and mapped by weight;
 - device screenshots are compared side by side with the corresponding export;
-- all four persona portraits are checked for circular cropping and accessibility;
-- portrait files ship only after their redistribution rights are recorded, or
-  are replaced with newly generated/project-owned equivalents;
+- all hosted raster art and persona portraits are excluded until redistribution
+  rights are recorded, or they are replaced with project-owned equivalents;
+- Material Symbols ship with their Apache-2.0 notice or are replaced with
+  project-owned icons;
 - at least one global-font comparison covers onboarding and one settings screen;
 - deviations are intentional, documented, and truthful, particularly privacy
   copy.
 
-The currently untracked Stitch export must become a durable reviewed design
-source, or its accepted screen contracts must be transcribed into committed
-documentation. The local zip is transport material, not a source artifact, and
-is not staged with architecture or integration work. The older committed
+The accepted screen contracts are transcribed into the committed
+[Stitch screen contract](2026-07-22-stitch-screen-contract.md). The local zip
+and export directory are transport/reference material, not source artifacts, and
+are not staged with architecture or integration work. The older committed
 `docs/design/mockups/` set remains historical exploration; the reconciled Stitch
 contract governs new fidelity work.
 
@@ -335,6 +338,8 @@ The coordinator maps implementation failures into stable product states:
 - `RateLimitedOrQuota` — explain the provider limit without blaming the
   keyboard;
 - `ProviderFailure` — retain the draft and provide a safe retry/dismiss path;
+- `MalformedResponse` — reject an empty or unusable provider result without
+  exposing its raw body;
 - `StaleEditor` — never commit; recapture before retrying;
 - `WriteRejected` — explain that the editor refused the change; do not retry
   automatically;
@@ -393,9 +398,10 @@ wrapper. The dependency graph and runtime seam must execute.
 
 The current PR stack is repaired rather than merged in its present order:
 
-1. Correct the Stitch implementation spec and its outstanding review findings,
-   including its screen counts/size contract, selected-provider validation,
-   Keystore wording, privacy copy, module map, and simulated onboarding demo.
+1. Commit the reconciled Stitch screen contract and resolve the earlier
+   implementation spec's review findings, including its screen counts/size
+   contract, selected-provider validation, Keystore wording, privacy copy,
+   module map, and simulated onboarding demo.
 2. Restack the toolchain experiment onto `main` and narrow its claim to the
    result it proves.
 3. Rewrite vendoring as an ingestion slice that names the rejected scaffold

@@ -1,7 +1,12 @@
 # PersonaSpeak keyboard UX — design
 
 **Date:** 2026-07-20
-**Status:** Design, pending review
+**Status:** Superseded in part by the owner-approved
+[Stitch screen contract](2026-07-22-stitch-screen-contract.md). The permanent
+strip, picker, result-card, and full-keyboard premises remain useful. The newer
+contract governs routes, copy, typed failures, accessibility, and evidence;
+geometry and window behavior also follow the newer contract;
+review-before-replace is fixed product behavior rather than a setting.
 **Branch:** `docs/fork-spike-and-ux-brainstorm`
 **Mockups:** [`docs/design/mockups/`](../../design/mockups/)
 **Related:** [fork-spike checkpoint](2026-07-20-fork-spike-checkpoint.md) ·
@@ -84,9 +89,10 @@ never did, and they justify the extra tap that variant A costs.
 
 ## 3. The result card
 
-Appears above the strip, floating **over the chat** — never over the keys
-(`10`). The keyboard never moves, dims, or reflows. This is a firm rule: the
-typing surface is not allowed to shift under the user's fingers.
+Appears above the strip inside ASK's input-view hierarchy — never over the keys
+(`10`). The IME window may grow and the host may relayout, but ASK's key-row
+coordinates remain fixed while the card is open. The typing surface is not
+allowed to shift under your fingers.
 
 **States:**
 
@@ -100,28 +106,28 @@ typing surface is not allowed to shift under the user's fingers.
 exhausted; response empty or malformed. Each names the cause plainly and states
 that the user's text is untouched.
 
-`Use this` replaces the draft. Default is to **ask before replacing** (see
-settings, "Rewrite behaviour") — the user's own words are never destroyed
-without a tap.
+`Use this` is the sole approval to replace the captured draft. There is no
+immediate-replace mode and no second confirmation dialog.
 
 ## 4. Onboarding
 
 Five screens (`01`–`05`).
 
 1. **Welcome.** "A keyboard with better manners." Keyboard-in-a-top-hat
-   illustration. Persona row, and the reassurance triple — **Autocorrect ·
-   Glide typing · Works offline** — which answers the objection that now
-   matters most: *will I lose my typing?*
+   illustration. Persona row and truthful typing reassurance. Typing works
+   offline; cloud rewrites do not. Gesture typing is not promised until ASK's
+   beta feature is deliberately enabled and verified.
 2. **Make it your keyboard.** Two steps, both incomplete on true first run:
    enable, then set default. Meets Android's "this keyboard can collect what
-   you type" warning head-on rather than hiding it, and states the escape
-   hatch: switch back any time.
+   you type" warning head-on rather than hiding it. Android's system input-
+   method chooser remains the escape hatch.
 3. **Pick a brain.** Gemini (recommended), Claude, OpenAI, OpenRouter,
    on-device (disabled, SOON).
 4. **Add your key.** Link out to get one, masked field with reveal, validation,
    Keystore reassurance, skip link.
-5. **Try it.** Type, tap, see a rewrite, with the strip pointed out. The payoff
-   before the user has to trust anything.
+5. **Try it.** An Activity-hosted editor summons the installed ASK IME. The
+   user types with real ASK keys and invokes the real strip; no simulated
+   keyboard or alternate draft state machine is a product path.
 
 **Known copy issue.** Screen 3 badges Gemini "FREE" and screen 4 then demands
 an API key. That is a lie of omission; the copy must own that free-tier still
@@ -132,15 +138,18 @@ with no AI configured at all.
 
 ## 5. Settings
 
-Five groups (`06`):
+Five settings groups:
 
-- **CHARACTERS** — personas, default mood, rewrite behaviour (ask vs replace).
-- **THE BRAIN** — provider, API keys, usage.
+- **CHARACTERS** — personas and default mood. Review before replacement is
+  fixed behavior, not a preference.
+- **THE BRAIN** — provider and API keys. Usage counters require a separately
+  approved and disclosed persistence design.
 - **TYPING** — languages and layouts, glide typing, autocorrect, personal
   dictionary.
 - **APPEARANCE** — theme, keyboard height.
-- **PRIVACY** — "What we store: Nothing. Here's the proof." and a link to the
-  source.
+- **PRIVACY** — separates explicit provider traffic, request-scoped transient
+  data, Keystore-protected credentials, and ASK's local typing data. Public
+  claims remain gated by ADR-0005's release audit.
 
 The TYPING group is the fork decision made visible: none of those rows could
 exist on the thin IME. It is also the group we will largely inherit from the
@@ -174,8 +183,9 @@ deciding whether to trust a keyboard deserves a straight answer.
    real ASK tree.
 3. **Dark-mode selected state** for the persona chip.
 4. **Long persona names** ("Sir Humphrey Appleby") in a fixed-width chip.
-5. **Mood list contents** — the working set is polite / witty / blunt /
-   apologetic / formal, unvalidated with real personas.
+5. ~~**Mood list contents**~~ — **resolved by the Stitch screen contract:**
+   stable product-owned IDs `polite`, `witty`, `blunt`, `apologetic`, and
+   `formal`, separate from persona schema data.
 6. ~~**Licence**~~ — **resolved: Apache-2.0** (follows from 1; ADR-0003).
 
 ## Decisions this design records
@@ -184,6 +194,7 @@ deciding whether to trust a keyboard deserves a straight answer.
 - Mood is an orthogonal prompt modifier. `schema_version` stays `1`,
   `personas/*.yaml` untouched, golden tests unaffected.
 - One persona chip + expander, not a row of persona buttons.
-- The result card floats over the chat; the keyboard never moves.
+- The result card lives above the strip; its expansion never moves ASK's key
+  rows.
 - Onboarding is a migration ("replace your keyboard"), not an addition.
 - The keyboard is fully usable with no AI configured.
