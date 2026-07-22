@@ -19,4 +19,5 @@ rootProject.name = "personaboard"
 include(":core-personas")
 include(":core-providers")
 include(":keyboard-stub")
+include(":personaspeak-ui")
 include(":app")
