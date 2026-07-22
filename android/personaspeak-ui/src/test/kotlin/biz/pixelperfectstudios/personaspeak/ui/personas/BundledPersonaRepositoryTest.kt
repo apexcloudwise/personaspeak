@@ -54,6 +54,21 @@ class BundledPersonaRepositoryTest {
     }
 
     @Test
+    fun `list fails for a parseable but semantically invalid bundled document`() {
+        val source = InMemoryPersonaDocumentSource(
+            "invalid" to """
+                name: "   "
+                schema_version: 1
+                speech_patterns:
+                  - "speaks in riddles"
+            """.trimIndent(),
+        )
+        val repository = BundledPersonaRepository(source)
+
+        assertTrue(repository.list().isFailure)
+    }
+
+    @Test
     fun `load rejects a non-bundled id without opening the document`() {
         val source = TrackingPersonaDocumentSource(FakePersonaDocumentSource(bundledPersonasDir))
         val repository = BundledPersonaRepository(source)
@@ -83,6 +98,19 @@ class BundledPersonaRepositoryTest {
         override fun open(slug: String): Result<InputStream> {
             openCalls += 1
             return delegate.open(slug)
+        }
+    }
+
+    private class InMemoryPersonaDocumentSource(
+        private val documents: Map<String, String>,
+    ) : PersonaDocumentSource {
+        constructor(vararg entries: Pair<String, String>) : this(entries.toMap())
+
+        override fun slugs(): Result<List<String>> = runCatching { documents.keys.toList() }
+
+        override fun open(slug: String): Result<InputStream> = runCatching {
+            documents[slug]?.byteInputStream()
+                ?: error("unknown persona slug '$slug'")
         }
     }
 }
