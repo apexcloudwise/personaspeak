@@ -60,6 +60,13 @@ screen.
   than a persistent screen.
 - **Rejected** — the requested interaction contradicts the accepted product or
   safety model and must not be implemented.
+- **Deferred** — the interaction is outside the initial flow. It requires a
+  later approval and must not be smuggled into an implementation slice as
+  decorative scope.
+
+These tables are the canonical inventory going forward. Implementations consume
+the committed contract; they do not read the preserved prompt or export tree at
+build time.
 
 ## Product-wide rules
 
@@ -100,8 +107,9 @@ never retries automatically because the first write may already have landed.
 - All interactive targets are at least 48dp in each dimension. A smaller visual
   icon may sit inside that target.
 - Long result text scrolls inside a body region whose maximum height is
-  `min(320dp, 40% of the current IME window height)`. This is the only result
-  body height formula. The card header and actions remain fixed.
+  `min(320dp, 40% of the current IME window height sampled before the result
+  card expands)`. This avoids a measurement feedback loop and is the only
+  result body height formula. The card header and actions remain fixed.
 - Landscape uses compact labels, horizontal persona browsing where needed,
   pinned result actions, and the same 48dp touch bounds. It derives available
   height from the current IME window, never from a fixed percentage of the
@@ -159,6 +167,12 @@ single-APK design. UI code does not read bundled YAML or branch on whether a
 persona is bundled, downloaded, or imported. Persona IDs are stable,
 source-qualified opaque values. Routes percent-encode the complete ID rather
 than split or interpret it. Display names are never keys.
+
+Moods are a separate, product-owned catalog rather than persona-schema fields.
+The initial stable IDs are `polite`, `witty`, `blunt`, `apologetic`, and
+`formal`; labels are localizable. UI passes the opaque mood ID to the rewrite
+coordinator, which resolves a reviewed prompt modifier. Persona source data
+does not extend the mood catalog or substitute labels for prompt instructions.
 
 If an active persona is missing, deleted, or fails validation, the UI selects a
 known-valid bundled fallback, announces the change, and shows a non-color-only
@@ -228,10 +242,10 @@ Only one expanded PersonaSpeak card or picker is visible at a time.
 | `MoodPicker` | Supported mood list and selected mood. | Select and persist or dismiss. |
 | `Loading` | Persona, mood, skeleton, progress announcement, cancel. | Cancel to `Resting`; success to `Result`; failure to typed error. |
 | `Result` | Rewritten candidate with fixed actions. | `Use this`, `Again`, or `Dismiss`. |
-| `Applying` | Brief disabled action/progress state while `EditorPort` attempts replacement. | Route only from `Use this`. |
+| `Applying` | Brief disabled action/progress state while `EditorPort` attempts replacement. | Route only from `Use this`; exit to `AppliedVerified`, `Error.StaleEditor`, `Error.WriteRejected`, or `Error.WriteUnconfirmed`. |
 | `AppliedVerified` | No card; host field contains verified replacement. | Return to `Resting`. |
 | `Error.EmptyInput` | Compact advisory; no provider call occurred. | Auto-dismiss or dismiss to `Resting`. |
-| `Error.NoProvider` | Setup card; no provider call occurred. | Open selected-provider setup or dismiss. |
+| `Error.NoProvider` | Setup card; no provider call occurred. | Open `settings/providers` or dismiss. |
 | `Error.MissingOrInvalidKey` | Selected provider rejected or lacks its credential. | Open that provider's settings or dismiss. |
 | `Error.Offline` | Network unavailable; editor unchanged. | Fresh retry or dismiss. |
 | `Error.RateLimitedOrQuota` | Provider limit; editor unchanged. | Dismiss or open provider settings when useful. |
@@ -254,6 +268,11 @@ diagnostics or logs.
 `captureSnapshot()`. They never reuse a draft or editor token retained from the
 previous request. Cancellation may save provider work, but only commit-time
 revalidation authorizes an attempted write.
+
+`Unavailable.NoProvider` is the settled resting state when the selected
+provider is absent or disabled. `Error.NoProvider` is reachable only when that
+readiness changes between rendering `Resting` and a rewrite capture. Both open
+the provider list because an absent provider has no valid detail route.
 
 ## Requested-screen disposition
 
@@ -333,8 +352,8 @@ onboarding, settings, demo, and IME surfaces.
 | 6.1 | Empty input | State-only | Show a compact accessible `Error.EmptyInput`; do not contact a provider. Auto-dismiss must pause while accessibility services are reading it. |
 | 6.2 | Long result | Canonical | Use `edge_case_long_text_result_sir_humphrey` with the single result-body formula, fixed header/actions, and internal scrolling. |
 | 6.3 | Replacement confirmation | Rejected | `Use this` already expresses approval. No redundant confirmation, original-text duplicate, or `Keep mine` dialog. |
-| 6.4 | First transformation celebration | Rejected for initial flow | Both celebration exports are retained as references only. Celebration is deferred until the core journey passes accessibility and performance gates. It must respect reduced motion and never delay typing if later approved. |
-| 6.5 | Keyboard without provider | Adapted | Render `Unavailable.NoProvider` while all ASK typing features remain usable. Setup opens the selected-provider settings route. |
+| 6.4 | First transformation celebration | Deferred | Both celebration exports are retained as references only. Celebration is deferred until the core journey passes accessibility and performance gates. It must respect reduced motion and never delay typing if later approved. |
+| 6.5 | Keyboard without provider | Adapted | Render `Unavailable.NoProvider` while all ASK typing features remain usable. Setup opens `settings/providers`. |
 | 6.6 | Landscape | Adapted | Apply the landscape and height rules in this contract to every relevant IME state. |
 
 ## Export disposition
@@ -445,7 +464,7 @@ Its five actionable review findings are resolved one-to-one:
 
 | Finding | Resolution in this contract |
 |---|---|
-| Conflicting long-result limits (`353px`, 40%, and `320dp`) | One rule: result body maximum `min(320dp, 40% of the current IME window height)`. |
+| Conflicting long-result limits (`353px`, 40%, and `320dp`) | One rule: result body maximum `min(320dp, 40% of the current IME window height sampled before expansion)`. |
 | Absolute privacy claims conflict with ADR-0005 | Privacy copy is separated by data category and remains audit-gated. `Nothing.` is rejected. |
 | No-provider detection looked for any stored key | Readiness belongs to the selected provider; local providers may require no key. |
 | Coverage incorrectly reported 12 unmocked screens | The inventory records 16: five in set 2, one in set 3, one in set 4, five in set 5, and four in set 6. |

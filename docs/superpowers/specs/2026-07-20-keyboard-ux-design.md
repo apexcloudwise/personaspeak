@@ -5,6 +5,7 @@
 [Stitch screen contract](2026-07-22-stitch-screen-contract.md). The permanent
 strip, picker, result-card, and full-keyboard premises remain useful. The newer
 contract governs routes, copy, typed failures, accessibility, and evidence;
+geometry and window behavior also follow the newer contract;
 review-before-replace is fixed product behavior rather than a setting.
 **Branch:** `docs/fork-spike-and-ux-brainstorm`
 **Mockups:** [`docs/design/mockups/`](../../design/mockups/)
@@ -88,9 +89,10 @@ never did, and they justify the extra tap that variant A costs.
 
 ## 3. The result card
 
-Appears above the strip, floating **over the chat** — never over the keys
-(`10`). The keyboard never moves, dims, or reflows. This is a firm rule: the
-typing surface is not allowed to shift under the user's fingers.
+Appears above the strip inside ASK's input-view hierarchy — never over the keys
+(`10`). The IME window may grow and the host may relayout, but ASK's key-row
+coordinates remain fixed while the card is open. The typing surface is not
+allowed to shift under your fingers.
 
 **States:**
 
@@ -136,7 +138,7 @@ with no AI configured at all.
 
 ## 5. Settings
 
-Five groups (`06`):
+Five settings groups:
 
 - **CHARACTERS** — personas and default mood. Review before replacement is
   fixed behavior, not a preference.
@@ -181,8 +183,9 @@ deciding whether to trust a keyboard deserves a straight answer.
    real ASK tree.
 3. **Dark-mode selected state** for the persona chip.
 4. **Long persona names** ("Sir Humphrey Appleby") in a fixed-width chip.
-5. **Mood list contents** — the working set is polite / witty / blunt /
-   apologetic / formal, unvalidated with real personas.
+5. ~~**Mood list contents**~~ — **resolved by the Stitch screen contract:**
+   stable product-owned IDs `polite`, `witty`, `blunt`, `apologetic`, and
+   `formal`, separate from persona schema data.
 6. ~~**Licence**~~ — **resolved: Apache-2.0** (follows from 1; ADR-0003).
 
 ## Decisions this design records
@@ -191,6 +194,7 @@ deciding whether to trust a keyboard deserves a straight answer.
 - Mood is an orthogonal prompt modifier. `schema_version` stays `1`,
   `personas/*.yaml` untouched, golden tests unaffected.
 - One persona chip + expander, not a row of persona buttons.
-- The result card floats over the chat; the keyboard never moves.
+- The result card lives above the strip; its expansion never moves ASK's key
+  rows.
 - Onboarding is a migration ("replace your keyboard"), not an addition.
 - The keyboard is fully usable with no AI configured.

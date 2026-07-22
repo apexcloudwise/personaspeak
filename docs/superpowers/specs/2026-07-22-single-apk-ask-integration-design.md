@@ -338,6 +338,8 @@ The coordinator maps implementation failures into stable product states:
 - `RateLimitedOrQuota` — explain the provider limit without blaming the
   keyboard;
 - `ProviderFailure` — retain the draft and provide a safe retry/dismiss path;
+- `MalformedResponse` — reject an empty or unusable provider result without
+  exposing its raw body;
 - `StaleEditor` — never commit; recapture before retrying;
 - `WriteRejected` — explain that the editor refused the change; do not retry
   automatically;
