@@ -115,6 +115,8 @@ android {
 dependencies {
     // PersonaSpeak UI layer; keeps :ime:app -> :personaspeak-ui -> core-*.
     implementation project(':personaspeak-ui')
+    implementation platform(libs.compose.bom)
+    implementation libs.compose.ui
 
     implementation project(':api')
     implementation project(':addons:base')
