@@ -34,7 +34,7 @@ public class AnySoftKeyboardKeyboardSubtypeTest extends AnySoftKeyboardBaseTest 
             Mockito.notNull(),
             Mockito.eq(
                 new ComponentName(
-                        "com.menny.android.anysoftkeyboard",
+                        com.menny.android.anysoftkeyboard.BuildConfig.APPLICATION_ID,
                         "com.menny.android.anysoftkeyboard.SoftKeyboard")
                     .flattenToShortString()),
             subtypeArgumentCaptor.capture());
@@ -59,7 +59,7 @@ public class AnySoftKeyboardKeyboardSubtypeTest extends AnySoftKeyboardBaseTest 
         .setAdditionalInputMethodSubtypes(
             Mockito.eq(
                 new ComponentName(
-                        "com.menny.android.anysoftkeyboard",
+                        com.menny.android.anysoftkeyboard.BuildConfig.APPLICATION_ID,
                         "com.menny.android.anysoftkeyboard.SoftKeyboard")
                     .flattenToShortString()),
             subtypesCaptor.capture());
@@ -117,7 +117,7 @@ public class AnySoftKeyboardKeyboardSubtypeTest extends AnySoftKeyboardBaseTest 
         .setAdditionalInputMethodSubtypes(
             Mockito.eq(
                 new ComponentName(
-                        "com.menny.android.anysoftkeyboard",
+                        com.menny.android.anysoftkeyboard.BuildConfig.APPLICATION_ID,
                         "com.menny.android.anysoftkeyboard.SoftKeyboard")
                     .flattenToShortString()),
             subtypesCaptor.capture());
@@ -164,7 +164,7 @@ public class AnySoftKeyboardKeyboardSubtypeTest extends AnySoftKeyboardBaseTest 
             Mockito.notNull(),
             Mockito.eq(
                 new ComponentName(
-                        "com.menny.android.anysoftkeyboard",
+                        com.menny.android.anysoftkeyboard.BuildConfig.APPLICATION_ID,
                         "com.menny.android.anysoftkeyboard.SoftKeyboard")
                     .flattenToShortString()),
             subtypeArgumentCaptor.capture());

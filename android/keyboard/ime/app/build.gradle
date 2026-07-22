@@ -3,15 +3,33 @@ import java.util.stream.Collectors
 
 group 'net.evendanan'
 
-ext.override_app_id = 'com.menny.android.anysoftkeyboard'
+// PersonaSpeak branding: the unified root build ships this ASK application
+// project as the PersonaSpeak APK.
+ext.override_app_id = 'biz.pixelperfectstudios.personaspeak'
 ext.shouldBePublished = true
 ext.override_release_key_alias = 'anysoftkeyboard'
 ext.closedTestingTrackName = 'alpha'
 ext.openTestingTrackName = 'beta'
 
-apply from: "${rootDir}/gradle/apk_module.gradle"
+apply from: "${rootProject.ext.askSourceRoot}/gradle/apk_module.gradle"
 
 apply plugin: 'androidx.navigation.safeargs'
+
+// PersonaSpeak: Kotlin + Compose for the first-party IME adapter/host code
+// that lives in this application module.
+apply plugin: 'org.jetbrains.kotlin.android'
+apply plugin: 'org.jetbrains.kotlin.plugin.compose'
+
+android {
+    buildFeatures {
+        compose = true
+    }
+    defaultConfig {
+        // PersonaSpeak floor; overrides the ASK-wide sdkMinimumVersion (23)
+        // set by android_general.gradle.
+        minSdkVersion 26
+    }
+}
 
 android {
     defaultConfig {
@@ -95,6 +113,9 @@ android {
 }
 
 dependencies {
+    // PersonaSpeak UI layer; keeps :ime:app -> :personaspeak-ui -> core-*.
+    implementation project(':personaspeak-ui')
+
     implementation project(':api')
     implementation project(':addons:base')
     implementation project(':addons:languages:english:pack')

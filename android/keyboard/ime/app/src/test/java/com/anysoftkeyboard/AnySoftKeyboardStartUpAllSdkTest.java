@@ -1,6 +1,5 @@
 package com.anysoftkeyboard;
 
-import static org.robolectric.annotation.Config.OLDEST_SDK;
 
 import android.os.Build;
 import com.anysoftkeyboard.test.TestUtils;
@@ -44,7 +43,7 @@ public abstract class AnySoftKeyboardStartUpAllSdkTest extends AnySoftKeyboardBa
   public static class AnySoftKeyboardStartUpAllSdkShard1Test
       extends AnySoftKeyboardStartUpAllSdkTest {
     @Test
-    @Config(minSdk = OLDEST_SDK, maxSdk = 23)
+    @Config(minSdk = 26, maxSdk = 29)
     public void testBasicWorks() {
       testBasicWorks_impl();
     }
@@ -53,7 +52,7 @@ public abstract class AnySoftKeyboardStartUpAllSdkTest extends AnySoftKeyboardBa
   public static class AnySoftKeyboardStartUpAllSdkShard2Test
       extends AnySoftKeyboardStartUpAllSdkTest {
     @Test
-    @Config(minSdk = 24, maxSdk = 28)
+    @Config(minSdk = 30, maxSdk = 32)
     public void testBasicWorks() {
       testBasicWorks_impl();
     }
@@ -62,7 +61,7 @@ public abstract class AnySoftKeyboardStartUpAllSdkTest extends AnySoftKeyboardBa
   public static class AnySoftKeyboardStartUpAllSdkShard3Test
       extends AnySoftKeyboardStartUpAllSdkTest {
     @Test
-    @Config(minSdk = 29, maxSdk = TestUtils.LATEST_STABLE_API_LEVEL)
+    @Config(minSdk = 33, maxSdk = TestUtils.LATEST_STABLE_API_LEVEL)
     public void testBasicWorks() {
       testBasicWorks_impl();
     }

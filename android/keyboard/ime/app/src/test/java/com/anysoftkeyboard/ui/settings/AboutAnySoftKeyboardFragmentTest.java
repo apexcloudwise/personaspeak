@@ -74,7 +74,8 @@ public class AboutAnySoftKeyboardFragmentTest
     Assert.assertNotNull(intent);
     Assert.assertEquals(Intent.ACTION_VIEW, intent.getAction());
     Assert.assertEquals(
-        "http://play.google.com/store/apps/details?id=com.menny.android.anysoftkeyboard",
+        "http://play.google.com/store/apps/details?id="
+            + com.menny.android.anysoftkeyboard.BuildConfig.APPLICATION_ID,
         intent.getData().toString());
   }
 

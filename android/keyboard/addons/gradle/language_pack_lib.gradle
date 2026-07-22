@@ -1,6 +1,6 @@
 apply plugin: 'com.android.library'
 
-apply from: "$rootDir/gradle/android_general.gradle"
+apply from: "${rootProject.ext.askSourceRoot}/gradle/android_general.gradle"
 
 apply plugin: 'make-dictionary'
 
@@ -29,9 +29,9 @@ if(project.ext.status_icon_text.length() == 3) {
 dimensArray.each { dimens ->
     def statusIcon = tasks.register("generateStatusIcon_${dimens[0]}", Exec) {
         if (System.getProperty('os.name').toLowerCase(Locale.ROOT).contains('windows')) {
-            it.commandLine "cmd", "/c", "${rootDir.absolutePath}\\addons\\scripts\\generate_status_icon.bat", project.ext.status_icon_text, languageName, "${dimens[1]}", "${dimens[2]}", "${projectDir.absolutePath}\\src\\main\\res\\drawable-${dimens[0]}"
+            it.commandLine "cmd", "/c", "${rootProject.ext.askSourceRoot.absolutePath}\\addons\\scripts\\generate_status_icon.bat", project.ext.status_icon_text, languageName, "${dimens[1]}", "${dimens[2]}", "${projectDir.absolutePath}\\src\\main\\res\\drawable-${dimens[0]}"
         } else {
-            it.commandLine "${rootDir.absolutePath}/addons/scripts/generate_status_icon.sh", project.ext.status_icon_text, languageName, "${dimens[1]}", "${dimens[2]}", "${projectDir.absolutePath}/src/main/res/drawable-${dimens[0]}"
+            it.commandLine "${rootProject.ext.askSourceRoot.absolutePath}/addons/scripts/generate_status_icon.sh", project.ext.status_icon_text, languageName, "${dimens[1]}", "${dimens[2]}", "${projectDir.absolutePath}/src/main/res/drawable-${dimens[0]}"
         }
     }
 
