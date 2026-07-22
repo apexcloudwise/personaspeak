@@ -20,9 +20,12 @@ value class EditorSessionToken(val value: Long)
 value class RequestGeneration(val value: Long)
 
 /**
- * UTF-16 code-unit selection range, half-open in the same units the platform
- * editor uses (`InputConnection.getSelectionStart` / `getSelectionEnd`).
- * UTF-16 — not code points — so a supplementary character occupies two units.
+ * Captured UTF-16 code-unit range, half-open. UTF-16 — not code points — so a
+ * supplementary character occupies two units.
+ *
+ * This is a platform-neutral value: it names no Android API. A later adapter
+ * derives these offsets from its complete read of the editor state; how it
+ * obtains them is the adapter's concern, not this type's.
  */
 data class Utf16Selection(val start: Int, val end: Int) {
     init {
@@ -79,18 +82,24 @@ sealed interface StaleReason {
 }
 
 /**
- * Outcome of attempting to replace the snapshot's selection with [replacement].
+ * Outcome of attempting to replace the entire captured bounded draft target
+ * with [replacement].
  *
- * - [AppliedVerified]: the adapter confirms the write landed at the captured
- *   coordinates.
- * - [Stale]: the snapshot no longer describes the live editor.
- * - [WriteRejected]: the editor refused the write outright.
- * - [WriteUnconfirmed]: the write was issued but the adapter could not verify
- *   it landed. Honest about uncertainty; no silent success.
+ * The snapshot's [EditorSnapshot.selection] is not the replacement subrange.
+ * v1 replaces the whole bounded draft; the selection exists to revalidate
+ * drift between capture and replace, and may yield
+ * [StaleReason.SelectionChanged].
  *
- * A [Stale] or [WriteUnconfirmed] result is a port-level observation only.
- * Whether the adapter actually emitted an editor mutation command is proven
- * by the adapter's own tests, not by this contract.
+ * - [AppliedVerified]: a post-write read of the editor observed the expected
+ *   replacement.
+ * - [Stale]: session/generation/text/selection validation failed before any
+ *   text mutation command was sent. No mutation is emitted on a [Stale]
+ *   outcome; that no-mutation guarantee is part of this contract, not merely
+ *   an adapter-test observation.
+ * - [WriteRejected]: a required editor mutation command was rejected.
+ * - [WriteUnconfirmed]: a mutation command was accepted by the editor but the
+ *   post-write verification could not prove the final text. Callers must not
+ *   auto-retry; honest about uncertainty, no silent success.
  */
 sealed interface ReplaceResult {
     data object AppliedVerified : ReplaceResult
