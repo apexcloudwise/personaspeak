@@ -30,7 +30,8 @@ open-source keyboard** and lives there permanently. ADR-0001 is superseded.
 A full Android keyboard — everything you expect from a daily driver — with a
 persona strip above the keys that rewrites what you've typed.
 
-- [x] Gradle scaffold: `core-personas`, `core-providers`, `keyboard`, `app`
+- [x] Gradle scaffold: `core-personas`, `core-providers`, temporary
+      `keyboard-stub`, and temporary `app`
 - [x] ~~Walking skeleton: static panel IME~~ — superseded by the fork
 - [x] core-personas: YAML parsing + prompt builder + golden tests
       (byte-identical prompts to `desktop/personaspeak.py` — verified)
@@ -40,12 +41,19 @@ persona strip above the keys that rewrites what you've typed.
       ([ADR-0003](docs/adr/0003-fork-anysoftkeyboard-apache.md)). Decides the
       licence; see Phase 0.
 - [x] ADR superseding ADR-0001, with the spike evidence attached — ADR-0003.
-- [ ] **Ingest ASK** (ADR-0004): pin an upstream revision, reproducible
+- [x] **Ingest ASK** (ADR-0004): pin an upstream revision, reproducible
       unmodified build, package/license baseline, documented update procedure.
-      Gates the graft.
-- [ ] **Privacy audit** of what an ASK fork stores/sends by default (learned
+      Landed in PR #37; the snapshot is deliberately inert until the unified
+      build cutover.
+- [x] **Privacy audit** of what an ASK fork stores/sends by default (learned
       words, dictionaries, clipboard, backups, diagnostics) — its own ADR,
-      before the "we store nothing" copy can ship.
+      before public privacy copy can ship. The static inventory is complete;
+      release-APK and on-device verification remain release gates.
+- [ ] Create `:personaspeak-ui` with source-neutral persona access, the accepted
+      `EditorPort` contract, fake-port tests, and no ASK implementation imports.
+- [ ] **Unify the Android build** (ADR-0006): make ASK's `:ime:app` the only APK,
+      delete the temporary `app` and `keyboard-stub`, and prove real ASK typing,
+      guarded host-editor replacement, and same-package settings on an emulator.
 - [ ] Persona strip grafted onto the chosen base: persona chip + mood chip +
       transform, reading the draft and replacing it in place
 - [ ] core-providers: `CompletionProvider` interface; Gemini free tier
@@ -80,6 +88,10 @@ replies to the message you just received, before you type anything.
       llama.cpp fallback for everyone else
 - [ ] Hybrid routing: local model for tone tweaks, cloud for full persona
 - [ ] Community persona packs (PRs; CI schema check + human taste check)
+- [ ] Marketplace/distribution design for third-party persona packages. The
+      Phase 1 UI consumes a source-neutral repository so this can be additive;
+      packaging, identity, provenance, signatures, moderation, downloads, and
+      updates require their own owner-approved ADR before implementation.
 - [ ] F-Droid submission, then Play Store
 - [ ] Stretch: Wear OS quick replies — reply as Dr. Schultz from your wrist,
       like a Bond villain

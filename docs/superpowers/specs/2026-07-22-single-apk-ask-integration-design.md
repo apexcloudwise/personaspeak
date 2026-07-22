@@ -75,6 +75,27 @@ It depends on `core-personas` and `core-providers`. It does not import ASK
 classes. The existing root `:app` Compose work is migrated here; the old
 application module does not remain installable.
 
+### Persona source boundary
+
+The first-party library does not read persona YAML files directly from UI or
+rewrite code. It consumes validated persona snapshots through a source-neutral
+repository interface. The initial implementation exposes only the four bundled
+personas and packages the existing root `personas/*.yaml` files as Android
+assets without duplicating them.
+
+`core-personas` remains the authority for parsing, schema-version checks,
+validation, stable source-qualified persona identity, and prompt construction.
+Source and provenance metadata wrap the v1 persona content; they do not change
+the YAML schema or prompt goldens. Active selection belongs to the package
+settings repository, not to the persona catalog, and editor/provider code never
+branches on where a persona came from.
+
+A future owner-approved marketplace can add a repository/store adapter behind
+this boundary. Network discovery, downloads, package manifests, signatures,
+moderation, trust policy, licensing, updates, and deletion are not implied by
+the interface and require a later ADR. No downloaded persona may become active
+until it passes the same schema and content validation as bundled personas.
+
 ### ASK `:ime:app`
 
 ASK remains the sole Android application and owns:
@@ -385,9 +406,13 @@ The current PR stack is repaired rather than merged in its present order:
    IME service without crashing. Do not use the panel as a typing or product
    journey. Place the inert ASK snapshot at `android/keyboard/`; ASK modules are
    not included yet.
-4. Extract reusable root-app Compose code into `:personaspeak-ui` while the
-   temporary root app and `:keyboard-stub` preserve that build/install baseline.
-   No code or UX is extracted from the rejected panel.
+4. Create `:personaspeak-ui` while the temporary root app and
+   `:keyboard-stub` preserve that build/install baseline. The current root app
+   contains no design-aligned Compose behavior worth extracting: its local
+   try-it field and switcher demonstration belong to the rejected topology.
+   Establish the accepted `EditorPort`, source-neutral persona repository, and
+   fake-driven coordinator tests as new first-party code. No code or UX is
+   extracted from the rejected panel.
 5. Land one atomic unified-build integration slice: root-owned build
    composition, ASK's `:ime:app` with PersonaSpeak's application ID, direct
    `:ime:app -> :personaspeak-ui -> core-*` dependencies, a minimal settings

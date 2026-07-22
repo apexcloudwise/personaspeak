@@ -52,11 +52,15 @@ The full roadmap lives in [ROADMAP.md](ROADMAP.md). The short version:
 
 ## Privacy, briefly
 
-Your API keys live in Android's Keystore. Message text goes only to the
-provider *you* configured, only when you ask for a rewrite. Nothing is stored,
-logged, or "used to improve our services." This repo is public specifically so
-you don't have to trust that paragraph — read the code. Sir Humphrey would be
-appalled at this level of transparency.
+The Android keyboard is still in development. The accepted design encrypts
+provider credentials with a key held by Android Keystore and sends a draft only
+when the user explicitly requests a rewrite, to the provider they selected.
+ASK also keeps normal keyboard data such as learned words on the device; that
+data must remain user-clearable and excluded from backup and device transfer
+before release. Drafts, prompts, and provider results are not product history.
+Public privacy claims remain gated on release-APK and on-device verification;
+the current evidence and open gates are recorded in
+[ADR-0005](docs/adr/0005-privacy-posture-fork-audit.md).
 
 ## Maintained by robots (supervised)
 
@@ -68,10 +72,10 @@ butler inspecting cutlery.
 
 ## License & money
 
-FOSS (license TBD — leaning Apache-2.0 for the app, CC-BY for personas, but
-the app's license now depends on which keyboard we fork: one leading candidate
-is GPL-3.0, which would carry across. Decided alongside the base, and this
-paragraph updated the moment it is). If this project ever earns a coin it'll be through donations and
-an optional hosted-key convenience tier — never ads. A keyboard that shows
-you ads is a keyboard that reads your texts for a living, and we are not
-that kind of establishment.
+[ADR-0003](docs/adr/0003-fork-anysoftkeyboard-apache.md) selected Apache-2.0
+for the app and ASK fork; persona content remains CC-BY as recorded in the
+roadmap. The repository still needs its top-level license material before a
+release. If this project ever earns a coin it'll be through donations and an
+optional hosted-key convenience tier — never ads. A keyboard that shows you ads
+is a keyboard that reads your texts for a living, and we are not that kind of
+establishment.

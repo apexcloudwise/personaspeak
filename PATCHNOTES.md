@@ -12,6 +12,10 @@ Newest first, like all respectable patch notes.
 
 ## 2026-07-22 — The keyboard and the product become the same application
 
+- The post-ingestion roadmap now has an address: one tested UI boundary, one
+  atomic ASK cutover, then the complete Stitch journey. The accepted plan also
+  routes persona sources through a repository seam, so a future marketplace can
+  add plumbing without teaching the keyboard where the parcels came from.
 - AnySoftKeyboard `1.13-r1` now occupies `android/keyboard/` as a pinned,
   inert snapshot with an empty upstream-rent ledger. The rejected panel moved
   unchanged to `:keyboard-stub`; it remains scaffolding, not a comeback tour.

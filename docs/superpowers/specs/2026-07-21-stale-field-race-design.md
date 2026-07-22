@@ -1,10 +1,14 @@
 # Stale-field race — design spec for the transform pipeline guard
 
 **Date:** 2026-07-21
-**Status:** Spec — informs issue #7's fork-base ADR; implementation waits on the
-base pick. Not an ADR. The binding base+license decision rides with #7; this doc
-is the contract that whichever base wins has to honour before a real provider
-replaces `FakeProvider`.
+**Status:** Superseded in part by the owner-approved
+[single-APK ASK integration design](2026-07-22-single-apk-ask-integration-design.md).
+The threat model, discard behavior, cancellation requirements, and race tests
+below remain binding. The older `EditorAuthority` API, its proposed module
+location, and its I2/I6 atomicity claim do not: the accepted `EditorPort`
+contract lives in `:personaspeak-ui`, uses `captureSnapshot()` and
+`attemptReplace()`, and does not claim Android provides an atomic cross-process
+read/write transaction.
 **Branch:** `docs/stale-field-race-design`
 **Closes:** issue #6
 **Related:** [fork-spike results — "Independent review"](2026-07-20-fork-spike-results.md#independent-review-2026-07-21) ·
