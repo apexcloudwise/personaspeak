@@ -72,8 +72,8 @@ The new `:personaspeak-ui` project at `android/personaspeak-ui/` owns:
 - the `EditorPort` boundary.
 
 It depends on `core-personas` and `core-providers`. It does not import ASK
-classes. The existing root `:app` Compose work is migrated here; the old
-application module does not remain installable.
+classes. The old application module does not remain installable; per migration
+step 4, no code or UX is extracted from it into this library.
 
 ### Persona source boundary
 
