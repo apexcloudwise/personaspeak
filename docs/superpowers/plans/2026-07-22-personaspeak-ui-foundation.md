@@ -762,10 +762,24 @@ Require exactly these three artifacts, sorted:
 ./personaspeak-ui/build/outputs/aar/personaspeak-ui-debug.aar
 ```
 
+Install `ripgrep` in the `android-build` job before running the first-party
+scans, and prove the binary exists before using shell negation:
+
+```yaml
+- name: Install scan tools
+  run: |
+    sudo apt-get update
+    sudo apt-get install --yes ripgrep
+    command -v rg
+    rg --version
+```
+
 Add first-party scans that fail on Android imports in `core-*`, ASK imports in
 `:personaspeak-ui`, and new occurrences of the rejected calls/phrases outside
 the quarantined `keyboard-stub`, temporary `app`, and inert ASK snapshot. Use
-this exact rejected-topology gate:
+this exact rejected-topology gate only after the availability check above.
+Without that prerequisite, `! rg ...` would turn a missing command into a
+passing gate:
 
 ```bash
 ! rg -n \
@@ -802,6 +816,7 @@ env JAVA_HOME=/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home \
     --no-daemon
 cd ..
 git diff --check
+command -v rg
 ! rg -n '\b(TB''D|TO''DO|FIX''ME)\b' \
   android/core-personas android/personaspeak-ui .github/workflows/ci.yml PATCHNOTES.md
 ! rg -n '^import android\.' android/core-personas/src android/core-providers/src
