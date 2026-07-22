@@ -91,8 +91,11 @@ system escape hatch is not a PersonaSpeak workflow.
   `android/keyboard/`. No slice may improve it, present its switcher/local-draft
   flow as product behavior, or use it as typing evidence. The proven ASK
   integration deletes it.
-- The current root `:app` is not a second shipping APK. Its reusable Compose
-  code moves into the first-party Android library; its application role ends.
+- The current root `:app` is not a second shipping APK; its application role
+  ends. Any independently reusable Compose code would move into the
+  first-party Android library, but the accepted migration review found no
+  design-aligned component to extract from its local-draft/switcher demo; see
+  migration step 4 in the single-APK integration design.
 - The old keyless-panel PR is not merged, and no source from the temporary stub
   is ported as behavior. Independently reusable visual components may be
   reimplemented in the real ASK host only after removing the local draft field,
