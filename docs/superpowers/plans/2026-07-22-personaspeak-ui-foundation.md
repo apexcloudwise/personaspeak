@@ -146,6 +146,15 @@ speech_patterns:
   - Arrived before its parser
 ```
 
+Create `tests/persona-validation/invalid-fractional-version.yaml`:
+
+```yaml
+schema_version: 1.5
+name: Fractional Butler
+speech_patterns:
+  - Arrived between parsers
+```
+
 - [ ] **Step 2: Pin Python validation to the shared fixtures**
 
 Create `desktop/test_validate_personas.py`:
@@ -180,6 +189,10 @@ class PersonaValidationTest(unittest.TestCase):
         errors = validate(FIXTURES / "unsupported-version.yaml")
         self.assertTrue(any("unsupported schema_version 2" in error for error in errors), errors)
 
+    def test_schema_version_must_be_an_integer(self) -> None:
+        errors = validate(FIXTURES / "invalid-fractional-version.yaml")
+        self.assertTrue(any("schema_version' must be an integer" in error for error in errors), errors)
+
 
 if __name__ == "__main__":
     unittest.main()
@@ -192,8 +205,10 @@ python3 -m unittest desktop/test_validate_personas.py
 ```
 
 Before running the test, extend `desktop/validate_personas.py` to reject a
-present `real_person` value unless `isinstance(value, bool)`. Expected: five
-tests pass.
+present `real_person` value unless `isinstance(value, bool)`, and reject a
+present `schema_version` unless `type(value) is int` so Python booleans and
+floating-point values do not masquerade as schema integers. Expected: six tests
+pass.
 
 - [ ] **Step 3: Write failing Kotlin parity tests**
 
@@ -259,6 +274,15 @@ fun `unsupported schema version is rejected`() {
     assertTrue(result.isFailure)
     assertTrue(result.exceptionOrNull()!!.message!!.contains("schema_version 2"))
 }
+
+@Test
+fun `fractional schema version fails parsing`() {
+    val error = assertFailsWith<IllegalArgumentException> {
+        fixtures.resolve("invalid-fractional-version.yaml")
+            .inputStream().use(Persona::fromYaml)
+    }
+    assertTrue(error.message!!.contains("'schema_version' must be an integer"))
+}
 ```
 
 Run:
@@ -291,9 +315,12 @@ private fun stringList(field: String, value: Any?): List<String> {
 ```
 
 Use it for `speech_patterns`, `vocabulary`, and `sample_lines`. Reject non-string
-`context` and `notes`, reject a present non-boolean `real_person`, and reject a
-non-numeric `schema_version` with `"'schema_version' must be an integer"`. Do
-not add identity or provenance to the YAML-backed `Persona` content class.
+`context` and `notes`, reject a present non-boolean `real_person`, and accept
+`schema_version` only from a YAML integer scalar that fits exactly in an `Int`.
+In particular, reject `Float`/`Double` values such as `1.5`, booleans,
+out-of-range values, and non-numbers with `"'schema_version' must be an
+integer"`; do not call `Number.toInt()` until those checks pass. Do not add
+identity or provenance to the YAML-backed `Persona` content class.
 
 - [ ] **Step 5: Add source-neutral identity and provenance values**
 
@@ -678,6 +705,9 @@ sealed interface ApplyResult {
 `RewriteCoordinator.request(personaId)` loads the validated persona, captures
 the editor, calls `PromptBuilder`, then calls the injected provider only after a
 successful capture. It never catches an exception into user-visible raw text.
+If provider invocation is guarded by a broad exception handler, catch and
+rethrow `CancellationException` before mapping other failures to
+`ProviderFailure`; cancellation is control flow, not a provider error.
 `RewriteCoordinator.apply(candidate)` calls `attemptReplace` exactly once and
 maps the returned type. Neither method stores candidates beyond its call.
 
@@ -686,8 +716,9 @@ maps the returned type. Neither method stores candidates beyond its call.
 Use `runBlocking` from the existing `libs.coroutines.core` test dependency and
 a fake provider with no delay. For cancellation, launch the request in the test
 scope, have the fake provider signal entry with `CompletableDeferred<Unit>`,
-cancel the job, and assert its `finally` block completes a second
-`CompletableDeferred<Unit>`.
+cancel and join the job, assert `job.isCancelled`, and assert its `finally` block
+completes a second `CompletableDeferred<Unit>`. The cancellation path must not
+produce `ProviderFailure` or call `attemptReplace`.
 
 Run all `:personaspeak-ui` and `:core-*` tests, then commit:
 
