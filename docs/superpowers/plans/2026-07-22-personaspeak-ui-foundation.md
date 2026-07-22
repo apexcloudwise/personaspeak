@@ -21,8 +21,10 @@ JDK 21, Android SDK 35, JUnit 4, SnakeYAML 2.3.
 
 ## Global Constraints
 
-- Start from current `origin/main` after PR #37, currently
-  `81835ebd22dad97dd19e4fbef31a240341ba545b`.
+- Start from a fresh `origin/main` after this plan correction lands. The
+  reviewed baseline before the correction is
+  `476667afc24484e9bc5a7cea65e1ecdc132badbc`; record the actual starting SHA
+  for the implementation PR's immutable receipts.
 - Read `/Users/devkiran/AGENTS.md` and repository `AGENTS.md` before acting.
 - Keep `android/` as the only Gradle root.
 - ASK stays excluded from `android/settings.gradle.kts`; no ASK task or APK runs
@@ -88,6 +90,7 @@ JDK 21, Android SDK 35, JUnit 4, SnakeYAML 2.3.
 - Create: `tests/persona-validation/invalid-pattern-entry.yaml`
 - Create: `tests/persona-validation/invalid-real-person-type.yaml`
 - Create: `tests/persona-validation/unsupported-version.yaml`
+- Create: `tests/persona-validation/invalid-fractional-version.yaml`
 - Modify: `desktop/validate_personas.py`
 
 **Interfaces:**
@@ -421,7 +424,7 @@ env JAVA_HOME=/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home \
   ./gradlew :core-personas:test --no-daemon
 ```
 
-Expected: four repository personas validate, five Python tests pass, Kotlin
+Expected: four repository personas validate, six Python tests pass, Kotlin
 validator tests pass, and existing prompt goldens remain unchanged.
 
 - [ ] **Step 8: Commit the pure persona boundary**
@@ -666,6 +669,8 @@ Tests must prove:
 - unknown or invalid persona does not call the editor or provider;
 - a successful request builds the prompt, calls the provider once, and returns
   a candidate containing the original snapshot and replacement;
+- a successful blank or whitespace-only provider response returns
+  `MalformedResponse`, never a candidate;
 - provider failure returns a generic `ProviderFailure` without exposing the raw
   exception message;
 - requesting a candidate never calls `attemptReplace`;
@@ -692,6 +697,7 @@ sealed interface RewriteRequestResult {
     data object IncompleteRead : RewriteRequestResult
     data object OversizedInput : RewriteRequestResult
     data object ProviderFailure : RewriteRequestResult
+    data object MalformedResponse : RewriteRequestResult
 }
 
 sealed interface ApplyResult {
@@ -708,6 +714,9 @@ successful capture. It never catches an exception into user-visible raw text.
 If provider invocation is guarded by a broad exception handler, catch and
 rethrow `CancellationException` before mapping other failures to
 `ProviderFailure`; cancellation is control flow, not a provider error.
+After unwrapping a successful provider result, reject `replacement.isBlank()`
+as `MalformedResponse` before constructing `RewriteCandidate`. Do not expose or
+log the raw response.
 `RewriteCoordinator.apply(candidate)` calls `attemptReplace` exactly once and
 maps the returned type. Neither method stores candidates beyond its call.
 
@@ -755,7 +764,18 @@ Require exactly these three artifacts, sorted:
 
 Add first-party scans that fail on Android imports in `core-*`, ASK imports in
 `:personaspeak-ui`, and new occurrences of the rejected calls/phrases outside
-the quarantined `keyboard-stub` and temporary `app`.
+the quarantined `keyboard-stub`, temporary `app`, and inert ASK snapshot. Use
+this exact rejected-topology gate:
+
+```bash
+! rg -n \
+  'switchBackToPreviousKeyboard|PersonaPanel|fun[[:space:]]+Onboarding[[:space:]]*\(' \
+  android \
+  --glob '!android/app/**' \
+  --glob '!android/keyboard-stub/**' \
+  --glob '!android/keyboard/**' \
+  --glob '*.{kt,java}'
+```
 
 - [ ] **Step 2: Add the patch note**
 
@@ -786,6 +806,13 @@ git diff --check
   android/core-personas android/personaspeak-ui .github/workflows/ci.yml PATCHNOTES.md
 ! rg -n '^import android\.' android/core-personas/src android/core-providers/src
 ! rg -n 'com\.anysoftkeyboard|com\.menny' android/personaspeak-ui/src
+! rg -n \
+  'switchBackToPreviousKeyboard|PersonaPanel|fun[[:space:]]+Onboarding[[:space:]]*\(' \
+  android \
+  --glob '!android/app/**' \
+  --glob '!android/keyboard-stub/**' \
+  --glob '!android/keyboard/**' \
+  --glob '*.{kt,java}'
 ```
 
 Expected: all commands pass; exactly one current APK and two AARs exist; ASK
