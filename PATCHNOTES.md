@@ -12,6 +12,13 @@ Newest first, like all respectable patch notes.
 
 ## 2026-07-22 — The keyboard and the product become the same application
 
+- The first-party UI boundary is now a contract, not a vibe. CI builds the
+  validated persona catalog/repository, the pure editor contract, and the
+  guarded two-stage rewrite coordinator, then fails if anything first-party
+  reaches for an Android import it shouldn't or an AnySoftKeyboard symbol it
+  hasn't earned. Exactly three artifacts leave the current graph — the
+  temporary app APK and the two first-party AARs — and the vendored ASK
+  snapshot stays inert, outside Gradle, producing nothing.
 - The UI-foundation plan has caught up with `main`: malformed provider
   successes, all six validation fixtures, and the rejected panel now have
   deterministic gates instead of relying on optimism.

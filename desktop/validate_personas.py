@@ -37,14 +37,19 @@ def validate(path: Path) -> list[str]:
         if value is not None and not isinstance(value, str):
             errors.append(f"{path.name}: '{optional_str}' must be a string")
 
-    if data.get("real_person") is True and not data.get("notes"):
+    real_person = data.get("real_person")
+    if real_person is not None and not isinstance(real_person, bool):
+        errors.append(f"{path.name}: 'real_person' must be a boolean")
+    elif real_person is True and not data.get("notes"):
         errors.append(
             f"{path.name}: real_person is true, so 'notes' must declare this a "
             "stylistic homage (see docs/persona-schema.md)"
         )
 
     version = data.get("schema_version", 1)
-    if version != 1:
+    if "schema_version" in data and type(version) is not int:
+        errors.append(f"{path.name}: 'schema_version' must be an integer")
+    elif version != 1:
         errors.append(f"{path.name}: unsupported schema_version {version}")
 
     return errors

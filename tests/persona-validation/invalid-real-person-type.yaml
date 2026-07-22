@@ -1,0 +1,5 @@
+schema_version: 1
+name: Ambiguous Biography
+speech_patterns:
+  - Speaks ambiguously
+real_person: "sometimes"
