@@ -18,5 +18,5 @@ rootProject.name = "personaboard"
 
 include(":core-personas")
 include(":core-providers")
-include(":keyboard")
+include(":keyboard-stub")
 include(":app")

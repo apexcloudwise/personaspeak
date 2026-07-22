@@ -12,6 +12,9 @@ Newest first, like all respectable patch notes.
 
 ## 2026-07-22 — The keyboard and the product become the same application
 
+- AnySoftKeyboard `1.13-r1` now occupies `android/keyboard/` as a pinned,
+  inert snapshot with an empty upstream-rent ledger. The rejected panel moved
+  unchanged to `:keyboard-stub`; it remains scaffolding, not a comeback tour.
 - The old ADR-0001 panel has been promoted from “demo keyboard” to its accurate
   title: disposable, non-typing build scaffolding. ASK ingestion may move it
   unchanged; no journey may endorse it, and ASK integration deletes it.

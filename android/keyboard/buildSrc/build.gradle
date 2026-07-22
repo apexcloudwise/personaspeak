@@ -1,0 +1,63 @@
+plugins {
+    // Version kept in sync with main project's libs.versions.toml
+    id "org.jetbrains.kotlin.jvm" version "2.3.10"
+}
+
+apply plugin: 'groovy'
+apply plugin: 'java'
+apply plugin: 'java-gradle-plugin'
+
+repositories {
+    mavenCentral()
+    maven { url "https://plugins.gradle.org/m2/" }
+}
+
+dependencies {
+    // Versions kept in sync with main project's libs.versions.toml
+    implementation 'org.jsoup:jsoup:1.22.1'
+    implementation gradleApi()
+    implementation localGroovy()
+
+    implementation 'org.apache.httpcomponents:httpclient:4.5.14'
+    implementation 'com.google.code.gson:gson:2.13.2'
+    implementation "org.jetbrains.kotlin:kotlin-reflect:2.3.10"
+
+    testImplementation 'junit:junit:4.13.2'
+    testImplementation 'com.github.stefanbirkner:system-rules:1.19.0'
+    testImplementation 'org.mockito:mockito-core:2.28.2'
+    testImplementation 'com.nhaarman:mockito-kotlin:1.6.0'
+}
+
+gradlePlugin {
+    plugins {
+        makeDictionaryPlugin {
+            id = 'make-dictionary'
+            implementationClass = 'MakeDictionaryPlugin'
+        }
+        manualVersionPlugin {
+            id = 'ask.net.evendanan.autoversion'
+            implementationClass = 'net.evendanan.versiongenerator.VersionGeneratorPlugin'
+        }
+        simpleVersionPlugin {
+            id = 'ask.net.evendanan.autoversion.simple'
+            implementationClass = 'net.evendanan.versiongenerator.SimpleVersionGeneratorPlugin'
+        }
+    }
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+}
+
+compileKotlin {
+    kotlinOptions {
+        jvmTarget = 21
+    }
+}
+
+compileTestKotlin {
+    kotlinOptions {
+        jvmTarget = 21
+    }
+}
