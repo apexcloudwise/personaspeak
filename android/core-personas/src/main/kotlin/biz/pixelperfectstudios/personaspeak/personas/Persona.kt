@@ -8,7 +8,6 @@ import java.io.InputStream
  * change that document (and every consumer) before changing this class.
  */
 data class Persona(
-    val schemaVersion: Int = 1,
     val name: String,
     val context: String = "",
     val speechPatterns: List<String>,
@@ -16,13 +15,13 @@ data class Persona(
     val sampleLines: List<String> = emptyList(),
     val notes: String = "",
     val realPerson: Boolean = false,
+    val schemaVersion: Int = 1,
 ) {
     companion object {
         fun fromYaml(input: InputStream): Persona {
             val data: Map<String, Any?> = Yaml().load(input)
                 ?: throw IllegalArgumentException("empty persona yaml")
             return Persona(
-                schemaVersion = schemaVersion(data["schema_version"]),
                 name = data["name"] as? String
                     ?: throw IllegalArgumentException("persona is missing 'name'"),
                 context = stringField("context", data["context"]),
@@ -32,13 +31,15 @@ data class Persona(
                 sampleLines = stringList("sample_lines", data["sample_lines"]),
                 notes = stringField("notes", data["notes"]),
                 realPerson = booleanField("real_person", data["real_person"]),
+                schemaVersion = schemaVersion(data, "schema_version"),
             )
         }
 
-        private fun schemaVersion(value: Any?): Int {
-            if (value == null) return 1
+        private fun schemaVersion(data: Map<String, Any?>, field: String): Int {
+            if (!data.containsKey(field)) return 1
+            val value = data[field]
             if (value is Int) return value
-            throw IllegalArgumentException("'schema_version' must be an integer")
+            throw IllegalArgumentException("'$field' must be an integer")
         }
 
         private fun stringList(field: String, value: Any?): List<String> {

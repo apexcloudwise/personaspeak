@@ -1,3 +1,4 @@
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -30,6 +31,19 @@ class PersonaValidationTest(unittest.TestCase):
     def test_schema_version_must_be_an_integer(self) -> None:
         errors = validate(FIXTURES / "invalid-fractional-version.yaml")
         self.assertTrue(any("schema_version' must be an integer" in error for error in errors), errors)
+
+        with tempfile.TemporaryDirectory() as tmp:
+            explicit_null = Path(tmp) / "explicit-null-version.yaml"
+            explicit_null.write_text(
+                "schema_version: null\n"
+                "name: Test Butler\n"
+                "speech_patterns:\n"
+                "  - Speaks plainly\n"
+            )
+            errors = validate(explicit_null)
+            self.assertTrue(
+                any("schema_version' must be an integer" in error for error in errors), errors
+            )
 
 
 if __name__ == "__main__":

@@ -75,11 +75,21 @@ class PersonaValidatorParityTest {
     }
 
     @Test
-    fun `fractional schema version fails parsing`() {
-        val error = assertFailsWith<IllegalArgumentException> {
+    fun `non-integer schema version fails parsing`() {
+        val fractional = assertFailsWith<IllegalArgumentException> {
             fixtures.resolve("invalid-fractional-version.yaml")
                 .inputStream().use(Persona::fromYaml)
         }
-        assertTrue(error.message!!.contains("'schema_version' must be an integer"))
+        assertTrue(fractional.message!!.contains("'schema_version' must be an integer"))
+
+        val explicitNull = assertFailsWith<IllegalArgumentException> {
+            Persona.fromYaml(EXPLICIT_NULL_SCHEMA_VERSION.byteInputStream())
+        }
+        assertTrue(explicitNull.message!!.contains("'schema_version' must be an integer"))
+    }
+
+    companion object {
+        private const val EXPLICIT_NULL_SCHEMA_VERSION =
+            "schema_version: null\nname: Test Butler\nspeech_patterns:\n  - Speaks plainly\n"
     }
 }
