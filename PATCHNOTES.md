@@ -12,6 +12,9 @@ Newest first, like all respectable patch notes.
 
 ## 2026-07-22 — The keyboard and the product become the same application
 
+- The UI-foundation plan has caught up with `main`: malformed provider
+  successes, all six validation fixtures, and the rejected panel now have
+  deterministic gates instead of relying on optimism.
 - The Stitch exports have acquired adult supervision: every requested screen
   now has an explicit disposition, with truthful privacy copy and your words
   still requiring one deliberate `Use this` before they move.
