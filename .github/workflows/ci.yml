@@ -98,7 +98,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          ! rg -n '^import android\.' android/core-personas/src android/core-providers/src
+          ! rg -n '^\s*import\s+(android|androidx)\.' android/core-personas/src android/core-providers/src
       - name: Forbid AnySoftKeyboard imports in personaspeak-ui
         shell: bash
         run: |

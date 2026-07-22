@@ -75,6 +75,17 @@ class PersonaValidatorParityTest {
     }
 
     @Test
+    fun `validated persona rejects direct construction when the id source disagrees with provenance source`() {
+        assertFailsWith<IllegalArgumentException> {
+            ValidatedPersona(
+                id = PersonaId("community:drift"),
+                provenance = PersonaProvenance.bundled,
+                content = Persona(name = "Drift", speechPatterns = listOf("drifts apart from its provenance")),
+            )
+        }
+    }
+
+    @Test
     fun `non-integer schema version fails parsing`() {
         val fractional = assertFailsWith<IllegalArgumentException> {
             fixtures.resolve("invalid-fractional-version.yaml")

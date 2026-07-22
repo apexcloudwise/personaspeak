@@ -40,4 +40,11 @@ data class ValidatedPersona(
     val id: PersonaId,
     val provenance: PersonaProvenance,
     val content: Persona,
-)
+) {
+    init {
+        val idSource = id.value.substringBefore(':')
+        require(idSource == provenance.source.value) {
+            "persona id source '$idSource' must match provenance source '${provenance.source.value}'"
+        }
+    }
+}

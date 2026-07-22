@@ -59,8 +59,9 @@ sealed interface ApplyResult {
  * Neither method stores candidates, provider bodies, or exception messages
  * beyond its call. Provider failure (whether returned via `Result.failure` or
  * thrown) collapses to [RewriteRequestResult.ProviderFailure] with no payload;
- * [CancellationException] is rethrown before that mapping because cancellation
- * is control flow, not a provider error.
+ * [CancellationException] — delivered either by a direct throw or inside a
+ * `Result.failure` — is rethrown before that mapping because cancellation is
+ * control flow, not a provider error.
  *
  * No Android, ASK, persistence, logging, analytics, or navigation types cross
  * this boundary — only the four pure-Kotlin ports it consumes.
@@ -94,7 +95,10 @@ class RewriteCoordinator(
             return RewriteRequestResult.ProviderFailure
         }
 
-        val replacement = result.getOrElse { return RewriteRequestResult.ProviderFailure }
+        val replacement = result.getOrElse { e ->
+            if (e is CancellationException) throw e
+            return RewriteRequestResult.ProviderFailure
+        }
         if (replacement.isBlank()) return RewriteRequestResult.MalformedResponse
 
         return RewriteRequestResult.Ready(RewriteCandidate(snapshot, replacement))

@@ -17,6 +17,7 @@ import biz.pixelperfectstudios.personaspeak.ui.editor.Utf16Selection
 import biz.pixelperfectstudios.personaspeak.ui.personas.PersonaRepository
 import biz.pixelperfectstudios.personaspeak.ui.personas.PersonaSummary
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -215,6 +216,23 @@ class RewriteCoordinatorTest {
     // -----------------------------------------------------------------
     // Cancellation propagation
     // -----------------------------------------------------------------
+
+    @Test
+    fun `request rethrows a CancellationException delivered via Result failure rather than collapsing it to ProviderFailure`() = runBlocking {
+        val editor = FakeEditorPort(capture = CaptureResult.Captured(aSnapshot()))
+        val provider = FakeCompletionProvider(
+            result = Result.failure(CancellationException("delivered as a failure result")),
+        )
+        val coordinator = coordinator(editor, provider)
+
+        val job = launch { coordinator.request(PERSONA_ID) }
+        job.join()
+
+        assertTrue(job.isCancelled, "CancellationException in Result.failure must propagate, not become ProviderFailure")
+        assertEquals(1, provider.calls.size)
+        assertTrue(editor.replaceCalls.isEmpty(), "cancellation-as-failure must not reach attemptReplace")
+        Unit
+    }
 
     @Test
     fun `cancellation during the provider rewrite propagates without ProviderFailure or attemptReplace`() = runBlocking {
