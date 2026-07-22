@@ -43,7 +43,7 @@ public abstract class AnySoftKeyboardStartUpAllSdkTest extends AnySoftKeyboardBa
   public static class AnySoftKeyboardStartUpAllSdkShard1Test
       extends AnySoftKeyboardStartUpAllSdkTest {
     @Test
-    @Config(minSdk = 26, maxSdk = 29)
+    @Config(minSdk = 26, maxSdk = 27)
     public void testBasicWorks() {
       testBasicWorks_impl();
     }
@@ -52,7 +52,7 @@ public abstract class AnySoftKeyboardStartUpAllSdkTest extends AnySoftKeyboardBa
   public static class AnySoftKeyboardStartUpAllSdkShard2Test
       extends AnySoftKeyboardStartUpAllSdkTest {
     @Test
-    @Config(minSdk = 30, maxSdk = 32)
+    @Config(minSdk = 28, maxSdk = 30)
     public void testBasicWorks() {
       testBasicWorks_impl();
     }
@@ -61,7 +61,7 @@ public abstract class AnySoftKeyboardStartUpAllSdkTest extends AnySoftKeyboardBa
   public static class AnySoftKeyboardStartUpAllSdkShard3Test
       extends AnySoftKeyboardStartUpAllSdkTest {
     @Test
-    @Config(minSdk = 33, maxSdk = TestUtils.LATEST_STABLE_API_LEVEL)
+    @Config(minSdk = 31, maxSdk = TestUtils.LATEST_STABLE_API_LEVEL)
     public void testBasicWorks() {
       testBasicWorks_impl();
     }

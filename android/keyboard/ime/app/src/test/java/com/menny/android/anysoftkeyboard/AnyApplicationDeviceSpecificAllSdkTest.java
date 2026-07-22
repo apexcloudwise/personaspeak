@@ -226,7 +226,7 @@ public abstract class AnyApplicationDeviceSpecificAllSdkTest {
   public static class AnyApplicationDeviceSpecificAllSdkShard1Test
       extends AnyApplicationDeviceSpecificAllSdkTest {
     @Test
-    @Config(minSdk = 26, maxSdk = 29)
+    @Config(minSdk = 26, maxSdk = 27)
     public void testCreateDeviceSpecificImplementation() {
       testCreateDeviceSpecificImplementationImpl();
     }
@@ -235,7 +235,7 @@ public abstract class AnyApplicationDeviceSpecificAllSdkTest {
   public static class AnyApplicationDeviceSpecificAllSdkShard2Test
       extends AnyApplicationDeviceSpecificAllSdkTest {
     @Test
-    @Config(minSdk = 30, maxSdk = 32)
+    @Config(minSdk = 28, maxSdk = 30)
     public void testCreateDeviceSpecificImplementation() {
       testCreateDeviceSpecificImplementationImpl();
     }
@@ -244,7 +244,7 @@ public abstract class AnyApplicationDeviceSpecificAllSdkTest {
   public static class AnyApplicationDeviceSpecificAllSdkShard3Test
       extends AnyApplicationDeviceSpecificAllSdkTest {
     @Test
-    @Config(minSdk = 33, maxSdk = TestUtils.LATEST_STABLE_API_LEVEL)
+    @Config(minSdk = 31, maxSdk = TestUtils.LATEST_STABLE_API_LEVEL)
     public void testCreateDeviceSpecificImplementation() {
       testCreateDeviceSpecificImplementationImpl();
     }

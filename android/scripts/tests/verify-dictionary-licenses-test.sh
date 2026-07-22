@@ -54,7 +54,10 @@ fi
 bad_root="$tmp/bad/android"
 make_fixture "$bad_root"
 bad_pack="$bad_root/keyboard/addons/languages/english/pack"
-sed -i '' '/dictionaryTextInputsEnabled/d' "$bad_pack/build.gradle"
+# POSIX-portable line removal (BSD and GNU sed disagree on in-place flags).
+grep -v 'dictionaryTextInputsEnabled' "$bad_pack/build.gradle" \
+  > "$bad_pack/build.gradle.tmp"
+mv "$bad_pack/build.gradle.tmp" "$bad_pack/build.gradle"
 printf 'unlicensed corpus line\n' > "$bad_pack/dictionary/inputs/unmapped.txt"
 # the previously mapped input file also needs a row now that inputs are active
 cat >> "$bad_root/keyboard/DICTIONARY-LICENSES.md" <<'EOF'
@@ -105,6 +108,35 @@ fi
 if ! grep -q "^stale manifest row: dictionary/inputs/mapped.txt$" "$out_stale"; then
   echo "FAIL: stale-row message missing" >&2
   cat "$out_stale" >&2
+  exit 1
+fi
+
+# 5. Tool-failure control: a grep that exits 2 must abort the verifier with
+#    exit 2 and a deterministic tool-error message, never a pass or a
+#    violation verdict.
+fakebin="$tmp/fakebin"
+mkdir -p "$fakebin"
+cat > "$fakebin/grep" <<'EOF'
+#!/bin/sh
+exit 2
+EOF
+chmod +x "$fakebin/grep"
+toolfail_root="$tmp/toolfail/android"
+make_fixture "$toolfail_root"
+out_toolfail="$tmp/out-toolfail.txt"
+set +e
+VERIFY_GREP="$fakebin/grep" bash "$verifier" "$toolfail_root" \
+  > "$out_toolfail" 2>&1
+toolfail_rc=$?
+set -e
+if [ "$toolfail_rc" -ne 2 ]; then
+  echo "FAIL: grep tool failure produced exit $toolfail_rc instead of 2" >&2
+  cat "$out_toolfail" >&2
+  exit 1
+fi
+if ! grep -q "verify-dictionary-licenses: grep tool failure" "$out_toolfail"; then
+  echo "FAIL: deterministic grep tool-failure message missing" >&2
+  cat "$out_toolfail" >&2
   exit 1
 fi
 

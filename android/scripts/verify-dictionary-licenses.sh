@@ -49,6 +49,44 @@ if [ ! -f "$build_file" ]; then
   exit 2
 fi
 
+# --- grep seam: every probe distinguishes 0 match / 1 no-match / 2+ tool
+# failure. A broken tool aborts with exit 2 and a deterministic message; it
+# can never read as absence or as a pass. VERIFY_GREP overrides the binary
+# for contract tests.
+GREP_BIN="${VERIFY_GREP:-grep}"
+
+grep_probe() {
+  local rc
+  set +e
+  "$GREP_BIN" "$@"
+  rc=$?
+  set -e
+  case "$rc" in
+    0) return 0 ;;
+    1) return 1 ;;
+    *)
+      echo "verify-dictionary-licenses: grep tool failure (exit $rc)" >&2
+      exit 2
+      ;;
+  esac
+}
+
+# grep -c exits 1 when the count is 0 — a valid count, not a tool failure.
+grep_count() {
+  local rc out
+  set +e
+  out="$("$GREP_BIN" "$@")"
+  rc=$?
+  set -e
+  case "$rc" in
+    0 | 1) printf '%s\n' "${out:-0}" ;;
+    *)
+      echo "verify-dictionary-licenses: grep tool failure (exit $rc)" >&2
+      exit 2
+      ;;
+  esac
+}
+
 # Pack path prefix relative to keyboard/ (manifest rows use this prefix).
 case "$pack_dir" in
   "$keyboard_root"/*) pack_prefix="${pack_dir#"$keyboard_root"/}" ;;
@@ -60,7 +98,7 @@ esac
 
 # --- Read the Gradle switch (plugin default: true) ------------------------
 inputs_enabled=1
-if grep -Eq 'dictionaryTextInputsEnabled[[:space:]]*=[[:space:]]*false' "$build_file"; then
+if grep_probe -Eq 'dictionaryTextInputsEnabled[[:space:]]*=[[:space:]]*false' "$build_file"; then
   inputs_enabled=0
 fi
 
@@ -98,7 +136,7 @@ status=0
 # 1. Every selected input has exactly one row.
 while IFS= read -r input; do
   [ -z "$input" ] && continue
-  count="$(grep -cxF -- "$input" "$pack_rows" || true)"
+  count="$(grep_count -cxF -- "$input" "$pack_rows")"
   if [ "$count" -eq 0 ]; then
     echo "unlicensed dictionary input: $input"
     status=1
@@ -111,7 +149,7 @@ done < "$selected"
 # 2. Every row for this pack names a selected input.
 while IFS= read -r row; do
   [ -z "$row" ] && continue
-  if ! grep -qxF -- "$row" "$selected"; then
+  if ! grep_probe -qxF -- "$row" "$selected"; then
     echo "stale manifest row: $row"
     status=1
   fi

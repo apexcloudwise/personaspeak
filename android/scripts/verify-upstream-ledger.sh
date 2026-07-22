@@ -47,6 +47,44 @@ if [ ! -f "$ledger" ]; then
   exit 2
 fi
 
+# --- grep seam: every probe distinguishes 0 match / 1 no-match / 2+ tool
+# failure. A broken tool aborts with exit 2 and a deterministic message; it
+# can never read as absence or as a pass. VERIFY_GREP overrides the binary
+# for contract tests.
+GREP_BIN="${VERIFY_GREP:-grep}"
+
+grep_probe() {
+  local rc
+  set +e
+  "$GREP_BIN" "$@"
+  rc=$?
+  set -e
+  case "$rc" in
+    0) return 0 ;;
+    1) return 1 ;;
+    *)
+      echo "verify-upstream-ledger: grep tool failure (exit $rc)" >&2
+      exit 2
+      ;;
+  esac
+}
+
+# grep -c exits 1 when the count is 0 — a valid count, not a tool failure.
+grep_count() {
+  local rc out
+  set +e
+  out="$("$GREP_BIN" "$@")"
+  rc=$?
+  set -e
+  case "$rc" in
+    0 | 1) printf '%s\n' "${out:-0}" ;;
+    *)
+      echo "verify-upstream-ledger: grep tool failure (exit $rc)" >&2
+      exit 2
+      ;;
+  esac
+}
+
 # Pinned upstream identity (must match keyboard/UPSTREAM.md).
 upstream_url="https://github.com/AnySoftKeyboard/AnySoftKeyboard"
 upstream_sha="8c1db51c8f23d1923d0eb05f70f1bb41d614fb6d"
@@ -165,7 +203,7 @@ awk '/^```/ { fence = !fence; next } !fence' "$ledger" \
 status=0
 
 count_entries() {
-  grep -cxF -- "$1" "$entries" || true
+  grep_count -cxF -- "$1" "$entries"
 }
 
 while IFS= read -r p; do
@@ -194,7 +232,7 @@ done < "$deleted"
 
 while IFS= read -r e; do
   [ -z "$e" ] && continue
-  if ! grep -qxF -- "$e" "$changed" && ! grep -qxF -- "$e" "$deleted"; then
+  if ! grep_probe -qxF -- "$e" "$changed" && ! grep_probe -qxF -- "$e" "$deleted"; then
     echo "stale ledger entry: $e"
     status=1
   fi

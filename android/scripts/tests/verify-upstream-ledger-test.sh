@@ -163,4 +163,39 @@ if ! grep -q "^unexpected addition outside PersonaSpeak allowlist: ime/base/Rogu
   exit 1
 fi
 
+# 8. Tool-failure control: a grep that exits 2 must abort the verifier with
+#    exit 2 and a deterministic tool-error message. The fixture has one
+#    ledgered modification so the entry-count grep probes actually run.
+fakebin="$tmp/fakebin"
+mkdir -p "$fakebin"
+cat > "$fakebin/grep" <<'EOF'
+#!/bin/sh
+exit 2
+EOF
+chmod +x "$fakebin/grep"
+fresh_target "$target"
+printf 'alpha CHANGED\n' > "$target/gradle/android_general.gradle"
+cat >> "$target/UPSTREAM-MODIFIED.md" <<'EOF'
+
+- gradle/android_general.gradle — fixture change for tool-failure control.
+EOF
+set +e
+UPSTREAM_PRISTINE_DIR="$pristine" \
+UPSTREAM_TARGET_DIR="$target" \
+UPSTREAM_LEDGER="$target/UPSTREAM-MODIFIED.md" \
+VERIFY_GREP="$fakebin/grep" \
+  bash "$verifier" "$tmp/android-root-unused" > "$tmp/out8.txt" 2>&1
+toolfail_rc=$?
+set -e
+if [ "$toolfail_rc" -ne 2 ]; then
+  echo "FAIL: grep tool failure produced exit $toolfail_rc instead of 2" >&2
+  cat "$tmp/out8.txt" >&2
+  exit 1
+fi
+if ! grep -q "verify-upstream-ledger: grep tool failure" "$tmp/out8.txt"; then
+  echo "FAIL: deterministic grep tool-failure message missing" >&2
+  cat "$tmp/out8.txt" >&2
+  exit 1
+fi
+
 echo "PASS: pristine ledger exact; unledgered rent rejected"
