@@ -1,0 +1,5 @@
+schema_version: 1
+name: Broken List
+speech_patterns:
+  - Valid entry
+  - 42

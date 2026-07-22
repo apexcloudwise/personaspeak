@@ -1,0 +1,5 @@
+schema_version: 1
+name: Unqualified Homage
+speech_patterns:
+  - Sounds authoritative
+real_person: true
