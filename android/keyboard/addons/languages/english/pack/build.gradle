@@ -1,5 +1,11 @@
 ext.status_icon_text = "en"
 
+// The vendored snapshot does not establish per-corpus provenance for the raw
+// dictionary/inputs/* corpus, so those files must not enter the generated
+// dictionary. The AOSP combined word list and the upstream-authored prebuilt
+// XMLs remain the only build inputs (see keyboard/DICTIONARY-LICENSES.md).
+ext.dictionaryTextInputsEnabled = false
+
 ext.dictionaryInputPossibleCharacters = null//"".toCharArray()
 ext.dictionaryInputAdditionalInnerCharacters = null//"".toCharArray()
 

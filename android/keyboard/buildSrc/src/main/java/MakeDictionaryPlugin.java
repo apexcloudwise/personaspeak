@@ -111,7 +111,11 @@ public class MakeDictionaryPlugin implements Plugin<Project> {
       }
 
       // we can also parse text files and generate word-list based on that.
-      if (project.file("dictionary/inputs").exists()) {
+      // Packs may opt out of raw text inputs (e.g. when per-corpus provenance
+      // is not established) via `ext.dictionaryTextInputsEnabled = false`;
+      // the default keeps upstream behavior.
+      if (getExtValue(project, "dictionaryTextInputsEnabled", true)
+          && project.file("dictionary/inputs").exists()) {
         TaskProvider<GenerateWordsListTask> inputs =
             project
                 .getTasks()
