@@ -22,6 +22,8 @@ class PersonaSpeakStripActionProvider(
 
     private var composeView: ComposeView? = null
 
+    val lastComposeView: ComposeView? get() = composeView
+
     override fun inflateActionView(parent: ViewGroup): View {
         val view = ComposeView(parent.context).apply {
             setViewCompositionStrategy(

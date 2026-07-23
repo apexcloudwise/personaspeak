@@ -114,7 +114,10 @@ android {
 
 dependencies {
     // PersonaSpeak UI layer; keeps :ime:app -> :personaspeak-ui -> core-*.
+    // Direct deps on core-* needed because personaspeak-ui uses implementation.
     implementation project(':personaspeak-ui')
+    implementation project(':core-personas')
+    implementation project(':core-providers')
     implementation platform(libs.compose.bom)
     implementation libs.compose.ui
 
