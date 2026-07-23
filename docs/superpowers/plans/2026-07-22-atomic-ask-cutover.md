@@ -454,7 +454,7 @@ Commit: `feat(android): add PersonaSpeak flow to real ASK view`.
 - Consumes: Tasks 1–6.
 - Produces: one reproducible green pre-cutover command plus device proof that the ASK APK already passes install, registration, real typing, fake capture/replace, and settings launch before either rollback module is deleted.
 
-- [ ] **Step 1: Implement the aggregate gate**
+- [x] **Step 1: Implement the aggregate gate**
 
 The script checks clean tracked state, JDK 21, exact closure, dictionary licenses, ledger, core purity with failure-aware `rg`, all unit tests, `lintDebug` where configured, and `:ime:app:assembleDebug`. It intentionally does not require one APK yet because rollback modules still exist.
 
