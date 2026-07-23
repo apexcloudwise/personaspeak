@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<issues format="6" by="lint 8.13.2" type="baseline" client="gradle" dependencies="true" name="AGP (8.13.2)" variant="all" version="8.13.2">
+    <issue id="ObsoleteSdkInt" message="Unnecessary; `SDK_INT` is never &lt; 26" errorLine1="    if (Build.VERSION.SDK_INT &lt; 24) return new DeviceSpecificV19();" errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location file="src/main/java/com/menny/android/anysoftkeyboard/AnyApplication.java" line="169" column="9" />
+    </issue>
+    <issue id="ObsoleteSdkInt" message="Unnecessary; `SDK_INT` is never &lt; 26" errorLine1="    if (Build.VERSION.SDK_INT &lt; 26) return new DeviceSpecificV24();" errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location file="src/main/java/com/menny/android/anysoftkeyboard/AnyApplication.java" line="170" column="9" />
+    </issue>
+    <issue id="ObsoleteSdkInt" message="Unnecessary; `SDK_INT` is always &gt;= 26" errorLine1="    if (Build.VERSION.SDK_INT &gt;= Build.VERSION_CODES.N) {" errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location file="src/main/java/com/anysoftkeyboard/AnySoftKeyboard.java" line="225" column="9" />
+    </issue>
+    <issue id="ObsoleteSdkInt" message="Unnecessary; `SDK_INT` is always &gt;= 26" errorLine1="        if (Build.VERSION.SDK_INT &gt;= Build.VERSION_CODES.N_MR1) {" errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location file="src/main/java/com/anysoftkeyboard/ime/AnySoftKeyboardMediaInsertion.java" line="121" column="13" />
+    </issue>
+    <issue id="ObsoleteSdkInt" message="Unnecessary; `SDK_INT` is always &gt;= 24" errorLine1="@TargetApi(24)" errorLine2="~~~~~~~~~~~~~~">
+        <location file="src/main/java/com/anysoftkeyboard/devicespecific/DeviceSpecificV24.java" line="22" column="1" />
+    </issue>
+    <issue id="ObsoleteSdkInt" message="Unnecessary; `SDK_INT` is always &gt;= 26" errorLine1="@RequiresApi(26)" errorLine2="~~~~~~~~~~~~~~~~">
+        <location file="src/main/java/com/anysoftkeyboard/devicespecific/DeviceSpecificV26.java" line="23" column="1" />
+    </issue>
+    <issue id="ObsoleteSdkInt" message="Unnecessary; `SDK_INT` is always &gt;= 26" errorLine1="@RequiresApi(26)" errorLine2="~~~~~~~~~~~~~~~~">
+        <location file="src/main/java/com/anysoftkeyboard/devicespecific/PressVibratorV26.java" line="23" column="1" />
+    </issue>
+    <issue id="ObsoleteSdkInt" message="Unnecessary; `Build.VERSION.SDK_INT &lt; Build.VERSION_CODES.N` is never true here" errorLine1="      if (Build.VERSION.SDK_INT &lt; Build.VERSION_CODES.N) {" errorLine2="          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location file="src/main/java/com/anysoftkeyboard/ui/settings/QuickTextSettingsFragment.java" line="41" column="11" />
+    </issue>
+    <issue id="ObsoleteSdkInt" message="Unnecessary; `SDK_INT` is always &gt;= 24" errorLine1="  @RequiresApi(api = Build.VERSION_CODES.N)" errorLine2="  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location file="src/main/java/com/anysoftkeyboard/addons/UserUnlockedReceiver.java" line="44" column="3" />
+    </issue>
+    <issue id="ObsoleteSdkInt" message="This folder configuration (`v24`) is unnecessary; `minSdkVersion` is 26. Merge all the resources in this folder into `animator`.">
+        <location file="src/main/res/animator-v24" />
+    </issue>
+    <issue id="ObsoleteSdkInt" message="This folder configuration (`v26`) is unnecessary; `minSdkVersion` is 26. Merge all the resources in this folder into `mipmap-anydpi`.">
+        <location file="src/main/res/mipmap-anydpi-v26" />
+    </issue>
+    <issue id="ObsoleteSdkInt" message="Unnecessary; `SDK_INT` is always &gt;= 25" errorLine1="    tools:targetApi=&quot;n_mr1&quot;&gt;" errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~">
+        <location file="src/main/res/xml/shortcuts.xml" line="4" column="5" />
+    </issue>
+    <issue id="ObsoleteSdkInt" message="This folder configuration (`v24`) is unnecessary; `minSdkVersion` is 26. Merge all the resources in this folder into `xml`.">
+        <location file="src/main/res/xml-v24" />
+    </issue>
+</issues>

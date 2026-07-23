@@ -29,6 +29,9 @@ android {
         // set by android_general.gradle.
         minSdkVersion 26
     }
+    lint {
+        baseline = file("${rootProject.projectDir}/lint-baselines/ime-app.xml")
+    }
 }
 
 android {

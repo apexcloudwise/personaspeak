@@ -160,17 +160,17 @@ echo "[7/9] unit tests (core-personas, core-providers, personaspeak-ui, ime:app)
 "$root/gradlew" -p "$root" \
     :core-personas:test :core-providers:test \
     :personaspeak-ui:testDebugUnitTest :ime:app:testDebugUnitTest \
-    --console=plain --no-daemon
+    --console=plain --no-daemon --rerun-tasks
 echo "  OK"
 
 # --- 8. lintDebug (where configured) ----------------------------------------
 echo "[8/9] lintDebug (:ime:app)..."
-"$root/gradlew" -p "$root" :ime:app:lintDebug --console=plain --no-daemon
+"$root/gradlew" -p "$root" :ime:app:lintDebug --console=plain --no-daemon --rerun-tasks
 echo "  OK"
 
 # --- 9. assembleDebug -------------------------------------------------------
 echo "[9/9] :ime:app:assembleDebug..."
-"$root/gradlew" -p "$root" :ime:app:assembleDebug --console=plain --no-daemon
+"$root/gradlew" -p "$root" :ime:app:assembleDebug --console=plain --no-daemon --rerun-tasks
 echo "  OK"
 
 echo ""

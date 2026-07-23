@@ -126,7 +126,9 @@ class InputConnectionEditorPort(
         val sdkInt = sdkIntSupplier()
         val success: Boolean
 
-        if (sdkInt >= 34) {
+        if (sdkInt >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE
+            && Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE
+        ) {
             success = connection.replaceText(0, oldLength, replacement, 1, null)
         } else {
             connection.finishComposingText()

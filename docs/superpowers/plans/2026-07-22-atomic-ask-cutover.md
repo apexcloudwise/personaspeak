@@ -458,11 +458,42 @@ Commit: `feat(android): add PersonaSpeak flow to real ASK view`.
 
 The script checks clean tracked state, JDK 21, exact closure, dictionary licenses, ledger, core purity with failure-aware `rg`, all unit tests, `lintDebug` where configured, and `:ime:app:assembleDebug`. It intentionally does not require one APK yet because rollback modules still exist.
 
-- [ ] **Step 2: Run it from a clean commit**
+- [x] **Step 2: Run it from a clean commit**
 
 Run: `bash android/scripts/verify-milestone-2-precutover.sh`
 
 Expected: `PASS: milestone 2 pre-cutover gate`; capture elapsed time and SHA in the plan execution log.
+
+**Execution log (intermediate run, SHA e25728b):**
+
+All 9 checks passed. Raw log: `/tmp/personaspeak-t7-corrective-verifier-intermediate-opencodeglmcoder.log`.
+
+| Check | Result |
+|-------|--------|
+| 1. Clean tracked state | OK |
+| 2. JDK 21 | OK |
+| 3. Exact ASK closure (rollback modules tolerated) | OK |
+| 4. Dictionary licenses | OK |
+| 5. Upstream ledger | OK |
+| 6. Core purity | OK |
+| 7. Unit tests | OK |
+| 8. lintDebug | OK |
+| 9. assembleDebug | OK |
+
+Final line: `PASS: milestone 2 pre-cutover gate`.
+
+Unit test totals (mechanically derived from 123 JUnit XML files):
+- core-personas: 8 tests, 0 failures, 0 errors, 0 skipped
+- personaspeak-ui: 66 tests, 0 failures, 0 errors, 0 skipped
+- keyboard/ime/app: 1268 tests, 0 failures, 0 errors, 16 skipped
+- **Total: 1342 tests, 0 failures, 0 errors, 16 skipped**
+
+lintDebug totals (from `lint-results-debug.xml`):
+- Errors: 0 (13 ObsoleteSdkInt filtered by baseline `ime-app.xml`)
+- Warnings: 470
+- Hints: 3
+
+assembleDebug: BUILD SUCCESSFUL in 1m 16s, 491 actionable tasks executed.
 
 - [ ] **Step 3: Qualify the ASK APK while rollback modules still exist**
 
