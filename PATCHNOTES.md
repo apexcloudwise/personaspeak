@@ -10,6 +10,13 @@ Newest first, like all respectable patch notes.
 
 ---
 
+## 2026-07-24 — Suggestions keep their chair
+
+- PersonaSpeak now has an architectural seating plan: its own measured row
+  above AnySoftKeyboard's suggestion row and keys. The shared-strip prototypes
+  were cheaper only if we ignored the suggestions, the keys, or occasionally
+  both. ADR-0007 declines the discount.
+
 ## 2026-07-22 — The keyboard and the product become the same application
 
 - The first-party UI boundary is now a contract, not a vibe. CI builds the

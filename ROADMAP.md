@@ -53,9 +53,12 @@ persona strip above the keys that rewrites what you've typed.
       `EditorPort` contract, fake-port tests, and no ASK implementation imports.
 - [ ] **Unify the Android build** (ADR-0006): make ASK's `:ime:app` the only APK,
       delete the temporary `app` and `keyboard-stub`, and prove real ASK typing,
-      guarded host-editor replacement, and same-package settings on an emulator.
-- [ ] Persona strip grafted onto the chosen base: persona chip + mood chip +
-      transform, reading the draft and replacing it in place
+      guarded host-editor replacement, same-package settings, and the
+      [ADR-0007](docs/adr/0007-dedicated-personaspeak-row.md) dedicated-row
+      geometry on an emulator.
+- [ ] Persona strip grafted onto the chosen base as its own row above ASK's
+      untouched suggestions and keys: persona chip + mood chip + transform,
+      reading the draft and replacing it in place
 - [ ] core-providers: `CompletionProvider` interface; Gemini free tier
       (default), Anthropic, OpenAI, OpenRouter via BYOK; keys in Keystore
 - [ ] app: onboarding (enable → set default → pick provider → try it),

@@ -8,6 +8,34 @@
 
 **Tech Stack:** Gradle 9.2.1, AGP 8.13.2, Kotlin 2.3.10, JDK 21, Android compile SDK 36 / target SDK 35 / minimum SDK 26, AndroidX Compose, Lifecycle, SavedState, ViewModel, Robolectric, JUnit 4, Bash, ADB.
 
+## 2026-07-24 Dedicated-Row Amendment Gate
+
+Tasks 1–6 are historical accepted work at
+`e1861837763961515026c7b7c83662c35cf5b8b5`, but the Task 5/6 attachment
+assumption is not the final product geometry. Device investigation confirmed
+that the PersonaSpeak controls render through `addStripAction`, while the
+full-width 1080×148 px Compose surface overlaps ASK's 1080×95 px candidate
+view and extends 53 px into the keyboard.
+
+The owner selected the dedicated-row design in
+[ADR-0007](../../adr/0007-dedicated-personaspeak-row.md), restoring the
+already accepted Stitch contract: one separately measured PersonaSpeak row
+above ASK's untouched candidate row and key rows. The approved design is
+specified in
+[`2026-07-24-dedicated-personaspeak-row-design.md`](../specs/2026-07-24-dedicated-personaspeak-row-design.md).
+
+This plan is frozen at a design-review gate:
+
+- Task 7 device qualification is paused.
+- No corrective implementation starts until the written dedicated-row spec is
+  owner-reviewed and a replacement implementation plan is written and
+  independently reviewed.
+- The replacement plan must supersede the Task 5 Step 4 strip-action attachment
+  and Task 6 proof-surface geometry, add container/host/accessibility/device
+  tests, and preserve all accepted Tasks 1–6 behavior.
+- Tasks 8–10 remain blocked until the corrected Task 7 gate passes from a final
+  clean head with complete raw evidence and mechanically derived counts.
+
 ## Global Constraints
 
 - Immutable starting point: `ed1b723088a69998e25d3703eb00e052b49a524f` from `origin/main`.
@@ -445,6 +473,10 @@ Commit: `feat(android): add PersonaSpeak flow to real ASK view`.
 
 ### Task 7: Prove the Complete Gate Before Deleting Rollback Modules
 
+> **Paused by the 2026-07-24 dedicated-row amendment gate above.** The
+> pre-cutover build gate passed at `e186183`; device qualification must be
+> replaced by the reviewed dedicated-row plan before this task can complete.
+
 **Files:**
 - Create: `android/scripts/verify-milestone-2-precutover.sh`
 - Create: `docs/evidence/milestone-2/precutover-commands.txt`
@@ -677,4 +709,13 @@ The initial verdict was `APPROVE`, but implementation remains locked because the
 
 Follow-up review: `agy` / Gemini 3.5 Flash (Medium), read-only, plan SHA-256 `b130a5ae42d798086e106a0adb6b1c5c9c97156a2342f22850410b7a1a94b4f9`. Report: `/tmp/personaspeak-m2-plan-review-agy-followup.md`. The reviewer verified all five resolutions, found no regression or remaining finding, returned the integration lease, and gave `APPROVE` for that exact hash.
 
-The final plan file differs from the approved substantive hash only by replacing the preceding `pending` sentence with this immutable follow-up receipt. The final committed file hash and the reviewer's metadata-only certification are recorded in AgentChattr and issue #47; no further plan edit is permitted before the plan commit.
+The original final plan file differed from the approved substantive hash only
+by replacing the preceding `pending` sentence with this immutable follow-up
+receipt. That certification governed the original Tasks 1–10 and remains the
+historical authority for accepted Tasks 1–6.
+
+The owner-approved 2026-07-24 dedicated-row decision changes the Task 5/6 host
+geometry and Task 7 device gate. The amendment notice above deliberately
+invalidates the original certification for that affected scope. No corrective
+implementation is permitted until the new written spec and replacement plan
+complete their own owner and independent-review gates.
