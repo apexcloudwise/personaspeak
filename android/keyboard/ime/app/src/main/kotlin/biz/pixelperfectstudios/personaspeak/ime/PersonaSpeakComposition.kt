@@ -6,6 +6,8 @@ import android.view.View
 import android.view.Window
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputConnection
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.ComposeView
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.SavedStateHandle
@@ -24,10 +26,13 @@ import biz.pixelperfectstudios.personaspeak.ui.rewrite.RewritePanel
 import biz.pixelperfectstudios.personaspeak.ui.rewrite.RewritePanelViewModel
 import com.menny.android.anysoftkeyboard.LauncherSettingsActivity
 
-class PersonaSpeakComposition(
+class PersonaSpeakComposition @JvmOverloads constructor(
     private val context: Context,
     private val inputConnectionSupplier: () -> InputConnection?,
     private val editorInfoSupplier: () -> EditorInfo?,
+    private val contentInstaller: (ComposeView, @Composable () -> Unit) -> Unit = { view, content ->
+        view.setContent(content)
+    },
 ) {
 
     private val personaId = PersonaId.bundled("jeeves")
@@ -91,7 +96,7 @@ class PersonaSpeakComposition(
                 }
             },
         )[RewritePanelViewModel::class.java]
-        composeView.setContent {
+        contentInstaller(composeView) {
             val state by vm.state.collectAsState()
             RewritePanel(
                 state = state,

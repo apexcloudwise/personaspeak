@@ -3,6 +3,7 @@ package biz.pixelperfectstudios.personaspeak.ime
 import android.content.Context
 import android.view.inputmethod.EditorInfo
 import com.anysoftkeyboard.keyboards.views.KeyboardViewContainerView
+import androidx.compose.ui.platform.ComposeView
 import org.junit.Assert.*
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -23,14 +24,17 @@ class PersonaSpeakCompositionTest {
         var stripAdds = 0
 
         override fun addExtensionRow(provider: ExtensionRowProvider) {
+            super.addExtensionRow(provider)
             extensionAdds++
         }
 
         override fun removeExtensionRow(provider: ExtensionRowProvider) {
+            super.removeExtensionRow(provider)
             extensionRemoves++
         }
 
         override fun addStripAction(provider: StripActionProvider, highPriority: Boolean) {
+            super.addStripAction(provider, highPriority)
             stripAdds++
         }
     }
@@ -38,7 +42,17 @@ class PersonaSpeakCompositionTest {
     @Test
     fun `input view uses one extension row and never a strip action`() {
         val container = RecordingKeyboardViewContainerView(context)
-        val composition = PersonaSpeakComposition(context, { null }, { EditorInfo() })
+        var contentInstallations = 0
+        val contentInstaller: (ComposeView, @androidx.compose.runtime.Composable () -> Unit) -> Unit = { _, _ ->
+            contentInstallations++
+        }
+
+        val composition = PersonaSpeakComposition(
+            context = context,
+            inputConnectionSupplier = { null },
+            editorInfoSupplier = { EditorInfo() },
+            contentInstaller = contentInstaller
+        )
         composition.onCreateInputView(container, null)
         composition.onStartInput(EditorInfo(), false)
 
@@ -49,5 +63,6 @@ class PersonaSpeakCompositionTest {
         assertEquals(1, container.extensionAdds)
         assertEquals(1, container.extensionRemoves)
         assertEquals(0, container.stripAdds)
+        assertEquals(1, contentInstallations)
     }
 }
