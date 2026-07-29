@@ -10,6 +10,22 @@ Newest first, like all respectable patch notes.
 
 ---
 
+## 2026-07-29 — Milestone two acquires written instructions
+
+- The accepted ASK cutover now has an executable completion plan: preserve the
+  reviewed history, add the dedicated PersonaSpeak row in serial slices, delete
+  both rollback applications atomically, prove exactly one APK, restore the
+  qualification device, and merge only exact-head evidence. The keyboard is
+  unchanged; the paperwork has become unusually competent.
+
+## 2026-07-29 — The keyboard receives a route to becoming installable
+
+- The production route (commit `f773aff`) now carries PersonaSpeak from the atomic ASK cutover
+  through real keyboard flow, encrypted provider state, onboarding, visual and
+  privacy qualification, and one reproducible signed APK. Eight milestones now
+  have explicit evidence, restoration, review, and stop gates; store publication
+  remains outside the velvet rope until it acquires a design of its own.
+
 ## 2026-07-24 — Suggestions keep their chair
 
 - PersonaSpeak now has an architectural seating plan: its own measured row
