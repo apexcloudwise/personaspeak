@@ -14,7 +14,7 @@ import androidx.lifecycle.viewmodel.CreationExtras
 import biz.pixelperfectstudios.personaspeak.ime.editor.EditorSessionState
 import biz.pixelperfectstudios.personaspeak.ime.editor.InputConnectionEditorPort
 import biz.pixelperfectstudios.personaspeak.ime.host.ImeViewTreeOwners
-import biz.pixelperfectstudios.personaspeak.ime.host.PersonaSpeakStripActionProvider
+import biz.pixelperfectstudios.personaspeak.ime.host.PersonaSpeakRowProvider
 import biz.pixelperfectstudios.personaspeak.personas.PersonaId
 import biz.pixelperfectstudios.personaspeak.providers.FakeProvider
 import biz.pixelperfectstudios.personaspeak.ui.personas.AssetPersonaDocumentSource
@@ -47,8 +47,9 @@ class PersonaSpeakComposition(
     )
 
     val owners = ImeViewTreeOwners()
-    private val stripProvider = PersonaSpeakStripActionProvider(owners)
+    private val rowProvider = PersonaSpeakRowProvider(owners)
     private var container: com.anysoftkeyboard.keyboards.views.KeyboardViewContainerView? = null
+    private var isAdded = false
 
     fun onCreateInputView(containerView: View, window: Window?) {
         container = containerView as? com.anysoftkeyboard.keyboards.views.KeyboardViewContainerView
@@ -70,8 +71,10 @@ class PersonaSpeakComposition(
     fun onStartInputView() {
         owners.startInput()
         val c = container ?: return
-        c.addStripAction(stripProvider, true)
-        val composeView = stripProvider.lastComposeView ?: return
+        if (isAdded) return
+        c.addExtensionRow(rowProvider)
+        isAdded = true
+        val composeView = rowProvider.lastComposeView ?: return
         val vm = ViewModelProvider(
             owners.viewModelStore,
             object : ViewModelProvider.Factory {
@@ -110,11 +113,14 @@ class PersonaSpeakComposition(
     fun onFinishInput() {
         owners.finishInput()
         val c = container ?: return
-        c.removeStripAction(stripProvider)
+        if (!isAdded) return
+        c.removeExtensionRow(rowProvider)
+        isAdded = false
     }
 
     fun onDestroy() {
-        stripProvider.destroy()
+        rowProvider.destroy()
+        isAdded = false
         owners.destroy()
         sessionState.finish()
     }
