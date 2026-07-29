@@ -7,6 +7,7 @@ import android.graphics.drawable.Drawable;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import androidx.test.core.app.ApplicationProvider;
 import com.anysoftkeyboard.AnySoftKeyboardRobolectricTestRunner;
@@ -412,5 +413,135 @@ public class KeyboardViewContainerViewTest {
     Assert.assertEquals(midX, e.getX(), 0.01f);
     // being offset
     Assert.assertEquals(candidateY + 1f, e.getY(), 0.01f);
+  }
+
+  private static final class FixedExtensionRowProvider
+      implements KeyboardViewContainerView.ExtensionRowProvider {
+    final View view;
+    int removed;
+
+    FixedExtensionRowProvider(KeyboardViewContainerView parent, int height) {
+      view = new View(parent.getContext());
+      view.setLayoutParams(
+          new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, height));
+    }
+
+    @Override public View inflateExtensionRow(ViewGroup parent) { return view; }
+    @Override public void onRemoved() { removed++; }
+  }
+
+  @Test
+  public void testExtensionRowMeasuresAboveCandidateAndKeyboard() {
+    var provider = new FixedExtensionRowProvider(mUnderTest, 60);
+    mUnderTest.addExtensionRow(provider);
+    mUnderTest.measure(
+        View.MeasureSpec.makeMeasureSpec(1024, View.MeasureSpec.EXACTLY),
+        View.MeasureSpec.makeMeasureSpec(1200, View.MeasureSpec.AT_MOST));
+    mUnderTest.layout(0, 0, 1024, mUnderTest.getMeasuredHeight());
+
+    Assert.assertEquals(0, provider.view.getTop());
+    Assert.assertEquals(60, provider.view.getBottom());
+    Assert.assertEquals(60, mUnderTest.getCandidateView().getTop());
+    Assert.assertEquals(
+        mUnderTest.getCandidateView().getBottom(),
+        ((View) mUnderTest.getStandardKeyboardView()).getTop());
+    Assert.assertEquals(1024, provider.view.getMeasuredWidth());
+  }
+
+  @Test
+  public void testExtensionRowIsIndependentOfCandidateVisibility() {
+    var provider = new FixedExtensionRowProvider(mUnderTest, 60);
+    mUnderTest.addExtensionRow(provider);
+    mUnderTest.setActionsStripVisibility(false);
+    mUnderTest.measure(
+        View.MeasureSpec.makeMeasureSpec(1024, View.MeasureSpec.EXACTLY),
+        View.MeasureSpec.makeMeasureSpec(1200, View.MeasureSpec.AT_MOST));
+    mUnderTest.layout(0, 0, 1024, mUnderTest.getMeasuredHeight());
+
+    Assert.assertSame(mUnderTest, provider.view.getParent());
+    Assert.assertEquals(0, provider.view.getTop());
+    Assert.assertEquals(60, provider.view.getBottom());
+    Assert.assertEquals(60, ((View) mUnderTest.getStandardKeyboardView()).getTop());
+  }
+
+  @Test
+  public void testStripActionLayoutsOnCandidateBelowExtensionRow() {
+    var provider = new FixedExtensionRowProvider(mUnderTest, 60);
+    mUnderTest.addExtensionRow(provider);
+
+    View stripAction = new View(mUnderTest.getContext());
+    stripAction.setLayoutParams(new ViewGroup.LayoutParams(
+        ViewGroup.LayoutParams.WRAP_CONTENT,
+        mUnderTest.getResources().getDimensionPixelSize(R.dimen.candidate_strip_height)
+    ));
+    KeyboardViewContainerView.StripActionProvider actionProvider =
+        Mockito.mock(KeyboardViewContainerView.StripActionProvider.class);
+    Mockito.doReturn(stripAction).when(actionProvider).inflateActionView(any());
+    mUnderTest.addStripAction(actionProvider, false);
+
+    mUnderTest.measure(
+        View.MeasureSpec.makeMeasureSpec(1024, View.MeasureSpec.EXACTLY),
+        View.MeasureSpec.makeMeasureSpec(1200, View.MeasureSpec.AT_MOST));
+    mUnderTest.layout(0, 0, 1024, mUnderTest.getMeasuredHeight());
+
+    Assert.assertEquals(mUnderTest.getCandidateView().getTop(), stripAction.getTop());
+    Assert.assertEquals(mUnderTest.getCandidateView().getBottom(), stripAction.getBottom());
+  }
+
+  @Test
+  public void testExtensionRowRemeasureMovesCandidateWithoutOverlap() {
+    var provider = new FixedExtensionRowProvider(mUnderTest, 60);
+    mUnderTest.addExtensionRow(provider);
+
+    int widthSpec = View.MeasureSpec.makeMeasureSpec(1024, View.MeasureSpec.EXACTLY);
+    int heightSpec = View.MeasureSpec.makeMeasureSpec(1200, View.MeasureSpec.AT_MOST);
+
+    mUnderTest.measure(widthSpec, heightSpec);
+    mUnderTest.layout(0, 0, 1024, mUnderTest.getMeasuredHeight());
+    Assert.assertEquals(60, mUnderTest.getCandidateView().getTop());
+
+    provider.view.getLayoutParams().height = 96;
+    mUnderTest.requestLayout();
+    mUnderTest.measure(widthSpec, heightSpec);
+    mUnderTest.layout(0, 0, 1024, mUnderTest.getMeasuredHeight());
+    Assert.assertEquals(96, mUnderTest.getCandidateView().getTop());
+  }
+
+  @Test
+  public void testDoubleAddExtensionRowIsIdempotent() {
+    var provider = new FixedExtensionRowProvider(mUnderTest, 60);
+    mUnderTest.addExtensionRow(provider);
+    mUnderTest.addExtensionRow(provider);
+    Assert.assertEquals(3, mUnderTest.getChildCount());
+  }
+
+  @Test
+  public void testRemoveExtensionRowCallsProviderOnce() {
+    var provider = new FixedExtensionRowProvider(mUnderTest, 60);
+    mUnderTest.addExtensionRow(provider);
+
+    mUnderTest.removeExtensionRow(provider);
+    mUnderTest.removeExtensionRow(provider);
+
+    Assert.assertEquals(1, provider.removed);
+    Assert.assertNull(provider.view.getParent());
+  }
+
+  @Test(expected = IllegalStateException.class)
+  public void testExtensionRowRejectsInflatedViewWithParent() {
+    mUnderTest.setActionsStripVisibility(false);
+
+    var provider = new KeyboardViewContainerView.ExtensionRowProvider() {
+      View view;
+      {
+        view = new View(mUnderTest.getContext());
+        FrameLayout parent = new FrameLayout(mUnderTest.getContext());
+        parent.addView(view);
+      }
+      @Override public View inflateExtensionRow(ViewGroup parent) { return view; }
+      @Override public void onRemoved() {}
+    };
+
+    mUnderTest.addExtensionRow(provider);
   }
 }
