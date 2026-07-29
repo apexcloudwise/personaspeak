@@ -66,7 +66,8 @@ Repository facts that later milestones must not mistake for completed work:
   first-party PersonaSpeak R8 keep rules, and can discover shared `/tmp`
   signing or publishing credentials;
 - dependency versions are pinned in places, but dependency locking does not
-  exist.
+  exist;
+- the inherited manifest declares the `android.permission.READ_CONTACTS` permission, which is not yet minimized or removed.
 
 ## Delivery shape
 

@@ -12,7 +12,7 @@ Newest first, like all respectable patch notes.
 
 ## 2026-07-29 — The keyboard receives a route to becoming installable
 
-- The production route now carries PersonaSpeak from the atomic ASK cutover
+- The production route (commit `f773aff`) now carries PersonaSpeak from the atomic ASK cutover
   through real keyboard flow, encrypted provider state, onboarding, visual and
   privacy qualification, and one reproducible signed APK. Eight milestones now
   have explicit evidence, restoration, review, and stop gates; store publication
