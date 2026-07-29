@@ -49,7 +49,7 @@ persona strip above the keys that rewrites what you've typed.
       words, dictionaries, clipboard, backups, diagnostics) — its own ADR,
       before public privacy copy can ship. The static inventory is complete;
       release-APK and on-device verification remain release gates.
-- [ ] Create `:personaspeak-ui` with source-neutral persona access, the accepted
+- [x] Create `:personaspeak-ui` with source-neutral persona access, the accepted
       `EditorPort` contract, fake-port tests, and no ASK implementation imports.
 - [ ] **Unify the Android build** (ADR-0006): make ASK's `:ime:app` the only APK,
       delete the temporary `app` and `keyboard-stub`, and prove real ASK typing,
@@ -61,6 +61,7 @@ persona strip above the keys that rewrites what you've typed.
 - [ ] app: onboarding (enable → set default → pick provider → try it),
       persona browser, settings
 - [ ] CI: assembleDebug + unit tests per PR; APK artifact on tags
+- [ ] **Installable M8 (Release Readiness)**: signing, cert-fingerprint pinning, version `v0.1.0`/`versionCode=1000`/immutable tag, fail-closed release build (rejected if active provider is fake/stub — test active composition, not ban class), usefulness receipt (one deterministic rewrite through production path + one failure as user-presentable message), R8/minification risk (release-only first-party reachability with no keep policy), dependency-lock state as reproducibility input.
 
 **Exit demo:** in WhatsApp, type "running late" on your normal keyboard —
 which is now ours — tap 🎩, send something Wodehouse would sign off on. No
