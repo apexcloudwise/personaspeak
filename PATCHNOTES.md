@@ -10,6 +10,26 @@ Newest first, like all respectable patch notes.
 
 ---
 
+## 2026-08-05 — One keyboard, one APK, one row of its own
+
+- PersonaSpeak now rides in a dedicated row above AnySoftKeyboard's
+  suggestions and keys, instead of borrowing a seat on the candidate strip.
+  Review scrolls inside a frozen `min(320dp, 40%)` bound sampled before the
+  row expands — sampling afterwards feeds the row's growth back into its own
+  limit, which ends with the keyboard covered by the thing meant to sit above
+  it. Every control clears 48dp, including Dismiss, which until now had no
+  test tag and therefore no opinion about its own size.
+- The two rollback modules are gone. `android/app` and `android/keyboard-stub`
+  existed so we could retreat; the retreat is over, and ASK's `:ime:app` is
+  now the only project that produces an APK. The tree used to yield three of
+  them, one of which was upstream copying the artifact somewhere convenient.
+  It no longer does that here, and still does it everywhere else.
+- New gates: exactly one APK at exactly one path from exactly one application
+  project, and one aggregate Milestone 2 verifier that CI now calls instead of
+  keeping its own parallel list of steps to drift out of sync with. Each
+  verifier has a fixture suite that runs before the verifier is trusted,
+  because a green gate built on an unchecked tool is worse than no gate.
+
 ## 2026-08-05 — The repo files its license
 
 - Root `/LICENSE` now carries the official Apache-2.0 text. The app code has
