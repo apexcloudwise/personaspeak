@@ -97,6 +97,7 @@ is_ignored() {
     outputs/* | node_modules/* | */node_modules/* | .DS_Store | */.DS_Store | \
     *.iml | .generated_pack_version | */.generated_pack_version | \
     .cxx/* | */.cxx/* | .project | .settings/* | \
+    .robolectric-android-all-jars/* | */.robolectric-android-all-jars/* | \
     addons/languages/*/pack/src/main/res/raw/*_words_*.dict | \
     addons/languages/*/pack/src/main/res/values/*_words_dict_array.xml | \
     UPSTREAM-MODIFIED.md)
