@@ -51,11 +51,15 @@ persona strip above the keys that rewrites what you've typed.
       release-APK and on-device verification remain release gates.
 - [x] Create `:personaspeak-ui` with source-neutral persona access, the accepted
       `EditorPort` contract, fake-port tests, and no ASK implementation imports.
-- [ ] **Unify the Android build** (ADR-0006): make ASK's `:ime:app` the only APK,
+- [x] **Unify the Android build** (ADR-0006): make ASK's `:ime:app` the only APK,
       delete the temporary `app` and `keyboard-stub`, and prove real ASK typing,
       guarded host-editor replacement, same-package settings, and the
       [ADR-0007](docs/adr/0007-dedicated-personaspeak-row.md) dedicated-row
-      geometry on an emulator.
+      geometry on an emulator. Qualified on `CityZen_Dev`; receipt in
+      [`docs/evidence/milestone-2/`](docs/evidence/milestone-2/README.md).
+      The dedicated-row geometry is proven by host tests and shown by
+      screenshots — the receipt records why the on-device view bounds could
+      not be measured mechanically.
 - [ ] Persona strip grafted onto the chosen base as its own row above ASK's
       untouched suggestions and keys: persona chip + mood chip + transform,
       reading the draft and replacing it in place
