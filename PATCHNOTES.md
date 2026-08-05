@@ -10,6 +10,14 @@ Newest first, like all respectable patch notes.
 
 ---
 
+## 2026-08-05 — The repo files its license
+
+- Root `/LICENSE` now carries the official Apache-2.0 text. The app code has
+  been Apache-2.0 since ADR-0003; the paperwork had simply not reached the
+  front door. AnySoftKeyboard's vendored license stays at
+  `android/keyboard/LICENSE`, and persona content remains CC-BY — a license
+  file is not a personality transplant.
+
 ## 2026-07-29 — Milestone two acquires written instructions
 
 - The accepted ASK cutover now has an executable completion plan: preserve the
