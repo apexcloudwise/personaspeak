@@ -19,6 +19,10 @@ package com.menny.android.anysoftkeyboard;
 import android.content.ComponentName;
 import android.os.Handler;
 import android.os.Looper;
+import android.view.View;
+import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputConnection;
+import biz.pixelperfectstudios.personaspeak.ime.PersonaSpeakComposition;
 import com.anysoftkeyboard.saywhat.PublicNotices;
 
 /*
@@ -37,11 +41,17 @@ public class SoftKeyboard extends PublicNotices {
    */
   private static final boolean DELAY_SELECTION_UPDATES = false;
   private Handler mDelayer = null;
+  private PersonaSpeakComposition mPersonaSpeak;
 
   @Override
   public void onCreate() {
     super.onCreate();
     if (DELAY_SELECTION_UPDATES) mDelayer = new Handler(Looper.getMainLooper());
+
+    mPersonaSpeak = new PersonaSpeakComposition(
+        /* context= */ this,
+        /* inputConnectionSupplier= */ () -> getCurrentInputConnection(),
+        /* editorInfoSupplier= */ () -> getCurrentInputEditorInfo());
   }
 
   @Override
@@ -62,6 +72,51 @@ public class SoftKeyboard extends PublicNotices {
       super.onUpdateSelection(
           oldSelStart, oldSelEnd, newSelStart, newSelEnd, candidatesStart, candidatesEnd);
     }
+    if (mPersonaSpeak != null) {
+      mPersonaSpeak.onUpdateSelection(oldSelStart, oldSelEnd, newSelStart, newSelEnd);
+    }
+  }
+
+  @Override
+  public void onStartInput(EditorInfo attribute, boolean restarting) {
+    super.onStartInput(attribute, restarting);
+    if (mPersonaSpeak != null) {
+      mPersonaSpeak.onStartInput(attribute, restarting);
+    }
+  }
+
+  @Override
+  public void onStartInputView(EditorInfo attribute, boolean restarting) {
+    super.onStartInputView(attribute, restarting);
+    if (mPersonaSpeak != null) {
+      mPersonaSpeak.onStartInputView();
+    }
+  }
+
+  @Override
+  public View onCreateInputView() {
+    View view = super.onCreateInputView();
+    if (mPersonaSpeak != null && getInputViewContainer() != null) {
+      mPersonaSpeak.onCreateInputView(getInputViewContainer(), getWindow().getWindow());
+    }
+    return view;
+  }
+
+  @Override
+  public void onFinishInput() {
+    if (mPersonaSpeak != null) {
+      mPersonaSpeak.onFinishInput();
+    }
+    super.onFinishInput();
+  }
+
+  @Override
+  public void onDestroy() {
+    if (mPersonaSpeak != null) {
+      mPersonaSpeak.onDestroy();
+      mPersonaSpeak = null;
+    }
+    super.onDestroy();
   }
 
   @Override

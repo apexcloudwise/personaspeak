@@ -13,6 +13,7 @@ import android.graphics.drawable.AnimationDrawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
 import android.text.method.LinkMovementMethod;
@@ -121,6 +122,17 @@ public class MainFragment extends Fragment {
         view.findViewById(R.id.no_notifications_permission_click_here_root);
     mNoNotificationPermissionView.setOnClickListener(
         v -> AnyApplication.notifier(requireContext()).askForNotificationPostPermission(this));
+
+    View personaspeakSettingsCard = view.findViewById(R.id.personaspeak_settings_card);
+    personaspeakSettingsCard.setOnClickListener(
+        v -> {
+          Intent imeSettingsIntent = new Intent(Settings.ACTION_INPUT_METHOD_SETTINGS);
+          try {
+            startActivity(imeSettingsIntent);
+          } catch (ActivityNotFoundException e) {
+            Logger.w(TAG, e, "No activity found to handle input-method settings intent.");
+          }
+        });
 
     setHasOptionsMenu(true);
   }

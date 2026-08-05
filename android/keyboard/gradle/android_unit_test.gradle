@@ -37,6 +37,7 @@ android {
                 systemProperty 'TestsGroupingFilter_TEST_GROUP_TO_EXECUTE_SYSTEM_PROPERTY_KEY', System.getenv().getOrDefault('TEST_GROUP_INDEX', '0')
                 systemProperty 'TestsGroupingFilter_TEST_GROUPS_COUNT_SYSTEM_PROPERTY_KEY', System.getenv().getOrDefault('TEST_GROUPS_COUNT', '1')
 
+                systemProperty 'robolectric.enabledSdks', '26,27,28,29,30,31,32,33,34,35,36'
                 systemProperty 'java.awt.headless', true
                 systemProperty 'robolectric.logging', 'stdout'
                 //disabling since there is just too much logging happening in the Robolectric layer.
@@ -51,7 +52,7 @@ android {
                     // We will tell Roboletric where exactly it can find the android-all artifacts.
                     // These files are downloaded using the "./scripts/download_robolectric_jars_to_machine.sh"
                     // script (which is called as part of the CI scripts).
-                    systemProperty 'robolectric.dependency.dir', "${rootDir.absolutePath}/.robolectric-android-all-jars/"
+                    systemProperty 'robolectric.dependency.dir', "${rootProject.ext.askSourceRoot.absolutePath}/.robolectric-android-all-jars/"
                 }
 
                 if (project.hasProperty('excludeTestClasses')) {
@@ -71,4 +72,4 @@ tasks.withType(AbstractTestTask).configureEach {
     failOnNoDiscoveredTests = false
 }
 
-apply from: "${rootDir}/gradle/jacoco.gradle"
+apply from: "${rootProject.ext.askSourceRoot}/gradle/jacoco.gradle"

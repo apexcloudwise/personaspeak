@@ -46,9 +46,11 @@ public class AnySoftKeyboardQuickTextTest extends AnySoftKeyboardBaseTest {
     Assert.assertFalse(foundQuickTextView.get());
     Assert.assertFalse(mAnySoftKeyboardUnderTest.isCurrentlyPredicting());
 
+    // PersonaSpeak: the dedicated extension row occupies child index 0, so
+    // the keyboard view sits at index 2 (row, candidates, keyboard).
     Assert.assertSame(
         mAnySoftKeyboardUnderTest.getInputView(),
-        mAnySoftKeyboardUnderTest.getInputViewContainer().getChildAt(1));
+        mAnySoftKeyboardUnderTest.getInputViewContainer().getChildAt(2));
 
     Assert.assertEquals(
         View.VISIBLE, ((View) mAnySoftKeyboardUnderTest.getInputView()).getVisibility());
@@ -381,9 +383,11 @@ public class AnySoftKeyboardQuickTextTest extends AnySoftKeyboardBaseTest {
     }
     Assert.assertTrue(foundQuickTextView.get());
 
+    // PersonaSpeak: the dedicated extension row occupies child index 0, so
+    // the keyboard view sits at index 2 (row, candidates, keyboard).
     Assert.assertSame(
         mAnySoftKeyboardUnderTest.getInputView(),
-        mAnySoftKeyboardUnderTest.getInputViewContainer().getChildAt(1));
+        mAnySoftKeyboardUnderTest.getInputViewContainer().getChildAt(2));
 
     Assert.assertEquals(
         View.GONE, ((View) mAnySoftKeyboardUnderTest.getInputView()).getVisibility());

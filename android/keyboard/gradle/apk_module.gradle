@@ -26,32 +26,44 @@ static String calculateApplicationId(Project proj) {
     return getExtValue(proj, "override_app_id", defaultId)
 }
 
-apply from: "${rootDir}/gradle/android_general.gradle"
+apply from: "${rootProject.ext.askSourceRoot}/gradle/android_general.gradle"
+
+// PersonaSpeak: the unified root build ships exactly one APK, from the
+// canonical AGP output path. These copy tasks duplicate that artifact into
+// <rootDir>/outputs/, which the one-APK gate correctly counts as a second
+// shippable file. Under the unified build we skip registration entirely
+// rather than delete the tasks — a nested or standalone upstream build does
+// not set the flag and keeps upstream's behaviour byte-for-byte.
+def personaSpeakUnifiedBuild =
+        rootProject.hasProperty('personaSpeakUnifiedBuild') &&
+                rootProject.property('personaSpeakUnifiedBuild') == true
 
 //copy bundles and APKs to output
-android.applicationVariants.configureEach { variant ->
-    def bundleProvider = tasks.named("sign${variant.name.capitalize()}Bundle")
-    def bundleCopy = tasks.register("copy${variant.name.capitalize()}Aab", Copy)
-    bundleCopy.configure { copier ->
-        copier.from "${project.buildDir.absolutePath}/outputs/bundle/${variant.name}/${project.name}-${variant.name}.aab"
-        copier.destinationDir file("${rootDir.absolutePath}/outputs/bundle/")
-        copier.rename ".*", "${project.parent.name}_${variant.name}.aab"
-        copier.dependsOn bundleProvider
-    }
-    bundleProvider.configure {
-        finalizedBy(bundleCopy)
-    }
+if (!personaSpeakUnifiedBuild) {
+    android.applicationVariants.configureEach { variant ->
+        def bundleProvider = tasks.named("sign${variant.name.capitalize()}Bundle")
+        def bundleCopy = tasks.register("copy${variant.name.capitalize()}Aab", Copy)
+        bundleCopy.configure { copier ->
+            copier.from "${project.buildDir.absolutePath}/outputs/bundle/${variant.name}/${project.name}-${variant.name}.aab"
+            copier.destinationDir file("${rootDir.absolutePath}/outputs/bundle/")
+            copier.rename ".*", "${project.parent.name}_${variant.name}.aab"
+            copier.dependsOn bundleProvider
+        }
+        bundleProvider.configure {
+            finalizedBy(bundleCopy)
+        }
 
-    def assembleProvider = tasks.named("assemble${variant.name.capitalize()}")
-    def apkCopy = tasks.register("copy${variant.name.capitalize()}Apk", Copy)
-    apkCopy.configure { copier ->
-        copier.from "${project.buildDir.absolutePath}/outputs/apk/${variant.name}/${project.name}-${variant.name}.apk"
-        copier.destinationDir file("${rootDir.absolutePath}/outputs/apk/")
-        copier.rename ".*", "${project.parent.name}_${variant.name}.apk"
-        copier.dependsOn assembleProvider
-    }
-    assembleProvider.configure {
-        finalizedBy(apkCopy)
+        def assembleProvider = tasks.named("assemble${variant.name.capitalize()}")
+        def apkCopy = tasks.register("copy${variant.name.capitalize()}Apk", Copy)
+        apkCopy.configure { copier ->
+            copier.from "${project.buildDir.absolutePath}/outputs/apk/${variant.name}/${project.name}-${variant.name}.apk"
+            copier.destinationDir file("${rootDir.absolutePath}/outputs/apk/")
+            copier.rename ".*", "${project.parent.name}_${variant.name}.apk"
+            copier.dependsOn assembleProvider
+        }
+        assembleProvider.configure {
+            finalizedBy(apkCopy)
+        }
     }
 }
 
@@ -146,4 +158,4 @@ if (project.ext.shouldBePublished && !publishingTrack.isEmpty()) {
     }
 }
 
-apply from: "$rootDir/gradle/versioning_apk.gradle"
+apply from: "${rootProject.ext.askSourceRoot}/gradle/versioning_apk.gradle"

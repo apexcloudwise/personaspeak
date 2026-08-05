@@ -2,20 +2,25 @@
 
 **Date:** 2026-07-22
 
-**Status:** Owner-approved sequence (2026-07-22)
+**Status:** Owner-approved sequence (2026-07-22); dedicated-row amendment
+approved 2026-07-24
 
 **Tracker:** [issue #38](https://github.com/apexcloudwise/personaspeak/issues/38)
 
 **Authority:** [ADR-0006](../../adr/0006-gradle-composition-for-the-graft.md) ·
-[single-APK design](2026-07-22-single-apk-ask-integration-design.md)
+[ADR-0007](../../adr/0007-dedicated-personaspeak-row.md) ·
+[single-APK design](2026-07-22-single-apk-ask-integration-design.md) ·
+[dedicated-row design](2026-07-24-dedicated-personaspeak-row-design.md)
 
 ## Current checkpoint
 
-PR #37 merged the pinned AnySoftKeyboard `1.13-r1` snapshot at
-`81835ebd22dad97dd19e4fbef31a240341ba545b`. ASK remains outside the Gradle
-graph. The temporary root `:app` and rejected `:keyboard-stub` still provide
-the pre-cutover build, install, and IME-registration baseline; they are not
-typing or product evidence.
+Milestone 2 Tasks 1–6 are implemented at
+`e1861837763961515026c7b7c83662c35cf5b8b5`. The clean pre-cutover build gate
+passes, but device geometry proved that the initial `addStripAction` host
+overlaps ASK's candidate and keyboard regions. ADR-0007 restores the committed
+screen contract with a dedicated PersonaSpeak row. Task 7 is paused until the
+written spec and replacement implementation plan complete review. The
+temporary root `:app` and rejected `:keyboard-stub` remain rollback anchors.
 
 ## Sequence
 
@@ -24,7 +29,7 @@ typing or product evidence.
 | 0A — truthful docs | README, ROADMAP, and the older stale-field spec agree with accepted ADRs and current code. | Link and placeholder checks; prose review. |
 | 0B — Stitch contract | A committed screen/state contract reconciles the preserved exports without importing the transport zip or export directory wholesale. | Every requested screen maps to a route/state or named adaptation; prior review findings resolved. |
 | 1 — first-party boundary | `:personaspeak-ui` contains the accepted `EditorPort`, rewrite coordinator, source-neutral persona repository, bundled-persona adapter, runtime validation, and fake-driven tests. ASK stays inert. | Current APK and stub AAR still build; the new UI AAR and all unit/golden tests pass. |
-| 2 — atomic ASK cutover | The root-owned unified build produces ASK `:ime:app` as the only APK. The real editor/view adapters work; temporary `:app` and `:keyboard-stub` are deleted. | Install, registration, real ASK typing, fake-provider capture/replace, settings launch, exact one-APK enumeration, dictionary licenses, and upstream-rent ledger. |
+| 2 — atomic ASK cutover | The root-owned unified build produces ASK `:ime:app` as the only APK. A dedicated PersonaSpeak row sits above untouched ASK suggestions and keys; temporary `:app` and `:keyboard-stub` are deleted only after that geometry passes Task 7. | Install, registration, visible suggestions, non-overlapping dedicated-row states, real ASK typing, fake-provider capture/review/replace, settings launch, exact one-APK enumeration, dictionary licenses, and upstream-rent ledger. |
 | 3 — keyboard product flow | Permanent strip, in-view persona/mood pickers, loading/cancel, result actions, and typed error/stale/unconfirmed states run over real ASK keys. | State tests, stale-race device tests, screenshots, and external-host journey. |
 | 4 — state, security, providers | Package settings, provider configuration, Keystore-held encryption key, ciphertext persistence, backup exclusions, and separately reviewed providers replace demo-only configuration. | Process-death tests, provider contract tests, secret/log scans, backup inspection, and truthful copy. |
 | 5 — onboarding and settings | The Stitch welcome, enable/select, provider/key, guided real-ASK demo, persona, provider, privacy, appearance, and inherited typing settings are complete. Review-before-replace remains fixed behavior. | Fresh-install guided-demo recording including `Use this` and verified host-field replacement, navigation tests, and screen captures. |
@@ -48,6 +53,10 @@ cutover gate.
   convenience.
 - ASK adapters implement first-party ports. First-party modules never import
   inherited ASK implementation types.
+- PersonaSpeak uses a separately measured row above ASK's candidate row.
+  PersonaSpeak states may expand the IME upward, but they never cover ASK
+  suggestions or key rows. Existing ASK strip actions remain candidate-row
+  actions.
 - Drafts, prompts, and provider results are request-scoped in-memory values,
   never catalog or settings data.
 - Every externally supplied persona is parsed and validated before it can enter

@@ -91,5 +91,35 @@
         <TextView
             style="@style/Ask.Legal.Text"
             android:text="@string/legal_this_app_uses_rx_prefs_license"/>
+
+        <View
+            style="@style/Ask.Legal.Divider" />
+
+        <TextView
+            style="@style/Ask.Legal.Title"
+            android:text="@string/legal_this_app_uses_aosp_wordlist_title"/>
+        <TextView
+            style="@style/Ask.Legal.Text"
+            android:text="@string/legal_this_app_uses_aosp_wordlist_license"/>
+
+        <View
+            style="@style/Ask.Legal.Divider" />
+
+        <TextView
+            style="@style/Ask.Legal.Title"
+            android:text="@string/legal_this_app_uses_ask_additionals_title"/>
+        <TextView
+            style="@style/Ask.Legal.Text"
+            android:text="@string/legal_this_app_uses_ask_additionals_license"/>
+
+        <View
+            style="@style/Ask.Legal.Divider" />
+
+        <TextView
+            style="@style/Ask.Legal.Title"
+            android:text="@string/legal_this_app_uses_ask_websites_title"/>
+        <TextView
+            style="@style/Ask.Legal.Text"
+            android:text="@string/legal_this_app_uses_ask_websites_license"/>
     </LinearLayout>
 </ScrollView>

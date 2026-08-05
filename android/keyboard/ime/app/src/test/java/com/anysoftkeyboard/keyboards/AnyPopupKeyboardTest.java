@@ -38,7 +38,9 @@ public class AnyPopupKeyboardTest {
         createAnyPopupKeyboard(R.xml.quick_text_unicode_emoticons, null, null);
     Assert.assertEquals("POP_KEYBOARD", keyboard.getKeyboardName());
 
-    Assert.assertEquals(98, keyboard.getKeys().size());
+    // API 26 selects res/xml-v24/quick_text_unicode_emoticons.xml, whose literal
+    // key count is 187 (the base sdk<24 file has 98).
+    Assert.assertEquals(187, keyboard.getKeys().size());
   }
 
   @Test

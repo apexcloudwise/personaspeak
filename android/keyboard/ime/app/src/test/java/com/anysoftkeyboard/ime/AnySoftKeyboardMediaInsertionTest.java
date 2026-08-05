@@ -109,7 +109,7 @@ public class AnySoftKeyboardMediaInsertionTest extends AnySoftKeyboardBaseTest {
         .onMediaRequestDone(
             1 + AnySoftKeyboardMediaInsertion.getIdForInsertionRequest(info),
             new InputContentInfoCompat(
-                Uri.EMPTY,
+                Uri.parse("content://com.anysoftkeyboard.test/media/1"),
                 new ClipDescription("", EditorInfoCompat.getContentMimeTypes(info)),
                 null));
 
@@ -138,7 +138,7 @@ public class AnySoftKeyboardMediaInsertionTest extends AnySoftKeyboardBaseTest {
         .onMediaRequestDone(
             AnySoftKeyboardMediaInsertion.getIdForInsertionRequest(info),
             new InputContentInfoCompat(
-                Uri.EMPTY,
+                Uri.parse("content://com.anysoftkeyboard.test/media/1"),
                 new ClipDescription("", EditorInfoCompat.getContentMimeTypes(info)),
                 null));
 
@@ -184,7 +184,7 @@ public class AnySoftKeyboardMediaInsertionTest extends AnySoftKeyboardBaseTest {
         .onMediaRequestDone(
             AnySoftKeyboardMediaInsertion.getIdForInsertionRequest(info),
             new InputContentInfoCompat(
-                Uri.EMPTY,
+                Uri.parse("content://com.anysoftkeyboard.test/media/1"),
                 new ClipDescription("", EditorInfoCompat.getContentMimeTypes(info)),
                 null));
 

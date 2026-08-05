@@ -1,7 +1,6 @@
 package com.menny.android.anysoftkeyboard;
 
 import static androidx.test.core.app.ApplicationProvider.getApplicationContext;
-import static org.robolectric.annotation.Config.OLDEST_SDK;
 
 import android.app.Application;
 import android.os.Build;
@@ -227,7 +226,7 @@ public abstract class AnyApplicationDeviceSpecificAllSdkTest {
   public static class AnyApplicationDeviceSpecificAllSdkShard1Test
       extends AnyApplicationDeviceSpecificAllSdkTest {
     @Test
-    @Config(minSdk = OLDEST_SDK, maxSdk = 23)
+    @Config(minSdk = 26, maxSdk = 27)
     public void testCreateDeviceSpecificImplementation() {
       testCreateDeviceSpecificImplementationImpl();
     }
@@ -236,7 +235,7 @@ public abstract class AnyApplicationDeviceSpecificAllSdkTest {
   public static class AnyApplicationDeviceSpecificAllSdkShard2Test
       extends AnyApplicationDeviceSpecificAllSdkTest {
     @Test
-    @Config(minSdk = 24, maxSdk = 28)
+    @Config(minSdk = 28, maxSdk = 30)
     public void testCreateDeviceSpecificImplementation() {
       testCreateDeviceSpecificImplementationImpl();
     }
@@ -245,7 +244,7 @@ public abstract class AnyApplicationDeviceSpecificAllSdkTest {
   public static class AnyApplicationDeviceSpecificAllSdkShard3Test
       extends AnyApplicationDeviceSpecificAllSdkTest {
     @Test
-    @Config(minSdk = 29, maxSdk = TestUtils.LATEST_STABLE_API_LEVEL)
+    @Config(minSdk = 31, maxSdk = TestUtils.LATEST_STABLE_API_LEVEL)
     public void testCreateDeviceSpecificImplementation() {
       testCreateDeviceSpecificImplementationImpl();
     }

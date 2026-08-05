@@ -1,1 +1,1 @@
-apply from: "$rootDir/addons/gradle/add_on_list_generator.gradle"
+apply from: "${rootProject.ext.askSourceRoot}/addons/gradle/add_on_list_generator.gradle"

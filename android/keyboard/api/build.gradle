@@ -1,6 +1,6 @@
 apply plugin: 'com.android.library'
 
-apply from: "${rootDir}/gradle/android_general.gradle"
+apply from: "${rootProject.ext.askSourceRoot}/gradle/android_general.gradle"
 
 android {
     namespace 'com.anysoftkeyboard.api'

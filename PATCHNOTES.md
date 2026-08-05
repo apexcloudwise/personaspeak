@@ -10,6 +10,33 @@ Newest first, like all respectable patch notes.
 
 ---
 
+## 2026-08-05 — One keyboard, one APK, one row of its own
+
+- PersonaSpeak now rides in a dedicated row above AnySoftKeyboard's
+  suggestions and keys, instead of borrowing a seat on the candidate strip.
+  Review scrolls inside a frozen `min(320dp, 40%)` bound sampled before the
+  row expands — sampling afterwards feeds the row's growth back into its own
+  limit, which ends with the keyboard covered by the thing meant to sit above
+  it. Every control clears 48dp, including Dismiss, which until now had no
+  test tag and therefore no opinion about its own size.
+- The two rollback modules are gone. `android/app` and `android/keyboard-stub`
+  existed so we could retreat; the retreat is over, and ASK's `:ime:app` is
+  now the only project that produces an APK. The tree used to yield three of
+  them, one of which was upstream copying the artifact somewhere convenient.
+  It no longer does that here, and still does it everywhere else.
+- New gates: exactly one APK at exactly one path from exactly one application
+  project, and one aggregate Milestone 2 verifier that CI now calls instead of
+  keeping its own parallel list of steps to drift out of sync with. Each
+  verifier has a fixture suite that runs before the verifier is trusted,
+  because a green gate built on an unchecked tool is worse than no gate.
+- What this entry does not claim: none of the above was verified on a real
+  device. The cutover is proven by the host gate and the unit suites. Mutation
+  against a real `InputConnection`, the height cap on a real screen, and
+  restoration after real mutation are pending, and land in a follow-up PR under
+  issue #47 along with the orchestrator that runs them. The earlier device
+  receipt was not accepted and is no longer tracked here; a receipt nobody
+  signed is not evidence, it is filing.
+
 ## 2026-08-05 — The repo files its license
 
 - Root `/LICENSE` now carries the official Apache-2.0 text. The app code has
@@ -33,6 +60,13 @@ Newest first, like all respectable patch notes.
   privacy qualification, and one reproducible signed APK. Eight milestones now
   have explicit evidence, restoration, review, and stop gates; store publication
   remains outside the velvet rope until it acquires a design of its own.
+
+## 2026-07-24 — Suggestions keep their chair
+
+- PersonaSpeak now has an architectural seating plan: its own measured row
+  above AnySoftKeyboard's suggestion row and keys. The shared-strip prototypes
+  were cheaper only if we ignored the suggestions, the keys, or occasionally
+  both. ADR-0007 declines the discount.
 
 ## 2026-07-22 — The keyboard and the product become the same application
 

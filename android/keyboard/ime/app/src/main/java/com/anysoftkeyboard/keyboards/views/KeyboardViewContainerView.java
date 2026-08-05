@@ -11,6 +11,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import com.anysoftkeyboard.ime.InputViewActionsProvider;
 import com.anysoftkeyboard.ime.InputViewBinder;
 import com.anysoftkeyboard.keyboards.views.extradraw.ExtraDraw;
@@ -41,6 +42,9 @@ public class KeyboardViewContainerView extends ViewGroup implements ThemeableChi
   private OverlayData mOverlayData = new OverlayDataImpl();
   private final Rect mExtraPaddingToMainKeyboard = new Rect();
   private ClicksExtraDraw mClicksDrawer;
+
+  @Nullable private ExtensionRowProvider mExtensionRowProvider;
+  @Nullable private View mExtensionRowView;
 
   private int mBottomPadding;
 
@@ -204,24 +208,26 @@ public class KeyboardViewContainerView extends ViewGroup implements ThemeableChi
     final int left = l + getPaddingLeft();
     final int right = r - getPaddingRight();
     int currentTop = t + getPaddingTop();
-    final int actionsTop = t + getPaddingTop();
-    int actionRight = r - getPaddingRight();
     for (int i = 0; i < count; i++) {
-      final View child = getChildAt(i);
-      if (child.getVisibility() == View.GONE) continue;
-      if (child.getTag(PROVIDER_TAG_ID) == null) {
-        child.layout(left, currentTop, right, currentTop + child.getMeasuredHeight());
-        currentTop += child.getMeasuredHeight();
-      } else {
-        // this is an action. It lives on the candidates-view
-        child.layout(
-            actionRight - child.getMeasuredWidth(),
-            actionsTop,
-            actionRight,
-            actionsTop + child.getMeasuredHeight());
-        actionRight -= child.getMeasuredWidth();
-      }
+      View child = getChildAt(i);
+      if (child.getVisibility() == View.GONE || child.getTag(PROVIDER_TAG_ID) != null) continue;
+      child.layout(left, currentTop, right, currentTop + child.getMeasuredHeight());
+      currentTop += child.getMeasuredHeight();
     }
+
+    int actionRight = r - getPaddingRight();
+    int actionsTop = mCandidateView.getTop();
+    for (int i = 0; i < count; i++) {
+      View child = getChildAt(i);
+      if (child.getVisibility() == View.GONE || child.getTag(PROVIDER_TAG_ID) == null) continue;
+      child.layout(
+          actionRight - child.getMeasuredWidth(),
+          actionsTop,
+          actionRight,
+          actionsTop + child.getMeasuredHeight());
+      actionRight -= child.getMeasuredWidth();
+    }
+
     // setting up the extra-offset for the main-keyboard
     final var mainKeyboard = ((View) mStandardKeyboardView);
     mainKeyboard.getHitRect(mExtraPaddingToMainKeyboard);
@@ -298,6 +304,35 @@ public class KeyboardViewContainerView extends ViewGroup implements ThemeableChi
         v.setBottomOffset(bottomPadding);
       }
     }
+  }
+
+  public void addExtensionRow(@NonNull ExtensionRowProvider provider) {
+    if (mExtensionRowProvider == provider) return;
+    if (mExtensionRowProvider != null) {
+      throw new IllegalStateException("Only one extension row is supported.");
+    }
+    View view = provider.inflateExtensionRow(this);
+    if (view.getParent() != null) {
+      throw new IllegalStateException("ExtensionRowProvider inflated a view with a parent!");
+    }
+    mExtensionRowProvider = provider;
+    mExtensionRowView = view;
+    addView(view, 0);
+    requestLayout();
+  }
+
+  public void removeExtensionRow(@NonNull ExtensionRowProvider provider) {
+    if (mExtensionRowProvider != provider) return;
+    removeView(mExtensionRowView);
+    mExtensionRowView = null;
+    mExtensionRowProvider = null;
+    provider.onRemoved();
+    requestLayout();
+  }
+
+  public interface ExtensionRowProvider {
+    @NonNull View inflateExtensionRow(@NonNull ViewGroup parent);
+    void onRemoved();
   }
 
   public interface StripActionProvider {
