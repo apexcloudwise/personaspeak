@@ -10,6 +10,15 @@ Newest first, like all respectable patch notes.
 
 ---
 
+## 2026-08-06 — The inspector receives an exit interview
+
+- The three failed Milestone 2 capture attempts now have one retrospective and
+  one replacement design. Bash retires from device orchestration; a bounded
+  Python instrument, adversarial fake-tool run, snapshot-backed emulator, typed
+  receipts, and external evidence archive take its place. The keyboard remains
+  unchanged. It has already spent quite enough time watching its clipboard
+  learn about itself.
+
 ## 2026-08-05 — One keyboard, one APK, one row of its own
 
 - PersonaSpeak now rides in a dedicated row above AnySoftKeyboard's
