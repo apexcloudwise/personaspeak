@@ -100,6 +100,18 @@ require 'personaspeak-ui/src'               "no UI ASK-import scan"
 require 'switchBackToPreviousKeyboard'      "no rejected-topology scan"
 require 'SoftKeyboard\.java'                "no upstream boundary seam allowlist"
 require 'apkanalyzer'                       "no APK manifest assertions"
+# Stage 10's `clean` deletes the XML stages 8-9 produced. Acceptance derives
+# its counts from that XML, so the gate must archive before cleaning or the
+# run destroys its own evidence.
+require 'MILESTONE_2_ARTIFACTS'             "no archive location for machine-readable results"
+require 'archived .* test-result XML'       "results are not archived before the clean"
+archive_line="$(line_of 'archived_suites=')"
+# The invoking line, not the stage list in the header comment.
+clean_line="$(grep -nE '^[[:space:]]*"\$root/gradlew".*clean' "$gate" | head -1 | cut -d: -f1)"
+if [ -n "$archive_line" ] && [ -n "$clean_line" ] && [ "$archive_line" -gt "$clean_line" ]; then
+  fail "results are archived after the clean that deletes them"
+fi
+checks=$((checks + 1))
 require 'biz\.pixelperfectstudios\.personaspeak' "no package-identity assertion"
 require 'SoftKeyboard'                      "no IME service assertion"
 require 'minSdk|minSdkVersion'              "no minSdk assertion"
@@ -148,10 +160,18 @@ require 'usage:' "no usage line"
 # --- 7. Read-only: the gate must not clean up artifacts -------------------
 # `clean` as a Gradle task is expected; `rm -rf` over outputs is not. A gate
 # that tidies away a stale APK turns a violation into a pass.
-if grep -nE '\brm\b' "$gate" | grep -vE 'rm -rf "\$workdir"|rm -f "\$|trap' | grep -q .; then
+# Allowed: its own temp workdir, and the test-results subtree of its own
+# archive directory (which it is also required to refuse to place inside the
+# repository). Anything else is the gate tidying away evidence.
+if grep -nE '\brm\b' "$gate" | grep -vE 'rm -rf "\$workdir"|rm -rf "\$archive/test-results"|rm -f "\$|trap' | grep -q .; then
   fail "removes files outside its own workdir — a gate must not clean up the evidence"
 fi
 checks=$((checks + 1))
+
+# The archive must be refused if it points inside the repository, or the gate
+# would dirty the tracked state it just verified.
+require 'MILESTONE_2_ARTIFACTS must be outside the repository' \
+  "archive location is not checked against the repository root"
 
 # --- 8. Success line present and unique -----------------------------------
 # Count only lines that can actually emit it. The header comment documents

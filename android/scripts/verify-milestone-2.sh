@@ -223,11 +223,70 @@ echo "[9/12] lintDebug (:ime:app)..."
     --console=plain --no-daemon --rerun-tasks
 echo "  OK"
 
+# --- 9b. Archive machine-readable results before the clean ------------------
+# Stage 10 runs `clean`, which deletes every build directory — including the
+# test-result and lint XML that stages 8 and 9 just produced. Acceptance
+# requires those counts to be derived mechanically from XML, so the run would
+# otherwise destroy its own evidence. Archive first, then clean.
+#
+# The archive lives OUTSIDE the tree. `clean` removes android/build wholesale,
+# so anything stored under it would be deleted by the very step this exists to
+# survive — and writing into the repo would dirty the tracked-clean state the
+# gate just verified. Set MILESTONE_2_ARTIFACTS to pin a durable location for
+# an acceptance run; otherwise a temp directory is used and its path printed.
+# Note the default is a fresh temp directory, NOT $workdir — $workdir is
+# removed on exit, and a gate that prints a path to evidence it then deletes
+# is worse than one that never claimed to keep any.
+archive="${MILESTONE_2_ARTIFACTS:-$(mktemp -d)}"
+mkdir -p "$archive"
+archive="$(cd "$archive" && pwd)"
+# Refuse an archive path inside the repository. It would dirty the tracked
+# state this gate just verified, and this script would then be deleting
+# repository content to make room for its own output — which is precisely the
+# behaviour the read-only rule forbids.
+case "$archive/" in
+    "$repo_root"/*)
+        echo "verify-milestone-2: MILESTONE_2_ARTIFACTS must be outside the repository: $archive" >&2
+        exit 2
+        ;;
+esac
+# Clear only the subtree this script writes, never the caller's directory.
+rm -rf "$archive/test-results"
+for src in \
+    "core-personas/build/test-results/test" \
+    "core-providers/build/test-results/test" \
+    "personaspeak-ui/build/test-results/testDebugUnitTest" \
+    "keyboard/ime/app/build/test-results/testDebugUnitTest"; do
+    if [ -d "$root/$src" ]; then
+        dest="$archive/test-results/$(printf '%s' "$src" | tr '/' '_')"
+        mkdir -p "$dest"
+        cp "$root/$src"/TEST-*.xml "$dest"/ 2>/dev/null || true
+    fi
+done
+lint_xml="$root/keyboard/ime/app/build/reports/lint-results-debug.xml"
+if [ -f "$lint_xml" ]; then
+    cp "$lint_xml" "$archive/"
+fi
+archived_suites="$(find "$archive/test-results" -name 'TEST-*.xml' 2>/dev/null | wc -l | tr -d ' ')"
+if [ "$archived_suites" -eq 0 ]; then
+    echo "FAIL: no test-result XML archived; counts could not be derived"
+    exit 1
+fi
+echo "  archived $archived_suites test-result XML files to $archive"
+
 # --- 10. Clean assembleDebug ------------------------------------------------
 echo "[10/12] clean :ime:app:assembleDebug..."
 "$root/gradlew" -p "$root" clean :ime:app:assembleDebug \
     --console=plain --no-daemon --rerun-tasks
 echo "  OK"
+
+# The clean above removes build/ wholesale on some AGP versions; make sure the
+# archive survived, because a receipt that quietly lost its evidence is worse
+# than one that admits it.
+if [ ! -d "$archive/test-results" ]; then
+    echo "FAIL: result archive did not survive the clean; counts unavailable"
+    exit 1
+fi
 
 # --- 11. Exact one APK ------------------------------------------------------
 echo "[11/12] exact-one-APK enumeration and topology..."
