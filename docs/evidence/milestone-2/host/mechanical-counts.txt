@@ -1,5 +1,0 @@
-core-personas_build_test-results_test                suites=   2 tests=    8 fail=  0 err=  0 skip=  0
-keyboard_ime_app_build_test-results_testDebugUnitTest suites= 118 tests= 1276 fail=  0 err=  0 skip= 16
-personaspeak-ui_build_test-results_testDebugUnitTest suites=   6 tests=   76 fail=  0 err=  0 skip=  0
-TOTAL                                                suites= 126 tests= 1360 fail=  0 err=  0 skip= 16
-lint: {'Error': 0, 'Warning': 471, 'Information': 0}

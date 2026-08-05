@@ -1,6 +1,0 @@
-=== PRIOR PACKAGE STATE ===
-2026-08-05T13:45:50Z
-PRIOR_PACKAGE_PRESENT=yes
-PRIOR_PACKAGE_PATH=/data/app/~~ohmM5x6N5M6OWxez--FCvA==/biz.pixelperfectstudios.personaspeak-6iAj76Ezx33JHC9x8qAJ5w==/base.apk
-PRIOR_APK_LOCAL_COPY=/private/tmp/claude-501/-Users-devkiran-workspace/7343face-20a9-46fc-8bbc-22056464727e/scratchpad/m2-evidence/device/prior-personaspeak.apk
-a5f74843e96a45400300a9ddfba28e8a4af86d62c6690e25adddf7d5251cf008  /private/tmp/claude-501/-Users-devkiran-workspace/7343face-20a9-46fc-8bbc-22056464727e/scratchpad/m2-evidence/device/prior-personaspeak.apk

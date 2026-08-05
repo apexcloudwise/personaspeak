@@ -29,6 +29,13 @@ Newest first, like all respectable patch notes.
   keeping its own parallel list of steps to drift out of sync with. Each
   verifier has a fixture suite that runs before the verifier is trusted,
   because a green gate built on an unchecked tool is worse than no gate.
+- What this entry does not claim: none of the above was verified on a real
+  device. The cutover is proven by the host gate and the unit suites. Mutation
+  against a real `InputConnection`, the height cap on a real screen, and
+  restoration after real mutation are pending, and land in a follow-up PR under
+  issue #47 along with the orchestrator that runs them. The earlier device
+  receipt was not accepted and is no longer tracked here; a receipt nobody
+  signed is not evidence, it is filing.
 
 ## 2026-08-05 — The repo files its license
 
