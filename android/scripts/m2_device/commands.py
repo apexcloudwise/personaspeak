@@ -98,8 +98,11 @@ def resolve_tool(
         raise FileNotFoundError(f"tool not found: {name}")
     v_args = version_args if version_args is not None else ["--version"]
     cr = run([resolved] + v_args, timeout=timeout)
-    version_line = cr.stdout.decode("utf-8", errors="replace").strip()
-    version = version_line.split("\n")[0] if version_line else f"rc={cr.returncode}"
+    text = cr.stdout.strip() or cr.stderr.strip()
+    if text:
+        version = text.decode("utf-8", errors="replace").split("\n")[0]
+    else:
+        raise RuntimeError(f"no version output from {name}")
     digest = None
     if os.path.isfile(resolved) and os.access(resolved, os.R_OK):
         try:

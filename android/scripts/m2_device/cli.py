@@ -46,16 +46,8 @@ def cmd_finalize(args: argparse.Namespace) -> int:
         return 1
     with open(args.manifest) as f:
         manifest = json.load(f)
-    privacy_ok = evidence.scan_directory(args.run_dir)
-    media_ok = all(
-        _validate_media_file(os.path.join(args.run_dir, name))
-        for name in manifest
-        if name.endswith((".png", ".mp4"))
-    )
     receipt = evidence.finalize(
-        capture, approval, manifest,
-        privacy_ok=privacy_ok,
-        media_ok=media_ok,
+        capture, approval, manifest, args.run_dir,
         restoration_verdict=args.restoration_verdict,
         counts=json.loads(args.counts),
         evidence_commit=args.evidence_commit,
@@ -68,15 +60,6 @@ def cmd_finalize(args: argparse.Namespace) -> int:
     else:
         sys.stdout.buffer.write(out)
     return 0
-
-
-def _validate_media_file(path: str) -> bool:
-    try:
-        with open(path, "rb") as f: data = f.read()
-    except OSError: return False
-    if path.endswith(".png"): return evidence.validate_png(data)
-    if path.endswith(".mp4"): return evidence.validate_mp4(data)
-    return True
 
 
 def cmd_approve(args: argparse.Namespace) -> int:

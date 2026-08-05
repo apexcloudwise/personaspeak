@@ -15,6 +15,7 @@ from android.scripts.m2_device.records import (
     ApprovalRecord,
     CaptureRecord,
     FinalReceipt,
+    VisualReview,
     encode,
     record_digest,
 )
@@ -44,7 +45,7 @@ def scan_directory(dir_path: str) -> bool:
                     if scan_text(fh.read()):
                         return False
             except OSError:
-                pass
+                return False
     return True
 
 
@@ -120,21 +121,35 @@ def manifest_digest(manifest: dict[str, str]) -> str:
 
 
 def check_evidence_root(path: str, repo_root: str) -> None:
-    ap = os.path.abspath(path)
-    if ap.startswith(os.path.abspath(repo_root) + os.sep) or ap == os.path.abspath(repo_root):
+    ap = os.path.realpath(path)
+    repo = os.path.realpath(repo_root)
+    if ap == repo or ap.startswith(repo + os.sep):
         raise ValueError("evidence root must be outside the repository")
-    tmp = tempfile.gettempdir()
-    if ap.startswith(tmp + os.sep) or ap == tmp:
-        raise ValueError("evidence root must not be in a temp directory")
+    for tmp in ["/tmp", "/var/tmp", tempfile.gettempdir()]:
+        tmp = os.path.realpath(tmp)
+        if ap == tmp or ap.startswith(tmp + os.sep):
+            raise ValueError("evidence root must not be in a temp directory")
+
+
+def _validate_media(path: str, name: str) -> bool:
+    try:
+        with open(path, "rb") as f:
+            data = f.read()
+    except OSError:
+        return False
+    if name.endswith(".png"):
+        return validate_png(data)
+    if name.endswith(".mp4"):
+        return validate_mp4(data)
+    return True
 
 
 def finalize(
     capture: CaptureRecord,
     approval: ApprovalRecord,
     manifest: dict[str, str],
+    evidence_dir: str,
     *,
-    privacy_ok: bool,
-    media_ok: bool,
     restoration_verdict: str,
     counts: dict[str, int],
     evidence_commit: str,
@@ -147,6 +162,14 @@ def finalize(
         raise ValueError("capture-record digest drift since approval")
     if man_d != approval.manifest_digest:
         raise ValueError("manifest digest drift since approval")
+    if approval.decision != VisualReview.APPROVED:
+        raise ValueError(f"approval decision was {approval.decision!r}, not approved")
+    privacy_ok = scan_directory(evidence_dir)
+    media_ok = all(
+        _validate_media(os.path.join(evidence_dir, name), name)
+        for name in manifest
+        if name.endswith((".png", ".mp4"))
+    )
     return FinalReceipt(
         capture_digest=cap_d,
         approval_digest=appr_d,

@@ -4,7 +4,7 @@ import unittest
 
 from android.scripts.m2_device import orchestrator as O
 from android.scripts.m2_device.records import (
-    CommandResult, PriorDeviceState, StepRecord, TerminalCause, ToolIdentity,
+    CommandResult, PriorDeviceState, RemoteResult, StepRecord, TerminalCause, ToolIdentity,
 )
 
 
@@ -70,14 +70,14 @@ class FakeHarness:
             cause=TerminalCause.COMPLETED,
         )]
 
-    def capture_evidence(self):
+    def capture_evidence(self) -> CommandResult:
         return _cr(rc=5 if self._fail_at == "capture" else 0)
 
     def restore(self):
         self.restore_count += 1
         return _cr(rc=5 if self._restore_fail else 0)
 
-    def verify_restore(self):
+    def verify_restore(self) -> PriorDeviceState:
         if self._verify_mismatch:
             return PriorDeviceState(
                 serial="emu-5554", emulator_state="booted",
@@ -144,7 +144,8 @@ class TestFixtureMismatch(unittest.TestCase):
         self.assertEqual(orch.terminal, TerminalCause.FIXTURE_MISMATCH)
         phases = [s.phase for s in rec.steps]
         self.assertNotIn("install", phases)
-        self.assertEqual(h.restore_count, 0)
+        self.assertEqual(h.restore_count, 1)
+        self.assertIsNotNone(rec.restoration)
 
 
 class TestInstallFailure(unittest.TestCase):
@@ -229,6 +230,72 @@ class TestMutationGuard(unittest.TestCase):
         orch.prior_state = None
         with self.assertRaises(RuntimeError):
             orch._guard_mutation("install")
+
+
+class TestRemoteResultDispatch(unittest.TestCase):
+    """B-1: _rc_of must consult remote_rc; unavailable never becomes zero."""
+
+    def _rr(self, transport_rc=0, remote_rc=None):
+        return RemoteResult(
+            transport=_cr(rc=transport_rc),
+            remote_rc=remote_rc,
+        )
+
+    def test_transport_ok_remote_failed(self):
+        result = self._rr(transport_rc=0, remote_rc=1)
+        self.assertNotEqual(O._rc_of(result), 0)
+
+    def test_transport_ok_remote_unavailable(self):
+        result = self._rr(transport_rc=0, remote_rc=None)
+        self.assertNotEqual(O._rc_of(result), 0)
+
+    def test_transport_ok_remote_success(self):
+        result = self._rr(transport_rc=0, remote_rc=0)
+        self.assertEqual(O._rc_of(result), 0)
+
+    def test_transport_failed(self):
+        result = self._rr(transport_rc=1, remote_rc=0)
+        self.assertNotEqual(O._rc_of(result), 0)
+
+    def test_remote_failed_stops_orchestrator(self):
+        class H:
+            restore_count = 0
+            def preflight(self): return _cr()
+            def launch_emulator(self): return _cr()
+            def attach(self): return _cr()
+            def capture_prior_state(self): return _prior()
+            def validate_fixture(self, prior): return _cr()
+            def install_apk(self): return RemoteResult(transport=_cr(), remote_rc=1)
+            def run_journey(self): return []
+            def capture_evidence(self): return _cr()
+            def restore(self):
+                self.restore_count += 1
+                return _cr()
+            def verify_restore(self): return _prior()
+        h = H()
+        orch = O.Orchestrator(h, repo_head="a", apk_sha256="b", tools=_tools())
+        orch.execute()
+        self.assertEqual(orch.terminal, TerminalCause.INSTALL_FAILED)
+
+    def test_remote_unavailable_stops_orchestrator(self):
+        class H:
+            restore_count = 0
+            def preflight(self): return _cr()
+            def launch_emulator(self): return _cr()
+            def attach(self): return _cr()
+            def capture_prior_state(self): return _prior()
+            def validate_fixture(self, prior): return _cr()
+            def install_apk(self): return RemoteResult(transport=_cr(), remote_rc=None)
+            def run_journey(self): return []
+            def capture_evidence(self): return _cr()
+            def restore(self):
+                self.restore_count += 1
+                return _cr()
+            def verify_restore(self): return _prior()
+        h = H()
+        orch = O.Orchestrator(h, repo_head="a", apk_sha256="b", tools=_tools())
+        orch.execute()
+        self.assertEqual(orch.terminal, TerminalCause.INSTALL_FAILED)
 
 
 class TestPreflightFailure(unittest.TestCase):

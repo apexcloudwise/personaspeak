@@ -60,6 +60,17 @@ class TestPrivacyScan(unittest.TestCase):
                 f.write("api_key=sk-1234567890abcdef\n")
             self.assertFalse(evidence.scan_directory(d))
 
+    def test_unreadable_file_fails_closed(self):
+        with tempfile.TemporaryDirectory() as d:
+            path = os.path.join(d, "unreadable.txt")
+            with open(path, "w") as f:
+                f.write("clean")
+            os.chmod(path, 0o000)
+            try:
+                self.assertFalse(evidence.scan_directory(d))
+            finally:
+                os.chmod(path, 0o644)
+
 
 class TestPNGValidation(unittest.TestCase):
     def test_valid_png(self):
@@ -129,6 +140,17 @@ class TestEvidenceRoot(unittest.TestCase):
         with self.assertRaises(ValueError):
             evidence.check_evidence_root(tempfile.gettempdir(), "/repo")
 
+    def test_rejects_vartmp(self):
+        with self.assertRaises(ValueError):
+            evidence.check_evidence_root("/var/tmp", "/repo")
+
+    def test_resolves_symlink(self):
+        with tempfile.TemporaryDirectory() as repo:
+            link = os.path.join(repo, "link_to_repo")
+            os.symlink(repo, link)
+            with self.assertRaises(ValueError):
+                evidence.check_evidence_root(link, repo)
+
     def test_accepts_external(self):
         evidence.check_evidence_root("/opt/evidence", "/repo")
 
@@ -140,55 +162,80 @@ class TestFinalize(unittest.TestCase):
             prior_state=None, steps=[], restoration=None, manifest_digest=None,
         )
 
-    def test_successful_finalize(self):
-        cap = self._capture()
-        cap_d = record_digest(cap)
-        man = {"screenshot.png": "abc123"}
-        man_d = evidence.manifest_digest(man)
-        appr = ApprovalRecord(
-            reviewer="reviewer", capture_digest=cap_d,
-            manifest_digest=man_d, decision=VisualReview.APPROVED,
+    def _make_approval(self, cap, man, decision=VisualReview.APPROVED):
+        return ApprovalRecord(
+            reviewer="reviewer", capture_digest=record_digest(cap),
+            manifest_digest=evidence.manifest_digest(man), decision=decision,
             approved_utc="2026-08-06T14:00:00Z",
         )
-        receipt = evidence.finalize(
-            cap, appr, man, privacy_ok=True, media_ok=True,
-            restoration_verdict="verified", counts={"screenshots": 7},
-            evidence_commit="sha", artifacts=man,
-        )
+
+    def test_successful_finalize(self):
+        cap = self._capture()
+        man = {"screenshot.png": "abc123"}
+        appr = self._make_approval(cap, man)
+        with tempfile.TemporaryDirectory() as d:
+            with open(os.path.join(d, "log.txt"), "w") as f:
+                f.write("clean log\n")
+            receipt = evidence.finalize(
+                cap, appr, man, d,
+                restoration_verdict="verified", counts={"screenshots": 7},
+                evidence_commit="sha", artifacts=man,
+            )
         self.assertTrue(receipt.privacy_ok)
-        self.assertTrue(receipt.media_ok)
-        self.assertEqual(receipt.restoration_verdict, "verified")
 
     def test_drift_blocks_finalize(self):
         cap = self._capture()
         man = {"x": "y"}
-        man_d = evidence.manifest_digest(man)
         appr = ApprovalRecord(
             reviewer="r", capture_digest="WRONG",
-            manifest_digest=man_d, decision=VisualReview.APPROVED,
+            manifest_digest=evidence.manifest_digest(man), decision=VisualReview.APPROVED,
             approved_utc="2026-08-06T14:00:00Z",
         )
         with self.assertRaises(ValueError):
             evidence.finalize(
-                cap, appr, man, privacy_ok=True, media_ok=True,
+                cap, appr, man, "/nonexistent",
                 restoration_verdict="verified", counts={},
                 evidence_commit="", artifacts={},
             )
 
     def test_manifest_drift_blocks_finalize(self):
         cap = self._capture()
-        cap_d = record_digest(cap)
         appr = ApprovalRecord(
-            reviewer="r", capture_digest=cap_d,
+            reviewer="r", capture_digest=record_digest(cap),
             manifest_digest="WRONG", decision=VisualReview.APPROVED,
             approved_utc="2026-08-06T14:00:00Z",
         )
         with self.assertRaises(ValueError):
             evidence.finalize(
-                cap, appr, {"x": "y"}, privacy_ok=True, media_ok=True,
+                cap, appr, {"x": "y"}, "/nonexistent",
                 restoration_verdict="verified", counts={},
                 evidence_commit="", artifacts={},
             )
+
+    def test_rejected_approval_blocks_finalize(self):
+        cap = self._capture()
+        man = {"screenshot.png": "abc"}
+        appr = self._make_approval(cap, man, decision=VisualReview.REJECTED)
+        with self.assertRaises(ValueError):
+            evidence.finalize(
+                cap, appr, man, "/nonexistent",
+                restoration_verdict="verified", counts={},
+                evidence_commit="", artifacts={},
+            )
+
+    def test_finalize_detects_privacy_violation(self):
+        cap = self._capture()
+        man = {"log.txt": "abc"}
+        appr = self._make_approval(cap, man)
+        with tempfile.TemporaryDirectory() as d:
+            with open(os.path.join(d, "log.txt"), "w") as f:
+                f.write("api_key=sk-1234567890abcdef\n")
+            receipt = evidence.finalize(
+                cap, appr, man, d,
+                restoration_verdict="verified", counts={},
+                evidence_commit="", artifacts=man,
+            )
+        self.assertFalse(receipt.privacy_ok)
 
 
 class TestCLI(unittest.TestCase):

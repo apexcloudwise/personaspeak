@@ -27,15 +27,15 @@ _MUTATION = frozenset({"install", "journey", "capture"})
 
 @runtime_checkable
 class JourneyHarness(Protocol):
-    def preflight(self) -> CommandResult: ...
-    def launch_emulator(self) -> CommandResult: ...
-    def attach(self) -> CommandResult: ...
+    def preflight(self) -> CommandResult | RemoteResult: ...
+    def launch_emulator(self) -> CommandResult | RemoteResult: ...
+    def attach(self) -> CommandResult | RemoteResult: ...
     def capture_prior_state(self) -> PriorDeviceState | None: ...
-    def validate_fixture(self, prior: PriorDeviceState) -> CommandResult: ...
-    def install_apk(self) -> CommandResult: ...
+    def validate_fixture(self, prior: PriorDeviceState) -> CommandResult | RemoteResult: ...
+    def install_apk(self) -> CommandResult | RemoteResult: ...
     def run_journey(self) -> list[StepRecord]: ...
-    def capture_evidence(self) -> CommandResult: ...
-    def restore(self) -> CommandResult: ...
+    def capture_evidence(self) -> CommandResult | RemoteResult: ...
+    def restore(self) -> CommandResult | RemoteResult: ...
     def verify_restore(self) -> PriorDeviceState: ...
 
 
@@ -43,7 +43,11 @@ def _rc_of(result) -> int:
     if isinstance(result, CommandResult):
         return result.returncode
     if isinstance(result, RemoteResult):
-        return result.transport.returncode
+        if result.transport.returncode != 0:
+            return result.transport.returncode
+        if result.remote_rc is None:
+            return 1
+        return result.remote_rc
     return 0
 
 
@@ -87,19 +91,17 @@ class Orchestrator:
         if self.terminal: return self._record()
 
         self._capture_prior()
-        if self.terminal: return self._record()
-
-        if self.prior_state:
-            self._run_phase("validate_fixture", "fixture identity check",
-                            lambda: self.harness.validate_fixture(self.prior_state),
-                            TerminalCause.FIXTURE_MISMATCH)
-        if self.terminal: return self._record()
 
         try:
-            self._guard_mutation("install")
-            self._run_phase("install", "install exact APK",
-                            lambda: self.harness.install_apk(),
-                            TerminalCause.INSTALL_FAILED)
+            if not self.terminal and self.prior_state:
+                self._run_phase("validate_fixture", "fixture identity check",
+                                lambda: self.harness.validate_fixture(self.prior_state),
+                                TerminalCause.FIXTURE_MISMATCH)
+            if not self.terminal:
+                self._guard_mutation("install")
+                self._run_phase("install", "install exact APK",
+                                lambda: self.harness.install_apk(),
+                                TerminalCause.INSTALL_FAILED)
             if not self.terminal:
                 self._guard_mutation("journey")
                 self._journey()

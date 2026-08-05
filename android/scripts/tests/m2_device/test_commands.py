@@ -137,6 +137,14 @@ class TestResolveTool(unittest.TestCase):
         ti = C.resolve_tool("sh", version_args=["-c", "echo custom-version"])
         self.assertIn("custom-version", ti.version)
 
+    def test_version_from_stderr(self):
+        ti = C.resolve_tool("sh", version_args=["-c", "echo v1.0 >&2"])
+        self.assertIn("v1.0", ti.version)
+
+    def test_no_version_output_raises(self):
+        with self.assertRaises(RuntimeError):
+            C.resolve_tool("sh", version_args=["-c", "true"])
+
 
 class TestNoShellStrings(unittest.TestCase):
     def test_pipe_not_interpreted(self):
