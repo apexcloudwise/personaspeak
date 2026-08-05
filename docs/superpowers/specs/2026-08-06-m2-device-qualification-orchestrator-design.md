@@ -2,7 +2,7 @@
 
 **Date:** 2026-08-06
 
-**Status:** Draft for owner review
+**Status:** Draft — two-PR consolidation approved; written-spec review pending
 
 **Milestone authority:** [issue #47](https://github.com/apexcloudwise/personaspeak/issues/47)
 
@@ -26,37 +26,46 @@ the inspector again, the design has failed even when its test counter is green.
 - No repair of the retired shell instrument.
 - No real provider, credential, onboarding, release, or distribution work.
 - No large logs, screenshots, or video in `main` history.
-- No device mutation during the first two implementation pull requests.
+- No device mutation during the machinery pull request.
 - No claim that timestamped raw evidence is byte-identical across runs.
 
-## Delivery shape: three small pull requests
+## Delivery shape: two pull requests and one preparation lease
 
-Issue #47 remains the parent milestone. Each child issue owns one concern, one
-author, one non-author reviewer, its own tests, and its own acceptance evidence.
-Roles are selected per pull request from actual authorship; they are not
-permanent offices with nameplates.
+Issue #47 remains the parent milestone. The first pull request owns the complete
+device-free instrument. A separately reviewed operational lease prepares the
+fixture and archive controls without changing repository code. The second pull
+request owns only real-device qualification and the compact receipt. Roles are
+selected per pull request from actual authorship; they are not permanent
+offices with nameplates.
 
-### PR A — typed orchestration core
+### PR A — complete device-free qualification machinery
 
 Build the typed record model, deterministic JSON codec, local process runner,
 remote-result interface, toolchain identity model, and restoration state
-machine. Tests use adversarial fake processes. No `adb`, emulator, or device
-contact is permitted.
+machine. Connect the real CLI to adversarial fake `adb`, `emulator`, and
+Android tooling. Implement the complete capture-to-private-archive flow,
+privacy scan, media validation, byte-bound visual approval, finalize flow, and
+compact receipt.
 
-The owner-selected roles for this slice are Seraph as implementer and Cassie as
-independent reviewer.
+The actual CLI runs end to end through every fake journey and failure path. No
+real `adb`, emulator, APK install, IME change, product journey, or device
+mutation is permitted. A separately authorized, confirmation-only capability
+probe may attach to the disposable fixture to establish remote-status
+semantics before the adapter is selected.
 
-### PR B — device-free capture and finalize machinery
+The owner-selected roles are Seraph as implementer and Cassie as independent
+reviewer.
 
-Connect the real orchestrator to fake `adb`, `emulator`, and Android tooling.
-Implement the complete capture-to-private-archive flow, privacy scan, media
-validation, byte-bound visual approval, finalize flow, and compact receipt.
-Exercise the actual CLI end to end. No APK install, IME change, product journey,
-or other device mutation is permitted. A separately authorized,
-confirmation-only capability probe may attach to the disposable fixture to
-establish remote-status semantics before the adapter is selected.
+### Preparation lease — pristine fixture and archive controls
 
-### PR C — real-device qualification and compact receipt
+After PR A merges, a separately reviewed non-destructive lease creates and pins
+the pristine snapshot-backed clone, cold-boots it twice, proves target-package
+absence and every required identity at snapshot creation, restores the source
+and clone, and proves force-push/deletion protection for the `evidence`
+branch. This is issue #56. It is an operational prerequisite, not a product or
+machinery pull request.
+
+### PR B — real-device qualification and compact receipt
 
 Run the already-merged orchestrator against the exact APK from merged `main`.
 This PR contains only the compact receipt/index and truthful patch note. Raw
@@ -64,7 +73,7 @@ logs and approved media live on the append-only evidence branch. If the real
 run discovers an instrument defect, qualification stops; the correction lands
 in a separate implementation PR before a fresh attempt.
 
-PR C closes #47 only after the final clean-HEAD host rerun, hosted CI, device
+PR B closes #47 only after the final clean-HEAD host rerun, hosted CI, device
 receipt, restoration proof, visual approval, and non-author review all pass on
 the exact candidate head.
 
@@ -138,10 +147,10 @@ interface until a behavior-neutral capability lease proves the exact installed
 `adb` mechanism and distinguishes transport status from remote-command status.
 That lease may attach to the disposable fixture and observe a harmless command
 only; it may not install the APK, change IMEs, run the product journey, or
-select a correction. Its accepted evidence becomes an input to the later PR B
+select a correction. Its accepted evidence becomes an input to the later PR A
 adapter lease. Confirmation and mechanism selection do not share a lease.
 
-If the installed tooling cannot provide a trustworthy remote status, PR B must
+If the installed tooling cannot provide a trustworthy remote status, PR A must
 stop for a design amendment. It may not smuggle the sentinel back in wearing a
 different hat.
 
@@ -165,9 +174,13 @@ device process starts. Preflight failures do not consume capture authority.
 ## Device fixture and phase order
 
 The accepted fixture is a named, snapshot-backed clone derived from
-`CityZen_Dev`. The exact AVD name and snapshot digest are recorded in the child
-issue after the snapshot is created through a separately reviewed,
-non-destructive preparation lease.
+`CityZen_Dev`; the known-dirty source state is not accepted as the baseline.
+Issue #56 owns the separately reviewed, non-destructive preparation lease. At
+snapshot creation it proves target-package absence, serial policy, system-image
+identity, fingerprint, API level, screen geometry, locale, animation settings,
+and boot-complete state. It cold-boots twice from the named snapshot and
+records the exact AVD name and snapshot digest. Any mismatch or inability to
+prove that the source AVD was preserved stops before qualification.
 
 The orchestrator enforces this order:
 
@@ -223,6 +236,11 @@ under `issue-47/<run-id>/`. Every attempt has a unique run ID; the branch is
 never force-pushed. The PR comment links immutable blob URLs containing the
 evidence commit, never a moving branch URL.
 
+Issue #56 must prove that branch protection blocks force-push and deletion
+before qualification authority. PR B proves that its evidence commit is an
+ancestor of the protected branch head and that previously published run IDs
+retain their original tree identities.
+
 `main` receives only:
 
 - `docs/evidence/milestone-2/README.md` — compact criterion-to-receipt index;
@@ -235,7 +253,7 @@ count is recorded.
 
 ## Required tests
 
-### PR A
+### PR A — complete machinery
 
 - Every dispatch-table record type encodes, decodes, and byte-round-trips.
 - Unknown/malformed record variants fail closed.
@@ -246,12 +264,12 @@ count is recorded.
 - Every partial phase invokes restoration exactly once and records the exact
   terminal cause.
 - Tool identities reject missing, conflicting, or drifted versions.
-
-### PR B
-
 - The real CLI runs end to end against adversarial fake executables.
-- Every guarded result variant is exercised with a genuinely nonzero command,
-  tracked by a coverage matrix rather than a pass-count anecdote.
+- A coverage matrix enumerates every production command-runner call site
+  crossed with every result variant it accepts. Each nonzero-capable site is
+  exercised by a genuine nonzero command. A site is exempt only when mechanical
+  evidence proves that every status decision delegates to one exhaustively
+  tested total dispatch.
 - Exact terminal-cause assertions distinguish neighboring failure modes.
 - SIGINT, SIGTERM, timeout, child failure, cleanup failure, and partial restore
   all stop and preserve a decodable record.
@@ -266,18 +284,29 @@ count is recorded.
   one structurally valid video.
 - All tests prove zero real `adb`, emulator, and `apksigner` contact.
 
-### PR C
+### Preparation lease
+
+- Two cold boots reproduce the exact snapshot and device identities.
+- Target-package absence is proven at snapshot creation and after each boot.
+- Source and clone return to their recorded initial running/stopped states.
+- The fixture receipt schema encodes, decodes, and byte-round-trips.
+- Evidence-branch force-push and deletion protection is mechanically verified.
+
+### PR B — qualification
 
 - Fresh complete host gate from tracked-clean exact HEAD.
 - Fresh device capture using exact merged orchestrator and APK identities.
 - Machine-derived journey, mutation, privacy, media, and restoration counts.
 - Byte-bound private visual approval followed by finalize.
-- Compact receipt schema validation and replay against the external archive.
+- Compact receipt schema validation and replay against the external archive:
+  fetch the archived bytes, recompute every digest named by `FinalReceipt`,
+  require exact matches, and rerun structural-media and privacy validators
+  against those bytes with verdicts identical to the receipt.
 - Hosted CI green on the exact receipt head.
 
 ## Evidence required from each pull request
 
-Every implementation PR reports:
+Each pull request reports:
 
 - exact base and head SHAs;
 - complete raw test log with inner and wrapper statuses;
@@ -293,8 +322,14 @@ are diagnostic and are not combined into a synthetic final receipt.
 
 ## Stop and retry law
 
-- Two consecutive failures inside the instrument trigger a mandatory
-  architecture pause. No third correction lease.
+- A counted failure is a real-fixture authorization that terminates because of
+  an instrument defect. The overseer records the count in issue #47. The new
+  Python architecture starts at zero and an ordinary correction does not reset
+  it; only an owner-approved replacement architecture starts a new count.
+- The confirmation-only capability probe is not a capture authorization and
+  does not increment the count.
+- Two counted failures trigger a mandatory architecture pause. No third
+  attempt under that instrument architecture.
 - Recurrence of a reviewed defect class escalates immediately to the mechanism;
   no second site-level guard.
 - Unparseable or unavailable required status stops before further journey work.
@@ -323,3 +358,8 @@ Every worker lease includes verbatim:
 Implementers do not grade their own work. The reviewer is selected per PR from
 actual authorship and model-family eligibility. Any head change invalidates
 prior exact-head approval and evidence affected by that change.
+
+The qualification merge panel deliberately has two exact-head non-author
+approvals: one independent reviewer and Sigrid as overseer, with architectural
+concurrence folded into the overseer seat under the owner-approved simplified
+model. This replaces the former three-seat panel for this sequence.
