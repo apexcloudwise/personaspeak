@@ -74,8 +74,11 @@ butler inspecting cutlery.
 
 [ADR-0003](docs/adr/0003-fork-anysoftkeyboard-apache.md) selected Apache-2.0
 for the app and ASK fork; persona content remains CC-BY as recorded in the
-roadmap. The repository still needs its top-level license material before a
-release. If this project ever earns a coin it'll be through donations and an
+roadmap. The full Apache-2.0 text is at [LICENSE](LICENSE);
+AnySoftKeyboard's vendored license and upstream provenance are documented in
+[android/keyboard/LICENSE](android/keyboard/LICENSE) and
+[android/keyboard/UPSTREAM.md](android/keyboard/UPSTREAM.md). If this project
+ever earns a coin it'll be through donations and an
 optional hosted-key convenience tier — never ads. A keyboard that shows you ads
 is a keyboard that reads your texts for a living, and we are not that kind of
 establishment.
