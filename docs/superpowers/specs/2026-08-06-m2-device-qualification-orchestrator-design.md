@@ -49,9 +49,8 @@ compact receipt.
 
 The actual CLI runs end to end through every fake journey and failure path. No
 real `adb`, emulator, APK install, IME change, product journey, or device
-mutation is permitted. A separately authorized, confirmation-only capability
-probe may attach to the disposable fixture to establish remote-status
-semantics before the adapter is selected.
+mutation is permitted outside the separately authorized, confirmation-only
+capability probe described below.
 
 The owner-selected roles are Seraph as implementer and Cassie as independent
 reviewer.
@@ -145,10 +144,15 @@ signal are separate fields.
 No status marker is appended to remote stdout or stderr. `RemoteResult` is an
 interface until a behavior-neutral capability lease proves the exact installed
 `adb` mechanism and distinguishes transport status from remote-command status.
-That lease may attach to the disposable fixture and observe a harmless command
-only; it may not install the APK, change IMEs, run the product journey, or
-select a correction. Its accepted evidence becomes an input to the later PR A
-adapter lease. Confirmation and mechanism selection do not share a lease.
+That lease may attach to any exclusively owned available emulator, including
+`CityZen_Dev`, because it proves installed-tool semantics rather than fixture
+state. It records host-tool identities and the observed serial, restores the
+emulator's initial running/stopped state, and observes harmless commands only.
+It may not install or remove a package, change an IME or setting, run the
+product journey, claim qualification/fixture evidence, or select a correction.
+It does not depend on issue #56. Its accepted evidence becomes an input to the
+later PR A adapter lease. Confirmation and mechanism selection do not share a
+lease.
 
 If the installed tooling cannot provide a trustworthy remote status, PR A must
 stop for a design amendment. It may not smuggle the sentinel back in wearing a
@@ -316,6 +320,11 @@ Each pull request reports:
 - production/test line counts against the complexity budget;
 - toolchain identities used; and
 - a non-author consolidated review comment on the pull request.
+
+PR A is staged in reviewable commits: records/codec first, then command and
+remote-result boundaries, then orchestration, then evidence/CLI integration.
+The first review contact reports per-module and total production line counts
+against the 900-line limit; line counts are not deferred until acceptance.
 
 Acceptance uses one final clean-HEAD rerun as its sole evidence. Earlier runs
 are diagnostic and are not combined into a synthetic final receipt.
