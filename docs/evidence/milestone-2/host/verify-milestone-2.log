@@ -1,0 +1,2870 @@
+=== M2 host gate at post-merge frozen head ===
+2026-08-05T13:39:40Z
+cwd=/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover
+HEAD=a3c8919c956005685e29ca826f3685fa2e4a1d36
+parent1=3a561efeb4424765ade7a757e40f7751dd66e8ae
+merge=3a561efeb4424765ade7a757e40f7751dd66e8ae (parents fd7a4280…, 59abe670…)
+tracked-modified=0
+JAVA_HOME=/opt/homebrew/opt/openjdk@21
+openjdk version "21.0.11" 2026-04-21
+OpenJDK Runtime Environment Homebrew (build 21.0.11)
+OpenJDK 64-Bit Server VM Homebrew (build 21.0.11, mixed mode, sharing)
+ANDROID_HOME=/opt/homebrew/share/android-commandlinetools
+
+=== Milestone 2 Gate ===
+android-root: /Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android
+repo-root:    /Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover
+
+[1/12] clean tracked state...
+  OK
+[2/12] JDK 21...
+  OK (openjdk version "21.0.11" 2026-04-21)
+[3/12] verifier fixture suites...
+  - verify-ask-closure-test
+  - verify-dictionary-licenses-test
+  - verify-upstream-ledger-test
+  - verify-single-apk-test
+  - verify-unified-build-flag-test
+  OK
+[4/12] exact ASK closure...
+  OK
+[5/12] dictionary licenses...
+  OK
+[6/12] upstream ledger...
+  OK
+[7/12] boundary scans...
+  - core purity (no android/androidx imports in core modules)
+  - :personaspeak-ui carries no ASK imports
+  - rejected topology absent outside the vendored snapshot
+  - upstream-to-first-party seam allowlist
+  OK
+[8/12] unit tests (core, UI, ASK :ime:app, dedicated row)...
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.2.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+> Task :buildSrc:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :buildSrc:pluginDescriptors
+> Task :buildSrc:processResources
+> Task :buildSrc:compileKotlin
+
+> Task :buildSrc:compileJava
+Note: Some input files use or override a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+Note: /Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/buildSrc/src/main/java/MakeDictionaryPlugin.java uses unchecked or unsafe operations.
+Note: Recompile with -Xlint:unchecked for details.
+
+> Task :buildSrc:compileGroovy
+> Task :buildSrc:classes
+> Task :buildSrc:jar
+
+> Configure project :addons
+Generated version 5.1.1 (version-code 1). Using StaticVersionGenerator for versioning.
+
+> Configure project :ime
+Generated version 1.13.1 (version-code 1). Using StaticVersionGenerator for versioning.
+
+> Configure project :ime:app
+Could not find '/tmp/anysoftkeyboard.keystore' file. Release APK will not be signed.
+Building :ime:app 1.13.1 (or 1.13.1), code 1.
+crash report email is: null
+Found prebuilt word-list folder for :addons:languages:english:pack with 2 files.
+
+> Task :core-personas:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :core-personas:processResources NO-SOURCE
+> Task :core-personas:processTestResources NO-SOURCE
+> Task :core-providers:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :core-providers:processResources NO-SOURCE
+> Task :core-providers:processTestResources NO-SOURCE
+> Task :personaspeak-ui:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :personaspeak-ui:preBuild UP-TO-DATE
+> Task :personaspeak-ui:preDebugBuild UP-TO-DATE
+> Task :personaspeak-ui:generateDebugResValues
+> Task :personaspeak-ui:generateDebugResources
+> Task :personaspeak-ui:packageDebugResources
+> Task :personaspeak-ui:processDebugNavigationResources
+> Task :personaspeak-ui:preDebugUnitTestBuild UP-TO-DATE
+> Task :personaspeak-ui:javaPreCompileDebug
+> Task :personaspeak-ui:writeDebugAarMetadata
+> Task :personaspeak-ui:compileDebugLibraryResources
+> Task :personaspeak-ui:parseDebugLocalResources
+> Task :personaspeak-ui:checkDebugUnitTestAarMetadata
+> Task :personaspeak-ui:generateDebugUnitTestResValues
+> Task :personaspeak-ui:mapDebugUnitTestSourceSetPaths
+> Task :personaspeak-ui:generateDebugUnitTestResources
+> Task :personaspeak-ui:generateDebugRFile
+> Task :core-providers:compileKotlin
+> Task :core-providers:compileJava NO-SOURCE
+> Task :core-providers:classes UP-TO-DATE
+> Task :core-personas:compileKotlin
+> Task :core-providers:jar
+> Task :core-personas:compileJava NO-SOURCE
+> Task :core-personas:classes UP-TO-DATE
+> Task :core-personas:jar
+> Task :core-providers:compileTestKotlin NO-SOURCE
+> Task :core-providers:compileTestJava NO-SOURCE
+> Task :core-providers:testClasses UP-TO-DATE
+> Task :core-providers:test NO-SOURCE
+> Task :personaspeak-ui:mergeDebugUnitTestResources
+> Task :personaspeak-ui:extractDeepLinksDebug
+> Task :personaspeak-ui:generateDebugUnitTestAssets UP-TO-DATE
+> Task :personaspeak-ui:javaPreCompileDebugUnitTest
+> Task :personaspeak-ui:mergeDebugShaders
+> Task :personaspeak-ui:compileDebugShaders NO-SOURCE
+> Task :personaspeak-ui:generateDebugAssets UP-TO-DATE
+> Task :personaspeak-ui:mergeDebugAssets
+> Task :personaspeak-ui:processDebugManifest
+> Task :personaspeak-ui:mergeDebugUnitTestAssets
+> Task :personaspeak-ui:processDebugUnitTestManifest
+> Task :core-personas:compileTestKotlin
+> Task :personaspeak-ui:processDebugUnitTestResources
+> Task :personaspeak-ui:compileDebugKotlin
+> Task :junit-sharding:compileJava
+> Task :core-personas:compileTestJava NO-SOURCE
+> Task :core-personas:testClasses UP-TO-DATE
+> Task :core-personas:test
+> Task :personaspeak-ui:compileDebugJavaWithJavac NO-SOURCE
+> Task :personaspeak-ui:packageDebugUnitTestForUnitTest
+> Task :personaspeak-ui:generateDebugUnitTestConfig
+> Task :personaspeak-ui:processDebugJavaRes
+> Task :personaspeak-ui:bundleLibRuntimeToJarDebug
+> Task :personaspeak-ui:bundleLibCompileToJarDebug
+> Task :junit-sharding:processResources NO-SOURCE
+> Task :junit-sharding:classes
+> Task :junit-sharding:jar
+> Task :api:preBuild UP-TO-DATE
+> Task :api:preDebugBuild UP-TO-DATE
+> Task :api:generateDebugResValues
+> Task :api:generateDebugResources
+> Task :api:packageDebugResources
+> Task :api:processDebugNavigationResources
+> Task :api:javaPreCompileDebug
+> Task :api:processDebugJavaRes NO-SOURCE
+> Task :addons:base:preBuild UP-TO-DATE
+> Task :addons:base:preDebugBuild UP-TO-DATE
+> Task :addons:base:generateDebugResValues
+> Task :addons:base:generateDebugResources
+> Task :addons:base:packageDebugResources
+> Task :addons:base:processDebugNavigationResources
+> Task :addons:base:javaPreCompileDebug
+> Task :addons:base:processDebugJavaRes NO-SOURCE
+> Task :ime:addons:preBuild UP-TO-DATE
+> Task :ime:addons:preDebugBuild UP-TO-DATE
+> Task :addons:base:parseDebugLocalResources
+> Task :api:parseDebugLocalResources
+> Task :ime:addons:generateDebugResValues
+> Task :api:generateDebugRFile
+> Task :ime:addons:generateDebugResources
+> Task :api:compileDebugJavaWithJavac
+> Task :api:bundleLibRuntimeToJarDebug
+> Task :api:bundleLibCompileToJarDebug
+> Task :addons:base:generateDebugRFile
+> Task :ime:addons:packageDebugResources
+> Task :addons:base:compileDebugJavaWithJavac
+> Task :addons:base:bundleLibRuntimeToJarDebug
+> Task :ime:addons:processDebugNavigationResources
+> Task :ime:base:preBuild UP-TO-DATE
+> Task :ime:base:preDebugBuild UP-TO-DATE
+> Task :ime:base:generateDebugResValues
+> Task :ime:base:generateDebugResources
+> Task :ime:addons:parseDebugLocalResources
+> Task :ime:base:packageDebugResources
+> Task :ime:base:processDebugNavigationResources
+> Task :ime:base-rx:preBuild UP-TO-DATE
+> Task :ime:base-rx:preDebugBuild UP-TO-DATE
+> Task :ime:base-rx:generateDebugResValues
+> Task :ime:base:parseDebugLocalResources
+> Task :ime:base-rx:generateDebugResources
+> Task :ime:base-rx:packageDebugResources
+> Task :ime:base-rx:processDebugNavigationResources
+> Task :ime:base:generateDebugRFile
+> Task :ime:pixel:preBuild UP-TO-DATE
+> Task :ime:pixel:preDebugBuild UP-TO-DATE
+> Task :ime:pixel:generateDebugResValues
+> Task :ime:base-rx:parseDebugLocalResources
+> Task :ime:pixel:generateDebugResources
+> Task :ime:base-rx:generateDebugRFile
+> Task :ime:pixel:packageDebugResources
+> Task :ime:pixel:processDebugNavigationResources
+> Task :ime:addons:javaPreCompileDebug
+> Task :ime:base:javaPreCompileDebug
+> Task :ime:base-rx:javaPreCompileDebug
+> Task :ime:pixel:parseDebugLocalResources
+> Task :ime:base:compileDebugJavaWithJavac
+> Task :ime:pixel:javaPreCompileDebug
+> Task :ime:addons:processDebugJavaRes NO-SOURCE
+> Task :ime:base:bundleLibCompileToJarDebug
+> Task :addons:base:bundleLibCompileToJarDebug
+> Task :ime:pixel:generateDebugRFile
+> Task :ime:base-rx:compileDebugJavaWithJavac
+> Task :ime:app:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :ime:app:preBuild UP-TO-DATE
+> Task :ime:app:preDebugBuild UP-TO-DATE
+> Task :ime:base-rx:bundleLibCompileToJarDebug
+> Task :ime:app:generateDebugBuildConfig
+> Task :ime:addons:generateDebugRFile
+
+> Task :ime:pixel:compileDebugJavaWithJavac
+Note: Some input files use or override a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+
+> Task :ime:app:generateDebugResValues
+> Task :ime:pixel:bundleLibCompileToJarDebug
+> Task :ime:app:generateSafeArgsDebug
+> Task :personaspeak-ui:compileDebugUnitTestKotlin
+> Task :ime:addons:compileDebugJavaWithJavac
+> Task :personaspeak-ui:compileDebugUnitTestJavaWithJavac NO-SOURCE
+> Task :personaspeak-ui:processDebugUnitTestJavaRes
+> Task :personaspeak-ui:testDebugUnitTest
+> Task :ime:addons:bundleLibRuntimeToJarDebug
+> Task :ime:addons:bundleLibCompileToJarDebug
+> Task :api:compileDebugLibraryResources
+> Task :addons:base:compileDebugLibraryResources
+> Task :api:writeDebugAarMetadata
+> Task :addons:base:writeDebugAarMetadata
+> Task :ime:addons:writeDebugAarMetadata
+> Task :ime:base:writeDebugAarMetadata
+> Task :ime:chewbacca:preBuild UP-TO-DATE
+> Task :ime:chewbacca:preDebugBuild UP-TO-DATE
+> Task :ime:base-rx:writeDebugAarMetadata
+> Task :ime:dictionaries:preBuild UP-TO-DATE
+> Task :ime:chewbacca:writeDebugAarMetadata
+> Task :ime:dictionaries:preDebugBuild UP-TO-DATE
+> Task :ime:fileprovider:preBuild UP-TO-DATE
+> Task :ime:fileprovider:preDebugBuild UP-TO-DATE
+> Task :ime:dictionaries:writeDebugAarMetadata
+> Task :ime:gesturetyping:preBuild UP-TO-DATE
+> Task :ime:gesturetyping:preDebugBuild UP-TO-DATE
+> Task :ime:fileprovider:writeDebugAarMetadata
+> Task :ime:nextword:preBuild UP-TO-DATE
+> Task :ime:gesturetyping:writeDebugAarMetadata
+> Task :ime:nextword:preDebugBuild UP-TO-DATE
+> Task :ime:notification:preBuild UP-TO-DATE
+> Task :ime:notification:preDebugBuild UP-TO-DATE
+> Task :ime:nextword:writeDebugAarMetadata
+> Task :ime:addons:compileDebugLibraryResources
+> Task :ime:notification:writeDebugAarMetadata
+> Task :ime:overlay:preBuild UP-TO-DATE
+> Task :ime:overlay:preDebugBuild UP-TO-DATE
+> Task :ime:permissions:preBuild UP-TO-DATE
+> Task :ime:permissions:preDebugBuild UP-TO-DATE
+> Task :ime:overlay:writeDebugAarMetadata
+> Task :ime:permissions:writeDebugAarMetadata
+> Task :ime:prefs:preBuild UP-TO-DATE
+> Task :ime:prefs:preDebugBuild UP-TO-DATE
+> Task :ime:pixel:writeDebugAarMetadata
+> Task :ime:releaseinfo:preBuild UP-TO-DATE
+> Task :ime:prefs:writeDebugAarMetadata
+> Task :ime:releaseinfo:preDebugBuild UP-TO-DATE
+> Task :ime:remote:preBuild UP-TO-DATE
+> Task :ime:remote:preDebugBuild UP-TO-DATE
+> Task :ime:releaseinfo:writeDebugAarMetadata
+> Task :ime:voiceime:preBuild UP-TO-DATE
+> Task :ime:voiceime:preDebugBuild UP-TO-DATE
+> Task :ime:remote:writeDebugAarMetadata
+> Task :ime:dictionaries:jnidictionaryv1:preBuild UP-TO-DATE
+> Task :ime:voiceime:writeDebugAarMetadata
+> Task :ime:dictionaries:jnidictionaryv1:preDebugBuild UP-TO-DATE
+> Task :ime:dictionaries:jnidictionaryv2:preBuild UP-TO-DATE
+> Task :ime:dictionaries:jnidictionaryv2:preDebugBuild UP-TO-DATE
+> Task :ime:dictionaries:jnidictionaryv1:writeDebugAarMetadata
+> Task :ime:dictionaries:jnidictionaryv2:writeDebugAarMetadata
+
+> Task :addons:languages:english:pack:parseAospDictionary_en_wordlist_combined_gz
+Reading input file en_wordlist.combined.gz (size 914050)...
+.0%..233%..468%..705%..100%.Wrote 165541 words.
+Done.
+
+> Task :addons:languages:english:pack:mergeAllWordLists
+Merging 3 files for maximum 300000 words, and writing into 'words_merged.xml'. Discarding 0 words.
+Reading en_wordlist.combined.gz.xml...
+Loaded 165541 words in total...
+Reading additionals.xml...
+Loaded 165571 words in total...
+Reading websites.xml...
+Loaded 165600 words in total...
+Creating output XML file...
+Done.
+Wrote 165600 words.
+
+> Task :addons:languages:english:pack:makeDictionary
+Reading words from input /Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/addons/languages/english/pack/build/dictionary/words_merged.xml
+Will store output files under /Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/addons/languages/english/pack/src/main/res/raw. Created raw folder? false
+Deleting previous versions...
+Nodes = 414532
+Dict Size = 1889353
+Writing to dict file /Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/addons/languages/english/pack/src/main/res/raw/english_words_1.dict
+Writing to dict file /Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/addons/languages/english/pack/src/main/res/raw/english_words_2.dict
+Done. Wrote 2 files.
+Done.
+
+> Task :addons:languages:english:pack:preBuild
+> Task :addons:languages:english:pack:preDebugBuild
+> Task :addons:languages:english:pack:writeDebugAarMetadata
+> Task :ime:chewbacca:processDebugNavigationResources
+> Task :ime:dictionaries:processDebugNavigationResources
+> Task :ime:fileprovider:processDebugNavigationResources
+> Task :ime:gesturetyping:processDebugNavigationResources
+> Task :ime:nextword:processDebugNavigationResources
+> Task :ime:notification:processDebugNavigationResources
+> Task :ime:overlay:processDebugNavigationResources
+> Task :ime:app:checkDebugAarMetadata
+> Task :ime:permissions:processDebugNavigationResources
+> Task :ime:prefs:processDebugNavigationResources
+> Task :ime:releaseinfo:processDebugNavigationResources
+> Task :ime:remote:processDebugNavigationResources
+> Task :ime:voiceime:processDebugNavigationResources
+> Task :ime:dictionaries:jnidictionaryv1:processDebugNavigationResources
+> Task :ime:dictionaries:jnidictionaryv2:processDebugNavigationResources
+> Task :addons:languages:english:pack:processDebugNavigationResources
+> Task :ime:app:processDebugNavigationResources
+> Task :ime:chewbacca:generateDebugResValues
+> Task :ime:chewbacca:generateDebugResources
+> Task :ime:app:compileDebugNavigationResources
+> Task :ime:chewbacca:packageDebugResources
+> Task :ime:dictionaries:generateDebugResValues
+> Task :ime:dictionaries:generateDebugResources
+> Task :ime:dictionaries:packageDebugResources
+> Task :ime:fileprovider:generateDebugResValues
+> Task :ime:fileprovider:generateDebugResources
+> Task :ime:fileprovider:packageDebugResources
+> Task :ime:gesturetyping:generateDebugResValues
+> Task :ime:gesturetyping:generateDebugResources
+> Task :ime:gesturetyping:packageDebugResources
+> Task :ime:nextword:generateDebugResValues
+> Task :ime:nextword:generateDebugResources
+> Task :ime:nextword:packageDebugResources
+> Task :ime:notification:generateDebugResValues
+> Task :ime:notification:generateDebugResources
+> Task :ime:notification:packageDebugResources
+> Task :ime:overlay:generateDebugResValues
+> Task :ime:overlay:generateDebugResources
+> Task :ime:overlay:packageDebugResources
+> Task :ime:permissions:generateDebugResValues
+> Task :ime:permissions:generateDebugResources
+> Task :ime:permissions:packageDebugResources
+> Task :ime:prefs:generateDebugResValues
+> Task :ime:prefs:generateDebugResources
+> Task :ime:prefs:packageDebugResources
+> Task :ime:releaseinfo:generateDebugResValues
+> Task :ime:releaseinfo:generateDebugResources
+> Task :ime:releaseinfo:packageDebugResources
+> Task :ime:remote:generateDebugResValues
+> Task :ime:remote:generateDebugResources
+> Task :ime:remote:packageDebugResources
+> Task :ime:voiceime:generateDebugResValues
+> Task :ime:voiceime:generateDebugResources
+> Task :ime:voiceime:packageDebugResources
+> Task :ime:dictionaries:jnidictionaryv1:generateDebugResValues
+> Task :ime:dictionaries:jnidictionaryv1:generateDebugResources
+> Task :ime:dictionaries:jnidictionaryv1:packageDebugResources
+> Task :ime:dictionaries:jnidictionaryv2:generateDebugResValues
+> Task :ime:dictionaries:jnidictionaryv2:generateDebugResources
+> Task :ime:dictionaries:jnidictionaryv2:packageDebugResources
+> Task :addons:languages:english:pack:generateDebugResValues
+> Task :addons:languages:english:pack:generateDebugResources
+> Task :addons:languages:english:pack:packageDebugResources
+> Task :ime:app:mapDebugSourceSetPaths
+> Task :ime:app:generateDebugResources
+> Task :ime:app:createDebugCompatibleScreenManifests
+> Task :api:extractDeepLinksDebug
+> Task :addons:base:extractDeepLinksDebug
+> Task :ime:addons:extractDeepLinksDebug
+> Task :ime:app:extractDeepLinksDebug
+> Task :ime:base:extractDeepLinksDebug
+> Task :ime:base-rx:extractDeepLinksDebug
+> Task :ime:chewbacca:extractDeepLinksDebug
+> Task :ime:dictionaries:extractDeepLinksDebug
+> Task :ime:fileprovider:extractDeepLinksDebug
+> Task :ime:gesturetyping:extractDeepLinksDebug
+> Task :ime:nextword:extractDeepLinksDebug
+> Task :ime:gesturetyping:processDebugManifest
+> Task :addons:base:processDebugManifest
+> Task :ime:base-rx:processDebugManifest
+> Task :ime:notification:extractDeepLinksDebug
+> Task :ime:dictionaries:processDebugManifest
+> Task :api:processDebugManifest
+> Task :ime:addons:processDebugManifest
+> Task :ime:base:processDebugManifest
+> Task :ime:fileprovider:processDebugManifest
+> Task :ime:nextword:processDebugManifest
+> Task :ime:chewbacca:processDebugManifest
+> Task :ime:overlay:extractDeepLinksDebug
+> Task :ime:notification:processDebugManifest
+> Task :ime:permissions:extractDeepLinksDebug
+> Task :ime:overlay:processDebugManifest
+> Task :ime:pixel:extractDeepLinksDebug
+> Task :ime:permissions:processDebugManifest
+> Task :ime:prefs:extractDeepLinksDebug
+> Task :ime:pixel:processDebugManifest
+> Task :ime:releaseinfo:extractDeepLinksDebug
+> Task :ime:prefs:processDebugManifest
+> Task :ime:remote:extractDeepLinksDebug
+> Task :ime:releaseinfo:processDebugManifest
+> Task :ime:voiceime:extractDeepLinksDebug
+> Task :ime:remote:processDebugManifest
+> Task :ime:dictionaries:jnidictionaryv1:extractDeepLinksDebug
+> Task :ime:voiceime:processDebugManifest
+> Task :ime:dictionaries:jnidictionaryv2:extractDeepLinksDebug
+> Task :ime:dictionaries:jnidictionaryv1:processDebugManifest
+> Task :addons:languages:english:pack:extractDeepLinksDebug
+> Task :ime:dictionaries:jnidictionaryv2:processDebugManifest
+> Task :addons:languages:english:pack:processDebugManifest
+> Task :ime:base:compileDebugLibraryResources
+> Task :ime:app:processDebugMainManifest
+> Task :ime:app:processDebugManifest
+> Task :ime:base-rx:compileDebugLibraryResources
+> Task :ime:chewbacca:compileDebugLibraryResources
+> Task :ime:chewbacca:parseDebugLocalResources
+> Task :ime:notification:parseDebugLocalResources
+> Task :ime:dictionaries:compileDebugLibraryResources
+> Task :ime:permissions:parseDebugLocalResources
+> Task :ime:dictionaries:parseDebugLocalResources
+> Task :ime:permissions:generateDebugRFile
+> Task :ime:dictionaries:generateDebugRFile
+
+> Task :ime:app:mergeDebugResources
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values-da-rDK/strings.xml:655:4: Multiple substitutions specified in non-positional format of string resource string/next_words_statistics_count. Did you mean to add the formatted="false" attribute?
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values-is-rIS/strings.xml:647:4: Multiple substitutions specified in non-positional format of string resource string/next_words_statistics_count. Did you mean to add the formatted="false" attribute?
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values-es-rMX/strings.xml:561:4: Multiple substitutions specified in non-positional format of string resource string/next_words_statistics_count. Did you mean to add the formatted="false" attribute?
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values-pt-rPT/strings.xml:615:4: Multiple substitutions specified in non-positional format of string resource string/next_words_statistics_count. Did you mean to add the formatted="false" attribute?
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values-si-rLK/strings.xml:646:4: Multiple substitutions specified in non-positional format of string resource string/next_words_statistics_count. Did you mean to add the formatted="false" attribute?
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values-be-rBY/strings.xml:572:4: Multiple substitutions specified in non-positional format of string resource string/next_words_statistics_count. Did you mean to add the formatted="false" attribute?
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values-de-rDE/strings.xml:562:4: Multiple substitutions specified in non-positional format of string resource string/next_words_statistics_count. Did you mean to add the formatted="false" attribute?
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values/strings.xml:820:4: Multiple substitutions specified in non-positional format of string resource string/next_words_statistics_count. Did you mean to add the formatted="false" attribute?
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values/strings.xml:156:4: Multiple substitutions specified in non-positional format of string resource string/quick_text_tab_title_template. Did you mean to add the formatted="false" attribute?
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values-eu-rES/strings.xml:570:4: Multiple substitutions specified in non-positional format of string resource string/next_words_statistics_count. Did you mean to add the formatted="false" attribute?
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values-sl-rSI/strings.xml:455:4: Multiple substitutions specified in non-positional format of string resource string/next_words_statistics_count. Did you mean to add the formatted="false" attribute?
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values-kmr-rTR/strings.xml:664:4: Multiple substitutions specified in non-positional format of string resource string/next_words_statistics_count. Did you mean to add the formatted="false" attribute?
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values-pt-rBR/strings.xml:591:4: Multiple substitutions specified in non-positional format of string resource string/next_words_statistics_count. Did you mean to add the formatted="false" attribute?
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values-hu-rHU/strings.xml:635:4: Multiple substitutions specified in non-positional format of string resource string/next_words_statistics_count. Did you mean to add the formatted="false" attribute?
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values/strings.xml:80:4: Multiple substitutions specified in non-positional format of string resource string/version_text. Did you mean to add the formatted="false" attribute?
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values-nl-rNL/strings.xml:576:4: Multiple substitutions specified in non-positional format of string resource string/next_words_statistics_count. Did you mean to add the formatted="false" attribute?
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values-lt-rLT/strings.xml:571:4: Multiple substitutions specified in non-positional format of string resource string/next_words_statistics_count. Did you mean to add the formatted="false" attribute?
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values-cs-rCZ/strings.xml:517:4: Multiple substitutions specified in non-positional format of string resource string/next_words_statistics_count. Did you mean to add the formatted="false" attribute?
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values-ku-rTR/strings.xml:652:4: Multiple substitutions specified in non-positional format of string resource string/next_words_statistics_count. Did you mean to add the formatted="false" attribute?
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values-ru-rRU/strings.xml:559:4: Multiple substitutions specified in non-positional format of string resource string/next_words_statistics_count. Did you mean to add the formatted="false" attribute?
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values-fil-rPH/strings.xml:463:4: Multiple substitutions specified in non-positional format of string resource string/next_words_statistics_count. Did you mean to add the formatted="false" attribute?
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values-es-rES/strings.xml:559:4: Multiple substitutions specified in non-positional format of string resource string/next_words_statistics_count. Did you mean to add the formatted="false" attribute?
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values-ckb-rIR/strings.xml:663:4: Multiple substitutions specified in non-positional format of string resource string/next_words_statistics_count. Did you mean to add the formatted="false" attribute?
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values-tr-rTR/strings.xml:567:4: Multiple substitutions specified in non-positional format of string resource string/next_words_statistics_count. Did you mean to add the formatted="false" attribute?
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values-sc-rIT/strings.xml:572:4: Multiple substitutions specified in non-positional format of string resource string/next_words_statistics_count. Did you mean to add the formatted="false" attribute?
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values-ca-rES/strings.xml:592:4: Multiple substitutions specified in non-positional format of string resource string/next_words_statistics_count. Did you mean to add the formatted="false" attribute?
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values-uk-rUA/strings.xml:542:4: Multiple substitutions specified in non-positional format of string resource string/next_words_statistics_count. Did you mean to add the formatted="false" attribute?
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values-pl-rPL/strings.xml:661:4: Multiple substitutions specified in non-positional format of string resource string/next_words_statistics_count. Did you mean to add the formatted="false" attribute?
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values-ka-rGE/strings.xml:675:4: Multiple substitutions specified in non-positional format of string resource string/next_words_statistics_count. Did you mean to add the formatted="false" attribute?
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values-fr-rFR/strings.xml:570:4: Multiple substitutions specified in non-positional format of string resource string/next_words_statistics_count. Did you mean to add the formatted="false" attribute?
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values-it-rIT/strings.xml:560:4: Multiple substitutions specified in non-positional format of string resource string/next_words_statistics_count. Did you mean to add the formatted="false" attribute?
+
+> Task :ime:fileprovider:compileDebugLibraryResources
+> Task :ime:fileprovider:parseDebugLocalResources
+> Task :ime:gesturetyping:compileDebugLibraryResources
+> Task :ime:notification:generateDebugRFile
+> Task :ime:fileprovider:generateDebugRFile
+> Task :ime:nextword:compileDebugLibraryResources
+> Task :ime:gesturetyping:parseDebugLocalResources
+> Task :ime:nextword:parseDebugLocalResources
+> Task :ime:chewbacca:generateDebugRFile
+> Task :ime:prefs:parseDebugLocalResources
+> Task :ime:notification:compileDebugLibraryResources
+> Task :ime:gesturetyping:generateDebugRFile
+> Task :ime:overlay:compileDebugLibraryResources
+> Task :ime:overlay:parseDebugLocalResources
+> Task :ime:permissions:compileDebugLibraryResources
+> Task :ime:prefs:generateDebugRFile
+> Task :ime:pixel:compileDebugLibraryResources
+> Task :ime:prefs:compileDebugLibraryResources
+> Task :ime:nextword:generateDebugRFile
+> Task :ime:overlay:generateDebugRFile
+> Task :ime:releaseinfo:compileDebugLibraryResources
+> Task :ime:releaseinfo:parseDebugLocalResources
+> Task :ime:remote:compileDebugLibraryResources
+> Task :ime:voiceime:compileDebugLibraryResources
+> Task :ime:remote:parseDebugLocalResources
+> Task :ime:releaseinfo:generateDebugRFile
+> Task :ime:voiceime:parseDebugLocalResources
+> Task :ime:app:processDebugManifestForPackage
+> Task :ime:remote:generateDebugRFile
+> Task :ime:voiceime:generateDebugRFile
+> Task :ime:dictionaries:jnidictionaryv1:compileDebugLibraryResources
+> Task :ime:dictionaries:jnidictionaryv1:parseDebugLocalResources
+> Task :ime:dictionaries:jnidictionaryv2:compileDebugLibraryResources
+> Task :ime:dictionaries:jnidictionaryv2:parseDebugLocalResources
+> Task :ime:dictionaries:jnidictionaryv1:generateDebugRFile
+> Task :addons:languages:english:pack:compileDebugLibraryResources
+> Task :ime:chewbacca:javaPreCompileDebug
+> Task :ime:notification:javaPreCompileDebug
+> Task :ime:dictionaries:jnidictionaryv2:generateDebugRFile
+> Task :ime:permissions:javaPreCompileDebug
+> Task :ime:dictionaries:generateDebugBuildConfig
+> Task :addons:languages:english:pack:parseDebugLocalResources
+> Task :ime:permissions:compileDebugJavaWithJavac
+> Task :ime:permissions:bundleLibCompileToJarDebug
+> Task :addons:languages:english:pack:generateDebugRFile
+> Task :ime:dictionaries:javaPreCompileDebug
+> Task :ime:fileprovider:javaPreCompileDebug
+> Task :ime:notification:compileDebugJavaWithJavac
+> Task :ime:notification:bundleLibCompileToJarDebug
+> Task :ime:dictionaries:compileDebugJavaWithJavac
+
+> Task :ime:chewbacca:compileDebugJavaWithJavac
+Note: Some input files use or override a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+
+> Task :ime:chewbacca:bundleLibCompileToJarDebug
+> Task :ime:dictionaries:bundleLibCompileToJarDebug
+> Task :ime:fileprovider:compileDebugJavaWithJavac
+> Task :ime:fileprovider:bundleLibCompileToJarDebug
+> Task :ime:gesturetyping:javaPreCompileDebug
+> Task :ime:nextword:generateDebugBuildConfig
+> Task :ime:gesturetyping:compileDebugJavaWithJavac
+> Task :ime:nextword:javaPreCompileDebug
+> Task :ime:gesturetyping:bundleLibCompileToJarDebug
+> Task :ime:prefs:javaPreCompileDebug
+> Task :ime:overlay:javaPreCompileDebug
+> Task :ime:releaseinfo:javaPreCompileDebug
+> Task :ime:prefs:compileDebugJavaWithJavac
+> Task :ime:prefs:bundleLibCompileToJarDebug
+
+> Task :ime:overlay:compileDebugJavaWithJavac
+Note: /Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/overlay/src/main/java/com/anysoftkeyboard/overlay/ThemeOverlayCombiner.java uses or overrides a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+
+> Task :ime:nextword:compileDebugJavaWithJavac
+> Task :ime:nextword:bundleLibCompileToJarDebug
+> Task :ime:overlay:bundleLibCompileToJarDebug
+
+> Task :ime:releaseinfo:compileDebugJavaWithJavac
+Note: /Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/releaseinfo/src/main/java/com/anysoftkeyboard/releaseinfo/TesterNotification.java uses or overrides a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+
+> Task :ime:remote:javaPreCompileDebug
+> Task :ime:voiceime:javaPreCompileDebug
+> Task :ime:releaseinfo:bundleLibCompileToJarDebug
+
+> Task :ime:remote:compileDebugJavaWithJavac
+Note: Some input files use or override a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+
+> Task :ime:remote:bundleLibCompileToJarDebug
+
+> Task :ime:voiceime:compileDebugJavaWithJavac
+Note: Some input files use or override a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+
+> Task :ime:dictionaries:jnidictionaryv1:javaPreCompileDebug
+> Task :ime:dictionaries:jnidictionaryv2:javaPreCompileDebug
+> Task :ime:voiceime:bundleLibCompileToJarDebug
+> Task :ime:dictionaries:jnidictionaryv1:compileDebugJavaWithJavac
+> Task :ime:dictionaries:jnidictionaryv1:bundleLibCompileToJarDebug
+> Task :ime:dictionaries:jnidictionaryv2:compileDebugJavaWithJavac
+> Task :ime:dictionaries:jnidictionaryv2:bundleLibCompileToJarDebug
+> Task :addons:languages:english:pack:javaPreCompileDebug
+> Task :ime:base-test:preBuild UP-TO-DATE
+> Task :ime:app:javaPreCompileDebug
+> Task :addons:languages:english:pack:compileDebugJavaWithJavac
+> Task :ime:base-test:preDebugBuild UP-TO-DATE
+> Task :ime:base-test:generateDebugResValues
+> Task :addons:languages:english:pack:bundleLibCompileToJarDebug
+> Task :ime:base-test:generateDebugResources
+> Task :ime:base-test:packageDebugResources
+> Task :ime:base-test:processDebugNavigationResources
+> Task :ime:app:preDebugUnitTestBuild UP-TO-DATE
+> Task :ime:base-test:javaPreCompileDebug
+> Task :ime:base-test:parseDebugLocalResources
+> Task :ime:app:javaPreCompileDebugUnitTest
+> Task :api:mergeDebugShaders
+> Task :api:compileDebugShaders NO-SOURCE
+> Task :api:generateDebugAssets UP-TO-DATE
+> Task :api:mergeDebugAssets
+> Task :ime:base-test:generateDebugRFile
+> Task :ime:app:processDebugResources
+> Task :ime:base-test:compileDebugJavaWithJavac
+> Task :addons:base:mergeDebugShaders
+> Task :addons:base:compileDebugShaders NO-SOURCE
+> Task :addons:base:generateDebugAssets UP-TO-DATE
+> Task :ime:base-test:bundleLibCompileToJarDebug
+> Task :addons:base:mergeDebugAssets
+> Task :ime:addons:mergeDebugShaders
+> Task :ime:addons:compileDebugShaders NO-SOURCE
+> Task :ime:addons:generateDebugAssets UP-TO-DATE
+> Task :ime:addons:mergeDebugAssets
+> Task :ime:app:mergeDebugShaders
+> Task :ime:app:compileDebugShaders NO-SOURCE
+> Task :ime:app:generateDebugAssets UP-TO-DATE
+> Task :ime:base:mergeDebugShaders
+> Task :ime:base:compileDebugShaders NO-SOURCE
+> Task :ime:base:generateDebugAssets UP-TO-DATE
+> Task :ime:base:mergeDebugAssets
+> Task :ime:base-rx:mergeDebugShaders
+> Task :ime:base-rx:compileDebugShaders NO-SOURCE
+> Task :ime:base-rx:generateDebugAssets UP-TO-DATE
+> Task :ime:base-rx:mergeDebugAssets
+> Task :ime:chewbacca:mergeDebugShaders
+> Task :ime:chewbacca:compileDebugShaders NO-SOURCE
+> Task :ime:chewbacca:generateDebugAssets UP-TO-DATE
+> Task :ime:chewbacca:mergeDebugAssets
+> Task :ime:dictionaries:mergeDebugShaders
+> Task :ime:dictionaries:compileDebugShaders NO-SOURCE
+> Task :ime:dictionaries:generateDebugAssets UP-TO-DATE
+> Task :ime:dictionaries:mergeDebugAssets
+> Task :ime:fileprovider:mergeDebugShaders
+> Task :ime:fileprovider:compileDebugShaders NO-SOURCE
+> Task :ime:fileprovider:generateDebugAssets UP-TO-DATE
+> Task :ime:fileprovider:mergeDebugAssets
+> Task :ime:gesturetyping:mergeDebugShaders
+> Task :ime:gesturetyping:compileDebugShaders NO-SOURCE
+> Task :ime:gesturetyping:generateDebugAssets UP-TO-DATE
+> Task :ime:gesturetyping:mergeDebugAssets
+> Task :ime:nextword:mergeDebugShaders
+> Task :ime:nextword:compileDebugShaders NO-SOURCE
+> Task :ime:nextword:generateDebugAssets UP-TO-DATE
+> Task :ime:nextword:mergeDebugAssets
+> Task :ime:notification:mergeDebugShaders
+> Task :ime:notification:compileDebugShaders NO-SOURCE
+> Task :ime:notification:generateDebugAssets UP-TO-DATE
+> Task :ime:notification:mergeDebugAssets
+> Task :ime:overlay:mergeDebugShaders
+> Task :ime:overlay:compileDebugShaders NO-SOURCE
+> Task :ime:overlay:generateDebugAssets UP-TO-DATE
+> Task :ime:overlay:mergeDebugAssets
+> Task :ime:permissions:mergeDebugShaders
+> Task :ime:permissions:compileDebugShaders NO-SOURCE
+> Task :ime:permissions:generateDebugAssets UP-TO-DATE
+> Task :ime:permissions:mergeDebugAssets
+> Task :ime:pixel:mergeDebugShaders
+> Task :ime:pixel:compileDebugShaders NO-SOURCE
+> Task :ime:pixel:generateDebugAssets UP-TO-DATE
+> Task :ime:pixel:mergeDebugAssets
+> Task :ime:prefs:mergeDebugShaders
+> Task :ime:prefs:compileDebugShaders NO-SOURCE
+> Task :ime:prefs:generateDebugAssets UP-TO-DATE
+> Task :ime:prefs:mergeDebugAssets
+> Task :ime:releaseinfo:mergeDebugShaders
+> Task :ime:releaseinfo:compileDebugShaders NO-SOURCE
+> Task :ime:releaseinfo:generateDebugAssets UP-TO-DATE
+> Task :ime:releaseinfo:mergeDebugAssets
+> Task :ime:remote:mergeDebugShaders
+> Task :ime:remote:compileDebugShaders NO-SOURCE
+> Task :ime:remote:generateDebugAssets UP-TO-DATE
+> Task :ime:remote:mergeDebugAssets
+> Task :ime:voiceime:mergeDebugShaders
+> Task :ime:voiceime:compileDebugShaders NO-SOURCE
+> Task :ime:voiceime:generateDebugAssets UP-TO-DATE
+> Task :ime:voiceime:mergeDebugAssets
+> Task :ime:dictionaries:jnidictionaryv1:mergeDebugShaders
+> Task :ime:dictionaries:jnidictionaryv1:compileDebugShaders NO-SOURCE
+> Task :ime:dictionaries:jnidictionaryv1:generateDebugAssets UP-TO-DATE
+> Task :ime:dictionaries:jnidictionaryv1:mergeDebugAssets
+> Task :ime:dictionaries:jnidictionaryv2:mergeDebugShaders
+> Task :ime:dictionaries:jnidictionaryv2:compileDebugShaders NO-SOURCE
+> Task :ime:dictionaries:jnidictionaryv2:generateDebugAssets UP-TO-DATE
+> Task :ime:dictionaries:jnidictionaryv2:mergeDebugAssets
+> Task :addons:languages:english:pack:mergeDebugShaders
+> Task :addons:languages:english:pack:compileDebugShaders NO-SOURCE
+> Task :addons:languages:english:pack:generateDebugAssets UP-TO-DATE
+> Task :addons:languages:english:pack:mergeDebugAssets
+> Task :ime:app:mergeDebugAssets
+> Task :ime:app:packageDebugUnitTestForUnitTest
+> Task :ime:base-test:extractDeepLinksDebug
+> Task :ime:base:processDebugJavaRes NO-SOURCE
+> Task :ime:base-test:processDebugManifest
+> Task :ime:base:bundleLibRuntimeToJarDebug
+> Task :ime:base-rx:bundleLibRuntimeToJarDebug
+> Task :ime:app:processDebugUnitTestManifest
+> Task :ime:base-rx:processDebugJavaRes NO-SOURCE
+> Task :ime:app:generateDebugUnitTestConfig
+> Task :ime:base-test:processDebugJavaRes NO-SOURCE
+> Task :ime:base-test:bundleLibRuntimeToJarDebug
+> Task :ime:chewbacca:processDebugJavaRes NO-SOURCE
+> Task :ime:chewbacca:bundleLibRuntimeToJarDebug
+> Task :ime:dictionaries:processDebugJavaRes NO-SOURCE
+> Task :ime:fileprovider:processDebugJavaRes NO-SOURCE
+> Task :ime:dictionaries:bundleLibRuntimeToJarDebug
+> Task :ime:fileprovider:bundleLibRuntimeToJarDebug
+> Task :ime:gesturetyping:processDebugJavaRes NO-SOURCE
+> Task :ime:gesturetyping:bundleLibRuntimeToJarDebug
+> Task :ime:nextword:processDebugJavaRes NO-SOURCE
+> Task :ime:notification:processDebugJavaRes NO-SOURCE
+> Task :ime:nextword:bundleLibRuntimeToJarDebug
+> Task :ime:notification:bundleLibRuntimeToJarDebug
+> Task :ime:overlay:processDebugJavaRes NO-SOURCE
+> Task :ime:permissions:processDebugJavaRes NO-SOURCE
+> Task :ime:overlay:bundleLibRuntimeToJarDebug
+> Task :ime:permissions:bundleLibRuntimeToJarDebug
+> Task :ime:pixel:processDebugJavaRes NO-SOURCE
+> Task :ime:prefs:processDebugJavaRes NO-SOURCE
+> Task :ime:pixel:bundleLibRuntimeToJarDebug
+> Task :ime:releaseinfo:processDebugJavaRes NO-SOURCE
+> Task :ime:prefs:bundleLibRuntimeToJarDebug
+> Task :ime:remote:processDebugJavaRes NO-SOURCE
+> Task :ime:releaseinfo:bundleLibRuntimeToJarDebug
+> Task :ime:remote:bundleLibRuntimeToJarDebug
+> Task :ime:voiceime:processDebugJavaRes NO-SOURCE
+> Task :ime:dictionaries:jnidictionaryv1:processDebugJavaRes NO-SOURCE
+> Task :ime:voiceime:bundleLibRuntimeToJarDebug
+> Task :ime:dictionaries:jnidictionaryv1:bundleLibRuntimeToJarDebug
+> Task :ime:dictionaries:jnidictionaryv2:processDebugJavaRes NO-SOURCE
+> Task :ime:dictionaries:jnidictionaryv2:bundleLibRuntimeToJarDebug
+> Task :addons:languages:english:pack:processDebugJavaRes NO-SOURCE
+> Task :addons:languages:english:pack:bundleLibRuntimeToJarDebug
+> Task :ime:app:compileDebugKotlin
+
+> Task :ime:app:compileDebugJavaWithJavac
+Note: Some input files use or override a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+
+> Task :ime:app:processDebugJavaRes
+> Task :ime:app:bundleDebugClassesToCompileJar
+> Task :ime:app:bundleDebugClassesToRuntimeJar
+> Task :ime:app:compileDebugUnitTestKotlin
+
+> Task :ime:app:compileDebugUnitTestJavaWithJavac
+Note: Some input files use or override a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+Note: Some input files use unchecked or unsafe operations.
+Note: Recompile with -Xlint:unchecked for details.
+
+> Task :ime:app:processDebugUnitTestJavaRes
+> Task :ime:app:testDebugUnitTest
+
+AnySoftKeyboardStartUpAllSdkTest$AnySoftKeyboardStartUpAllSdkShard2Test > testBasicWorks SKIPPED
+
+AnySoftKeyboardStartUpAllSdkTest$AnySoftKeyboardStartUpAllSdkShard3Test > testBasicWorks[32] SKIPPED
+
+AnySoftKeyboardStartUpAllSdkTest$AnySoftKeyboardStartUpAllSdkShard3Test > testBasicWorks[33] SKIPPED
+
+AnySoftKeyboardStartUpAllSdkTest$AnySoftKeyboardStartUpAllSdkShard3Test > testBasicWorks[34] SKIPPED
+
+AnySoftKeyboardStartUpAllSdkTest$AnySoftKeyboardStartUpAllSdkShard3Test > testBasicWorks SKIPPED
+
+GestureTypingDetectorTest > testCalculatesCornersInBackgroundWithTwoDictionariesButDisposed SKIPPED
+
+GestureTypingDetectorTest > testCalculatesCornersInBackgroundWithTwoDictionaries SKIPPED
+
+AnySoftKeyboardClipboardTest > testDoesNotShowToastInAndroid33 SKIPPED
+
+AnySoftKeyboardKeyboardSwitchingTest > testModeSwitchesOnConfigurationChange SKIPPED
+
+AnySoftKeyboardSuggestionsTest > testOverExpectedDelayedOnSelectionUpdate SKIPPED
+
+AnySoftKeyboardSuggestionsTest > testCrazyDelayedOnSelectionUpdate SKIPPED
+
+AnySoftKeyboardSuggestionsTest > testCorrectlyOutputCharactersWhenVeryCongestedCursorUpdates SKIPPED
+
+AnySoftKeyboardSuggestionsTest > testAnnoyingDelayedOnSelectionUpdate SKIPPED
+
+AnySoftKeyboardSuggestionsTest > testWayOverExpectedDelayedOnSelectionUpdate SKIPPED
+
+SingleSelectionAddOnsBrowserFragmentTest > testDemoKeyboardShowsLastUsedKeyboardSymbols SKIPPED
+
+SingleSelectionAddOnsBrowserFragmentTest > testDemoKeyboardShowsLastUsedKeyboardAlphabet SKIPPED
+
+[Incubating] Problems report is available at: file:///Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/build/reports/problems/problems-report.html
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 10.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/9.2.1/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD SUCCESSFUL in 2m 36s
+429 actionable tasks: 429 executed
+  OK
+[9/12] lintDebug (:ime:app)...
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.2.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+> Task :buildSrc:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :buildSrc:pluginDescriptors
+> Task :buildSrc:processResources
+> Task :buildSrc:compileKotlin
+
+> Task :buildSrc:compileJava
+Note: Some input files use or override a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+Note: /Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/buildSrc/src/main/java/MakeDictionaryPlugin.java uses unchecked or unsafe operations.
+Note: Recompile with -Xlint:unchecked for details.
+
+> Task :buildSrc:compileGroovy
+> Task :buildSrc:classes
+> Task :buildSrc:jar
+
+> Configure project :addons
+Generated version 5.1.1 (version-code 1). Using StaticVersionGenerator for versioning.
+
+> Configure project :ime
+Generated version 1.13.1 (version-code 1). Using StaticVersionGenerator for versioning.
+
+> Configure project :ime:app
+Could not find '/tmp/anysoftkeyboard.keystore' file. Release APK will not be signed.
+Building :ime:app 1.13.1 (or 1.13.1), code 1.
+crash report email is: null
+Found prebuilt word-list folder for :addons:languages:english:pack with 2 files.
+
+> Task :api:preBuild UP-TO-DATE
+> Task :api:preDebugBuild UP-TO-DATE
+> Task :api:checkDebugAarMetadata
+> Task :api:mergeDebugJniLibFolders
+> Task :api:mergeDebugNativeLibs NO-SOURCE
+> Task :api:stripDebugDebugSymbols NO-SOURCE
+> Task :api:generateDebugResValues
+> Task :api:copyDebugJniLibsProjectAndLocalJars
+> Task :api:generateDebugResources
+> Task :api:packageDebugResources
+> Task :api:processDebugNavigationResources
+> Task :api:extractDeepLinksForAarDebug
+> Task :api:mergeDebugShaders
+> Task :api:compileDebugShaders NO-SOURCE
+> Task :api:generateDebugAssets UP-TO-DATE
+> Task :api:mergeDebugAssets
+> Task :api:prepareDebugArtProfile
+> Task :api:javaPreCompileDebug
+> Task :api:prepareLintJarForPublish
+> Task :api:processDebugJavaRes NO-SOURCE
+> Task :api:preDebugAndroidTestBuild UP-TO-DATE
+> Task :api:generateDebugAndroidTestResValues
+> Task :api:writeDebugAarMetadata
+> Task :api:writeDebugLintModelMetadata
+> Task :api:extractProguardFiles
+> Task :api:preDebugUnitTestBuild UP-TO-DATE
+> Task :personaspeak-ui:preBuild UP-TO-DATE
+> Task :personaspeak-ui:preDebugBuild UP-TO-DATE
+> Task :api:parseDebugLocalResources
+> Task :api:processDebugManifest
+> Task :api:mergeDebugJavaResource
+> Task :api:generateDebugRFile
+> Task :personaspeak-ui:checkDebugAarMetadata
+> Task :api:extractDebugAnnotations
+> Task :api:compileDebugJavaWithJavac
+> Task :api:mergeDebugGeneratedProguardFiles
+> Task :api:mergeDebugConsumerProguardFiles
+> Task :api:syncDebugLibJars
+> Task :api:bundleDebugLocalLintAar
+> Task :api:bundleLibRuntimeToJarDebug
+> Task :api:generateDebugLintModel
+> Task :api:createFullJarDebug
+> Task :api:generateDebugAndroidTestLintModel
+> Task :api:generateDebugUnitTestLintModel
+> Task :personaspeak-ui:mergeDebugJniLibFolders
+> Task :personaspeak-ui:mergeDebugNativeLibs NO-SOURCE
+> Task :personaspeak-ui:stripDebugDebugSymbols NO-SOURCE
+> Task :personaspeak-ui:copyDebugJniLibsProjectAndLocalJars
+> Task :core-personas:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :core-personas:processResources NO-SOURCE
+> Task :core-providers:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :core-providers:processResources NO-SOURCE
+> Task :personaspeak-ui:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :personaspeak-ui:generateDebugResValues
+> Task :personaspeak-ui:generateDebugResources
+> Task :personaspeak-ui:packageDebugResources
+> Task :personaspeak-ui:processDebugNavigationResources
+> Task :personaspeak-ui:extractDeepLinksForAarDebug
+> Task :personaspeak-ui:mergeDebugShaders
+> Task :personaspeak-ui:compileDebugShaders NO-SOURCE
+> Task :personaspeak-ui:generateDebugAssets UP-TO-DATE
+> Task :personaspeak-ui:parseDebugLocalResources
+> Task :personaspeak-ui:mergeDebugAssets
+> Task :personaspeak-ui:javaPreCompileDebug
+> Task :personaspeak-ui:prepareDebugArtProfile
+> Task :personaspeak-ui:prepareLintJarForPublish
+> Task :personaspeak-ui:writeDebugAarMetadata
+> Task :personaspeak-ui:preDebugAndroidTestBuild UP-TO-DATE
+> Task :personaspeak-ui:processDebugManifest
+> Task :personaspeak-ui:generateDebugAndroidTestResValues
+> Task :personaspeak-ui:writeDebugLintModelMetadata
+> Task :personaspeak-ui:generateDebugRFile
+> Task :personaspeak-ui:extractProguardFiles
+> Task :personaspeak-ui:preDebugUnitTestBuild UP-TO-DATE
+> Task :addons:base:preBuild UP-TO-DATE
+> Task :addons:base:preDebugBuild UP-TO-DATE
+> Task :addons:base:checkDebugAarMetadata
+> Task :addons:base:mergeDebugJniLibFolders
+> Task :addons:base:mergeDebugNativeLibs NO-SOURCE
+> Task :addons:base:stripDebugDebugSymbols NO-SOURCE
+> Task :addons:base:copyDebugJniLibsProjectAndLocalJars
+> Task :addons:base:generateDebugResValues
+> Task :api:bundleLibCompileToJarDebug
+> Task :addons:base:generateDebugResources
+> Task :addons:base:packageDebugResources
+> Task :addons:base:processDebugNavigationResources
+> Task :addons:base:extractDeepLinksForAarDebug
+> Task :addons:base:parseDebugLocalResources
+> Task :addons:base:mergeDebugShaders
+> Task :addons:base:compileDebugShaders NO-SOURCE
+> Task :addons:base:generateDebugAssets UP-TO-DATE
+> Task :addons:base:mergeDebugAssets
+> Task :addons:base:generateDebugRFile
+> Task :addons:base:extractDebugAnnotations
+> Task :addons:base:javaPreCompileDebug
+> Task :addons:base:prepareDebugArtProfile
+> Task :addons:base:compileDebugJavaWithJavac
+> Task :addons:base:mergeDebugGeneratedProguardFiles
+> Task :addons:base:mergeDebugConsumerProguardFiles
+> Task :addons:base:prepareLintJarForPublish
+> Task :addons:base:processDebugJavaRes NO-SOURCE
+> Task :addons:base:processDebugManifest
+> Task :addons:base:mergeDebugJavaResource
+> Task :addons:base:writeDebugAarMetadata
+> Task :addons:base:bundleLibRuntimeToJarDebug
+> Task :addons:base:syncDebugLibJars
+> Task :addons:base:bundleDebugLocalLintAar
+> Task :addons:base:createFullJarDebug
+> Task :addons:base:preDebugAndroidTestBuild UP-TO-DATE
+> Task :addons:base:generateDebugAndroidTestResValues
+> Task :addons:base:writeDebugLintModelMetadata
+> Task :addons:base:generateDebugAndroidTestLintModel
+> Task :addons:base:extractProguardFiles
+> Task :addons:base:generateDebugLintModel
+> Task :addons:base:preDebugUnitTestBuild UP-TO-DATE
+> Task :addons:base:generateDebugUnitTestLintModel
+> Task :ime:addons:preBuild UP-TO-DATE
+> Task :ime:addons:preDebugBuild UP-TO-DATE
+> Task :ime:base:preBuild UP-TO-DATE
+> Task :ime:base:preDebugBuild UP-TO-DATE
+> Task :ime:base-rx:preBuild UP-TO-DATE
+> Task :ime:base-rx:preDebugBuild UP-TO-DATE
+> Task :ime:base:writeDebugAarMetadata
+> Task :ime:pixel:preBuild UP-TO-DATE
+> Task :ime:pixel:preDebugBuild UP-TO-DATE
+> Task :ime:base-rx:writeDebugAarMetadata
+> Task :ime:pixel:writeDebugAarMetadata
+> Task :ime:addons:mergeDebugJniLibFolders
+> Task :ime:addons:mergeDebugNativeLibs NO-SOURCE
+> Task :ime:addons:stripDebugDebugSymbols NO-SOURCE
+> Task :ime:addons:copyDebugJniLibsProjectAndLocalJars
+> Task :ime:addons:generateDebugResValues
+> Task :ime:addons:checkDebugAarMetadata
+> Task :ime:addons:generateDebugResources
+> Task :core-providers:compileKotlin
+> Task :ime:addons:packageDebugResources
+> Task :core-providers:compileJava NO-SOURCE
+> Task :core-providers:classes UP-TO-DATE
+> Task :core-providers:jar
+> Task :ime:addons:processDebugNavigationResources
+> Task :ime:base:generateDebugResValues
+> Task :ime:base:generateDebugResources
+> Task :ime:addons:parseDebugLocalResources
+> Task :ime:base:packageDebugResources
+> Task :ime:base:processDebugNavigationResources
+> Task :ime:base-rx:generateDebugResValues
+> Task :ime:base:parseDebugLocalResources
+> Task :ime:base-rx:generateDebugResources
+> Task :ime:base-rx:packageDebugResources
+> Task :ime:base-rx:processDebugNavigationResources
+> Task :ime:base:generateDebugRFile
+> Task :ime:pixel:generateDebugResValues
+> Task :ime:base-rx:parseDebugLocalResources
+> Task :ime:pixel:generateDebugResources
+> Task :ime:base-rx:generateDebugRFile
+> Task :ime:pixel:packageDebugResources
+> Task :ime:pixel:processDebugNavigationResources
+> Task :ime:base:javaPreCompileDebug
+> Task :ime:base-rx:javaPreCompileDebug
+> Task :ime:pixel:parseDebugLocalResources
+> Task :ime:base:compileDebugJavaWithJavac
+> Task :ime:pixel:javaPreCompileDebug
+> Task :ime:base:bundleLibCompileToJarDebug
+> Task :ime:addons:extractDeepLinksForAarDebug
+> Task :ime:pixel:generateDebugRFile
+> Task :core-personas:compileKotlin
+> Task :ime:base-rx:compileDebugJavaWithJavac
+> Task :core-personas:compileJava NO-SOURCE
+> Task :core-personas:classes UP-TO-DATE
+> Task :core-personas:jar
+> Task :ime:addons:generateDebugRFile
+> Task :ime:base-rx:bundleLibCompileToJarDebug
+> Task :ime:addons:mergeDebugShaders
+
+> Task :ime:pixel:compileDebugJavaWithJavac
+Note: Some input files use or override a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+
+> Task :ime:addons:compileDebugShaders NO-SOURCE
+> Task :ime:addons:generateDebugAssets UP-TO-DATE
+> Task :ime:addons:mergeDebugAssets
+> Task :ime:pixel:bundleLibCompileToJarDebug
+> Task :ime:addons:javaPreCompileDebug
+> Task :ime:addons:extractDebugAnnotations
+> Task :ime:addons:compileDebugJavaWithJavac
+> Task :ime:addons:mergeDebugGeneratedProguardFiles
+> Task :ime:addons:mergeDebugConsumerProguardFiles
+> Task :ime:addons:prepareDebugArtProfile
+> Task :ime:addons:prepareLintJarForPublish
+> Task :ime:addons:processDebugJavaRes NO-SOURCE
+> Task :ime:addons:processDebugManifest
+> Task :ime:addons:writeDebugAarMetadata
+> Task :ime:addons:mergeDebugJavaResource
+> Task :ime:pixel:checkDebugAarMetadata
+> Task :ime:addons:syncDebugLibJars
+> Task :ime:addons:bundleDebugLocalLintAar
+> Task :ime:pixel:mergeDebugJniLibFolders
+> Task :ime:pixel:mergeDebugNativeLibs NO-SOURCE
+> Task :ime:pixel:stripDebugDebugSymbols NO-SOURCE
+> Task :ime:pixel:copyDebugJniLibsProjectAndLocalJars
+> Task :ime:pixel:extractDebugAnnotations
+> Task :ime:pixel:extractDeepLinksForAarDebug
+> Task :ime:pixel:mergeDebugShaders
+> Task :ime:pixel:compileDebugShaders NO-SOURCE
+> Task :ime:pixel:generateDebugAssets UP-TO-DATE
+> Task :ime:pixel:mergeDebugAssets
+> Task :ime:pixel:mergeDebugGeneratedProguardFiles
+> Task :ime:pixel:mergeDebugConsumerProguardFiles
+> Task :ime:pixel:prepareDebugArtProfile
+> Task :ime:pixel:prepareLintJarForPublish
+> Task :ime:pixel:processDebugJavaRes NO-SOURCE
+> Task :ime:pixel:processDebugManifest
+> Task :ime:pixel:mergeDebugJavaResource
+> Task :ime:base-rx:checkDebugAarMetadata
+> Task :ime:pixel:syncDebugLibJars
+> Task :ime:pixel:bundleDebugLocalLintAar
+> Task :ime:base-rx:mergeDebugJniLibFolders
+> Task :ime:base-rx:mergeDebugNativeLibs NO-SOURCE
+> Task :ime:base-rx:stripDebugDebugSymbols NO-SOURCE
+> Task :ime:base-rx:copyDebugJniLibsProjectAndLocalJars
+> Task :ime:base-rx:extractDebugAnnotations
+> Task :ime:base-rx:extractDeepLinksForAarDebug
+> Task :ime:base-rx:mergeDebugShaders
+> Task :ime:base-rx:compileDebugShaders NO-SOURCE
+> Task :ime:base-rx:generateDebugAssets UP-TO-DATE
+> Task :ime:base-rx:mergeDebugAssets
+> Task :ime:base-rx:mergeDebugGeneratedProguardFiles
+> Task :ime:base-rx:mergeDebugConsumerProguardFiles
+> Task :ime:base-rx:prepareDebugArtProfile
+> Task :ime:base-rx:prepareLintJarForPublish
+> Task :ime:base-rx:processDebugJavaRes NO-SOURCE
+> Task :ime:base-rx:processDebugManifest
+> Task :ime:base-rx:mergeDebugJavaResource
+> Task :ime:base:checkDebugAarMetadata
+> Task :ime:base-rx:syncDebugLibJars
+> Task :ime:base-rx:bundleDebugLocalLintAar
+> Task :ime:base:mergeDebugJniLibFolders
+> Task :ime:base:mergeDebugNativeLibs NO-SOURCE
+> Task :ime:base:stripDebugDebugSymbols NO-SOURCE
+> Task :ime:base:copyDebugJniLibsProjectAndLocalJars
+> Task :ime:base:extractDebugAnnotations
+> Task :ime:base:extractDeepLinksForAarDebug
+> Task :ime:base:mergeDebugShaders
+> Task :ime:base:compileDebugShaders NO-SOURCE
+> Task :ime:base:generateDebugAssets UP-TO-DATE
+> Task :ime:base:mergeDebugAssets
+> Task :ime:base:mergeDebugGeneratedProguardFiles
+> Task :ime:base:mergeDebugConsumerProguardFiles
+> Task :ime:base:prepareDebugArtProfile
+> Task :ime:base:prepareLintJarForPublish
+> Task :ime:base:processDebugJavaRes NO-SOURCE
+> Task :ime:base:processDebugManifest
+> Task :ime:addons:preDebugAndroidTestBuild UP-TO-DATE
+> Task :ime:base:mergeDebugJavaResource
+> Task :ime:addons:generateDebugAndroidTestResValues
+> Task :ime:addons:bundleLibRuntimeToJarDebug
+> Task :ime:base:syncDebugLibJars
+> Task :ime:base:bundleDebugLocalLintAar
+> Task :ime:addons:createFullJarDebug
+> Task :ime:addons:writeDebugLintModelMetadata
+> Task :ime:base:writeDebugLintModelMetadata
+> Task :ime:base:bundleLibRuntimeToJarDebug
+> Task :ime:base-rx:writeDebugLintModelMetadata
+> Task :ime:base-rx:bundleLibRuntimeToJarDebug
+> Task :ime:base:createFullJarDebug
+> Task :ime:base-rx:createFullJarDebug
+> Task :ime:pixel:writeDebugLintModelMetadata
+> Task :ime:pixel:bundleLibRuntimeToJarDebug
+> Task :ime:addons:extractProguardFiles
+> Task :ime:pixel:createFullJarDebug
+> Task :ime:addons:generateDebugAndroidTestLintModel
+> Task :ime:base:extractProguardFiles
+> Task :ime:base:generateDebugLintModel
+> Task :ime:base-rx:extractProguardFiles
+> Task :ime:base-rx:generateDebugLintModel
+> Task :ime:pixel:extractProguardFiles
+> Task :ime:pixel:generateDebugLintModel
+> Task :ime:addons:generateDebugLintModel
+> Task :ime:base-test:preBuild UP-TO-DATE
+> Task :ime:base-test:preDebugBuild UP-TO-DATE
+> Task :ime:base-test:checkDebugAarMetadata
+> Task :ime:base-test:mergeDebugJniLibFolders
+> Task :ime:base-test:mergeDebugNativeLibs NO-SOURCE
+> Task :ime:base-test:stripDebugDebugSymbols NO-SOURCE
+> Task :ime:base-test:copyDebugJniLibsProjectAndLocalJars
+> Task :addons:base:lintAnalyzeDebugUnitTest
+> Task :api:lintAnalyzeDebugAndroidTest
+> Task :addons:base:lintAnalyzeDebugAndroidTest
+> Task :api:lintAnalyzeDebugUnitTest
+> Task :personaspeak-ui:compileDebugKotlin
+> Task :junit-sharding:compileJava
+> Task :personaspeak-ui:extractDebugAnnotations
+> Task :personaspeak-ui:compileDebugJavaWithJavac NO-SOURCE
+> Task :personaspeak-ui:mergeDebugGeneratedProguardFiles
+> Task :personaspeak-ui:mergeDebugConsumerProguardFiles
+> Task :personaspeak-ui:processDebugJavaRes
+> Task :personaspeak-ui:bundleLibRuntimeToJarDebug
+> Task :personaspeak-ui:mergeDebugJavaResource
+> Task :personaspeak-ui:generateDebugLintModel
+> Task :personaspeak-ui:syncDebugLibJars
+> Task :personaspeak-ui:bundleDebugLocalLintAar
+> Task :personaspeak-ui:createFullJarDebug
+> Task :personaspeak-ui:generateDebugAndroidTestLintModel
+> Task :personaspeak-ui:generateDebugUnitTestLintModel
+> Task :junit-sharding:processResources NO-SOURCE
+> Task :junit-sharding:classes
+> Task :junit-sharding:jar
+> Task :ime:base-test:generateDebugResValues
+> Task :ime:base-test:generateDebugResources
+> Task :ime:base-test:packageDebugResources
+> Task :ime:base-test:processDebugNavigationResources
+> Task :ime:base-test:extractDeepLinksForAarDebug
+> Task :ime:base-test:parseDebugLocalResources
+> Task :ime:base-test:mergeDebugShaders
+> Task :ime:base-test:compileDebugShaders NO-SOURCE
+> Task :ime:base-test:generateDebugAssets UP-TO-DATE
+> Task :ime:base-test:mergeDebugAssets
+> Task :ime:base-test:javaPreCompileDebug
+> Task :ime:base-test:prepareDebugArtProfile
+> Task :ime:base-test:prepareLintJarForPublish
+> Task :ime:base-test:generateDebugRFile
+> Task :ime:base-test:processDebugJavaRes NO-SOURCE
+> Task :ime:base-test:processDebugManifest
+> Task :ime:base-test:extractDebugAnnotations
+> Task :ime:base-test:compileDebugJavaWithJavac
+> Task :ime:base-test:mergeDebugGeneratedProguardFiles
+> Task :ime:base-test:mergeDebugConsumerProguardFiles
+> Task :ime:addons:preDebugUnitTestBuild UP-TO-DATE
+> Task :ime:base-test:writeDebugAarMetadata
+> Task :ime:base-test:mergeDebugJavaResource
+> Task :ime:base-test:writeDebugLintModelMetadata
+> Task :ime:base-test:bundleLibRuntimeToJarDebug
+> Task :ime:base-test:syncDebugLibJars
+> Task :ime:base-test:bundleDebugLocalLintAar
+> Task :ime:base-test:createFullJarDebug
+> Task :ime:addons:generateDebugUnitTestLintModel
+
+> Task :addons:languages:english:pack:parseAospDictionary_en_wordlist_combined_gz
+Reading input file en_wordlist.combined.gz (size 914050)...
+.0%..233%..468%..705%..100%.Wrote 165541 words.
+Done.
+
+> Task :ime:addons:lintAnalyzeDebugAndroidTest
+
+> Task :addons:languages:english:pack:mergeAllWordLists
+Merging 3 files for maximum 300000 words, and writing into 'words_merged.xml'. Discarding 0 words.
+Reading en_wordlist.combined.gz.xml...
+Loaded 165541 words in total...
+Reading additionals.xml...
+Loaded 165571 words in total...
+Reading websites.xml...
+Loaded 165600 words in total...
+Creating output XML file...
+Done.
+Wrote 165600 words.
+
+> Task :addons:languages:english:pack:makeDictionary
+Reading words from input /Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/addons/languages/english/pack/build/dictionary/words_merged.xml
+Will store output files under /Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/addons/languages/english/pack/src/main/res/raw. Created raw folder? false
+Deleting previous versions...
+Nodes = 414532
+Dict Size = 1889353
+Writing to dict file /Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/addons/languages/english/pack/src/main/res/raw/english_words_1.dict
+Writing to dict file /Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/addons/languages/english/pack/src/main/res/raw/english_words_2.dict
+Done. Wrote 2 files.
+Done.
+
+> Task :addons:languages:english:pack:preBuild
+> Task :addons:languages:english:pack:preDebugBuild
+> Task :addons:languages:english:pack:checkDebugAarMetadata
+> Task :addons:languages:english:pack:mergeDebugJniLibFolders
+> Task :addons:languages:english:pack:mergeDebugNativeLibs NO-SOURCE
+> Task :addons:languages:english:pack:stripDebugDebugSymbols NO-SOURCE
+> Task :addons:languages:english:pack:copyDebugJniLibsProjectAndLocalJars
+> Task :addons:languages:english:pack:generateDebugResValues
+> Task :addons:base:bundleLibCompileToJarDebug
+> Task :addons:languages:english:pack:generateDebugResources
+> Task :addons:languages:english:pack:packageDebugResources
+> Task :addons:languages:english:pack:processDebugNavigationResources
+> Task :addons:languages:english:pack:extractDeepLinksForAarDebug
+> Task :addons:languages:english:pack:mergeDebugShaders
+> Task :addons:languages:english:pack:compileDebugShaders NO-SOURCE
+> Task :addons:languages:english:pack:generateDebugAssets UP-TO-DATE
+> Task :addons:languages:english:pack:mergeDebugAssets
+> Task :addons:languages:english:pack:javaPreCompileDebug
+> Task :addons:languages:english:pack:prepareDebugArtProfile
+> Task :addons:languages:english:pack:prepareLintJarForPublish
+> Task :addons:languages:english:pack:parseDebugLocalResources
+> Task :addons:languages:english:pack:processDebugManifest
+> Task :addons:languages:english:pack:processDebugJavaRes NO-SOURCE
+> Task :ime:nextword:preBuild UP-TO-DATE
+> Task :ime:nextword:preDebugBuild UP-TO-DATE
+> Task :ime:prefs:preBuild UP-TO-DATE
+> Task :ime:prefs:preDebugBuild UP-TO-DATE
+> Task :addons:languages:english:pack:writeDebugAarMetadata
+> Task :addons:languages:english:pack:mergeDebugJavaResource
+> Task :addons:languages:english:pack:generateDebugRFile
+> Task :ime:prefs:writeDebugAarMetadata
+> Task :addons:languages:english:pack:extractDebugAnnotations
+> Task :addons:languages:english:pack:compileDebugJavaWithJavac
+> Task :addons:languages:english:pack:mergeDebugGeneratedProguardFiles
+> Task :addons:languages:english:pack:mergeDebugConsumerProguardFiles
+> Task :addons:languages:english:pack:syncDebugLibJars
+> Task :addons:languages:english:pack:bundleDebugLocalLintAar
+> Task :ime:nextword:mergeDebugJniLibFolders
+> Task :ime:nextword:mergeDebugNativeLibs NO-SOURCE
+> Task :ime:nextword:stripDebugDebugSymbols NO-SOURCE
+> Task :ime:nextword:checkDebugAarMetadata
+> Task :ime:nextword:copyDebugJniLibsProjectAndLocalJars
+> Task :ime:nextword:generateDebugBuildConfig
+> Task :ime:nextword:generateDebugResValues
+> Task :ime:nextword:generateDebugResources
+> Task :ime:nextword:packageDebugResources
+> Task :ime:nextword:processDebugNavigationResources
+> Task :ime:prefs:generateDebugResValues
+> Task :ime:prefs:generateDebugResources
+> Task :ime:nextword:parseDebugLocalResources
+> Task :ime:prefs:packageDebugResources
+> Task :ime:prefs:processDebugNavigationResources
+> Task :ime:prefs:javaPreCompileDebug
+> Task :ime:prefs:parseDebugLocalResources
+> Task :ime:nextword:extractDeepLinksForAarDebug
+> Task :ime:nextword:mergeDebugShaders
+> Task :ime:nextword:compileDebugShaders NO-SOURCE
+> Task :ime:nextword:generateDebugAssets UP-TO-DATE
+> Task :ime:nextword:mergeDebugAssets
+> Task :ime:nextword:javaPreCompileDebug
+> Task :ime:nextword:prepareDebugArtProfile
+> Task :ime:prefs:generateDebugRFile
+> Task :ime:nextword:generateDebugRFile
+> Task :ime:addons:lintAnalyzeDebugUnitTest
+> Task :ime:prefs:compileDebugJavaWithJavac
+> Task :ime:nextword:prepareLintJarForPublish
+> Task :ime:prefs:bundleLibCompileToJarDebug
+> Task :ime:nextword:processDebugManifest
+> Task :ime:nextword:extractDebugAnnotations
+> Task :ime:nextword:compileDebugJavaWithJavac
+> Task :ime:nextword:mergeDebugGeneratedProguardFiles
+> Task :ime:nextword:mergeDebugConsumerProguardFiles
+> Task :ime:nextword:processDebugJavaRes NO-SOURCE
+> Task :ime:notification:preBuild UP-TO-DATE
+> Task :ime:notification:preDebugBuild UP-TO-DATE
+> Task :ime:permissions:preBuild UP-TO-DATE
+> Task :ime:nextword:writeDebugAarMetadata
+> Task :ime:permissions:preDebugBuild UP-TO-DATE
+> Task :ime:nextword:mergeDebugJavaResource
+> Task :ime:permissions:writeDebugAarMetadata
+> Task :ime:nextword:syncDebugLibJars
+> Task :ime:nextword:bundleDebugLocalLintAar
+> Task :ime:notification:mergeDebugJniLibFolders
+> Task :ime:notification:checkDebugAarMetadata
+> Task :ime:notification:mergeDebugNativeLibs NO-SOURCE
+> Task :ime:notification:stripDebugDebugSymbols NO-SOURCE
+> Task :ime:notification:copyDebugJniLibsProjectAndLocalJars
+> Task :ime:notification:generateDebugResValues
+> Task :ime:notification:generateDebugResources
+> Task :ime:notification:packageDebugResources
+> Task :ime:notification:processDebugNavigationResources
+> Task :ime:permissions:generateDebugResValues
+> Task :ime:notification:parseDebugLocalResources
+> Task :ime:permissions:generateDebugResources
+> Task :ime:permissions:packageDebugResources
+> Task :ime:permissions:processDebugNavigationResources
+> Task :ime:permissions:javaPreCompileDebug
+> Task :ime:notification:extractDeepLinksForAarDebug
+> Task :ime:permissions:parseDebugLocalResources
+> Task :ime:notification:mergeDebugShaders
+> Task :ime:notification:compileDebugShaders NO-SOURCE
+> Task :ime:notification:generateDebugAssets UP-TO-DATE
+> Task :ime:notification:mergeDebugAssets
+> Task :ime:notification:prepareDebugArtProfile
+> Task :ime:notification:javaPreCompileDebug
+> Task :ime:permissions:generateDebugRFile
+> Task :ime:notification:prepareLintJarForPublish
+> Task :ime:notification:generateDebugRFile
+> Task :ime:permissions:compileDebugJavaWithJavac
+> Task :ime:permissions:bundleLibCompileToJarDebug
+> Task :ime:notification:processDebugManifest
+> Task :ime:notification:extractDebugAnnotations
+> Task :ime:notification:compileDebugJavaWithJavac
+> Task :ime:notification:mergeDebugGeneratedProguardFiles
+> Task :ime:notification:mergeDebugConsumerProguardFiles
+> Task :ime:notification:processDebugJavaRes NO-SOURCE
+> Task :ime:releaseinfo:preBuild UP-TO-DATE
+> Task :ime:releaseinfo:preDebugBuild UP-TO-DATE
+> Task :ime:notification:writeDebugAarMetadata
+> Task :ime:notification:mergeDebugJavaResource
+> Task :ime:releaseinfo:mergeDebugJniLibFolders
+> Task :ime:notification:syncDebugLibJars
+> Task :ime:notification:bundleDebugLocalLintAar
+> Task :ime:releaseinfo:mergeDebugNativeLibs NO-SOURCE
+> Task :ime:releaseinfo:stripDebugDebugSymbols NO-SOURCE
+> Task :ime:releaseinfo:copyDebugJniLibsProjectAndLocalJars
+> Task :ime:releaseinfo:generateDebugResValues
+> Task :ime:releaseinfo:checkDebugAarMetadata
+> Task :ime:notification:bundleLibCompileToJarDebug
+> Task :ime:releaseinfo:generateDebugResources
+> Task :ime:releaseinfo:packageDebugResources
+> Task :ime:releaseinfo:processDebugNavigationResources
+> Task :ime:releaseinfo:extractDeepLinksForAarDebug
+> Task :ime:releaseinfo:mergeDebugShaders
+> Task :ime:releaseinfo:compileDebugShaders NO-SOURCE
+> Task :ime:releaseinfo:generateDebugAssets UP-TO-DATE
+> Task :ime:releaseinfo:parseDebugLocalResources
+> Task :ime:releaseinfo:mergeDebugAssets
+> Task :ime:releaseinfo:javaPreCompileDebug
+> Task :ime:releaseinfo:prepareDebugArtProfile
+> Task :ime:releaseinfo:generateDebugRFile
+> Task :ime:releaseinfo:prepareLintJarForPublish
+> Task :ime:releaseinfo:processDebugManifest
+> Task :ime:releaseinfo:extractDebugAnnotations
+
+> Task :ime:releaseinfo:compileDebugJavaWithJavac
+Note: /Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/releaseinfo/src/main/java/com/anysoftkeyboard/releaseinfo/TesterNotification.java uses or overrides a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+
+> Task :ime:releaseinfo:mergeDebugGeneratedProguardFiles
+> Task :ime:releaseinfo:mergeDebugConsumerProguardFiles
+> Task :ime:releaseinfo:processDebugJavaRes NO-SOURCE
+> Task :ime:dictionaries:preBuild UP-TO-DATE
+> Task :ime:dictionaries:preDebugBuild UP-TO-DATE
+> Task :ime:releaseinfo:writeDebugAarMetadata
+> Task :ime:releaseinfo:mergeDebugJavaResource
+> Task :ime:dictionaries:checkDebugAarMetadata
+> Task :ime:releaseinfo:syncDebugLibJars
+> Task :ime:releaseinfo:bundleDebugLocalLintAar
+> Task :ime:dictionaries:mergeDebugJniLibFolders
+> Task :ime:dictionaries:mergeDebugNativeLibs NO-SOURCE
+> Task :ime:dictionaries:stripDebugDebugSymbols NO-SOURCE
+> Task :ime:dictionaries:copyDebugJniLibsProjectAndLocalJars
+> Task :ime:dictionaries:generateDebugBuildConfig
+> Task :ime:dictionaries:generateDebugResValues
+> Task :ime:dictionaries:generateDebugResources
+> Task :ime:dictionaries:packageDebugResources
+> Task :ime:dictionaries:processDebugNavigationResources
+> Task :ime:dictionaries:extractDeepLinksForAarDebug
+> Task :ime:dictionaries:parseDebugLocalResources
+> Task :ime:dictionaries:mergeDebugShaders
+> Task :ime:dictionaries:compileDebugShaders NO-SOURCE
+> Task :ime:dictionaries:generateDebugAssets UP-TO-DATE
+> Task :ime:dictionaries:mergeDebugAssets
+> Task :ime:dictionaries:javaPreCompileDebug
+> Task :ime:dictionaries:prepareDebugArtProfile
+> Task :ime:dictionaries:prepareLintJarForPublish
+> Task :ime:dictionaries:generateDebugRFile
+> Task :ime:dictionaries:processDebugManifest
+> Task :ime:dictionaries:extractDebugAnnotations
+> Task :ime:dictionaries:compileDebugJavaWithJavac
+> Task :ime:dictionaries:mergeDebugGeneratedProguardFiles
+> Task :ime:dictionaries:mergeDebugConsumerProguardFiles
+> Task :ime:dictionaries:processDebugJavaRes NO-SOURCE
+> Task :ime:dictionaries:jnidictionaryv1:preBuild UP-TO-DATE
+> Task :ime:dictionaries:jnidictionaryv1:preDebugBuild UP-TO-DATE
+> Task :ime:dictionaries:writeDebugAarMetadata
+> Task :ime:dictionaries:mergeDebugJavaResource
+> Task :ime:dictionaries:jnidictionaryv1:checkDebugAarMetadata
+> Task :ime:dictionaries:syncDebugLibJars
+> Task :ime:dictionaries:bundleDebugLocalLintAar
+> Task :personaspeak-ui:lintAnalyzeDebugAndroidTest
+> Task :ime:dictionaries:jnidictionaryv1:configureCMakeDebug[arm64-v8a]
+> Task :ime:dictionaries:jnidictionaryv1:buildCMakeDebug[arm64-v8a]
+> Task :ime:dictionaries:jnidictionaryv1:configureCMakeDebug[armeabi-v7a]
+> Task :ime:dictionaries:jnidictionaryv1:buildCMakeDebug[armeabi-v7a]
+> Task :ime:dictionaries:jnidictionaryv1:configureCMakeDebug[x86]
+> Task :ime:dictionaries:jnidictionaryv1:buildCMakeDebug[x86]
+> Task :ime:dictionaries:jnidictionaryv1:configureCMakeDebug[x86_64]
+> Task :ime:dictionaries:jnidictionaryv1:buildCMakeDebug[x86_64]
+> Task :ime:dictionaries:jnidictionaryv1:mergeDebugJniLibFolders
+> Task :ime:dictionaries:jnidictionaryv1:generateDebugResValues
+> Task :ime:dictionaries:jnidictionaryv1:generateDebugResources
+> Task :ime:dictionaries:bundleLibCompileToJarDebug
+> Task :ime:dictionaries:jnidictionaryv1:packageDebugResources
+> Task :ime:dictionaries:jnidictionaryv1:processDebugNavigationResources
+> Task :ime:dictionaries:jnidictionaryv1:extractDeepLinksForAarDebug
+> Task :ime:dictionaries:jnidictionaryv1:parseDebugLocalResources
+> Task :ime:dictionaries:jnidictionaryv1:mergeDebugShaders
+> Task :ime:dictionaries:jnidictionaryv1:mergeDebugNativeLibs
+> Task :ime:dictionaries:jnidictionaryv1:compileDebugShaders NO-SOURCE
+> Task :ime:dictionaries:jnidictionaryv1:generateDebugAssets UP-TO-DATE
+> Task :ime:dictionaries:jnidictionaryv1:generateDebugRFile
+> Task :ime:dictionaries:jnidictionaryv1:mergeDebugAssets
+> Task :ime:dictionaries:jnidictionaryv1:extractDebugAnnotations
+> Task :ime:dictionaries:jnidictionaryv1:javaPreCompileDebug
+> Task :ime:dictionaries:jnidictionaryv1:prepareDebugArtProfile
+> Task :ime:dictionaries:jnidictionaryv1:stripDebugDebugSymbols
+> Task :ime:dictionaries:jnidictionaryv1:compileDebugJavaWithJavac
+> Task :ime:dictionaries:jnidictionaryv1:mergeDebugGeneratedProguardFiles
+> Task :ime:dictionaries:jnidictionaryv1:mergeDebugConsumerProguardFiles
+> Task :ime:dictionaries:jnidictionaryv1:prepareLintJarForPublish
+> Task :ime:dictionaries:jnidictionaryv1:copyDebugJniLibsProjectAndLocalJars
+> Task :ime:dictionaries:jnidictionaryv1:processDebugJavaRes NO-SOURCE
+> Task :ime:dictionaries:jnidictionaryv1:processDebugManifest
+> Task :ime:dictionaries:jnidictionaryv2:preBuild UP-TO-DATE
+> Task :ime:dictionaries:jnidictionaryv2:preDebugBuild UP-TO-DATE
+> Task :ime:dictionaries:jnidictionaryv1:writeDebugAarMetadata
+> Task :ime:dictionaries:jnidictionaryv1:mergeDebugJavaResource
+> Task :ime:dictionaries:jnidictionaryv2:checkDebugAarMetadata
+> Task :ime:dictionaries:jnidictionaryv1:syncDebugLibJars
+> Task :ime:dictionaries:jnidictionaryv1:bundleDebugLocalLintAar
+> Task :ime:dictionaries:jnidictionaryv2:configureCMakeDebug[arm64-v8a]
+> Task :ime:dictionaries:jnidictionaryv2:buildCMakeDebug[arm64-v8a]
+> Task :ime:dictionaries:jnidictionaryv2:configureCMakeDebug[armeabi-v7a]
+> Task :ime:dictionaries:jnidictionaryv2:buildCMakeDebug[armeabi-v7a]
+> Task :ime:dictionaries:jnidictionaryv2:configureCMakeDebug[x86]
+> Task :ime:dictionaries:jnidictionaryv2:buildCMakeDebug[x86]
+> Task :ime:dictionaries:jnidictionaryv2:configureCMakeDebug[x86_64]
+> Task :ime:dictionaries:jnidictionaryv2:buildCMakeDebug[x86_64]
+> Task :ime:dictionaries:jnidictionaryv2:mergeDebugJniLibFolders
+> Task :ime:dictionaries:jnidictionaryv2:generateDebugResValues
+> Task :ime:dictionaries:jnidictionaryv2:generateDebugResources
+> Task :ime:dictionaries:jnidictionaryv2:packageDebugResources
+> Task :ime:dictionaries:jnidictionaryv2:processDebugNavigationResources
+> Task :ime:dictionaries:jnidictionaryv2:extractDeepLinksForAarDebug
+> Task :ime:dictionaries:jnidictionaryv2:parseDebugLocalResources
+> Task :ime:dictionaries:jnidictionaryv2:mergeDebugShaders
+> Task :ime:dictionaries:jnidictionaryv2:mergeDebugNativeLibs
+> Task :ime:dictionaries:jnidictionaryv2:compileDebugShaders NO-SOURCE
+> Task :ime:dictionaries:jnidictionaryv2:generateDebugAssets UP-TO-DATE
+> Task :ime:dictionaries:jnidictionaryv2:mergeDebugAssets
+> Task :ime:dictionaries:jnidictionaryv2:generateDebugRFile
+> Task :ime:dictionaries:jnidictionaryv2:javaPreCompileDebug
+> Task :ime:dictionaries:jnidictionaryv2:extractDebugAnnotations
+> Task :ime:dictionaries:jnidictionaryv2:stripDebugDebugSymbols
+> Task :ime:dictionaries:jnidictionaryv2:compileDebugJavaWithJavac
+> Task :ime:dictionaries:jnidictionaryv2:mergeDebugGeneratedProguardFiles
+> Task :ime:dictionaries:jnidictionaryv2:mergeDebugConsumerProguardFiles
+> Task :ime:dictionaries:jnidictionaryv2:prepareDebugArtProfile
+> Task :ime:dictionaries:jnidictionaryv2:prepareLintJarForPublish
+> Task :ime:dictionaries:jnidictionaryv2:copyDebugJniLibsProjectAndLocalJars
+> Task :ime:dictionaries:jnidictionaryv2:processDebugJavaRes NO-SOURCE
+> Task :ime:dictionaries:jnidictionaryv2:processDebugManifest
+> Task :ime:dictionaries:jnidictionaryv2:writeDebugAarMetadata
+> Task :ime:dictionaries:jnidictionaryv2:mergeDebugJavaResource
+> Task :ime:dictionaries:jnidictionaryv2:syncDebugLibJars
+> Task :ime:prefs:checkDebugAarMetadata
+> Task :ime:dictionaries:jnidictionaryv2:bundleDebugLocalLintAar
+> Task :ime:prefs:mergeDebugJniLibFolders
+> Task :ime:prefs:mergeDebugNativeLibs NO-SOURCE
+> Task :ime:prefs:stripDebugDebugSymbols NO-SOURCE
+> Task :ime:prefs:copyDebugJniLibsProjectAndLocalJars
+> Task :ime:prefs:extractDebugAnnotations
+> Task :ime:prefs:extractDeepLinksForAarDebug
+> Task :ime:prefs:mergeDebugShaders
+> Task :ime:prefs:compileDebugShaders NO-SOURCE
+> Task :ime:prefs:generateDebugAssets UP-TO-DATE
+> Task :ime:prefs:mergeDebugAssets
+> Task :ime:prefs:mergeDebugGeneratedProguardFiles
+> Task :ime:prefs:mergeDebugConsumerProguardFiles
+> Task :ime:prefs:prepareDebugArtProfile
+> Task :ime:prefs:prepareLintJarForPublish
+> Task :ime:prefs:processDebugJavaRes NO-SOURCE
+> Task :ime:overlay:preBuild UP-TO-DATE
+> Task :ime:overlay:preDebugBuild UP-TO-DATE
+> Task :ime:prefs:processDebugManifest
+> Task :ime:prefs:mergeDebugJavaResource
+> Task :ime:overlay:checkDebugAarMetadata
+> Task :ime:prefs:syncDebugLibJars
+> Task :ime:prefs:bundleDebugLocalLintAar
+> Task :ime:overlay:mergeDebugJniLibFolders
+> Task :ime:overlay:mergeDebugNativeLibs NO-SOURCE
+> Task :ime:overlay:stripDebugDebugSymbols NO-SOURCE
+> Task :ime:overlay:copyDebugJniLibsProjectAndLocalJars
+> Task :ime:overlay:generateDebugResValues
+> Task :ime:overlay:generateDebugResources
+> Task :ime:overlay:packageDebugResources
+> Task :ime:overlay:processDebugNavigationResources
+> Task :ime:overlay:extractDeepLinksForAarDebug
+> Task :ime:overlay:parseDebugLocalResources
+> Task :ime:overlay:mergeDebugShaders
+> Task :ime:overlay:compileDebugShaders NO-SOURCE
+> Task :ime:overlay:generateDebugAssets UP-TO-DATE
+> Task :ime:overlay:mergeDebugAssets
+> Task :ime:overlay:generateDebugRFile
+> Task :ime:overlay:javaPreCompileDebug
+> Task :ime:overlay:extractDebugAnnotations
+
+> Task :ime:overlay:compileDebugJavaWithJavac
+Note: /Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/overlay/src/main/java/com/anysoftkeyboard/overlay/ThemeOverlayCombiner.java uses or overrides a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+
+> Task :ime:overlay:mergeDebugGeneratedProguardFiles
+> Task :ime:overlay:mergeDebugConsumerProguardFiles
+> Task :ime:overlay:prepareDebugArtProfile
+> Task :ime:overlay:prepareLintJarForPublish
+> Task :ime:overlay:processDebugJavaRes NO-SOURCE
+> Task :ime:fileprovider:preBuild UP-TO-DATE
+> Task :ime:fileprovider:preDebugBuild UP-TO-DATE
+> Task :ime:overlay:processDebugManifest
+> Task :ime:remote:preBuild UP-TO-DATE
+> Task :ime:overlay:mergeDebugJavaResource
+> Task :ime:remote:preDebugBuild UP-TO-DATE
+> Task :ime:overlay:writeDebugAarMetadata
+> Task :ime:fileprovider:writeDebugAarMetadata
+> Task :ime:remote:mergeDebugJniLibFolders
+> Task :ime:overlay:syncDebugLibJars
+> Task :ime:overlay:bundleDebugLocalLintAar
+> Task :ime:remote:mergeDebugNativeLibs NO-SOURCE
+> Task :ime:remote:stripDebugDebugSymbols NO-SOURCE
+> Task :ime:remote:copyDebugJniLibsProjectAndLocalJars
+> Task :ime:fileprovider:generateDebugResValues
+> Task :ime:remote:checkDebugAarMetadata
+> Task :ime:fileprovider:generateDebugResources
+> Task :ime:fileprovider:packageDebugResources
+> Task :ime:fileprovider:processDebugNavigationResources
+> Task :ime:fileprovider:javaPreCompileDebug
+> Task :ime:fileprovider:parseDebugLocalResources
+> Task :ime:remote:generateDebugResValues
+> Task :ime:fileprovider:generateDebugRFile
+> Task :ime:remote:generateDebugResources
+> Task :ime:fileprovider:compileDebugJavaWithJavac
+> Task :ime:fileprovider:bundleLibCompileToJarDebug
+> Task :ime:remote:packageDebugResources
+> Task :ime:remote:processDebugNavigationResources
+> Task :ime:remote:extractDeepLinksForAarDebug
+> Task :ime:remote:mergeDebugShaders
+> Task :ime:remote:parseDebugLocalResources
+> Task :ime:remote:compileDebugShaders NO-SOURCE
+> Task :ime:remote:generateDebugAssets UP-TO-DATE
+> Task :ime:remote:mergeDebugAssets
+> Task :ime:remote:javaPreCompileDebug
+> Task :ime:remote:prepareDebugArtProfile
+> Task :ime:remote:prepareLintJarForPublish
+> Task :ime:remote:generateDebugRFile
+> Task :ime:remote:processDebugManifest
+> Task :ime:remote:extractDebugAnnotations
+
+> Task :ime:remote:compileDebugJavaWithJavac
+Note: Some input files use or override a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+
+> Task :ime:remote:mergeDebugGeneratedProguardFiles
+> Task :ime:remote:mergeDebugConsumerProguardFiles
+> Task :ime:remote:processDebugJavaRes NO-SOURCE
+> Task :ime:gesturetyping:preBuild UP-TO-DATE
+> Task :ime:gesturetyping:preDebugBuild UP-TO-DATE
+> Task :ime:remote:writeDebugAarMetadata
+> Task :ime:remote:mergeDebugJavaResource
+> Task :ime:remote:syncDebugLibJars
+> Task :ime:gesturetyping:checkDebugAarMetadata
+> Task :ime:remote:bundleDebugLocalLintAar
+> Task :ime:gesturetyping:mergeDebugJniLibFolders
+> Task :ime:gesturetyping:mergeDebugNativeLibs NO-SOURCE
+> Task :ime:gesturetyping:stripDebugDebugSymbols NO-SOURCE
+> Task :ime:gesturetyping:copyDebugJniLibsProjectAndLocalJars
+> Task :ime:gesturetyping:generateDebugResValues
+> Task :ime:gesturetyping:generateDebugResources
+> Task :ime:addons:bundleLibCompileToJarDebug
+> Task :ime:gesturetyping:packageDebugResources
+> Task :ime:gesturetyping:processDebugNavigationResources
+> Task :ime:gesturetyping:extractDeepLinksForAarDebug
+> Task :ime:gesturetyping:parseDebugLocalResources
+> Task :ime:gesturetyping:mergeDebugShaders
+> Task :ime:gesturetyping:compileDebugShaders NO-SOURCE
+> Task :ime:gesturetyping:generateDebugAssets UP-TO-DATE
+> Task :ime:gesturetyping:mergeDebugAssets
+> Task :ime:gesturetyping:javaPreCompileDebug
+> Task :ime:gesturetyping:prepareDebugArtProfile
+> Task :ime:gesturetyping:generateDebugRFile
+> Task :ime:gesturetyping:prepareLintJarForPublish
+> Task :ime:gesturetyping:extractDebugAnnotations
+> Task :ime:gesturetyping:compileDebugJavaWithJavac
+> Task :ime:gesturetyping:mergeDebugGeneratedProguardFiles
+> Task :ime:gesturetyping:mergeDebugConsumerProguardFiles
+> Task :ime:gesturetyping:processDebugJavaRes NO-SOURCE
+> Task :ime:gesturetyping:processDebugManifest
+> Task :ime:gesturetyping:writeDebugAarMetadata
+> Task :ime:voiceime:preBuild UP-TO-DATE
+> Task :ime:voiceime:preDebugBuild UP-TO-DATE
+> Task :ime:gesturetyping:mergeDebugJavaResource
+> Task :ime:voiceime:checkDebugAarMetadata
+> Task :ime:gesturetyping:syncDebugLibJars
+> Task :ime:gesturetyping:bundleDebugLocalLintAar
+> Task :ime:voiceime:mergeDebugJniLibFolders
+> Task :ime:voiceime:mergeDebugNativeLibs NO-SOURCE
+> Task :ime:voiceime:stripDebugDebugSymbols NO-SOURCE
+> Task :ime:voiceime:copyDebugJniLibsProjectAndLocalJars
+> Task :ime:voiceime:generateDebugResValues
+> Task :ime:voiceime:generateDebugResources
+> Task :ime:voiceime:packageDebugResources
+> Task :ime:voiceime:processDebugNavigationResources
+> Task :ime:voiceime:extractDeepLinksForAarDebug
+> Task :ime:voiceime:parseDebugLocalResources
+> Task :ime:voiceime:mergeDebugShaders
+> Task :ime:voiceime:compileDebugShaders NO-SOURCE
+> Task :ime:voiceime:generateDebugAssets UP-TO-DATE
+> Task :ime:voiceime:mergeDebugAssets
+> Task :ime:voiceime:generateDebugRFile
+> Task :ime:voiceime:javaPreCompileDebug
+> Task :ime:voiceime:extractDebugAnnotations
+
+> Task :ime:voiceime:compileDebugJavaWithJavac
+Note: Some input files use or override a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+
+> Task :ime:voiceime:mergeDebugGeneratedProguardFiles
+> Task :ime:voiceime:mergeDebugConsumerProguardFiles
+> Task :ime:voiceime:prepareDebugArtProfile
+> Task :ime:voiceime:prepareLintJarForPublish
+> Task :ime:voiceime:processDebugJavaRes NO-SOURCE
+> Task :ime:voiceime:processDebugManifest
+> Task :ime:chewbacca:preBuild UP-TO-DATE
+> Task :ime:chewbacca:preDebugBuild UP-TO-DATE
+> Task :ime:voiceime:writeDebugAarMetadata
+> Task :ime:voiceime:mergeDebugJavaResource
+> Task :ime:chewbacca:checkDebugAarMetadata
+> Task :ime:voiceime:syncDebugLibJars
+> Task :ime:voiceime:bundleDebugLocalLintAar
+> Task :ime:chewbacca:mergeDebugJniLibFolders
+> Task :ime:chewbacca:mergeDebugNativeLibs NO-SOURCE
+> Task :ime:chewbacca:stripDebugDebugSymbols NO-SOURCE
+> Task :ime:chewbacca:copyDebugJniLibsProjectAndLocalJars
+> Task :ime:chewbacca:generateDebugResValues
+> Task :ime:chewbacca:generateDebugResources
+> Task :ime:chewbacca:packageDebugResources
+> Task :ime:chewbacca:processDebugNavigationResources
+> Task :ime:chewbacca:extractDeepLinksForAarDebug
+> Task :ime:chewbacca:parseDebugLocalResources
+> Task :ime:chewbacca:mergeDebugShaders
+> Task :ime:chewbacca:compileDebugShaders NO-SOURCE
+> Task :ime:chewbacca:generateDebugAssets UP-TO-DATE
+> Task :ime:chewbacca:mergeDebugAssets
+> Task :ime:chewbacca:javaPreCompileDebug
+> Task :ime:chewbacca:prepareDebugArtProfile
+> Task :ime:chewbacca:prepareLintJarForPublish
+> Task :ime:chewbacca:generateDebugRFile
+> Task :ime:chewbacca:processDebugManifest
+> Task :ime:chewbacca:extractDebugAnnotations
+
+> Task :ime:chewbacca:compileDebugJavaWithJavac
+Note: Some input files use or override a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+
+> Task :ime:chewbacca:mergeDebugGeneratedProguardFiles
+> Task :ime:chewbacca:mergeDebugConsumerProguardFiles
+> Task :ime:chewbacca:processDebugJavaRes NO-SOURCE
+> Task :ime:chewbacca:mergeDebugJavaResource
+> Task :ime:chewbacca:writeDebugAarMetadata
+> Task :ime:permissions:checkDebugAarMetadata
+> Task :ime:chewbacca:syncDebugLibJars
+> Task :ime:chewbacca:bundleDebugLocalLintAar
+> Task :ime:permissions:mergeDebugJniLibFolders
+> Task :ime:permissions:mergeDebugNativeLibs NO-SOURCE
+> Task :ime:permissions:stripDebugDebugSymbols NO-SOURCE
+> Task :ime:permissions:copyDebugJniLibsProjectAndLocalJars
+> Task :ime:permissions:extractDebugAnnotations
+> Task :ime:permissions:extractDeepLinksForAarDebug
+> Task :ime:permissions:mergeDebugShaders
+> Task :ime:permissions:compileDebugShaders NO-SOURCE
+> Task :ime:permissions:generateDebugAssets UP-TO-DATE
+> Task :ime:permissions:mergeDebugAssets
+> Task :ime:permissions:mergeDebugGeneratedProguardFiles
+> Task :ime:permissions:mergeDebugConsumerProguardFiles
+> Task :ime:permissions:prepareDebugArtProfile
+> Task :ime:permissions:prepareLintJarForPublish
+> Task :ime:permissions:processDebugJavaRes NO-SOURCE
+> Task :ime:permissions:processDebugManifest
+> Task :ime:permissions:mergeDebugJavaResource
+> Task :ime:fileprovider:checkDebugAarMetadata
+> Task :ime:permissions:syncDebugLibJars
+> Task :ime:permissions:bundleDebugLocalLintAar
+> Task :ime:fileprovider:mergeDebugJniLibFolders
+> Task :ime:fileprovider:mergeDebugNativeLibs NO-SOURCE
+> Task :ime:fileprovider:stripDebugDebugSymbols NO-SOURCE
+> Task :ime:fileprovider:copyDebugJniLibsProjectAndLocalJars
+> Task :ime:fileprovider:extractDebugAnnotations
+> Task :ime:fileprovider:extractDeepLinksForAarDebug
+> Task :ime:fileprovider:mergeDebugShaders
+> Task :ime:fileprovider:compileDebugShaders NO-SOURCE
+> Task :ime:fileprovider:generateDebugAssets UP-TO-DATE
+> Task :ime:fileprovider:mergeDebugAssets
+> Task :ime:fileprovider:mergeDebugGeneratedProguardFiles
+> Task :ime:fileprovider:mergeDebugConsumerProguardFiles
+> Task :ime:fileprovider:prepareDebugArtProfile
+> Task :ime:fileprovider:prepareLintJarForPublish
+> Task :ime:fileprovider:processDebugJavaRes NO-SOURCE
+> Task :ime:fileprovider:processDebugManifest
+> Task :ime:app:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :ime:app:preBuild UP-TO-DATE
+> Task :ime:fileprovider:mergeDebugJavaResource
+> Task :ime:app:preDebugBuild UP-TO-DATE
+> Task :ime:fileprovider:syncDebugLibJars
+> Task :ime:fileprovider:bundleDebugLocalLintAar
+> Task :personaspeak-ui:bundleLibCompileToJarDebug
+> Task :ime:app:generateDebugBuildConfig
+> Task :ime:app:generateDebugResValues
+> Task :ime:app:generateSafeArgsDebug
+> Task :personaspeak-ui:compileDebugLibraryResources
+> Task :api:compileDebugLibraryResources
+> Task :addons:base:compileDebugLibraryResources
+> Task :ime:addons:compileDebugLibraryResources
+> Task :ime:app:checkDebugAarMetadata
+> Task :ime:app:processDebugNavigationResources
+> Task :ime:app:compileDebugNavigationResources
+> Task :ime:app:mapDebugSourceSetPaths
+> Task :ime:app:generateDebugResources
+> Task :personaspeak-ui:lintAnalyzeDebugUnitTest
+
+> Task :ime:app:mergeDebugResources
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values-is-rIS/strings.xml:647:4: Multiple substitutions specified in non-positional format of string resource string/next_words_statistics_count. Did you mean to add the formatted="false" attribute?
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values-da-rDK/strings.xml:655:4: Multiple substitutions specified in non-positional format of string resource string/next_words_statistics_count. Did you mean to add the formatted="false" attribute?
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values-es-rMX/strings.xml:561:4: Multiple substitutions specified in non-positional format of string resource string/next_words_statistics_count. Did you mean to add the formatted="false" attribute?
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values/strings.xml:820:4: Multiple substitutions specified in non-positional format of string resource string/next_words_statistics_count. Did you mean to add the formatted="false" attribute?
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values-pt-rPT/strings.xml:615:4: Multiple substitutions specified in non-positional format of string resource string/next_words_statistics_count. Did you mean to add the formatted="false" attribute?
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values/strings.xml:156:4: Multiple substitutions specified in non-positional format of string resource string/quick_text_tab_title_template. Did you mean to add the formatted="false" attribute?
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values-si-rLK/strings.xml:646:4: Multiple substitutions specified in non-positional format of string resource string/next_words_statistics_count. Did you mean to add the formatted="false" attribute?
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values/strings.xml:80:4: Multiple substitutions specified in non-positional format of string resource string/version_text. Did you mean to add the formatted="false" attribute?
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values-pt-rBR/strings.xml:591:4: Multiple substitutions specified in non-positional format of string resource string/next_words_statistics_count. Did you mean to add the formatted="false" attribute?
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values-sl-rSI/strings.xml:455:4: Multiple substitutions specified in non-positional format of string resource string/next_words_statistics_count. Did you mean to add the formatted="false" attribute?
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values-be-rBY/strings.xml:572:4: Multiple substitutions specified in non-positional format of string resource string/next_words_statistics_count. Did you mean to add the formatted="false" attribute?
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values-hu-rHU/strings.xml:635:4: Multiple substitutions specified in non-positional format of string resource string/next_words_statistics_count. Did you mean to add the formatted="false" attribute?
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values-lt-rLT/strings.xml:571:4: Multiple substitutions specified in non-positional format of string resource string/next_words_statistics_count. Did you mean to add the formatted="false" attribute?
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values-de-rDE/strings.xml:562:4: Multiple substitutions specified in non-positional format of string resource string/next_words_statistics_count. Did you mean to add the formatted="false" attribute?
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values-kmr-rTR/strings.xml:664:4: Multiple substitutions specified in non-positional format of string resource string/next_words_statistics_count. Did you mean to add the formatted="false" attribute?
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values-eu-rES/strings.xml:570:4: Multiple substitutions specified in non-positional format of string resource string/next_words_statistics_count. Did you mean to add the formatted="false" attribute?
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values-nl-rNL/strings.xml:576:4: Multiple substitutions specified in non-positional format of string resource string/next_words_statistics_count. Did you mean to add the formatted="false" attribute?
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values-ku-rTR/strings.xml:652:4: Multiple substitutions specified in non-positional format of string resource string/next_words_statistics_count. Did you mean to add the formatted="false" attribute?
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values-es-rES/strings.xml:559:4: Multiple substitutions specified in non-positional format of string resource string/next_words_statistics_count. Did you mean to add the formatted="false" attribute?
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values-sc-rIT/strings.xml:572:4: Multiple substitutions specified in non-positional format of string resource string/next_words_statistics_count. Did you mean to add the formatted="false" attribute?
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values-ckb-rIR/strings.xml:663:4: Multiple substitutions specified in non-positional format of string resource string/next_words_statistics_count. Did you mean to add the formatted="false" attribute?
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values-ca-rES/strings.xml:592:4: Multiple substitutions specified in non-positional format of string resource string/next_words_statistics_count. Did you mean to add the formatted="false" attribute?
+
+> Task :ime:app:createDebugCompatibleScreenManifests
+> Task :api:extractDeepLinksDebug
+> Task :personaspeak-ui:extractDeepLinksDebug
+> Task :addons:base:extractDeepLinksDebug
+> Task :ime:addons:extractDeepLinksDebug
+> Task :ime:app:extractDeepLinksDebug
+> Task :ime:base:extractDeepLinksDebug
+> Task :ime:base-rx:extractDeepLinksDebug
+> Task :ime:chewbacca:extractDeepLinksDebug
+> Task :ime:dictionaries:extractDeepLinksDebug
+> Task :ime:fileprovider:extractDeepLinksDebug
+> Task :ime:gesturetyping:extractDeepLinksDebug
+> Task :ime:nextword:extractDeepLinksDebug
+> Task :ime:notification:extractDeepLinksDebug
+> Task :ime:overlay:extractDeepLinksDebug
+> Task :ime:permissions:extractDeepLinksDebug
+> Task :ime:pixel:extractDeepLinksDebug
+> Task :ime:prefs:extractDeepLinksDebug
+> Task :ime:releaseinfo:extractDeepLinksDebug
+> Task :ime:remote:extractDeepLinksDebug
+> Task :ime:voiceime:extractDeepLinksDebug
+> Task :ime:dictionaries:jnidictionaryv1:extractDeepLinksDebug
+> Task :ime:dictionaries:jnidictionaryv2:extractDeepLinksDebug
+> Task :addons:languages:english:pack:extractDeepLinksDebug
+> Task :ime:app:processDebugMainManifest
+> Task :ime:app:processDebugManifest
+> Task :ime:base:compileDebugLibraryResources
+> Task :ime:app:processDebugManifestForPackage
+> Task :ime:base-rx:compileDebugLibraryResources
+> Task :ime:chewbacca:compileDebugLibraryResources
+> Task :ime:dictionaries:compileDebugLibraryResources
+> Task :personaspeak-ui:lintAnalyzeDebug
+
+> Task :ime:app:mergeDebugResources
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values-fil-rPH/strings.xml:463:4: Multiple substitutions specified in non-positional format of string resource string/next_words_statistics_count. Did you mean to add the formatted="false" attribute?
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values-cs-rCZ/strings.xml:517:4: Multiple substitutions specified in non-positional format of string resource string/next_words_statistics_count. Did you mean to add the formatted="false" attribute?
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values-tr-rTR/strings.xml:567:4: Multiple substitutions specified in non-positional format of string resource string/next_words_statistics_count. Did you mean to add the formatted="false" attribute?
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values-uk-rUA/strings.xml:542:4: Multiple substitutions specified in non-positional format of string resource string/next_words_statistics_count. Did you mean to add the formatted="false" attribute?
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values-pl-rPL/strings.xml:661:4: Multiple substitutions specified in non-positional format of string resource string/next_words_statistics_count. Did you mean to add the formatted="false" attribute?
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values-ka-rGE/strings.xml:675:4: Multiple substitutions specified in non-positional format of string resource string/next_words_statistics_count. Did you mean to add the formatted="false" attribute?
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values-ru-rRU/strings.xml:559:4: Multiple substitutions specified in non-positional format of string resource string/next_words_statistics_count. Did you mean to add the formatted="false" attribute?
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values-fr-rFR/strings.xml:570:4: Multiple substitutions specified in non-positional format of string resource string/next_words_statistics_count. Did you mean to add the formatted="false" attribute?
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values-it-rIT/strings.xml:560:4: Multiple substitutions specified in non-positional format of string resource string/next_words_statistics_count. Did you mean to add the formatted="false" attribute?
+
+> Task :ime:fileprovider:compileDebugLibraryResources
+> Task :ime:gesturetyping:compileDebugLibraryResources
+> Task :ime:nextword:compileDebugLibraryResources
+> Task :ime:notification:compileDebugLibraryResources
+> Task :ime:overlay:compileDebugLibraryResources
+> Task :ime:permissions:compileDebugLibraryResources
+> Task :ime:prefs:compileDebugLibraryResources
+> Task :ime:pixel:compileDebugLibraryResources
+> Task :ime:releaseinfo:compileDebugLibraryResources
+> Task :ime:remote:compileDebugLibraryResources
+> Task :ime:voiceime:compileDebugLibraryResources
+> Task :ime:dictionaries:jnidictionaryv1:compileDebugLibraryResources
+> Task :ime:dictionaries:jnidictionaryv2:compileDebugLibraryResources
+> Task :ime:chewbacca:bundleLibCompileToJarDebug
+> Task :ime:gesturetyping:bundleLibCompileToJarDebug
+> Task :ime:nextword:bundleLibCompileToJarDebug
+> Task :addons:languages:english:pack:compileDebugLibraryResources
+> Task :ime:overlay:bundleLibCompileToJarDebug
+> Task :ime:releaseinfo:bundleLibCompileToJarDebug
+> Task :ime:remote:bundleLibCompileToJarDebug
+> Task :ime:dictionaries:jnidictionaryv1:bundleLibCompileToJarDebug
+> Task :ime:voiceime:bundleLibCompileToJarDebug
+> Task :ime:dictionaries:jnidictionaryv2:bundleLibCompileToJarDebug
+> Task :addons:languages:english:pack:bundleLibCompileToJarDebug
+> Task :ime:app:preDebugAndroidTestBuild SKIPPED
+> Task :ime:app:javaPreCompileDebug
+> Task :ime:app:generateDebugAndroidTestResValues
+> Task :ime:chewbacca:writeDebugLintModelMetadata
+> Task :ime:chewbacca:bundleLibRuntimeToJarDebug
+> Task :ime:chewbacca:createFullJarDebug
+> Task :ime:dictionaries:writeDebugLintModelMetadata
+> Task :ime:dictionaries:bundleLibRuntimeToJarDebug
+> Task :ime:fileprovider:bundleLibRuntimeToJarDebug
+> Task :ime:fileprovider:writeDebugLintModelMetadata
+> Task :ime:dictionaries:createFullJarDebug
+> Task :ime:fileprovider:createFullJarDebug
+> Task :ime:gesturetyping:writeDebugLintModelMetadata
+> Task :ime:gesturetyping:bundleLibRuntimeToJarDebug
+> Task :ime:gesturetyping:createFullJarDebug
+> Task :ime:nextword:bundleLibRuntimeToJarDebug
+> Task :ime:nextword:writeDebugLintModelMetadata
+> Task :ime:nextword:createFullJarDebug
+> Task :ime:notification:writeDebugLintModelMetadata
+> Task :ime:notification:bundleLibRuntimeToJarDebug
+> Task :ime:notification:createFullJarDebug
+> Task :ime:overlay:bundleLibRuntimeToJarDebug
+> Task :ime:overlay:writeDebugLintModelMetadata
+> Task :ime:overlay:createFullJarDebug
+> Task :ime:permissions:writeDebugLintModelMetadata
+> Task :ime:permissions:bundleLibRuntimeToJarDebug
+> Task :ime:permissions:createFullJarDebug
+> Task :ime:prefs:writeDebugLintModelMetadata
+> Task :ime:prefs:bundleLibRuntimeToJarDebug
+> Task :ime:releaseinfo:writeDebugLintModelMetadata
+> Task :ime:releaseinfo:bundleLibRuntimeToJarDebug
+> Task :ime:prefs:createFullJarDebug
+> Task :ime:releaseinfo:createFullJarDebug
+> Task :ime:remote:writeDebugLintModelMetadata
+> Task :ime:remote:bundleLibRuntimeToJarDebug
+> Task :ime:remote:createFullJarDebug
+> Task :ime:voiceime:writeDebugLintModelMetadata
+> Task :ime:voiceime:bundleLibRuntimeToJarDebug
+> Task :ime:voiceime:createFullJarDebug
+> Task :ime:dictionaries:jnidictionaryv1:writeDebugLintModelMetadata
+> Task :ime:dictionaries:jnidictionaryv1:bundleLibRuntimeToJarDebug
+> Task :ime:dictionaries:jnidictionaryv1:createFullJarDebug
+> Task :ime:dictionaries:jnidictionaryv2:bundleLibRuntimeToJarDebug
+> Task :ime:dictionaries:jnidictionaryv2:writeDebugLintModelMetadata
+> Task :ime:dictionaries:jnidictionaryv2:createFullJarDebug
+> Task :addons:languages:english:pack:bundleLibRuntimeToJarDebug
+> Task :addons:languages:english:pack:writeDebugLintModelMetadata
+> Task :addons:languages:english:pack:createFullJarDebug
+> Task :ime:app:extractProguardFiles
+> Task :ime:chewbacca:extractProguardFiles
+> Task :ime:notification:extractProguardFiles
+> Task :ime:permissions:extractProguardFiles
+> Task :ime:permissions:generateDebugLintModel
+> Task :ime:notification:generateDebugLintModel
+> Task :ime:chewbacca:generateDebugLintModel
+> Task :ime:dictionaries:extractProguardFiles
+> Task :ime:dictionaries:generateDebugLintModel
+> Task :ime:fileprovider:extractProguardFiles
+> Task :ime:fileprovider:generateDebugLintModel
+> Task :ime:gesturetyping:extractProguardFiles
+> Task :ime:gesturetyping:generateDebugLintModel
+> Task :ime:nextword:extractProguardFiles
+> Task :ime:prefs:extractProguardFiles
+> Task :ime:prefs:generateDebugLintModel
+> Task :ime:nextword:generateDebugLintModel
+> Task :ime:overlay:extractProguardFiles
+> Task :ime:overlay:generateDebugLintModel
+> Task :ime:releaseinfo:extractProguardFiles
+> Task :ime:releaseinfo:generateDebugLintModel
+> Task :ime:remote:extractProguardFiles
+> Task :ime:remote:generateDebugLintModel
+> Task :ime:voiceime:extractProguardFiles
+> Task :ime:voiceime:generateDebugLintModel
+> Task :ime:dictionaries:jnidictionaryv1:extractProguardFiles
+> Task :ime:dictionaries:jnidictionaryv1:generateDebugLintModel
+> Task :ime:dictionaries:jnidictionaryv2:extractProguardFiles
+> Task :ime:dictionaries:jnidictionaryv2:generateDebugLintModel
+> Task :addons:languages:english:pack:extractProguardFiles
+> Task :addons:languages:english:pack:generateDebugLintModel
+> Task :ime:app:preDebugUnitTestBuild UP-TO-DATE
+> Task :ime:base:preDebugAndroidTestBuild UP-TO-DATE
+> Task :ime:base:generateDebugAndroidTestResValues
+> Task :ime:base:generateDebugAndroidTestLintModel
+> Task :ime:base:preDebugUnitTestBuild UP-TO-DATE
+> Task :ime:base:generateDebugUnitTestLintModel
+> Task :ime:base-rx:preDebugAndroidTestBuild UP-TO-DATE
+> Task :ime:base-rx:generateDebugAndroidTestResValues
+> Task :ime:base-rx:generateDebugAndroidTestLintModel
+> Task :ime:base-rx:preDebugUnitTestBuild UP-TO-DATE
+> Task :ime:base-rx:generateDebugUnitTestLintModel
+> Task :ime:chewbacca:preDebugAndroidTestBuild UP-TO-DATE
+> Task :ime:chewbacca:generateDebugAndroidTestResValues
+> Task :ime:chewbacca:generateDebugAndroidTestLintModel
+> Task :ime:chewbacca:preDebugUnitTestBuild UP-TO-DATE
+> Task :ime:chewbacca:generateDebugUnitTestLintModel
+> Task :ime:dictionaries:preDebugAndroidTestBuild UP-TO-DATE
+> Task :ime:dictionaries:generateDebugAndroidTestResValues
+> Task :ime:dictionaries:generateDebugAndroidTestLintModel
+> Task :ime:dictionaries:preDebugUnitTestBuild UP-TO-DATE
+> Task :ime:dictionaries:generateDebugUnitTestLintModel
+> Task :ime:fileprovider:preDebugAndroidTestBuild UP-TO-DATE
+> Task :ime:fileprovider:generateDebugAndroidTestResValues
+> Task :ime:fileprovider:generateDebugAndroidTestLintModel
+> Task :ime:fileprovider:preDebugUnitTestBuild UP-TO-DATE
+> Task :ime:fileprovider:generateDebugUnitTestLintModel
+> Task :ime:base:lintAnalyzeDebugAndroidTest
+> Task :ime:base-rx:lintAnalyzeDebugAndroidTest
+> Task :ime:base-rx:lintAnalyzeDebugUnitTest
+> Task :ime:gesturetyping:preDebugAndroidTestBuild UP-TO-DATE
+> Task :ime:chewbacca:lintAnalyzeDebugAndroidTest
+> Task :ime:gesturetyping:generateDebugAndroidTestResValues
+> Task :ime:gesturetyping:generateDebugAndroidTestLintModel
+> Task :ime:gesturetyping:preDebugUnitTestBuild UP-TO-DATE
+> Task :ime:gesturetyping:generateDebugUnitTestLintModel
+> Task :ime:nextword:preDebugAndroidTestBuild UP-TO-DATE
+> Task :ime:nextword:generateDebugAndroidTestResValues
+> Task :ime:nextword:generateDebugAndroidTestLintModel
+> Task :ime:nextword:preDebugUnitTestBuild UP-TO-DATE
+> Task :ime:fileprovider:lintAnalyzeDebugAndroidTest
+> Task :ime:nextword:generateDebugUnitTestLintModel
+> Task :ime:gesturetyping:lintAnalyzeDebugAndroidTest
+> Task :ime:notification:preDebugAndroidTestBuild UP-TO-DATE
+> Task :ime:notification:generateDebugAndroidTestResValues
+> Task :ime:notification:generateDebugAndroidTestLintModel
+> Task :ime:notification:preDebugUnitTestBuild UP-TO-DATE
+> Task :ime:notification:generateDebugUnitTestLintModel
+> Task :ime:dictionaries:lintAnalyzeDebugAndroidTest
+> Task :ime:overlay:preDebugAndroidTestBuild UP-TO-DATE
+> Task :api:lintAnalyzeDebug
+> Task :ime:overlay:generateDebugAndroidTestResValues
+> Task :ime:nextword:lintAnalyzeDebugAndroidTest
+> Task :ime:overlay:generateDebugAndroidTestLintModel
+> Task :ime:overlay:preDebugUnitTestBuild UP-TO-DATE
+> Task :ime:overlay:generateDebugUnitTestLintModel
+> Task :ime:permissions:preDebugAndroidTestBuild UP-TO-DATE
+> Task :ime:permissions:generateDebugAndroidTestResValues
+> Task :ime:notification:lintAnalyzeDebugAndroidTest
+> Task :ime:permissions:generateDebugAndroidTestLintModel
+> Task :ime:permissions:preDebugUnitTestBuild UP-TO-DATE
+> Task :ime:permissions:generateDebugUnitTestLintModel
+> Task :ime:pixel:preDebugAndroidTestBuild UP-TO-DATE
+> Task :ime:pixel:generateDebugAndroidTestResValues
+> Task :ime:pixel:generateDebugAndroidTestLintModel
+> Task :ime:pixel:preDebugUnitTestBuild UP-TO-DATE
+> Task :ime:overlay:lintAnalyzeDebugAndroidTest
+> Task :ime:pixel:generateDebugUnitTestLintModel
+> Task :ime:prefs:preDebugAndroidTestBuild UP-TO-DATE
+> Task :ime:prefs:generateDebugAndroidTestResValues
+> Task :ime:prefs:generateDebugAndroidTestLintModel
+> Task :ime:prefs:preDebugUnitTestBuild UP-TO-DATE
+> Task :addons:base:lintAnalyzeDebug
+> Task :ime:prefs:generateDebugUnitTestLintModel
+> Task :ime:releaseinfo:preDebugAndroidTestBuild UP-TO-DATE
+> Task :ime:releaseinfo:generateDebugAndroidTestResValues
+> Task :ime:releaseinfo:generateDebugAndroidTestLintModel
+> Task :ime:releaseinfo:preDebugUnitTestBuild UP-TO-DATE
+> Task :ime:permissions:lintAnalyzeDebugAndroidTest
+> Task :ime:releaseinfo:generateDebugUnitTestLintModel
+> Task :ime:gesturetyping:lintAnalyzeDebugUnitTest
+> Task :ime:base:lintAnalyzeDebugUnitTest
+> Task :ime:remote:preDebugAndroidTestBuild UP-TO-DATE
+> Task :ime:dictionaries:lintAnalyzeDebugUnitTest
+> Task :ime:remote:generateDebugAndroidTestResValues
+> Task :ime:remote:generateDebugAndroidTestLintModel
+> Task :ime:remote:preDebugUnitTestBuild UP-TO-DATE
+> Task :ime:nextword:lintAnalyzeDebugUnitTest
+> Task :ime:remote:generateDebugUnitTestLintModel
+> Task :ime:voiceime:preDebugAndroidTestBuild UP-TO-DATE
+> Task :ime:voiceime:generateDebugAndroidTestResValues
+> Task :ime:voiceime:generateDebugAndroidTestLintModel
+> Task :ime:voiceime:preDebugUnitTestBuild UP-TO-DATE
+> Task :ime:voiceime:generateDebugUnitTestLintModel
+> Task :ime:dictionaries:jnidictionaryv1:preDebugAndroidTestBuild UP-TO-DATE
+> Task :ime:dictionaries:jnidictionaryv1:generateDebugAndroidTestResValues
+> Task :addons:languages:english:pack:lintAnalyzeDebug
+> Task :ime:prefs:lintAnalyzeDebugAndroidTest
+> Task :ime:dictionaries:jnidictionaryv1:generateDebugAndroidTestLintModel
+> Task :ime:pixel:lintAnalyzeDebugAndroidTest
+> Task :ime:dictionaries:jnidictionaryv1:preDebugUnitTestBuild UP-TO-DATE
+> Task :ime:fileprovider:lintAnalyzeDebugUnitTest
+> Task :ime:dictionaries:jnidictionaryv1:generateDebugUnitTestLintModel
+> Task :ime:dictionaries:jnidictionaryv2:preDebugAndroidTestBuild UP-TO-DATE
+> Task :ime:dictionaries:jnidictionaryv2:generateDebugAndroidTestResValues
+> Task :ime:dictionaries:jnidictionaryv2:generateDebugAndroidTestLintModel
+> Task :ime:dictionaries:jnidictionaryv2:preDebugUnitTestBuild UP-TO-DATE
+> Task :ime:dictionaries:jnidictionaryv2:generateDebugUnitTestLintModel
+> Task :addons:languages:english:pack:preDebugAndroidTestBuild
+> Task :addons:languages:english:pack:generateDebugAndroidTestResValues
+> Task :ime:chewbacca:lintAnalyzeDebugUnitTest
+> Task :addons:languages:english:pack:generateDebugAndroidTestLintModel
+> Task :addons:languages:english:pack:preDebugUnitTestBuild
+> Task :ime:releaseinfo:lintAnalyzeDebugAndroidTest
+> Task :addons:languages:english:pack:generateDebugUnitTestLintModel
+> Task :ime:remote:lintAnalyzeDebugAndroidTest
+> Task :ime:voiceime:lintAnalyzeDebugAndroidTest
+> Task :ime:notification:lintAnalyzeDebugUnitTest
+> Task :ime:dictionaries:jnidictionaryv1:lintAnalyzeDebugAndroidTest
+> Task :ime:releaseinfo:lintAnalyzeDebugUnitTest
+> Task :ime:overlay:lintAnalyzeDebugUnitTest
+> Task :ime:dictionaries:jnidictionaryv1:lintAnalyzeDebugUnitTest
+> Task :ime:permissions:lintAnalyzeDebugUnitTest
+> Task :ime:voiceime:lintAnalyzeDebugUnitTest
+> Task :ime:base:lintAnalyzeDebug
+> Task :ime:dictionaries:jnidictionaryv2:lintAnalyzeDebugAndroidTest
+> Task :ime:dictionaries:jnidictionaryv2:lintAnalyzeDebugUnitTest
+> Task :addons:languages:english:pack:lintAnalyzeDebugAndroidTest
+> Task :addons:languages:english:pack:lintAnalyzeDebugUnitTest
+> Task :ime:remote:lintAnalyzeDebugUnitTest
+> Task :ime:pixel:lintAnalyzeDebugUnitTest
+> Task :ime:app:processDebugResources
+> Task :ime:base-rx:lintAnalyzeDebug
+> Task :ime:overlay:lintAnalyzeDebug
+> Task :ime:voiceime:lintAnalyzeDebug
+> Task :ime:permissions:lintAnalyzeDebug
+> Task :ime:prefs:lintAnalyzeDebugUnitTest
+> Task :ime:prefs:lintAnalyzeDebug
+> Task :ime:notification:lintAnalyzeDebug
+> Task :ime:fileprovider:lintAnalyzeDebug
+> Task :ime:dictionaries:lintAnalyzeDebug
+> Task :ime:nextword:lintAnalyzeDebug
+> Task :ime:pixel:lintAnalyzeDebug
+> Task :ime:app:compileDebugKotlin
+> Task :ime:dictionaries:jnidictionaryv1:lintAnalyzeDebug
+> Task :ime:addons:lintAnalyzeDebug
+> Task :ime:dictionaries:jnidictionaryv2:lintAnalyzeDebug
+> Task :ime:remote:lintAnalyzeDebug
+> Task :ime:releaseinfo:lintAnalyzeDebug
+> Task :ime:chewbacca:lintAnalyzeDebug
+
+> Task :ime:app:compileDebugJavaWithJavac
+Note: Some input files use or override a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+
+> Task :ime:app:generateDebugLintReportModel
+Warning: Lint will treat :core-personas as an external dependency and not analyze it.
+ * Recommended Action: Apply the 'com.android.lint' plugin to java library project :core-personas. to enable lint to analyze those sources.
+
+Warning: Lint will treat :core-providers as an external dependency and not analyze it.
+ * Recommended Action: Apply the 'com.android.lint' plugin to java library project :core-providers. to enable lint to analyze those sources.
+
+
+> Task :ime:app:bundleDebugClassesToCompileJar
+> Task :ime:app:generateDebugAndroidTestLintModel
+> Task :ime:app:generateDebugUnitTestLintModel
+> Task :ime:gesturetyping:lintAnalyzeDebug
+> Task :ime:app:lintAnalyzeDebugAndroidTest
+> Task :ime:app:lintAnalyzeDebugUnitTest
+> Task :ime:app:lintAnalyzeDebug
+
+> Task :ime:app:lintReportDebug
+Wrote HTML report to file:///Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/build/reports/lint-results-debug.html
+Lint found 471 warnings, 2 hints (and 13 errors filtered by baseline ime-app.xml)
+
+> Task :ime:app:lintDebug
+
+[Incubating] Problems report is available at: file:///Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/build/reports/problems/problems-report.html
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 10.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/9.2.1/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD SUCCESSFUL in 43s
+930 actionable tasks: 930 executed
+  OK
+  archived 126 test-result XML files to /private/tmp/claude-501/-Users-devkiran-workspace/7343face-20a9-46fc-8bbc-22056464727e/scratchpad/m2-evidence/gate-artifacts-frozen
+[10/12] clean :ime:app:assembleDebug...
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.2.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+> Task :buildSrc:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :buildSrc:pluginDescriptors
+> Task :buildSrc:processResources
+> Task :buildSrc:compileKotlin
+
+> Task :buildSrc:compileJava
+Note: Some input files use or override a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+Note: /Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/buildSrc/src/main/java/MakeDictionaryPlugin.java uses unchecked or unsafe operations.
+Note: Recompile with -Xlint:unchecked for details.
+
+> Task :buildSrc:compileGroovy
+> Task :buildSrc:classes
+> Task :buildSrc:jar
+
+> Configure project :addons
+Generated version 5.1.1 (version-code 1). Using StaticVersionGenerator for versioning.
+
+> Configure project :ime
+Generated version 1.13.1 (version-code 1). Using StaticVersionGenerator for versioning.
+
+> Configure project :ime:app
+Could not find '/tmp/anysoftkeyboard.keystore' file. Release APK will not be signed.
+Building :ime:app 1.13.1 (or 1.13.1), code 1.
+crash report email is: null
+Found prebuilt word-list folder for :addons:languages:english:pack with 2 files.
+
+> Task :api:clean
+> Task :core-personas:clean
+> Task :core-providers:clean
+> Task :junit-sharding:clean
+> Task :personaspeak-ui:clean
+> Task :addons:base:clean
+> Task :ime:addons:clean
+> Task :ime:app:clean
+> Task :ime:base:clean
+> Task :ime:base-rx:clean
+> Task :ime:base-test:clean
+> Task :ime:chewbacca:clean
+> Task :ime:dictionaries:clean
+> Task :ime:fileprovider:clean
+> Task :ime:gesturetyping:clean
+> Task :ime:nextword:clean
+> Task :ime:notification:clean
+> Task :ime:overlay:clean
+> Task :ime:permissions:clean
+> Task :ime:pixel:clean
+> Task :ime:prefs:clean
+> Task :ime:releaseinfo:clean
+> Task :ime:remote:clean
+> Task :ime:voiceime:clean
+
+> Task :ime:dictionaries:jnidictionaryv1:externalNativeBuildCleanDebug
+Clean anysoftkey_jni-armeabi-v7a
+Clean anysoftkey_jni-arm64-v8a
+Clean anysoftkey_jni-x86
+Clean anysoftkey_jni-x86_64
+
+> Task :ime:dictionaries:jnidictionaryv1:externalNativeBuildCleanRelease
+> Task :ime:dictionaries:jnidictionaryv1:clean
+
+> Task :ime:dictionaries:jnidictionaryv2:externalNativeBuildCleanDebug
+Clean anysoftkey2_jni-armeabi-v7a
+Clean anysoftkey2_jni-arm64-v8a
+Clean anysoftkey2_jni-x86
+Clean anysoftkey2_jni-x86_64
+
+> Task :ime:dictionaries:jnidictionaryv2:externalNativeBuildCleanRelease
+> Task :ime:dictionaries:jnidictionaryv2:clean
+> Task :addons:languages:english:pack:clean
+> Task :ime:app:preBuild UP-TO-DATE
+> Task :ime:app:preDebugBuild UP-TO-DATE
+> Task :ime:app:mergeDebugNativeDebugMetadata NO-SOURCE
+> Task :core-personas:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :core-personas:processResources NO-SOURCE
+> Task :core-providers:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :core-providers:processResources NO-SOURCE
+> Task :api:preBuild UP-TO-DATE
+> Task :api:preDebugBuild UP-TO-DATE
+> Task :api:generateDebugResValues
+> Task :api:generateDebugResources
+> Task :api:packageDebugResources
+> Task :api:processDebugNavigationResources
+> Task :personaspeak-ui:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :api:javaPreCompileDebug
+> Task :personaspeak-ui:preBuild UP-TO-DATE
+> Task :personaspeak-ui:preDebugBuild UP-TO-DATE
+> Task :personaspeak-ui:generateDebugResValues
+> Task :personaspeak-ui:generateDebugResources
+> Task :personaspeak-ui:packageDebugResources
+> Task :personaspeak-ui:processDebugNavigationResources
+> Task :addons:base:preBuild UP-TO-DATE
+> Task :addons:base:preDebugBuild UP-TO-DATE
+> Task :personaspeak-ui:javaPreCompileDebug
+> Task :personaspeak-ui:parseDebugLocalResources
+> Task :addons:base:generateDebugResValues
+> Task :api:parseDebugLocalResources
+> Task :addons:base:generateDebugResources
+> Task :addons:base:packageDebugResources
+> Task :addons:base:processDebugNavigationResources
+> Task :personaspeak-ui:generateDebugRFile
+> Task :api:generateDebugRFile
+> Task :addons:base:parseDebugLocalResources
+> Task :core-providers:compileKotlin
+> Task :api:compileDebugJavaWithJavac
+> Task :core-providers:compileJava NO-SOURCE
+> Task :core-providers:classes UP-TO-DATE
+> Task :core-providers:jar
+> Task :ime:addons:preBuild UP-TO-DATE
+> Task :ime:addons:preDebugBuild UP-TO-DATE
+> Task :addons:base:javaPreCompileDebug
+> Task :addons:base:generateDebugRFile
+> Task :ime:addons:generateDebugResValues
+> Task :api:bundleLibCompileToJarDebug
+> Task :ime:addons:generateDebugResources
+> Task :addons:base:compileDebugJavaWithJavac
+> Task :addons:base:bundleLibCompileToJarDebug
+> Task :ime:addons:packageDebugResources
+> Task :ime:addons:processDebugNavigationResources
+> Task :ime:base:preBuild UP-TO-DATE
+> Task :ime:base:preDebugBuild UP-TO-DATE
+> Task :ime:base:generateDebugResValues
+> Task :ime:addons:parseDebugLocalResources
+> Task :ime:base:generateDebugResources
+> Task :ime:base:packageDebugResources
+> Task :ime:base:processDebugNavigationResources
+> Task :ime:base-rx:preBuild UP-TO-DATE
+> Task :ime:base-rx:preDebugBuild UP-TO-DATE
+> Task :ime:base-rx:generateDebugResValues
+> Task :ime:base:parseDebugLocalResources
+> Task :ime:base-rx:generateDebugResources
+> Task :ime:base-rx:packageDebugResources
+> Task :ime:base-rx:processDebugNavigationResources
+> Task :ime:pixel:preBuild UP-TO-DATE
+> Task :ime:pixel:preDebugBuild UP-TO-DATE
+> Task :ime:base:generateDebugRFile
+> Task :ime:pixel:generateDebugResValues
+> Task :ime:base-rx:parseDebugLocalResources
+> Task :ime:pixel:generateDebugResources
+> Task :ime:base-rx:generateDebugRFile
+> Task :core-personas:compileKotlin
+> Task :ime:pixel:packageDebugResources
+> Task :core-personas:compileJava NO-SOURCE
+> Task :core-personas:classes UP-TO-DATE
+> Task :core-personas:jar
+> Task :ime:pixel:processDebugNavigationResources
+> Task :ime:pixel:parseDebugLocalResources
+> Task :ime:pixel:generateDebugRFile
+> Task :ime:base:javaPreCompileDebug
+> Task :ime:base-rx:javaPreCompileDebug
+> Task :ime:addons:javaPreCompileDebug
+> Task :ime:addons:generateDebugRFile
+> Task :ime:base:compileDebugJavaWithJavac
+> Task :ime:app:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :ime:pixel:javaPreCompileDebug
+> Task :ime:base:bundleLibCompileToJarDebug
+> Task :ime:app:generateDebugBuildConfig
+> Task :ime:base-rx:compileDebugJavaWithJavac
+> Task :ime:app:generateDebugResValues
+> Task :ime:base-rx:bundleLibCompileToJarDebug
+> Task :ime:app:generateSafeArgsDebug
+
+> Task :ime:pixel:compileDebugJavaWithJavac
+Note: Some input files use or override a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+
+> Task :ime:pixel:bundleLibCompileToJarDebug
+> Task :api:compileDebugLibraryResources
+> Task :ime:addons:compileDebugJavaWithJavac
+> Task :personaspeak-ui:compileDebugLibraryResources
+> Task :addons:base:compileDebugLibraryResources
+> Task :ime:addons:bundleLibCompileToJarDebug
+> Task :personaspeak-ui:writeDebugAarMetadata
+> Task :addons:base:writeDebugAarMetadata
+> Task :api:writeDebugAarMetadata
+> Task :ime:addons:writeDebugAarMetadata
+> Task :ime:base:writeDebugAarMetadata
+> Task :ime:chewbacca:preBuild UP-TO-DATE
+> Task :ime:chewbacca:preDebugBuild UP-TO-DATE
+> Task :ime:base-rx:writeDebugAarMetadata
+> Task :ime:chewbacca:writeDebugAarMetadata
+> Task :ime:dictionaries:preBuild UP-TO-DATE
+> Task :ime:dictionaries:preDebugBuild UP-TO-DATE
+> Task :ime:fileprovider:preBuild UP-TO-DATE
+> Task :ime:fileprovider:preDebugBuild UP-TO-DATE
+> Task :ime:dictionaries:writeDebugAarMetadata
+> Task :ime:gesturetyping:preBuild UP-TO-DATE
+> Task :ime:gesturetyping:preDebugBuild UP-TO-DATE
+> Task :ime:nextword:preBuild UP-TO-DATE
+> Task :ime:fileprovider:writeDebugAarMetadata
+> Task :ime:nextword:preDebugBuild UP-TO-DATE
+> Task :ime:gesturetyping:writeDebugAarMetadata
+> Task :ime:notification:preBuild UP-TO-DATE
+> Task :ime:notification:preDebugBuild UP-TO-DATE
+> Task :ime:addons:compileDebugLibraryResources
+> Task :ime:nextword:writeDebugAarMetadata
+> Task :ime:overlay:preBuild UP-TO-DATE
+> Task :ime:overlay:preDebugBuild UP-TO-DATE
+> Task :ime:notification:writeDebugAarMetadata
+> Task :ime:permissions:preBuild UP-TO-DATE
+> Task :ime:permissions:preDebugBuild UP-TO-DATE
+> Task :ime:overlay:writeDebugAarMetadata
+> Task :ime:permissions:writeDebugAarMetadata
+> Task :ime:prefs:preBuild UP-TO-DATE
+> Task :ime:prefs:preDebugBuild UP-TO-DATE
+> Task :ime:pixel:writeDebugAarMetadata
+> Task :ime:releaseinfo:preBuild UP-TO-DATE
+> Task :ime:releaseinfo:preDebugBuild UP-TO-DATE
+> Task :ime:prefs:writeDebugAarMetadata
+> Task :ime:remote:preBuild UP-TO-DATE
+> Task :ime:remote:preDebugBuild UP-TO-DATE
+> Task :ime:releaseinfo:writeDebugAarMetadata
+> Task :ime:voiceime:preBuild UP-TO-DATE
+> Task :ime:voiceime:preDebugBuild UP-TO-DATE
+> Task :ime:remote:writeDebugAarMetadata
+> Task :ime:dictionaries:jnidictionaryv1:preBuild UP-TO-DATE
+> Task :ime:dictionaries:jnidictionaryv1:preDebugBuild UP-TO-DATE
+> Task :ime:voiceime:writeDebugAarMetadata
+> Task :ime:dictionaries:jnidictionaryv2:preBuild UP-TO-DATE
+> Task :ime:dictionaries:jnidictionaryv2:preDebugBuild UP-TO-DATE
+> Task :ime:dictionaries:jnidictionaryv1:writeDebugAarMetadata
+> Task :ime:dictionaries:jnidictionaryv2:writeDebugAarMetadata
+
+> Task :addons:languages:english:pack:parseAospDictionary_en_wordlist_combined_gz
+Reading input file en_wordlist.combined.gz (size 914050)...
+.0%..233%..468%..705%..100%.Wrote 165541 words.
+Done.
+
+> Task :addons:languages:english:pack:mergeAllWordLists
+Merging 3 files for maximum 300000 words, and writing into 'words_merged.xml'. Discarding 0 words.
+Reading en_wordlist.combined.gz.xml...
+Loaded 165541 words in total...
+Reading additionals.xml...
+Loaded 165571 words in total...
+Reading websites.xml...
+Loaded 165600 words in total...
+Creating output XML file...
+Done.
+Wrote 165600 words.
+
+> Task :personaspeak-ui:compileDebugKotlin
+
+> Task :addons:languages:english:pack:makeDictionary
+Reading words from input /Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/addons/languages/english/pack/build/dictionary/words_merged.xml
+Will store output files under /Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/addons/languages/english/pack/src/main/res/raw. Created raw folder? false
+Deleting previous versions...
+Nodes = 414532
+Dict Size = 1889353
+Writing to dict file /Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/addons/languages/english/pack/src/main/res/raw/english_words_1.dict
+Writing to dict file /Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/addons/languages/english/pack/src/main/res/raw/english_words_2.dict
+Done. Wrote 2 files.
+Done.
+
+> Task :personaspeak-ui:compileDebugJavaWithJavac NO-SOURCE
+> Task :addons:languages:english:pack:preBuild
+> Task :addons:languages:english:pack:preDebugBuild
+> Task :addons:languages:english:pack:writeDebugAarMetadata
+> Task :personaspeak-ui:bundleLibCompileToJarDebug
+> Task :ime:chewbacca:processDebugNavigationResources
+> Task :ime:dictionaries:processDebugNavigationResources
+> Task :ime:fileprovider:processDebugNavigationResources
+> Task :ime:gesturetyping:processDebugNavigationResources
+> Task :ime:nextword:processDebugNavigationResources
+> Task :ime:notification:processDebugNavigationResources
+> Task :ime:app:checkDebugAarMetadata
+> Task :ime:overlay:processDebugNavigationResources
+> Task :ime:permissions:processDebugNavigationResources
+> Task :ime:prefs:processDebugNavigationResources
+> Task :ime:releaseinfo:processDebugNavigationResources
+> Task :ime:remote:processDebugNavigationResources
+> Task :ime:voiceime:processDebugNavigationResources
+> Task :ime:dictionaries:jnidictionaryv1:processDebugNavigationResources
+> Task :ime:dictionaries:jnidictionaryv2:processDebugNavigationResources
+> Task :addons:languages:english:pack:processDebugNavigationResources
+> Task :ime:app:processDebugNavigationResources
+> Task :ime:chewbacca:generateDebugResValues
+> Task :ime:chewbacca:generateDebugResources
+> Task :ime:app:compileDebugNavigationResources
+> Task :ime:chewbacca:packageDebugResources
+> Task :ime:dictionaries:generateDebugResValues
+> Task :ime:dictionaries:generateDebugResources
+> Task :ime:dictionaries:packageDebugResources
+> Task :ime:fileprovider:generateDebugResValues
+> Task :ime:fileprovider:generateDebugResources
+> Task :ime:fileprovider:packageDebugResources
+> Task :ime:gesturetyping:generateDebugResValues
+> Task :ime:gesturetyping:generateDebugResources
+> Task :ime:gesturetyping:packageDebugResources
+> Task :ime:nextword:generateDebugResValues
+> Task :ime:nextword:generateDebugResources
+> Task :ime:nextword:packageDebugResources
+> Task :ime:notification:generateDebugResValues
+> Task :ime:notification:generateDebugResources
+> Task :ime:notification:packageDebugResources
+> Task :ime:overlay:generateDebugResValues
+> Task :ime:overlay:generateDebugResources
+> Task :ime:overlay:packageDebugResources
+> Task :ime:permissions:generateDebugResValues
+> Task :ime:permissions:generateDebugResources
+> Task :ime:permissions:packageDebugResources
+> Task :ime:prefs:generateDebugResValues
+> Task :ime:prefs:generateDebugResources
+> Task :ime:prefs:packageDebugResources
+> Task :ime:releaseinfo:generateDebugResValues
+> Task :ime:releaseinfo:generateDebugResources
+> Task :ime:releaseinfo:packageDebugResources
+> Task :ime:remote:generateDebugResValues
+> Task :ime:remote:generateDebugResources
+> Task :ime:remote:packageDebugResources
+> Task :ime:voiceime:generateDebugResValues
+> Task :ime:voiceime:generateDebugResources
+> Task :ime:voiceime:packageDebugResources
+> Task :ime:dictionaries:jnidictionaryv1:generateDebugResValues
+> Task :ime:dictionaries:jnidictionaryv1:generateDebugResources
+> Task :ime:dictionaries:jnidictionaryv1:packageDebugResources
+> Task :ime:dictionaries:jnidictionaryv2:generateDebugResValues
+> Task :ime:dictionaries:jnidictionaryv2:generateDebugResources
+> Task :ime:dictionaries:jnidictionaryv2:packageDebugResources
+> Task :addons:languages:english:pack:generateDebugResValues
+> Task :addons:languages:english:pack:generateDebugResources
+> Task :addons:languages:english:pack:packageDebugResources
+> Task :ime:app:mapDebugSourceSetPaths
+> Task :ime:app:generateDebugResources
+> Task :ime:app:createDebugCompatibleScreenManifests
+> Task :api:extractDeepLinksDebug
+> Task :personaspeak-ui:extractDeepLinksDebug
+> Task :addons:base:extractDeepLinksDebug
+> Task :ime:addons:extractDeepLinksDebug
+> Task :ime:app:extractDeepLinksDebug
+> Task :ime:base:extractDeepLinksDebug
+> Task :ime:base-rx:extractDeepLinksDebug
+> Task :ime:chewbacca:extractDeepLinksDebug
+> Task :ime:dictionaries:extractDeepLinksDebug
+> Task :ime:fileprovider:extractDeepLinksDebug
+> Task :ime:gesturetyping:extractDeepLinksDebug
+> Task :ime:nextword:extractDeepLinksDebug
+> Task :ime:notification:extractDeepLinksDebug
+> Task :ime:fileprovider:processDebugManifest
+> Task :api:processDebugManifest
+> Task :ime:base-rx:processDebugManifest
+> Task :ime:base:processDebugManifest
+> Task :ime:addons:processDebugManifest
+> Task :ime:chewbacca:processDebugManifest
+> Task :ime:dictionaries:processDebugManifest
+> Task :personaspeak-ui:processDebugManifest
+> Task :ime:nextword:processDebugManifest
+> Task :addons:base:processDebugManifest
+> Task :ime:gesturetyping:processDebugManifest
+> Task :ime:overlay:extractDeepLinksDebug
+> Task :ime:notification:processDebugManifest
+> Task :ime:permissions:extractDeepLinksDebug
+> Task :ime:overlay:processDebugManifest
+> Task :ime:pixel:extractDeepLinksDebug
+> Task :ime:permissions:processDebugManifest
+> Task :ime:prefs:extractDeepLinksDebug
+> Task :ime:pixel:processDebugManifest
+> Task :ime:releaseinfo:extractDeepLinksDebug
+> Task :ime:prefs:processDebugManifest
+> Task :ime:remote:extractDeepLinksDebug
+> Task :ime:releaseinfo:processDebugManifest
+> Task :ime:voiceime:extractDeepLinksDebug
+> Task :ime:remote:processDebugManifest
+> Task :ime:dictionaries:jnidictionaryv1:extractDeepLinksDebug
+> Task :ime:voiceime:processDebugManifest
+> Task :ime:dictionaries:jnidictionaryv2:extractDeepLinksDebug
+> Task :ime:dictionaries:jnidictionaryv1:processDebugManifest
+> Task :addons:languages:english:pack:extractDeepLinksDebug
+> Task :ime:dictionaries:jnidictionaryv2:processDebugManifest
+> Task :ime:base:compileDebugLibraryResources
+> Task :addons:languages:english:pack:processDebugManifest
+> Task :ime:base-rx:compileDebugLibraryResources
+> Task :ime:app:processDebugMainManifest
+> Task :ime:app:processDebugManifest
+> Task :ime:chewbacca:compileDebugLibraryResources
+> Task :ime:chewbacca:parseDebugLocalResources
+> Task :ime:notification:parseDebugLocalResources
+> Task :ime:dictionaries:compileDebugLibraryResources
+> Task :ime:permissions:parseDebugLocalResources
+> Task :ime:dictionaries:parseDebugLocalResources
+> Task :ime:permissions:generateDebugRFile
+> Task :ime:dictionaries:generateDebugRFile
+> Task :ime:notification:generateDebugRFile
+
+> Task :ime:app:mergeDebugResources
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values-da-rDK/strings.xml:655:4: Multiple substitutions specified in non-positional format of string resource string/next_words_statistics_count. Did you mean to add the formatted="false" attribute?
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values-es-rMX/strings.xml:561:4: Multiple substitutions specified in non-positional format of string resource string/next_words_statistics_count. Did you mean to add the formatted="false" attribute?
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values-si-rLK/strings.xml:646:4: Multiple substitutions specified in non-positional format of string resource string/next_words_statistics_count. Did you mean to add the formatted="false" attribute?
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values-pt-rPT/strings.xml:615:4: Multiple substitutions specified in non-positional format of string resource string/next_words_statistics_count. Did you mean to add the formatted="false" attribute?
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values-is-rIS/strings.xml:647:4: Multiple substitutions specified in non-positional format of string resource string/next_words_statistics_count. Did you mean to add the formatted="false" attribute?
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values/strings.xml:820:4: Multiple substitutions specified in non-positional format of string resource string/next_words_statistics_count. Did you mean to add the formatted="false" attribute?
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values/strings.xml:156:4: Multiple substitutions specified in non-positional format of string resource string/quick_text_tab_title_template. Did you mean to add the formatted="false" attribute?
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values/strings.xml:80:4: Multiple substitutions specified in non-positional format of string resource string/version_text. Did you mean to add the formatted="false" attribute?
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values-cs-rCZ/strings.xml:517:4: Multiple substitutions specified in non-positional format of string resource string/next_words_statistics_count. Did you mean to add the formatted="false" attribute?
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values-pt-rBR/strings.xml:591:4: Multiple substitutions specified in non-positional format of string resource string/next_words_statistics_count. Did you mean to add the formatted="false" attribute?
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values-fil-rPH/strings.xml:463:4: Multiple substitutions specified in non-positional format of string resource string/next_words_statistics_count. Did you mean to add the formatted="false" attribute?
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values-sl-rSI/strings.xml:455:4: Multiple substitutions specified in non-positional format of string resource string/next_words_statistics_count. Did you mean to add the formatted="false" attribute?
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values-kmr-rTR/strings.xml:664:4: Multiple substitutions specified in non-positional format of string resource string/next_words_statistics_count. Did you mean to add the formatted="false" attribute?
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values-ru-rRU/strings.xml:559:4: Multiple substitutions specified in non-positional format of string resource string/next_words_statistics_count. Did you mean to add the formatted="false" attribute?
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values-hu-rHU/strings.xml:635:4: Multiple substitutions specified in non-positional format of string resource string/next_words_statistics_count. Did you mean to add the formatted="false" attribute?
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values-be-rBY/strings.xml:572:4: Multiple substitutions specified in non-positional format of string resource string/next_words_statistics_count. Did you mean to add the formatted="false" attribute?
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values-de-rDE/strings.xml:562:4: Multiple substitutions specified in non-positional format of string resource string/next_words_statistics_count. Did you mean to add the formatted="false" attribute?
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values-tr-rTR/strings.xml:567:4: Multiple substitutions specified in non-positional format of string resource string/next_words_statistics_count. Did you mean to add the formatted="false" attribute?
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values-nl-rNL/strings.xml:576:4: Multiple substitutions specified in non-positional format of string resource string/next_words_statistics_count. Did you mean to add the formatted="false" attribute?
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values-ku-rTR/strings.xml:652:4: Multiple substitutions specified in non-positional format of string resource string/next_words_statistics_count. Did you mean to add the formatted="false" attribute?
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values-eu-rES/strings.xml:570:4: Multiple substitutions specified in non-positional format of string resource string/next_words_statistics_count. Did you mean to add the formatted="false" attribute?
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values-lt-rLT/strings.xml:571:4: Multiple substitutions specified in non-positional format of string resource string/next_words_statistics_count. Did you mean to add the formatted="false" attribute?
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values-ckb-rIR/strings.xml:663:4: Multiple substitutions specified in non-positional format of string resource string/next_words_statistics_count. Did you mean to add the formatted="false" attribute?
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values-es-rES/strings.xml:559:4: Multiple substitutions specified in non-positional format of string resource string/next_words_statistics_count. Did you mean to add the formatted="false" attribute?
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values-sc-rIT/strings.xml:572:4: Multiple substitutions specified in non-positional format of string resource string/next_words_statistics_count. Did you mean to add the formatted="false" attribute?
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values-uk-rUA/strings.xml:542:4: Multiple substitutions specified in non-positional format of string resource string/next_words_statistics_count. Did you mean to add the formatted="false" attribute?
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values-ca-rES/strings.xml:592:4: Multiple substitutions specified in non-positional format of string resource string/next_words_statistics_count. Did you mean to add the formatted="false" attribute?
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values-pl-rPL/strings.xml:661:4: Multiple substitutions specified in non-positional format of string resource string/next_words_statistics_count. Did you mean to add the formatted="false" attribute?
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values-ka-rGE/strings.xml:675:4: Multiple substitutions specified in non-positional format of string resource string/next_words_statistics_count. Did you mean to add the formatted="false" attribute?
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values-fr-rFR/strings.xml:570:4: Multiple substitutions specified in non-positional format of string resource string/next_words_statistics_count. Did you mean to add the formatted="false" attribute?
+/Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/app/src/main/res/values-it-rIT/strings.xml:560:4: Multiple substitutions specified in non-positional format of string resource string/next_words_statistics_count. Did you mean to add the formatted="false" attribute?
+
+> Task :ime:fileprovider:compileDebugLibraryResources
+> Task :ime:gesturetyping:compileDebugLibraryResources
+> Task :ime:fileprovider:parseDebugLocalResources
+> Task :ime:chewbacca:generateDebugRFile
+> Task :ime:gesturetyping:parseDebugLocalResources
+> Task :ime:fileprovider:generateDebugRFile
+> Task :ime:nextword:compileDebugLibraryResources
+> Task :ime:nextword:parseDebugLocalResources
+> Task :ime:gesturetyping:generateDebugRFile
+> Task :ime:notification:compileDebugLibraryResources
+> Task :ime:prefs:parseDebugLocalResources
+> Task :ime:overlay:compileDebugLibraryResources
+> Task :ime:permissions:compileDebugLibraryResources
+> Task :ime:overlay:parseDebugLocalResources
+> Task :ime:prefs:generateDebugRFile
+> Task :ime:pixel:compileDebugLibraryResources
+> Task :ime:prefs:compileDebugLibraryResources
+> Task :ime:nextword:generateDebugRFile
+> Task :ime:overlay:generateDebugRFile
+> Task :ime:releaseinfo:compileDebugLibraryResources
+> Task :ime:releaseinfo:parseDebugLocalResources
+> Task :ime:remote:compileDebugLibraryResources
+> Task :ime:voiceime:compileDebugLibraryResources
+> Task :ime:remote:parseDebugLocalResources
+> Task :ime:app:processDebugManifestForPackage
+> Task :ime:releaseinfo:generateDebugRFile
+> Task :ime:voiceime:parseDebugLocalResources
+> Task :ime:dictionaries:jnidictionaryv1:compileDebugLibraryResources
+> Task :ime:remote:generateDebugRFile
+> Task :ime:dictionaries:jnidictionaryv1:parseDebugLocalResources
+> Task :ime:voiceime:generateDebugRFile
+> Task :ime:dictionaries:jnidictionaryv2:compileDebugLibraryResources
+> Task :ime:dictionaries:jnidictionaryv2:parseDebugLocalResources
+> Task :ime:dictionaries:jnidictionaryv1:generateDebugRFile
+> Task :ime:chewbacca:javaPreCompileDebug
+> Task :ime:notification:javaPreCompileDebug
+> Task :addons:languages:english:pack:compileDebugLibraryResources
+> Task :ime:dictionaries:jnidictionaryv2:generateDebugRFile
+> Task :ime:permissions:javaPreCompileDebug
+> Task :ime:dictionaries:generateDebugBuildConfig
+> Task :addons:languages:english:pack:parseDebugLocalResources
+> Task :ime:permissions:compileDebugJavaWithJavac
+> Task :ime:dictionaries:javaPreCompileDebug
+> Task :addons:languages:english:pack:generateDebugRFile
+> Task :ime:permissions:bundleLibCompileToJarDebug
+> Task :ime:fileprovider:javaPreCompileDebug
+> Task :ime:notification:compileDebugJavaWithJavac
+> Task :ime:notification:bundleLibCompileToJarDebug
+> Task :ime:dictionaries:compileDebugJavaWithJavac
+
+> Task :ime:chewbacca:compileDebugJavaWithJavac
+Note: Some input files use or override a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+
+> Task :ime:chewbacca:bundleLibCompileToJarDebug
+> Task :ime:dictionaries:bundleLibCompileToJarDebug
+> Task :ime:fileprovider:compileDebugJavaWithJavac
+> Task :ime:fileprovider:bundleLibCompileToJarDebug
+> Task :ime:gesturetyping:javaPreCompileDebug
+> Task :ime:nextword:generateDebugBuildConfig
+> Task :ime:gesturetyping:compileDebugJavaWithJavac
+> Task :ime:nextword:javaPreCompileDebug
+> Task :ime:gesturetyping:bundleLibCompileToJarDebug
+> Task :ime:prefs:javaPreCompileDebug
+> Task :ime:overlay:javaPreCompileDebug
+> Task :ime:prefs:compileDebugJavaWithJavac
+> Task :ime:prefs:bundleLibCompileToJarDebug
+
+> Task :ime:overlay:compileDebugJavaWithJavac
+Note: /Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/overlay/src/main/java/com/anysoftkeyboard/overlay/ThemeOverlayCombiner.java uses or overrides a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+
+> Task :ime:nextword:compileDebugJavaWithJavac
+> Task :ime:releaseinfo:javaPreCompileDebug
+> Task :ime:nextword:bundleLibCompileToJarDebug
+> Task :ime:overlay:bundleLibCompileToJarDebug
+> Task :ime:remote:javaPreCompileDebug
+
+> Task :ime:releaseinfo:compileDebugJavaWithJavac
+Note: /Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/keyboard/ime/releaseinfo/src/main/java/com/anysoftkeyboard/releaseinfo/TesterNotification.java uses or overrides a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+
+> Task :ime:releaseinfo:bundleLibCompileToJarDebug
+
+> Task :ime:remote:compileDebugJavaWithJavac
+Note: Some input files use or override a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+
+> Task :ime:voiceime:javaPreCompileDebug
+> Task :ime:remote:bundleLibCompileToJarDebug
+> Task :ime:dictionaries:jnidictionaryv1:javaPreCompileDebug
+
+> Task :ime:voiceime:compileDebugJavaWithJavac
+Note: Some input files use or override a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+
+> Task :ime:voiceime:bundleLibCompileToJarDebug
+> Task :ime:dictionaries:jnidictionaryv1:compileDebugJavaWithJavac
+> Task :ime:dictionaries:jnidictionaryv2:javaPreCompileDebug
+> Task :ime:dictionaries:jnidictionaryv1:bundleLibCompileToJarDebug
+> Task :addons:languages:english:pack:javaPreCompileDebug
+> Task :ime:dictionaries:jnidictionaryv2:compileDebugJavaWithJavac
+> Task :ime:dictionaries:jnidictionaryv2:bundleLibCompileToJarDebug
+> Task :addons:languages:english:pack:compileDebugJavaWithJavac
+> Task :addons:languages:english:pack:bundleLibCompileToJarDebug
+> Task :ime:app:javaPreCompileDebug
+> Task :api:mergeDebugShaders
+> Task :api:compileDebugShaders NO-SOURCE
+> Task :api:generateDebugAssets UP-TO-DATE
+> Task :api:mergeDebugAssets
+> Task :personaspeak-ui:mergeDebugShaders
+> Task :personaspeak-ui:compileDebugShaders NO-SOURCE
+> Task :personaspeak-ui:generateDebugAssets UP-TO-DATE
+> Task :ime:app:processDebugResources
+> Task :personaspeak-ui:mergeDebugAssets
+> Task :addons:base:mergeDebugShaders
+> Task :addons:base:compileDebugShaders NO-SOURCE
+> Task :addons:base:generateDebugAssets UP-TO-DATE
+> Task :addons:base:mergeDebugAssets
+> Task :ime:addons:mergeDebugShaders
+> Task :ime:addons:compileDebugShaders NO-SOURCE
+> Task :ime:addons:generateDebugAssets UP-TO-DATE
+> Task :ime:addons:mergeDebugAssets
+> Task :ime:app:mergeDebugShaders
+> Task :ime:app:compileDebugShaders NO-SOURCE
+> Task :ime:app:generateDebugAssets UP-TO-DATE
+> Task :ime:base:mergeDebugShaders
+> Task :ime:base:compileDebugShaders NO-SOURCE
+> Task :ime:base:generateDebugAssets UP-TO-DATE
+> Task :ime:base:mergeDebugAssets
+> Task :ime:base-rx:mergeDebugShaders
+> Task :ime:base-rx:compileDebugShaders NO-SOURCE
+> Task :ime:base-rx:generateDebugAssets UP-TO-DATE
+> Task :ime:base-rx:mergeDebugAssets
+> Task :ime:chewbacca:mergeDebugShaders
+> Task :ime:chewbacca:compileDebugShaders NO-SOURCE
+> Task :ime:chewbacca:generateDebugAssets UP-TO-DATE
+> Task :ime:chewbacca:mergeDebugAssets
+> Task :ime:dictionaries:mergeDebugShaders
+> Task :ime:dictionaries:compileDebugShaders NO-SOURCE
+> Task :ime:dictionaries:generateDebugAssets UP-TO-DATE
+> Task :ime:dictionaries:mergeDebugAssets
+> Task :ime:fileprovider:mergeDebugShaders
+> Task :ime:fileprovider:compileDebugShaders NO-SOURCE
+> Task :ime:fileprovider:generateDebugAssets UP-TO-DATE
+> Task :ime:fileprovider:mergeDebugAssets
+> Task :ime:gesturetyping:mergeDebugShaders
+> Task :ime:gesturetyping:compileDebugShaders NO-SOURCE
+> Task :ime:gesturetyping:generateDebugAssets UP-TO-DATE
+> Task :ime:gesturetyping:mergeDebugAssets
+> Task :ime:nextword:mergeDebugShaders
+> Task :ime:nextword:compileDebugShaders NO-SOURCE
+> Task :ime:nextword:generateDebugAssets UP-TO-DATE
+> Task :ime:nextword:mergeDebugAssets
+> Task :ime:notification:mergeDebugShaders
+> Task :ime:notification:compileDebugShaders NO-SOURCE
+> Task :ime:notification:generateDebugAssets UP-TO-DATE
+> Task :ime:notification:mergeDebugAssets
+> Task :ime:overlay:mergeDebugShaders
+> Task :ime:overlay:compileDebugShaders NO-SOURCE
+> Task :ime:overlay:generateDebugAssets UP-TO-DATE
+> Task :ime:overlay:mergeDebugAssets
+> Task :ime:permissions:mergeDebugShaders
+> Task :ime:permissions:compileDebugShaders NO-SOURCE
+> Task :ime:permissions:generateDebugAssets UP-TO-DATE
+> Task :ime:permissions:mergeDebugAssets
+> Task :ime:pixel:mergeDebugShaders
+> Task :ime:pixel:compileDebugShaders NO-SOURCE
+> Task :ime:pixel:generateDebugAssets UP-TO-DATE
+> Task :ime:pixel:mergeDebugAssets
+> Task :ime:prefs:mergeDebugShaders
+> Task :ime:prefs:compileDebugShaders NO-SOURCE
+> Task :ime:prefs:generateDebugAssets UP-TO-DATE
+> Task :ime:prefs:mergeDebugAssets
+> Task :ime:releaseinfo:mergeDebugShaders
+> Task :ime:releaseinfo:compileDebugShaders NO-SOURCE
+> Task :ime:releaseinfo:generateDebugAssets UP-TO-DATE
+> Task :ime:releaseinfo:mergeDebugAssets
+> Task :ime:remote:mergeDebugShaders
+> Task :ime:remote:compileDebugShaders NO-SOURCE
+> Task :ime:remote:generateDebugAssets UP-TO-DATE
+> Task :ime:remote:mergeDebugAssets
+> Task :ime:voiceime:mergeDebugShaders
+> Task :ime:voiceime:compileDebugShaders NO-SOURCE
+> Task :ime:voiceime:generateDebugAssets UP-TO-DATE
+> Task :ime:voiceime:mergeDebugAssets
+> Task :ime:dictionaries:jnidictionaryv1:mergeDebugShaders
+> Task :ime:dictionaries:jnidictionaryv1:compileDebugShaders NO-SOURCE
+> Task :ime:dictionaries:jnidictionaryv1:generateDebugAssets UP-TO-DATE
+> Task :ime:dictionaries:jnidictionaryv1:mergeDebugAssets
+> Task :ime:dictionaries:jnidictionaryv2:mergeDebugShaders
+> Task :ime:dictionaries:jnidictionaryv2:compileDebugShaders NO-SOURCE
+> Task :ime:dictionaries:jnidictionaryv2:generateDebugAssets UP-TO-DATE
+> Task :ime:dictionaries:jnidictionaryv2:mergeDebugAssets
+> Task :addons:languages:english:pack:mergeDebugShaders
+> Task :addons:languages:english:pack:compileDebugShaders NO-SOURCE
+> Task :addons:languages:english:pack:generateDebugAssets UP-TO-DATE
+> Task :addons:languages:english:pack:mergeDebugAssets
+> Task :ime:app:mergeDebugAssets
+> Task :ime:app:compressDebugAssets
+> Task :addons:languages:english:pack:bundleLibRuntimeToJarDebug
+> Task :addons:base:bundleLibRuntimeToJarDebug
+> Task :ime:dictionaries:jnidictionaryv1:bundleLibRuntimeToJarDebug
+> Task :ime:dictionaries:jnidictionaryv2:bundleLibRuntimeToJarDebug
+> Task :ime:dictionaries:bundleLibRuntimeToJarDebug
+> Task :ime:nextword:bundleLibRuntimeToJarDebug
+> Task :ime:releaseinfo:bundleLibRuntimeToJarDebug
+> Task :ime:gesturetyping:bundleLibRuntimeToJarDebug
+> Task :ime:prefs:bundleLibRuntimeToJarDebug
+> Task :personaspeak-ui:bundleLibRuntimeToJarDebug
+> Task :ime:remote:bundleLibRuntimeToJarDebug
+> Task :ime:addons:bundleLibRuntimeToJarDebug
+> Task :ime:chewbacca:bundleLibRuntimeToJarDebug
+> Task :ime:fileprovider:bundleLibRuntimeToJarDebug
+> Task :ime:pixel:bundleLibRuntimeToJarDebug
+> Task :ime:base-rx:bundleLibRuntimeToJarDebug
+> Task :ime:notification:bundleLibRuntimeToJarDebug
+> Task :ime:overlay:bundleLibRuntimeToJarDebug
+> Task :ime:voiceime:bundleLibRuntimeToJarDebug
+> Task :ime:permissions:bundleLibRuntimeToJarDebug
+> Task :ime:base:bundleLibRuntimeToJarDebug
+> Task :api:bundleLibRuntimeToJarDebug
+> Task :ime:app:desugarDebugFileDependencies
+> Task :api:processDebugJavaRes NO-SOURCE
+> Task :personaspeak-ui:processDebugJavaRes
+> Task :addons:base:processDebugJavaRes NO-SOURCE
+> Task :ime:addons:processDebugJavaRes NO-SOURCE
+> Task :ime:base:processDebugJavaRes NO-SOURCE
+> Task :ime:base-rx:processDebugJavaRes NO-SOURCE
+> Task :ime:chewbacca:processDebugJavaRes NO-SOURCE
+> Task :ime:dictionaries:processDebugJavaRes NO-SOURCE
+> Task :ime:fileprovider:processDebugJavaRes NO-SOURCE
+> Task :ime:gesturetyping:processDebugJavaRes NO-SOURCE
+> Task :ime:nextword:processDebugJavaRes NO-SOURCE
+> Task :ime:notification:processDebugJavaRes NO-SOURCE
+> Task :ime:overlay:processDebugJavaRes NO-SOURCE
+> Task :ime:permissions:processDebugJavaRes NO-SOURCE
+> Task :ime:pixel:processDebugJavaRes NO-SOURCE
+> Task :ime:prefs:processDebugJavaRes NO-SOURCE
+> Task :ime:releaseinfo:processDebugJavaRes NO-SOURCE
+> Task :ime:remote:processDebugJavaRes NO-SOURCE
+> Task :ime:voiceime:processDebugJavaRes NO-SOURCE
+> Task :ime:dictionaries:jnidictionaryv1:processDebugJavaRes NO-SOURCE
+> Task :ime:dictionaries:jnidictionaryv2:processDebugJavaRes NO-SOURCE
+> Task :addons:languages:english:pack:processDebugJavaRes NO-SOURCE
+> Task :addons:languages:english:pack:bundleLibRuntimeToDirDebug
+> Task :addons:base:bundleLibRuntimeToDirDebug
+> Task :ime:dictionaries:jnidictionaryv1:bundleLibRuntimeToDirDebug
+> Task :ime:dictionaries:jnidictionaryv2:bundleLibRuntimeToDirDebug
+> Task :ime:dictionaries:bundleLibRuntimeToDirDebug
+> Task :ime:releaseinfo:bundleLibRuntimeToDirDebug
+> Task :ime:gesturetyping:bundleLibRuntimeToDirDebug
+> Task :ime:prefs:bundleLibRuntimeToDirDebug
+> Task :ime:nextword:bundleLibRuntimeToDirDebug
+> Task :ime:chewbacca:bundleLibRuntimeToDirDebug
+> Task :ime:remote:bundleLibRuntimeToDirDebug
+> Task :ime:addons:bundleLibRuntimeToDirDebug
+> Task :ime:fileprovider:bundleLibRuntimeToDirDebug
+> Task :ime:pixel:bundleLibRuntimeToDirDebug
+> Task :ime:base-rx:bundleLibRuntimeToDirDebug
+> Task :ime:notification:bundleLibRuntimeToDirDebug
+> Task :personaspeak-ui:bundleLibRuntimeToDirDebug
+> Task :ime:app:checkDebugDuplicateClasses
+> Task :ime:permissions:bundleLibRuntimeToDirDebug
+> Task :ime:overlay:bundleLibRuntimeToDirDebug
+> Task :ime:voiceime:bundleLibRuntimeToDirDebug
+> Task :api:mergeDebugJniLibFolders
+> Task :api:bundleLibRuntimeToDirDebug
+> Task :api:mergeDebugNativeLibs NO-SOURCE
+> Task :ime:base:bundleLibRuntimeToDirDebug
+> Task :api:copyDebugJniLibsProjectOnly
+> Task :personaspeak-ui:mergeDebugJniLibFolders
+> Task :personaspeak-ui:mergeDebugNativeLibs NO-SOURCE
+> Task :personaspeak-ui:copyDebugJniLibsProjectOnly
+> Task :addons:base:mergeDebugJniLibFolders
+> Task :addons:base:mergeDebugNativeLibs NO-SOURCE
+> Task :addons:base:copyDebugJniLibsProjectOnly
+> Task :ime:addons:mergeDebugJniLibFolders
+> Task :ime:addons:mergeDebugNativeLibs NO-SOURCE
+> Task :ime:addons:copyDebugJniLibsProjectOnly
+> Task :ime:app:mergeDebugJniLibFolders
+> Task :ime:base:mergeDebugJniLibFolders
+> Task :ime:base:mergeDebugNativeLibs NO-SOURCE
+> Task :ime:base:copyDebugJniLibsProjectOnly
+> Task :ime:base-rx:mergeDebugJniLibFolders
+> Task :ime:base-rx:mergeDebugNativeLibs NO-SOURCE
+> Task :ime:base-rx:copyDebugJniLibsProjectOnly
+> Task :ime:chewbacca:mergeDebugJniLibFolders
+> Task :ime:chewbacca:mergeDebugNativeLibs NO-SOURCE
+> Task :ime:chewbacca:copyDebugJniLibsProjectOnly
+> Task :ime:dictionaries:mergeDebugJniLibFolders
+> Task :ime:dictionaries:mergeDebugNativeLibs NO-SOURCE
+> Task :ime:dictionaries:copyDebugJniLibsProjectOnly
+> Task :ime:fileprovider:mergeDebugJniLibFolders
+> Task :ime:fileprovider:mergeDebugNativeLibs NO-SOURCE
+> Task :ime:fileprovider:copyDebugJniLibsProjectOnly
+> Task :ime:gesturetyping:mergeDebugJniLibFolders
+> Task :ime:gesturetyping:mergeDebugNativeLibs NO-SOURCE
+> Task :ime:gesturetyping:copyDebugJniLibsProjectOnly
+> Task :ime:nextword:mergeDebugJniLibFolders
+> Task :ime:nextword:mergeDebugNativeLibs NO-SOURCE
+> Task :ime:nextword:copyDebugJniLibsProjectOnly
+> Task :ime:notification:mergeDebugJniLibFolders
+> Task :ime:notification:mergeDebugNativeLibs NO-SOURCE
+> Task :ime:notification:copyDebugJniLibsProjectOnly
+> Task :ime:overlay:mergeDebugJniLibFolders
+> Task :ime:overlay:mergeDebugNativeLibs NO-SOURCE
+> Task :ime:overlay:copyDebugJniLibsProjectOnly
+> Task :ime:permissions:mergeDebugJniLibFolders
+> Task :ime:permissions:mergeDebugNativeLibs NO-SOURCE
+> Task :ime:permissions:copyDebugJniLibsProjectOnly
+> Task :ime:pixel:mergeDebugJniLibFolders
+> Task :ime:pixel:mergeDebugNativeLibs NO-SOURCE
+> Task :ime:pixel:copyDebugJniLibsProjectOnly
+> Task :ime:prefs:mergeDebugJniLibFolders
+> Task :ime:prefs:mergeDebugNativeLibs NO-SOURCE
+> Task :ime:prefs:copyDebugJniLibsProjectOnly
+> Task :ime:releaseinfo:mergeDebugJniLibFolders
+> Task :ime:releaseinfo:mergeDebugNativeLibs NO-SOURCE
+> Task :ime:releaseinfo:copyDebugJniLibsProjectOnly
+> Task :ime:remote:mergeDebugJniLibFolders
+> Task :ime:remote:mergeDebugNativeLibs NO-SOURCE
+> Task :ime:remote:copyDebugJniLibsProjectOnly
+> Task :ime:voiceime:mergeDebugJniLibFolders
+> Task :ime:voiceime:mergeDebugNativeLibs NO-SOURCE
+> Task :ime:voiceime:copyDebugJniLibsProjectOnly
+> Task :ime:app:mergeLibDexDebug
+> Task :ime:dictionaries:jnidictionaryv1:configureCMakeDebug[arm64-v8a]
+> Task :ime:dictionaries:jnidictionaryv1:buildCMakeDebug[arm64-v8a]
+> Task :ime:dictionaries:jnidictionaryv1:configureCMakeDebug[armeabi-v7a]
+> Task :ime:dictionaries:jnidictionaryv1:buildCMakeDebug[armeabi-v7a]
+> Task :ime:dictionaries:jnidictionaryv1:configureCMakeDebug[x86]
+> Task :ime:dictionaries:jnidictionaryv1:buildCMakeDebug[x86]
+> Task :ime:dictionaries:jnidictionaryv1:configureCMakeDebug[x86_64]
+> Task :ime:app:compileDebugKotlin
+> Task :ime:dictionaries:jnidictionaryv1:buildCMakeDebug[x86_64]
+> Task :ime:app:mergeExtDexDebug
+
+> Task :ime:app:compileDebugJavaWithJavac
+Note: Some input files use or override a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+
+> Task :ime:app:dexBuilderDebug
+> Task :ime:app:processDebugJavaRes
+> Task :ime:app:mergeDebugGlobalSynthetics
+> Task :ime:dictionaries:jnidictionaryv1:mergeDebugJniLibFolders
+> Task :ime:dictionaries:jnidictionaryv2:configureCMakeDebug[arm64-v8a]
+> Task :ime:dictionaries:jnidictionaryv1:mergeDebugNativeLibs
+> Task :ime:dictionaries:jnidictionaryv2:buildCMakeDebug[arm64-v8a]
+> Task :ime:dictionaries:jnidictionaryv2:configureCMakeDebug[armeabi-v7a]
+> Task :ime:dictionaries:jnidictionaryv1:copyDebugJniLibsProjectOnly
+> Task :ime:app:mergeProjectDexDebug
+> Task :ime:dictionaries:jnidictionaryv2:buildCMakeDebug[armeabi-v7a]
+> Task :ime:dictionaries:jnidictionaryv2:configureCMakeDebug[x86]
+> Task :ime:dictionaries:jnidictionaryv2:buildCMakeDebug[x86]
+> Task :ime:dictionaries:jnidictionaryv2:configureCMakeDebug[x86_64]
+> Task :ime:app:mergeDebugJavaResource
+> Task :ime:dictionaries:jnidictionaryv2:buildCMakeDebug[x86_64]
+> Task :ime:dictionaries:jnidictionaryv2:mergeDebugJniLibFolders
+> Task :addons:languages:english:pack:mergeDebugJniLibFolders
+> Task :addons:languages:english:pack:mergeDebugNativeLibs NO-SOURCE
+> Task :addons:languages:english:pack:copyDebugJniLibsProjectOnly
+> Task :ime:dictionaries:jnidictionaryv2:mergeDebugNativeLibs
+> Task :ime:app:validateSigningDebug
+> Task :ime:app:writeDebugAppMetadata
+> Task :ime:app:writeDebugSigningConfigVersions
+> Task :ime:dictionaries:jnidictionaryv2:copyDebugJniLibsProjectOnly
+> Task :ime:app:mergeDebugNativeLibs
+
+> Task :ime:app:stripDebugDebugSymbols
+Unable to strip the following libraries, packaging them as they are: libandroidx.graphics.path.so, libanysoftkey2_jni.so, libanysoftkey_jni.so. Run with --info option to learn more.
+
+> Task :ime:app:packageDebug
+> Task :ime:app:createDebugApkListingFileRedirect
+> Task :ime:app:assembleDebug
+
+[Incubating] Problems report is available at: file:///Users/devkiran/workspace/personaspeak-workers/issue-47-atomic-ask-cutover/android/build/reports/problems/problems-report.html
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 10.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/9.2.1/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD SUCCESSFUL in 26s
+521 actionable tasks: 521 executed
+  OK
+[11/12] exact-one-APK enumeration and topology...
+  OK
+[12/12] APK manifest identity...
+  OK
+
+PASS: milestone 2 gate
+M2_GATE_EXIT=0

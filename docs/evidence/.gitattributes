@@ -1,0 +1,6 @@
+# Evidence is stored verbatim. Raw logcat, Gradle, and command transcripts
+# contain trailing whitespace that the emitting tools produced; rewriting them
+# to satisfy a whitespace check would mean editing the evidence, which defeats
+# the point of keeping raw logs at all. Disable whitespace linting here so
+# `git diff --check` stays meaningful everywhere else.
+* -whitespace

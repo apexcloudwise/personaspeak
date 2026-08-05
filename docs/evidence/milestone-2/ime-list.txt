@@ -1,0 +1,13 @@
+=== IME ENABLE / SELECT ===
+2026-08-05T13:46:17Z
+--- enable ---
+Input method biz.pixelperfectstudios.personaspeak/com.menny.android.anysoftkeyboard.SoftKeyboard: already enabled for user #0
+--- set ---
+Input method biz.pixelperfectstudios.personaspeak/com.menny.android.anysoftkeyboard.SoftKeyboard selected for user #0
+
+--- default_input_method ---
+biz.pixelperfectstudios.personaspeak/com.menny.android.anysoftkeyboard.SoftKeyboard
+
+--- dumpsys input_method (curId / curMethodId) ---
+  mCurMethodId=biz.pixelperfectstudios.personaspeak/com.menny.android.anysoftkeyboard.SoftKeyboard
+  mCurId=biz.pixelperfectstudios.personaspeak/com.menny.android.anysoftkeyboard.SoftKeyboard mHaveConnection=true mBoundToMethod=false mVisibleBound=false

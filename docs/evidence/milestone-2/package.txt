@@ -1,0 +1,25 @@
+=== INSTALL + PACKAGE/IME IDENTITY ===
+2026-08-05T13:46:06Z
+source-head=a3c8919c956005685e29ca826f3685fa2e4a1d36
+apk=android/keyboard/ime/app/build/outputs/apk/debug/app-debug.apk
+9b3f0fe1e0b04fd619f0f4a63ca19d67b81736a91aa01a10243463c0c3e54f04  android/keyboard/ime/app/build/outputs/apk/debug/app-debug.apk
+
+--- adb install -r ---
+Performing Streamed Install
+Success
+install_exit=0
+
+--- pm path ---
+package:/data/app/~~sbuoTw2MzYZZaVrTdSl3Gg==/biz.pixelperfectstudios.personaspeak-CYKQSNboXw307KOAmE5u-A==/base.apk
+
+--- installed APK hash pulled back from device ---
+9b3f0fe1e0b04fd619f0f4a63ca19d67b81736a91aa01a10243463c0c3e54f04  /tmp/installed.apk
+
+--- package version/signer ---
+    versionCode=1 minSdk=26 targetSdk=35
+    versionName=1.13.1
+    lastUpdateTime=2026-08-05 19:16:07
+      firstInstallTime=2026-07-22 05:08:15
+
+--- ime list -a (PersonaSpeak component) ---
+biz.pixelperfectstudios.personaspeak/com.menny.android.anysoftkeyboard.SoftKeyboard

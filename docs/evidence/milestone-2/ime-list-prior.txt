@@ -1,0 +1,14 @@
+=== PRIOR IME STATE (before any install) ===
+2026-08-05T13:45:50Z
+device=emulator-5554
+PRIOR_DEFAULT_IME=com.menny.android.anysoftkeyboard/.SoftKeyboard
+PRIOR_ENABLED_IMES=helium314.keyboard/.latin.LatinIME:com.google.android.tts/com.google.android.apps.speech.tts.googletts.settings.asr.voiceime.VoiceInputMethodService:com.menny.android.anysoftkeyboard/.SoftKeyboard:com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME:dev.patrickgold.florisboard/.FlorisImeService:dev.patrickgold.florisboard.debug/dev.patrickgold.florisboard.FlorisImeService:biz.pixelperfectstudios.personaspeak/com.menny.android.anysoftkeyboard.SoftKeyboard
+
+--- ime list -a ---
+com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME
+com.google.android.tts/com.google.android.apps.speech.tts.googletts.settings.asr.voiceime.VoiceInputMethodService
+biz.pixelperfectstudios.personaspeak/com.menny.android.anysoftkeyboard.SoftKeyboard
+com.menny.android.anysoftkeyboard/.SoftKeyboard
+dev.patrickgold.florisboard/.FlorisImeService
+dev.patrickgold.florisboard.debug/dev.patrickgold.florisboard.FlorisImeService
+helium314.keyboard/.latin.LatinIME

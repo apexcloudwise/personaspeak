@@ -1,0 +1,13 @@
+=== build 1 APK ===
+9b3f0fe1e0b04fd619f0f4a63ca19d67b81736a91aa01a10243463c0c3e54f04  android/keyboard/ime/app/build/outputs/apk/debug/app-debug.apk
+
+=== second clean build ===
+2026-08-05T13:19:01Z
+CLEAN_BUILD2_EXIT=0
+=== build 2 APK ===
+9b3f0fe1e0b04fd619f0f4a63ca19d67b81736a91aa01a10243463c0c3e54f04  android/keyboard/ime/app/build/outputs/apk/debug/app-debug.apk
+
+=== verify-single-apk after build 2 ===
+single APK verified: keyboard/ime/app/build/outputs/apk/debug/app-debug.apk
+sole application project: keyboard/ime/app/build.gradle
+SINGLE_APK_EXIT=0
