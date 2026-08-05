@@ -10,6 +10,16 @@ Newest first, like all respectable patch notes.
 
 ---
 
+## 2026-08-06 — The inspector rebuilds, in a language that doesn't eat its own status
+
+- Five Python modules (898 lines) implement the complete device-free
+  qualification machinery: typed records with deterministic JSON codec, local
+  process runner with remote-result interface, phase-ordered orchestrator with
+  prior-state capture and restoration, evidence validation (privacy scan, PNG
+  and MP4 structural checks, manifest digests), and a capture/finalize/approve
+  CLI. 96 tests exercise every record round-trip, failure path, and adversarial
+  fake-tool boundary. No device was contacted; no keyboard code was changed.
+
 ## 2026-08-06 — The inspector receives an exit interview
 
 - The three failed Milestone 2 capture attempts now have one retrospective and
