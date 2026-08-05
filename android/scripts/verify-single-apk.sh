@@ -96,8 +96,14 @@ app_files="$workdir/app-files.txt"
 : > "$app_files"
 while IFS= read -r build_file; do
   [ -z "$build_file" ] && continue
+  # Read declarations, not prose. A comment that merely names
+  # apk_module.gradle or the application plugin — e.g. the root build file
+  # explaining why it sets the unified-build flag — is documentation, and a
+  # topology verifier that a sentence can defeat is not a topology verifier.
+  # Full-line //, #, and block-comment lines are dropped before matching.
+  code="$(grep -vE '^[[:space:]]*(//|#|/\*|\*)' "$build_file" || true)"
   grep_rc=0
-  hits="$(grep -E "$app_plugin_pattern" "$build_file")" || grep_rc=$?
+  hits="$(printf '%s\n' "$code" | grep -E "$app_plugin_pattern")" || grep_rc=$?
   case "$grep_rc" in
     0) ;;
     1) continue ;;

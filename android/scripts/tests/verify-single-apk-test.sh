@@ -44,8 +44,18 @@ new_fixture() {
   # The real root build file makes the application plugin *available* with
   # `apply false`. That is a declaration, not an application, and every
   # fixture carries it so no case can pass by pretending it is absent.
-  printf 'plugins {\n    alias(libs.plugins.android.application) apply false\n}\n' \
-    > "$root/build.gradle.kts"
+  # ...and it also *talks about* apk_module.gradle in a comment, explaining
+  # why it sets the unified-build flag. Prose is not topology; a verifier a
+  # sentence can defeat is not a verifier. This bit the real tree once.
+  cat > "$root/build.gradle.kts" <<'KTS'
+plugins {
+    alias(libs.plugins.android.application) apply false
+}
+
+// Upstream's apk_module.gradle reads this flag and skips registering its
+// com.android.application convenience copy tasks under the unified build.
+extra["personaSpeakUnifiedBuild"] = true
+KTS
   mkdir -p "$root/core-personas" "$root/core-providers" "$root/personaspeak-ui"
   printf '// inert library fixture\n' > "$root/core-personas/build.gradle.kts"
   printf '// inert library fixture\n' > "$root/core-providers/build.gradle.kts"
