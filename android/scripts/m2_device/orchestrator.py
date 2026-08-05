@@ -48,7 +48,7 @@ def _rc_of(result) -> int:
         if result.remote_rc is None:
             return 1
         return result.remote_rc
-    return 0
+    raise TypeError(f"unknown result type: {type(result).__name__}")
 
 
 def _make_step(phase, operation, result, cause):

@@ -298,6 +298,34 @@ class TestRemoteResultDispatch(unittest.TestCase):
         self.assertEqual(orch.terminal, TerminalCause.INSTALL_FAILED)
 
 
+class TestUnknownResultType(unittest.TestCase):
+    """Exhaustive dispatch: unknown result types must raise, never return 0."""
+
+    def test_unit_level_raises(self):
+        with self.assertRaises(TypeError):
+            O._rc_of(object())
+
+    def test_orchestrator_stops_on_unknown_result(self):
+        class H:
+            restore_count = 0
+            def preflight(self): return _cr()
+            def launch_emulator(self): return _cr()
+            def attach(self): return _cr()
+            def capture_prior_state(self): return _prior()
+            def validate_fixture(self, prior): return _cr()
+            def install_apk(self): return "not-a-valid-result"
+            def run_journey(self): return []
+            def capture_evidence(self): return _cr()
+            def restore(self):
+                self.restore_count += 1
+                return _cr()
+            def verify_restore(self): return _prior()
+        h = H()
+        orch = O.Orchestrator(h, repo_head="a", apk_sha256="b", tools=_tools())
+        with self.assertRaises(TypeError):
+            orch.execute()
+
+
 class TestPreflightFailure(unittest.TestCase):
     def test_preflight_fail_no_restore(self):
         h = FakeHarness(fail_at="preflight")
