@@ -155,6 +155,21 @@ case "$purity_rc" in
 esac
 echo "  OK"
 
+# --- 7a. Dedicated-row focused tests ----------------------------------------
+# Run the corrective Tasks 1-3 suites by exact pattern before the broad
+# invocation. If one of them stops existing under its expected name, this
+# fails loudly here rather than quietly shrinking the count in step 7.
+echo "[7a/9] dedicated-row focused tests..."
+"$root/gradlew" -p "$root" \
+    :personaspeak-ui:testDebugUnitTest :ime:app:testDebugUnitTest \
+    --tests '*ResultHeightPolicyTest' \
+    --tests '*RewritePanelTest' \
+    --tests '*PersonaSpeakCompositionTest' \
+    --tests '*PersonaSpeakRowProviderTest' \
+    --tests 'com.anysoftkeyboard.keyboards.views.KeyboardViewContainerViewTest' \
+    --console=plain --no-daemon --rerun-tasks
+echo "  OK"
+
 # --- 7. All first-party + IME unit tests ------------------------------------
 echo "[7/9] unit tests (core-personas, core-providers, personaspeak-ui, ime:app)..."
 "$root/gradlew" -p "$root" \
