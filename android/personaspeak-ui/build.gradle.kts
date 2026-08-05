@@ -18,6 +18,12 @@ android {
     }
 
     sourceSets.getByName("main").assets.srcDir("../../personas")
+
+    // Compose UI tests run on Robolectric, which needs the module's merged
+    // resources on the unit-test classpath.
+    testOptions {
+        unitTests.isIncludeAndroidResources = true
+    }
 }
 
 kotlin {
@@ -38,4 +44,10 @@ dependencies {
     testImplementation(libs.kotlin.test)
     testImplementation(libs.coroutines.core)
     testImplementation(libs.coroutines.test)
+    testImplementation(libs.androidx.test.core)
+    testImplementation(libs.robolectric)
+    testImplementation(platform(libs.compose.bom))
+    testImplementation(libs.compose.ui.test.junit4)
+    debugImplementation(platform(libs.compose.bom))
+    debugImplementation(libs.compose.ui.test.manifest)
 }

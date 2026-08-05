@@ -104,6 +104,12 @@ class PersonaSpeakComposition @JvmOverloads constructor(
                 onApply = vm::apply,
                 onDismiss = vm::dismiss,
                 onSettings = { launchSettings() },
+                // Geometry only. The panel freezes this before Review expands
+                // the row, so it must read the container that hosts us, not
+                // our own view.
+                preExpansionImeHeightPx = {
+                    (composeView.parent as? View)?.height ?: 0
+                },
             )
         }
     }
