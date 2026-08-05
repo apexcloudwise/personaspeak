@@ -237,6 +237,20 @@ class TestFinalize(unittest.TestCase):
             )
         self.assertFalse(receipt.privacy_ok)
 
+    def test_empty_manifest_media_fails_closed(self):
+        cap = self._capture()
+        man = {"log.txt": "abc"}
+        appr = self._make_approval(cap, man)
+        with tempfile.TemporaryDirectory() as d:
+            with open(os.path.join(d, "log.txt"), "w") as f:
+                f.write("clean text\n")
+            receipt = evidence.finalize(
+                cap, appr, man, d,
+                restoration_verdict="verified", counts={},
+                evidence_commit="", artifacts={},
+            )
+        self.assertFalse(receipt.media_ok)
+
 
 class TestCLI(unittest.TestCase):
     def test_parser_capture(self):

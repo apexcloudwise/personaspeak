@@ -133,7 +133,8 @@ class TestPriorStateUnavailable(unittest.TestCase):
         phases = [s.phase for s in rec.steps]
         self.assertNotIn("install", phases)
         self.assertNotIn("journey", phases)
-        self.assertEqual(h.restore_count, 0)
+        self.assertEqual(h.restore_count, 1)
+        self.assertIsNotNone(rec.restoration)
 
 
 class TestFixtureMismatch(unittest.TestCase):
@@ -206,8 +207,8 @@ class TestRestoration(unittest.TestCase):
         self.assertIsNotNone(orch.restoration)
         self.assertEqual(orch.restoration.cause, TerminalCause.CLEANUP_PARTIAL)
 
-    def test_no_restore_without_prior_state(self):
-        h = FakeHarness(fail_at="prior_state")
+    def test_no_restore_without_emulator(self):
+        h = FakeHarness(fail_at="launch")
         orch = O.Orchestrator(h, repo_head="a", apk_sha256="b", tools=_tools())
         orch.execute()
         self.assertEqual(h.restore_count, 0)
@@ -334,6 +335,84 @@ class TestPreflightFailure(unittest.TestCase):
         self.assertEqual(orch.terminal, TerminalCause.TOOL_FAILURE)
         self.assertNotIn("install", [s.phase for s in rec.steps])
         self.assertEqual(h.restore_count, 0)
+
+
+class TestRestoreOnPreMutationFailure(unittest.TestCase):
+    """Restoration must cover every phase after emulator launch."""
+
+    def test_restore_on_attach_failure(self):
+        h = FakeHarness(fail_at="attach")
+        orch = O.Orchestrator(h, repo_head="a", apk_sha256="b", tools=_tools())
+        rec = orch.execute()
+        self.assertEqual(orch.terminal, TerminalCause.TOOL_FAILURE)
+        self.assertEqual(h.restore_count, 1)
+        self.assertIsNotNone(rec.restoration)
+
+    def test_restore_on_prior_state_unavailable(self):
+        h = FakeHarness(fail_at="prior_state")
+        orch = O.Orchestrator(h, repo_head="a", apk_sha256="b", tools=_tools())
+        rec = orch.execute()
+        self.assertEqual(orch.terminal, TerminalCause.PRIOR_STATE_UNAVAILABLE)
+        self.assertEqual(h.restore_count, 1)
+        self.assertIsNotNone(rec.restoration)
+
+
+class TestTimeoutDispatch(unittest.TestCase):
+    """Timeout status must route through exhaustive dispatch for both result types."""
+
+    def test_command_result_timeout(self):
+        self.assertTrue(O._timed_out(_cr(timed_out=True)))
+        self.assertFalse(O._timed_out(_cr(timed_out=False)))
+
+    def test_remote_result_transport_timeout(self):
+        transport = CommandResult(
+            argv=[], start_utc="", end_utc="", returncode=0,
+            stdout=b"", stderr=b"", timed_out=True,
+        )
+        rr = RemoteResult(transport=transport, remote_rc=0)
+        self.assertTrue(O._timed_out(rr))
+
+    def test_remote_result_no_timeout(self):
+        transport = CommandResult(
+            argv=[], start_utc="", end_utc="", returncode=0,
+            stdout=b"", stderr=b"", timed_out=False,
+        )
+        rr = RemoteResult(transport=transport, remote_rc=0)
+        self.assertFalse(O._timed_out(rr))
+
+    def test_unknown_type_raises(self):
+        with self.assertRaises(TypeError):
+            O._timed_out(object())
+
+    def test_timeout_cause_in_orchestrator(self):
+        """A RemoteResult whose transport timed out records as TIMEOUT, not TOOL_FAILURE."""
+        class H:
+            restore_count = 0
+            def preflight(self): return _cr()
+            def launch_emulator(self): return _cr()
+            def attach(self): return _cr()
+            def capture_prior_state(self): return _prior()
+            def validate_fixture(self, prior): return _cr()
+            def install_apk(self):
+                return RemoteResult(
+                    transport=CommandResult(
+                        argv=[], start_utc="", end_utc="", returncode=0,
+                        stdout=b"", stderr=b"", timed_out=True,
+                    ),
+                    remote_rc=0,
+                )
+            def run_journey(self): return []
+            def capture_evidence(self): return _cr()
+            def restore(self):
+                self.restore_count += 1
+                return _cr()
+            def verify_restore(self): return _prior()
+        h = H()
+        orch = O.Orchestrator(h, repo_head="a", apk_sha256="b", tools=_tools())
+        orch.execute()
+        install_steps = [s for s in orch.steps if s.phase == "install"]
+        self.assertTrue(install_steps)
+        self.assertEqual(install_steps[0].cause, TerminalCause.TIMEOUT)
 
 
 class TestCaptureRecordDecodable(unittest.TestCase):

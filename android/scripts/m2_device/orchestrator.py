@@ -48,6 +48,15 @@ def _rc_of(result) -> int:
         if result.remote_rc is None:
             return 1
         return result.remote_rc
+
+    raise TypeError(f"unknown result type: {type(result).__name__}")
+
+
+def _timed_out(result) -> bool:
+    if isinstance(result, CommandResult):
+        return result.timed_out
+    if isinstance(result, RemoteResult):
+        return result.transport.timed_out
     raise TypeError(f"unknown result type: {type(result).__name__}")
 
 
@@ -75,6 +84,7 @@ class Orchestrator:
         self.restoration: StepRecord | None = None
         self.terminal: TerminalCause | None = None
         self._restored = False
+        self._emulator_launched = False
         self._reached: str | None = None
 
     def execute(self) -> CaptureRecord:
@@ -85,14 +95,13 @@ class Orchestrator:
         self._run_phase("emulator_launch", "boot pinned snapshot",
                         lambda: self.harness.launch_emulator())
         if self.terminal: return self._record()
-
-        self._run_phase("attach", "adb attach serial",
-                        lambda: self.harness.attach())
-        if self.terminal: return self._record()
-
-        self._capture_prior()
+        self._emulator_launched = True
 
         try:
+            self._run_phase("attach", "adb attach serial",
+                            lambda: self.harness.attach())
+            if not self.terminal:
+                self._capture_prior()
             if not self.terminal and self.prior_state:
                 self._run_phase("validate_fixture", "fixture identity check",
                                 lambda: self.harness.validate_fixture(self.prior_state),
@@ -126,7 +135,7 @@ class Orchestrator:
         result = fn()
         rc = _rc_of(result)
         cause = TerminalCause.COMPLETED if rc == 0 else fail_cause
-        if isinstance(result, CommandResult) and result.timed_out:
+        if _timed_out(result):
             cause = TerminalCause.TIMEOUT
         self.steps.append(_make_step(phase, operation, result, cause))
         if cause != TerminalCause.COMPLETED:
@@ -163,7 +172,7 @@ class Orchestrator:
         if self._restored:
             return
         self._restored = True
-        if self.prior_state is None:
+        if not self._emulator_launched:
             return
         result = self.harness.restore()
         rc = _rc_of(result)

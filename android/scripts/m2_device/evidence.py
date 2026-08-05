@@ -165,11 +165,14 @@ def finalize(
     if approval.decision != VisualReview.APPROVED:
         raise ValueError(f"approval decision was {approval.decision!r}, not approved")
     privacy_ok = scan_directory(evidence_dir)
-    media_ok = all(
-        _validate_media(os.path.join(evidence_dir, name), name)
-        for name in manifest
-        if name.endswith((".png", ".mp4"))
-    )
+    media_files = [n for n in manifest if n.endswith((".png", ".mp4"))]
+    if not media_files:
+        media_ok = False
+    else:
+        media_ok = all(
+            _validate_media(os.path.join(evidence_dir, name), name)
+            for name in media_files
+        )
     return FinalReceipt(
         capture_digest=cap_d,
         approval_digest=appr_d,
