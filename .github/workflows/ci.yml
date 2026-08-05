@@ -71,6 +71,35 @@ jobs:
           sudo apt-get install --yes ripgrep
           command -v rg
           rg --version
+      # ASK's android_unit_test.gradle pins robolectric.dependency.dir to
+      # keyboard/.robolectric-android-all-jars ONLY when it detects CI, so that
+      # hosted runs resolve a fixed set of android-all jars instead of
+      # whatever Maven serves that day. Upstream fills that directory from its
+      # own CI script; ours has to do the same or every Robolectric test fails
+      # with "Path is not a file". Local runs never hit this, because isCi is
+      # false there and Robolectric resolves normally — which is precisely why
+      # it has to be a CI step and not something we notice on a laptop.
+      - name: Restore the ASK Robolectric jar cache
+        id: robolectric-cache
+        uses: actions/cache@v4
+        with:
+          path: android/keyboard/.robolectric-android-all-jars
+          key: robolectric-jars-${{ hashFiles('android/keyboard/scripts/robolectric_jars_versions.txt') }}
+      - name: Populate the ASK Robolectric jar cache
+        if: steps.robolectric-cache.outputs.cache-hit != 'true'
+        working-directory: android/keyboard
+        run: |
+          set -euo pipefail
+          bash scripts/download_robolectric_jars_to_machine.sh
+      - name: Require the Robolectric jars to be present
+        working-directory: android/keyboard
+        run: |
+          set -euo pipefail
+          count="$(find .robolectric-android-all-jars -name '*.jar' | wc -l | tr -d ' ')"
+          echo "cached android-all jars: $count"
+          # A restored-but-empty cache would otherwise hand the gate the exact
+          # failure this step exists to prevent, only quieter.
+          test "$count" -ge 11
       # The verifier fixture suites run first and separately, so a broken
       # verifier is a distinct red step rather than something the aggregate
       # gate quietly inherits. The gate runs them again; that is intentional

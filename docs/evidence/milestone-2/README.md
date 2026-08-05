@@ -26,6 +26,18 @@ picture — see [Declared deviations](#declared-deviations).
 The APK installed on the device was pulled back off it and hashed: it matches
 the host artifact byte-for-byte. See `package.txt`.
 
+**The PR head is later than the device-qualified head.** After the device phase
+closed, hosted CI failed — ASK pins `robolectric.dependency.dir` only when it
+detects CI, and our workflow never populated that directory, so every
+Robolectric test failed with `Path is not a file`. Local runs never hit it
+because `isCi` is false there. The fix is confined to
+`.github/workflows/ci.yml` plus this paragraph; it contributes nothing to the
+APK. The canonical APK rebuilt at the PR head hashes identically to the
+device-qualified artifact — `9b3f0fe1…` — so the device receipt's artifact
+identity is preserved across the head change. Whether the receipt itself
+survives a CI-and-docs-only head change is the overseer's ruling to make, and
+it is asked for explicitly rather than assumed.
+
 ## Host gate
 
 One complete invocation of `bash android/scripts/verify-milestone-2.sh` from
