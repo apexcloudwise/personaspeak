@@ -18,9 +18,7 @@ rootProject.name = "personaboard"
 
 include(":core-personas")
 include(":core-providers")
-include(":keyboard-stub")
 include(":personaspeak-ui")
-include(":app")
 
 // Restricted ASK closure: every logical path maps explicitly onto the vendored
 // snapshot under keyboard/. The set must stay identical to

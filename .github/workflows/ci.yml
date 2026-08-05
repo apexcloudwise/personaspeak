@@ -56,7 +56,7 @@ jobs:
           fi
 
   android-build:
-    name: Build Android modules
+    name: Milestone 2 gate
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -71,47 +71,50 @@ jobs:
           sudo apt-get install --yes ripgrep
           command -v rg
           rg --version
-      - name: Build and test the current Android graph
-        working-directory: android
-        run: >-
-          ./gradlew
-          :core-personas:build
-          :core-providers:build
-          :personaspeak-ui:testDebugUnitTest
-          :personaspeak-ui:assembleDebug
-          :keyboard-stub:assembleDebug
-          :app:assembleDebug
-          :app:testDebugUnitTest
-          --no-daemon
-      - name: Require the three current-graph artifacts
-        working-directory: android
+      # The verifier fixture suites run first and separately, so a broken
+      # verifier is a distinct red step rather than something the aggregate
+      # gate quietly inherits. The gate runs them again; that is intentional
+      # — this step exists so the failure is legible in the job list.
+      - name: Verifier fixture suites
         shell: bash
         run: |
           set -euo pipefail
-          mapfile -t artifacts < <(find . \( -path '*/build/outputs/apk/*/*.apk' -o -path '*/build/outputs/aar/*.aar' \) -type f -print | sort)
-          printf '%s\n' "${artifacts[@]}"
-          test "${#artifacts[@]}" -eq 3
-          test "${artifacts[0]}" = "./app/build/outputs/apk/debug/app-debug.apk"
-          test "${artifacts[1]}" = "./keyboard-stub/build/outputs/aar/keyboard-stub-debug.aar"
-          test "${artifacts[2]}" = "./personaspeak-ui/build/outputs/aar/personaspeak-ui-debug.aar"
-      - name: Forbid Android imports in core modules
+          for suite in verify-ask-closure-test verify-dictionary-licenses-test \
+                       verify-upstream-ledger-test verify-single-apk-test \
+                       verify-unified-build-flag-test verify-milestone-2-test; do
+            echo "::group::$suite"
+            bash "android/scripts/tests/$suite.sh"
+            echo "::endgroup::"
+          done
+      # One call. Every M2 scan, test, lint, build, artifact and manifest
+      # assertion lives inside the gate, which is also what runs locally for
+      # acceptance — so CI and the receipt cannot drift apart.
+      - name: Milestone 2 aggregate gate
+        shell: bash
+        run: bash android/scripts/verify-milestone-2.sh android
+      - name: Canonical APK identity
         shell: bash
         run: |
           set -euo pipefail
-          ! rg -n '^\s*import\s+(android|androidx)\.' android/core-personas/src android/core-providers/src
-      - name: Forbid AnySoftKeyboard imports in personaspeak-ui
-        shell: bash
-        run: |
-          set -euo pipefail
-          ! rg -n 'com\.anysoftkeyboard|com\.menny' android/personaspeak-ui/src
-      - name: Forbid rejected topology outside the quarantined modules
-        shell: bash
-        run: |
-          set -euo pipefail
-          ! rg -n \
-            'switchBackToPreviousKeyboard|PersonaPanel|fun[[:space:]]+Onboarding[[:space:]]*\(' \
-            android \
-            --glob '!android/app/**' \
-            --glob '!android/keyboard-stub/**' \
-            --glob '!android/keyboard/**' \
-            --glob '*.{kt,java}'
+          apk=android/keyboard/ime/app/build/outputs/apk/debug/app-debug.apk
+          test -f "$apk"
+          sha256sum "$apk"
+      # Only the canonical APK. Uploading a second one would recreate, in the
+      # artifact tab, exactly the ambiguity the cutover removed from the tree.
+      - name: Upload canonical APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: personaspeak-debug-apk
+          path: android/keyboard/ime/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14
+      - name: Upload non-APK reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: milestone-2-reports
+          path: |
+            android/**/build/reports/**
+            android/**/build/test-results/**
+          if-no-files-found: warn
+          retention-days: 14

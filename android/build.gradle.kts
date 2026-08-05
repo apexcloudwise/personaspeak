@@ -16,6 +16,14 @@ plugins {
 // instead of Gradle's rootDir, which now points at the unified root.
 extra["askSourceRoot"] = file("keyboard")
 
+// Marks this as the unified PersonaSpeak root build, which ships exactly one
+// APK from ASK's :ime:app. Upstream's apk_module.gradle reads this to skip
+// registering its copy<Variant>Apk / copy<Variant>Aab convenience tasks: those
+// copy the built artifact into android/outputs/, producing a second file that
+// is indistinguishable from a shippable APK. A nested or standalone upstream
+// build never sets this and keeps upstream's behaviour unchanged.
+extra["personaSpeakUnifiedBuild"] = true
+
 // ASK-wide ext values (SDK levels, build tools, Robolectric, CI flags) that
 // upstream's root build applied to every project.
 apply(from = "keyboard/gradle/root_all_projects_ext.gradle")
