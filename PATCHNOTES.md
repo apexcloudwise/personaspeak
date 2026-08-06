@@ -10,6 +10,31 @@ Newest first, like all respectable patch notes.
 
 ---
 
+## 2026-08-06 — The inspector learns to read exit codes without reading minds
+
+- `RemoteResult.remote_rc` is no longer set to None by default and left
+  for someone else to figure out. `AdbRemoteStatusReader` populates it
+  from the adb shell_v2 transport result, using a structural discriminator
+  (stderr emptiness at rc=1) rather than pattern-matching adb's English
+  error text. The probe observed that transport failures always write to
+  stderr and always exit 1; remote exit codes pass through at every
+  other value. Where the two signals collide — rc=1 with non-empty
+  stderr — the adapter declines to guess and returns None, letting
+  `_rc_of` fail closed to 1. A real remote exit code lost to caution
+  is an acceptable trade; a transport failure reported as remote success
+  is not.
+- `run_remote` no longer defaults every caller to `UnavailableReader`.
+  The concrete reader is the default; the old unavailable behavior is
+  still available for callers who want to opt out.
+- `_rc_of` for `RemoteResult` retains its transport backstop (the B-1
+  correction from the previous PR). The adapter populates `remote_rc`;
+  the dispatch remains correct regardless of which reader produced
+  the record. The redundancy is the guarantee.
+- A coverage-matrix test parses the orchestrator's AST and asserts the
+  set of `_rc_of` / `_timed_out` call sites matches an enumerated list.
+  It was demonstrated failing against a stray call before it was
+  trusted to guard against one. 138 tests, no device contacted.
+
 ## 2026-08-06 — The inspector rebuilds, in a language that doesn't eat its own status
 
 - Five Python modules (898 lines) implement the complete device-free
