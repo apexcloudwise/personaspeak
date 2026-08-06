@@ -7,7 +7,7 @@ import tempfile
 import unittest
 
 from android.scripts.m2_device import commands as C
-from android.scripts.m2_device.records import RemoteResult
+from android.scripts.m2_device.records import CommandResult, RemoteResult
 
 
 class TestRun(unittest.TestCase):
@@ -58,9 +58,14 @@ class TestRun(unittest.TestCase):
 
 
 class TestRunRemote(unittest.TestCase):
-    def test_unavailable_by_default(self):
+    def test_default_reader_provides_rc(self):
         rr = C.run_remote(["echo", "hello"])
         self.assertIsInstance(rr, RemoteResult)
+        self.assertEqual(rr.remote_rc, 0)
+        self.assertTrue(rr.remote_available)
+
+    def test_explicit_unavailable_reader(self):
+        rr = C.run_remote(["echo", "hello"], reader=C.UnavailableReader())
         self.assertIsNone(rr.remote_rc)
         self.assertFalse(rr.remote_available)
 
@@ -92,6 +97,89 @@ class TestRunRemote(unittest.TestCase):
         rr = C.run_remote(["echo", "payload"])
         self.assertEqual(rr.transport.stdout, b"payload\n")
         self.assertEqual(rr.transport.returncode, 0)
+
+
+def _transport(rc=0, stdout=b"", stderr=b"", timed_out=False):
+    return CommandResult(
+        argv=["adb", "-s", "emu-5554", "shell", "exit", str(rc)],
+        start_utc="2026-08-06T02:45:00Z",
+        end_utc="2026-08-06T02:45:01Z",
+        returncode=rc, stdout=stdout, stderr=stderr, timed_out=timed_out,
+    )
+
+
+class TestAdbRemoteStatusReader(unittest.TestCase):
+    """Reproduces probe-observed adb shell_v2 behavior (no live adb)."""
+
+    def test_remote_nonzero_7(self):
+        self.assertEqual(C.AdbRemoteStatusReader().extract_rc(_transport(rc=7)), 7)
+
+    def test_remote_nonzero_5(self):
+        self.assertEqual(C.AdbRemoteStatusReader().extract_rc(_transport(rc=5)), 5)
+
+    def test_remote_nonzero_3(self):
+        self.assertEqual(C.AdbRemoteStatusReader().extract_rc(_transport(rc=3)), 3)
+
+    def test_remote_nonzero_2(self):
+        self.assertEqual(C.AdbRemoteStatusReader().extract_rc(_transport(rc=2)), 2)
+
+    def test_remote_exit_1_empty_stderr(self):
+        rc = C.AdbRemoteStatusReader().extract_rc(_transport(rc=1, stderr=b""))
+        self.assertEqual(rc, 1)
+
+    def test_remote_exit_1_with_stderr_fails_closed(self):
+        stderr_msg = bytes([0x6d, 0x73, 0x67, 0x0a])
+        rc = C.AdbRemoteStatusReader().extract_rc(
+            _transport(rc=1, stderr=stderr_msg))
+        self.assertIsNone(rc)
+
+    def test_transport_failure_device_not_found(self):
+        rc = C.AdbRemoteStatusReader().extract_rc(_transport(
+            rc=1, stderr=b"adb: device 'bogus-serial' not found"))
+        self.assertIsNone(rc)
+
+    def test_transport_failure_no_devices(self):
+        rc = C.AdbRemoteStatusReader().extract_rc(_transport(
+            rc=1, stderr=b"adb: no devices/emulators found"))
+        self.assertIsNone(rc)
+
+    def test_remote_success_empty_stdout(self):
+        rc = C.AdbRemoteStatusReader().extract_rc(_transport(rc=0, stdout=b""))
+        self.assertEqual(rc, 0)
+
+    def test_remote_success_no_trailing_newline(self):
+        rc = C.AdbRemoteStatusReader().extract_rc(
+            _transport(rc=0, stdout=b"no-newline"))
+        self.assertEqual(rc, 0)
+
+    def test_sentinel_payload_does_not_fuse(self):
+        rc = C.AdbRemoteStatusReader().extract_rc(
+            _transport(rc=3, stdout=b"__RC=0"))
+        self.assertEqual(rc, 3)
+
+    def test_stderr_only_exit_0(self):
+        rc = C.AdbRemoteStatusReader().extract_rc(
+            _transport(rc=0, stderr=b"error_msg"))
+        self.assertEqual(rc, 0)
+
+    def test_stderr_only_nonzero(self):
+        rc = C.AdbRemoteStatusReader().extract_rc(
+            _transport(rc=5, stderr=b"error_msg"))
+        self.assertEqual(rc, 5)
+
+    def test_timeout_returns_none(self):
+        rc = C.AdbRemoteStatusReader().extract_rc(_transport(timed_out=True))
+        self.assertIsNone(rc)
+
+    def test_remote_success_with_stdout(self):
+        rc = C.AdbRemoteStatusReader().extract_rc(
+            _transport(rc=0, stdout=b"hello\n"))
+        self.assertEqual(rc, 0)
+
+    def test_mixed_stdout_stderr_nonzero(self):
+        rc = C.AdbRemoteStatusReader().extract_rc(
+            _transport(rc=2, stdout=b"out_line", stderr=b"err_line"))
+        self.assertEqual(rc, 2)
 
 
 class TestDigestFile(unittest.TestCase):

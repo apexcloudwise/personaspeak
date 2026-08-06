@@ -28,6 +28,29 @@ class UnavailableReader:
         return None
 
 
+class AdbRemoteStatusReader:
+    """Determines remote exit code from adb shell_v2 transport results.
+
+    Under shell_v2, the adb wrapper exit code IS the remote exit code
+    (observed at 7, 5, 3, 2, 1, 0). Observed transport failures
+    (probe P2: device-not-found and no-devices, five cases) produce
+    rc=1 with non-empty stderr.
+
+    Discriminator is structural (stderr emptiness), not text-matching:
+    - rc != 1: unambiguous remote exit code
+    - rc == 1, stderr empty: remote exit 1 (observed transport failures write stderr)
+    - rc == 1, stderr non-empty: ambiguous, return None (fail closed)
+    """
+
+    def extract_rc(self, transport: CommandResult) -> int | None:
+        if transport.timed_out:
+            return None
+        rc = transport.returncode
+        if rc == 1 and transport.stderr:
+            return None
+        return rc
+
+
 def run(
     argv: list[str],
     *,
@@ -72,7 +95,7 @@ def run_remote(
     env: dict[str, str] | None = None,
     cwd: str | None = None,
 ) -> RemoteResult:
-    r = reader or UnavailableReader()
+    r = reader or AdbRemoteStatusReader()
     transport = run(argv, timeout=timeout, env=env, cwd=cwd)
     remote_rc = r.extract_rc(transport)
     return RemoteResult(transport=transport, remote_rc=remote_rc)
