@@ -55,6 +55,21 @@ jobs:
             exit 1
           fi
 
+  m2-device-suite:
+    name: M2 device qualification suite
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run m2_device focused suite
+        shell: bash
+        working-directory: ${{ github.workspace }}
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s android/scripts/tests/m2_device -v
+
   android-build:
     name: Milestone 2 gate
     runs-on: ubuntu-latest
