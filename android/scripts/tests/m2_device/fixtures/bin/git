@@ -1,0 +1,14 @@
+#!/usr/bin/env python3
+import sys
+import os
+
+log_path = os.environ.get("MOCK_COMMANDS_LOG")
+if log_path:
+    with open(log_path, "a") as f:
+        f.write(f"git: {' '.join(sys.argv[1:])}\n")
+
+if "rev-parse HEAD" in " ".join(sys.argv[1:]):
+    print("5e944b42feea728f8d451efcaade83c6baf608c6")
+    sys.exit(0)
+
+sys.exit(0)

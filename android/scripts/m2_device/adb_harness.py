@@ -10,8 +10,8 @@ from datetime import datetime, timezone
 from typing import Any
 
 from android.scripts.m2_device import commands
+from android.scripts.m2_device.orchestrator import CaptureContext
 from android.scripts.m2_device.records import (
-    CaptureContext,
     CommandResult,
     PriorDeviceState,
     RemoteResult,
@@ -583,25 +583,24 @@ class AdbHarness:
         return self.runner(["adb", "-s", self.serial, "emu", "kill"])
 
     def verify_release(self) -> CommandResult:
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.settimeout(1.0)
-        try:
-            s.connect(("127.0.0.1", 5554))
-            s.close()
-            return CommandResult(
-                argv=["verify_release"],
-                start_utc=_UTC(),
-                end_utc=_UTC(),
-                returncode=1,
-                stdout=b"",
-                stderr=b"socket connection succeeded (emulator still running)",
-            )
-        except OSError:
-            return CommandResult(
-                argv=["verify_release"],
-                start_utc=_UTC(),
-                end_utc=_UTC(),
-                returncode=0,
-                stdout=b"release verified (port closed)",
-                stderr=b"",
-            )
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.settimeout(1.0)
+            try:
+                s.connect(("127.0.0.1", 5554))
+                return CommandResult(
+                    argv=["verify_release"],
+                    start_utc=_UTC(),
+                    end_utc=_UTC(),
+                    returncode=1,
+                    stdout=b"",
+                    stderr=b"socket connection succeeded (emulator still running)",
+                )
+            except OSError:
+                return CommandResult(
+                    argv=["verify_release"],
+                    start_utc=_UTC(),
+                    end_utc=_UTC(),
+                    returncode=0,
+                    stdout=b"release verified (port closed)",
+                    stderr=b"",
+                )

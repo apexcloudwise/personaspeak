@@ -24,8 +24,8 @@ from android.scripts.m2_device.adb_harness import (
     TIMEZONE,
     AdbHarness,
 )
+from android.scripts.m2_device.orchestrator import CaptureContext
 from android.scripts.m2_device.records import (
-    CaptureContext,
     CommandResult,
     PriorDeviceState,
     StepRecord,
@@ -286,7 +286,7 @@ class TestAdbHarness(unittest.TestCase):
         # socket.connect raises error (port closed)
         mock_inst = MagicMock()
         mock_inst.connect.side_effect = OSError("Connection refused")
-        mock_socket.return_value = mock_inst
+        mock_socket.return_value.__enter__.return_value = mock_inst
 
         res = self.harness.verify_release()
         self.assertEqual(res.returncode, 0)
@@ -295,7 +295,7 @@ class TestAdbHarness(unittest.TestCase):
     def test_verify_release_alive(self, mock_socket):
         # socket.connect succeeds (emulator still running)
         mock_inst = MagicMock()
-        mock_socket.return_value = mock_inst
+        mock_socket.return_value.__enter__.return_value = mock_inst
 
         res = self.harness.verify_release()
         self.assertEqual(res.returncode, 1)

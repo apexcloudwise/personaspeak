@@ -3,8 +3,9 @@
 import unittest
 
 from android.scripts.m2_device import orchestrator as O
+from android.scripts.m2_device.orchestrator import CaptureContext
 from android.scripts.m2_device.records import (
-    CaptureContext, CommandResult, PriorDeviceState, RemoteResult, StepRecord, TerminalCause, ToolIdentity,
+    CommandResult, PriorDeviceState, RemoteResult, StepRecord, TerminalCause, ToolIdentity,
 )
 
 
