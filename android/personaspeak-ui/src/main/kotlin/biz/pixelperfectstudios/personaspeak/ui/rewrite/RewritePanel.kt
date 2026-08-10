@@ -84,6 +84,7 @@ fun RewritePanel(
             CompactLayout(
                 state = state,
                 onRewrite = onRewrite,
+                onDismiss = onDismiss,
                 onSettings = onSettings,
             )
         }
@@ -95,6 +96,7 @@ fun RewritePanel(
 private fun CompactLayout(
     state: RewritePanelState,
     onRewrite: () -> Unit,
+    onDismiss: () -> Unit,
     onSettings: () -> Unit,
 ) {
     Row(
@@ -124,6 +126,14 @@ private fun CompactLayout(
                         .testTag("personaspeak_loading"),
                     strokeWidth = 2.dp,
                 )
+                TextButton(
+                    onClick = onDismiss,
+                    modifier = Modifier
+                        .heightIn(min = MinInteractiveHeight)
+                        .testTag("personaspeak_cancel"),
+                ) {
+                    Text("Cancel")
+                }
             }
 
             is RewritePanelState.Message -> {

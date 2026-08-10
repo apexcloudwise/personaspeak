@@ -10,6 +10,18 @@ Newest first, like all respectable patch notes.
 
 ---
 
+## 2026-08-10 — The Loading row learns the word "Cancel"
+
+- While PersonaSpeak is thinking, the row now shows a Cancel button next
+  to the spinner. This is not a second cancellation path; it is the
+  existing one (`onDismiss` → `RewritePanelViewModel.dismiss()`, which
+  drops the in-flight request) finally given somewhere to be tapped.
+  Idle, Message, and Review are unchanged — Review keeps its own
+  Dismiss. The control clears the 48dp touch minimum, carries the
+  `personaspeak_cancel` test tag, and exists only in Loading. Closes
+  the M2 contradiction where the qualification journey required a
+  Loading/cancel control the row did not render (#60).
+
 ## 2026-08-06 — The inspector learns to read exit codes without reading minds
 
 - `RemoteResult.remote_rc` is no longer set to None by default and left
