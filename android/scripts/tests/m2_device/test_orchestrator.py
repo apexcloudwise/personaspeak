@@ -4,7 +4,7 @@ import unittest
 
 from android.scripts.m2_device import orchestrator as O
 from android.scripts.m2_device.records import (
-    CommandResult, PriorDeviceState, RemoteResult, StepRecord, TerminalCause, ToolIdentity,
+    CaptureContext, CommandResult, PriorDeviceState, RemoteResult, StepRecord, TerminalCause, ToolIdentity,
 )
 
 
@@ -28,15 +28,31 @@ def _prior():
 
 class FakeHarness:
     def __init__(self, *, prior=_prior(), fail_at=None,
-                 restore_fail=False, verify_mismatch=False):
+                 restore_fail=False, verify_mismatch=False,
+                 release_fail=False, verify_release_fail=False,
+                 repo_head="abc", apk_sha256="def", tools=None):
         self._prior = prior
         self._fail_at = fail_at
         self._restore_fail = restore_fail
         self._verify_mismatch = verify_mismatch
+        self._release_fail = release_fail
+        self._verify_release_fail = verify_release_fail
+        self._repo_head = repo_head
+        self._apk_sha256 = apk_sha256
+        self._tools = tools if tools is not None else [ToolIdentity(name="adb", path="/adb", version="1.0")]
         self.restore_count = 0
+        self.release_count = 0
+        self.verify_release_count = 0
 
     def preflight(self):
         return _cr(rc=5 if self._fail_at == "preflight" else 0)
+
+    def capture_context(self) -> CaptureContext:
+        return CaptureContext(
+            repo_head=self._repo_head,
+            apk_sha256=self._apk_sha256,
+            tools=self._tools,
+        )
 
     def launch_emulator(self):
         return _cr(rc=5 if self._fail_at == "launch" else 0)
@@ -87,6 +103,14 @@ class FakeHarness:
                 enabled_imes=["default"], default_ime="default",
             )
         return self._prior
+
+    def release_emulator(self):
+        self.release_count += 1
+        return _cr(rc=5 if self._release_fail else 0)
+
+    def verify_release(self):
+        self.verify_release_count += 1
+        return _cr(rc=5 if self._verify_release_fail else 0)
 
 
 def _tools():
@@ -259,40 +283,16 @@ class TestRemoteResultDispatch(unittest.TestCase):
         self.assertNotEqual(O._rc_of(result), 0)
 
     def test_remote_failed_stops_orchestrator(self):
-        class H:
-            restore_count = 0
-            def preflight(self): return _cr()
-            def launch_emulator(self): return _cr()
-            def attach(self): return _cr()
-            def capture_prior_state(self): return _prior()
-            def validate_fixture(self, prior): return _cr()
+        class H(FakeHarness):
             def install_apk(self): return RemoteResult(transport=_cr(), remote_rc=1)
-            def run_journey(self): return []
-            def capture_evidence(self): return _cr()
-            def restore(self):
-                self.restore_count += 1
-                return _cr()
-            def verify_restore(self): return _prior()
         h = H()
         orch = O.Orchestrator(h, repo_head="a", apk_sha256="b", tools=_tools())
         orch.execute()
         self.assertEqual(orch.terminal, TerminalCause.INSTALL_FAILED)
 
     def test_remote_unavailable_stops_orchestrator(self):
-        class H:
-            restore_count = 0
-            def preflight(self): return _cr()
-            def launch_emulator(self): return _cr()
-            def attach(self): return _cr()
-            def capture_prior_state(self): return _prior()
-            def validate_fixture(self, prior): return _cr()
+        class H(FakeHarness):
             def install_apk(self): return RemoteResult(transport=_cr(), remote_rc=None)
-            def run_journey(self): return []
-            def capture_evidence(self): return _cr()
-            def restore(self):
-                self.restore_count += 1
-                return _cr()
-            def verify_restore(self): return _prior()
         h = H()
         orch = O.Orchestrator(h, repo_head="a", apk_sha256="b", tools=_tools())
         orch.execute()
@@ -307,20 +307,8 @@ class TestUnknownResultType(unittest.TestCase):
             O._rc_of(object())
 
     def test_orchestrator_stops_on_unknown_result(self):
-        class H:
-            restore_count = 0
-            def preflight(self): return _cr()
-            def launch_emulator(self): return _cr()
-            def attach(self): return _cr()
-            def capture_prior_state(self): return _prior()
-            def validate_fixture(self, prior): return _cr()
+        class H(FakeHarness):
             def install_apk(self): return "not-a-valid-result"
-            def run_journey(self): return []
-            def capture_evidence(self): return _cr()
-            def restore(self):
-                self.restore_count += 1
-                return _cr()
-            def verify_restore(self): return _prior()
         h = H()
         orch = O.Orchestrator(h, repo_head="a", apk_sha256="b", tools=_tools())
         with self.assertRaises(TypeError):
@@ -386,13 +374,7 @@ class TestTimeoutDispatch(unittest.TestCase):
 
     def test_timeout_cause_in_orchestrator(self):
         """A RemoteResult whose transport timed out records as TIMEOUT, not TOOL_FAILURE."""
-        class H:
-            restore_count = 0
-            def preflight(self): return _cr()
-            def launch_emulator(self): return _cr()
-            def attach(self): return _cr()
-            def capture_prior_state(self): return _prior()
-            def validate_fixture(self, prior): return _cr()
+        class H(FakeHarness):
             def install_apk(self):
                 return RemoteResult(
                     transport=CommandResult(
@@ -401,12 +383,6 @@ class TestTimeoutDispatch(unittest.TestCase):
                     ),
                     remote_rc=0,
                 )
-            def run_journey(self): return []
-            def capture_evidence(self): return _cr()
-            def restore(self):
-                self.restore_count += 1
-                return _cr()
-            def verify_restore(self): return _prior()
         h = H()
         orch = O.Orchestrator(h, repo_head="a", apk_sha256="b", tools=_tools())
         orch.execute()
@@ -424,6 +400,33 @@ class TestCaptureRecordDecodable(unittest.TestCase):
         encoded = encode(rec)
         decoded = decode(encoded)
         self.assertEqual(encoded, encode(decoded))
+
+
+class TestEmulatorRelease(unittest.TestCase):
+    def test_release_runs_on_success(self):
+        h = FakeHarness()
+        orch = O.Orchestrator(h)
+        orch.execute()
+        self.assertEqual(h.release_count, 1)
+        self.assertEqual(h.verify_release_count, 1)
+
+    def test_release_failure_recorded(self):
+        h = FakeHarness(release_fail=True)
+        orch = O.Orchestrator(h)
+        orch.execute()
+        self.assertEqual(orch.terminal, TerminalCause.CLEANUP_PARTIAL)
+
+    def test_verify_release_failure_recorded(self):
+        h = FakeHarness(verify_release_fail=True)
+        orch = O.Orchestrator(h)
+        orch.execute()
+        self.assertEqual(orch.terminal, TerminalCause.CLEANUP_PARTIAL)
+
+    def test_preserve_primary_cause(self):
+        h = FakeHarness(fail_at="install", release_fail=True)
+        orch = O.Orchestrator(h)
+        orch.execute()
+        self.assertEqual(orch.terminal, TerminalCause.INSTALL_FAILED)
 
 
 if __name__ == "__main__":

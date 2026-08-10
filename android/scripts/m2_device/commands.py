@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 import hashlib
 import os
 import shutil
@@ -51,6 +52,75 @@ class AdbRemoteStatusReader:
         return rc
 
 
+@dataclass(frozen=True)
+class ManagedProcess:
+    proc: subprocess.Popen
+    argv: list[str]
+    start_utc: str
+
+
+def start(
+    argv: list[str],
+    *,
+    env: dict[str, str] | None = None,
+    cwd: str | None = None,
+) -> ManagedProcess:
+    start_time = _UTC()
+    proc = subprocess.Popen(
+        argv,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        env=env,
+        cwd=cwd,
+    )
+    return ManagedProcess(proc=proc, argv=list(argv), start_utc=start_time)
+
+
+def finish(
+    process: ManagedProcess,
+    *,
+    timeout: float | None = None,
+    terminate: bool = True,
+) -> CommandResult:
+    proc = process.proc
+    timed_out = False
+    if terminate:
+        try:
+            proc.terminate()
+        except OSError:
+            pass
+
+    try:
+        stdout, stderr = proc.communicate(timeout=timeout)
+        rc = proc.returncode
+    except subprocess.TimeoutExpired:
+        try:
+            proc.kill()
+        except OSError:
+            pass
+        stdout, stderr = proc.communicate()
+        rc = proc.returncode if proc.returncode is not None else -9
+        timed_out = True
+    except Exception:
+        try:
+            proc.kill()
+        except OSError:
+            pass
+        proc.communicate()
+        raise
+
+    end = _UTC()
+    return CommandResult(
+        argv=process.argv,
+        start_utc=process.start_utc,
+        end_utc=end,
+        returncode=rc if rc is not None else -9,
+        stdout=stdout or b"",
+        stderr=stderr or b"",
+        timed_out=timed_out,
+    )
+
+
 def run(
     argv: list[str],
     *,
@@ -58,7 +128,7 @@ def run(
     env: dict[str, str] | None = None,
     cwd: str | None = None,
 ) -> CommandResult:
-    start = _UTC()
+    start_time = _UTC()
     proc = subprocess.Popen(
         argv,
         stdout=subprocess.PIPE,
@@ -78,7 +148,7 @@ def run(
     end = _UTC()
     return CommandResult(
         argv=list(argv),
-        start_utc=start,
+        start_utc=start_time,
         end_utc=end,
         returncode=rc,
         stdout=stdout or b"",

@@ -244,5 +244,28 @@ class TestNoShellStrings(unittest.TestCase):
         self.assertEqual(cr.stdout, b"> /dev/null\n")
 
 
+class TestManagedProcess(unittest.TestCase):
+    def test_start_and_finish_success(self):
+        mp = C.start(["echo", "hello"])
+        self.assertIsInstance(mp, C.ManagedProcess)
+        cr = C.finish(mp, terminate=False)
+        self.assertEqual(cr.returncode, 0)
+        self.assertEqual(cr.stdout, b"hello\n")
+
+    def test_start_and_finish_with_terminate(self):
+        # We start a sleep command and finish it with terminate=True
+        mp = C.start(["sleep", "10"])
+        cr = C.finish(mp, terminate=True)
+        # Process was terminated, returncode should be non-zero (typically negative on Unix)
+        self.assertNotEqual(cr.returncode, 0)
+
+    def test_finish_timeout(self):
+        # We start a sleep command and finish it with a small timeout but terminate=False
+        mp = C.start(["sleep", "10"])
+        cr = C.finish(mp, timeout=0.1, terminate=False)
+        self.assertTrue(cr.timed_out)
+        self.assertNotEqual(cr.returncode, 0)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -19,6 +19,8 @@ EXPECTED_SITES = frozenset({
     ("_run_phase", "_rc_of"),
     ("_run_phase", "_timed_out"),
     ("_restore", "_rc_of"),
+    ("_release_emulator", "_rc_of"),
+    ("_release_emulator", "_timed_out"),
 })
 
 _DISPATCH_FUNCS = frozenset({"_rc_of", "_timed_out"})

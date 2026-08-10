@@ -190,6 +190,13 @@ def decode(data: bytes | str) -> Record:
 
 
 @dataclass(frozen=True)
+class CaptureContext:
+    repo_head: str
+    apk_sha256: str
+    tools: list[ToolIdentity]
+
+
+@dataclass(frozen=True)
 @_register("tool_identity")
 class ToolIdentity(Record):
     name: str

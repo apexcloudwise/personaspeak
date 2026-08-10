@@ -8,6 +8,7 @@ from enum import StrEnum
 from typing import Protocol, runtime_checkable
 
 from android.scripts.m2_device.records import (
+    CaptureContext,
     CaptureRecord,
     CommandResult,
     PriorDeviceState,
@@ -28,6 +29,7 @@ _MUTATION = frozenset({"install", "journey", "capture"})
 @runtime_checkable
 class JourneyHarness(Protocol):
     def preflight(self) -> CommandResult | RemoteResult: ...
+    def capture_context(self) -> CaptureContext: ...
     def launch_emulator(self) -> CommandResult | RemoteResult: ...
     def attach(self) -> CommandResult | RemoteResult: ...
     def capture_prior_state(self) -> PriorDeviceState | None: ...
@@ -37,6 +39,8 @@ class JourneyHarness(Protocol):
     def capture_evidence(self) -> CommandResult | RemoteResult: ...
     def restore(self) -> CommandResult | RemoteResult: ...
     def verify_restore(self) -> PriorDeviceState: ...
+    def release_emulator(self) -> CommandResult | RemoteResult: ...
+    def verify_release(self) -> CommandResult | RemoteResult: ...
 
 
 def _rc_of(result) -> int:
@@ -71,14 +75,14 @@ class Orchestrator:
         self,
         harness: JourneyHarness,
         *,
-        repo_head: str,
-        apk_sha256: str,
-        tools: list[ToolIdentity],
+        repo_head: str = "",
+        apk_sha256: str = "",
+        tools: list[ToolIdentity] | None = None,
     ):
         self.harness = harness
         self.repo_head = repo_head
         self.apk_sha256 = apk_sha256
-        self.tools = tools
+        self.tools = list(tools) if tools is not None else []
         self.steps: list[StepRecord] = []
         self.prior_state: PriorDeviceState | None = None
         self.restoration: StepRecord | None = None
@@ -92,39 +96,45 @@ class Orchestrator:
                         lambda: self.harness.preflight())
         if self.terminal: return self._record()
 
+        ctx = self.harness.capture_context()
+        self.repo_head = ctx.repo_head
+        self.apk_sha256 = ctx.apk_sha256
+        self.tools = list(ctx.tools)
+
         self._run_phase("emulator_launch", "boot pinned snapshot",
                         lambda: self.harness.launch_emulator())
         if self.terminal: return self._record()
         self._emulator_launched = True
 
         try:
-            self._run_phase("attach", "adb attach serial",
-                            lambda: self.harness.attach())
-            if not self.terminal:
-                self._capture_prior()
-            if not self.terminal and self.prior_state:
-                self._run_phase("validate_fixture", "fixture identity check",
-                                lambda: self.harness.validate_fixture(self.prior_state),
-                                TerminalCause.FIXTURE_MISMATCH)
-            if not self.terminal:
-                self._guard_mutation("install")
-                self._run_phase("install", "install exact APK",
-                                lambda: self.harness.install_apk(),
-                                TerminalCause.INSTALL_FAILED)
-            if not self.terminal:
-                self._guard_mutation("journey")
-                self._journey()
-            if not self.terminal:
-                self._guard_mutation("capture")
-                self._run_phase("capture", "capture evidence",
-                                lambda: self.harness.capture_evidence(),
-                                TerminalCause.CAPTURE_FAILED)
+            try:
+                self._run_phase("attach", "adb attach serial",
+                                lambda: self.harness.attach())
+                if not self.terminal:
+                    self._capture_prior()
+                if not self.terminal and self.prior_state:
+                    self._run_phase("validate_fixture", "fixture identity check",
+                                    lambda: self.harness.validate_fixture(self.prior_state),
+                                    TerminalCause.FIXTURE_MISMATCH)
+                if not self.terminal:
+                    self._guard_mutation("install")
+                    self._run_phase("install", "install exact APK",
+                                    lambda: self.harness.install_apk(),
+                                    TerminalCause.INSTALL_FAILED)
+                if not self.terminal:
+                    self._guard_mutation("journey")
+                    self._journey()
+                if not self.terminal:
+                    self._guard_mutation("capture")
+                    self._run_phase("capture", "capture evidence",
+                                    lambda: self.harness.capture_evidence(),
+                                    TerminalCause.CAPTURE_FAILED)
+            finally:
+                self._restore()
+                self._verify()
         finally:
-            self._restore()
+            self._release_emulator()
 
-        if self.terminal: return self._record()
-
-        self._verify()
         return self._record()
 
     def _run_phase(self, phase, operation, fn,
@@ -187,13 +197,56 @@ class Orchestrator:
     def _verify(self):
         if self.prior_state is None: return
         self._reached = "verify_restore"
-        if self.harness.verify_restore() != self.prior_state:
-            self.terminal = TerminalCause.RESTORATION_MISMATCH
+        try:
+            actual = self.harness.verify_restore()
+            if actual != self.prior_state:
+                self.steps.append(_make_step(
+                    "verify_restore", "compare restored state",
+                    CommandResult(argv=[], start_utc="", end_utc="", returncode=1,
+                                  stdout=b"mismatch", stderr=b""),
+                    TerminalCause.RESTORATION_MISMATCH))
+                if self.terminal is None:
+                    self.terminal = TerminalCause.RESTORATION_MISMATCH
+            else:
+                self.steps.append(_make_step(
+                    "verify_restore", "compare restored state",
+                    CommandResult(argv=[], start_utc="", end_utc="", returncode=0,
+                                  stdout=b"verified", stderr=b""),
+                    TerminalCause.COMPLETED))
+        except Exception as e:
+            v_cause = TerminalCause.TOOL_FAILURE
             self.steps.append(_make_step(
                 "verify_restore", "compare restored state",
                 CommandResult(argv=[], start_utc="", end_utc="", returncode=1,
-                              stdout=b"mismatch", stderr=b""),
-                TerminalCause.RESTORATION_MISMATCH))
+                              stdout=b"", stderr=str(e).encode()),
+                v_cause))
+            if self.terminal is None:
+                self.terminal = v_cause
+
+    def _release_emulator(self):
+        if not self._emulator_launched:
+            return
+        result = self.harness.release_emulator()
+        rc = _rc_of(result)
+        cause = TerminalCause.COMPLETED if rc == 0 else TerminalCause.CLEANUP_PARTIAL
+        if _timed_out(result):
+            cause = TerminalCause.TIMEOUT
+        self.steps.append(_make_step(
+            "release_emulator", "release owned emulator", result, cause
+        ))
+        if cause != TerminalCause.COMPLETED and self.terminal is None:
+            self.terminal = cause
+
+        v_res = self.harness.verify_release()
+        v_rc = _rc_of(v_res)
+        v_cause = TerminalCause.COMPLETED if v_rc == 0 else TerminalCause.CLEANUP_PARTIAL
+        if _timed_out(v_res):
+            v_cause = TerminalCause.TIMEOUT
+        self.steps.append(_make_step(
+            "verify_release", "verify emulator release", v_res, v_cause
+        ))
+        if v_cause != TerminalCause.COMPLETED and self.terminal is None:
+            self.terminal = v_cause
 
     def _record(self) -> CaptureRecord:
         return CaptureRecord(
