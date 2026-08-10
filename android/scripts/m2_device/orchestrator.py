@@ -116,10 +116,20 @@ class Orchestrator:
                         lambda: self.harness.preflight())
         if self.terminal: return self._record()
 
-        ctx = self.harness.capture_context()
-        self.repo_head = ctx.repo_head
-        self.apk_sha256 = ctx.apk_sha256
-        self.tools = list(ctx.tools)
+        try:
+            ctx = self.harness.capture_context()
+            self.repo_head = ctx.repo_head
+            self.apk_sha256 = ctx.apk_sha256
+            self.tools = list(ctx.tools)
+        except Exception as e:
+            self.steps.append(_make_step(
+                "capture_context", "capture context",
+                CommandResult(argv=[], start_utc="", end_utc="",
+                              returncode=1, stdout=b"",
+                              stderr=str(e).encode()),
+                TerminalCause.PREFLIGHT_FAILED))
+            self.terminal = TerminalCause.PREFLIGHT_FAILED
+            return self._record()
         if self._expected_apk_sha256 and ctx.apk_sha256 != self._expected_apk_sha256:
             self.terminal = TerminalCause.FIXTURE_MISMATCH
             return self._record()

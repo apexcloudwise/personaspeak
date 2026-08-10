@@ -65,7 +65,7 @@ def _write_valid_mp4(path):
     import struct as _s
     payload = b'isom' + b'\x00\x00\x00\x00' + b'isom'
     ftyp = _s.pack('>I', 8 + len(payload)) + b'ftyp' + payload
-    mdat = _s.pack('>I', 8) + b'mdat'
+    mdat = _s.pack('>I', 12) + b'mdat' + b'\x00\x00\x00\x00'
     with open(path, 'wb') as f:
         f.write(ftyp + mdat)
 

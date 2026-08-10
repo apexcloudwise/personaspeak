@@ -149,37 +149,39 @@ class AdbHarness:
     def attach(self) -> CommandResult:
         return self.runner(self._cmd("wait-for-device"), timeout=30.0)
 
+    @staticmethod
+    def _out(res: CommandResult) -> str:
+        if res.returncode != 0:
+            raise ValueError(f"command rc={res.returncode}")
+        return res.stdout.decode("utf-8").strip()
+
     def capture_prior_state(self) -> PriorDeviceState | None:
         def _run(*args):
             return self.runner(self._cmd(*args))
 
-        boot = _run("shell", "getprop", "sys.boot_completed").stdout.decode().strip()
-        fp = _run("shell", "getprop", "ro.build.fingerprint").stdout.decode().strip()
-
-        sdk_raw = _run("shell", "getprop", "ro.build.version.sdk").stdout.decode().strip()
         try:
+            boot = self._out(_run("shell", "getprop", "sys.boot_completed"))
+            fp = self._out(_run("shell", "getprop", "ro.build.fingerprint"))
+            sdk_raw = self._out(_run("shell", "getprop", "ro.build.version.sdk"))
             api_level = int(sdk_raw)
-        except ValueError:
+            size_str = self._out(_run("shell", "wm", "size"))
+            m = re.search(r"(\d+)x(\d+)", size_str)
+            if not m:
+                return None
+            sw, sh = int(m.group(1)), int(m.group(2))
+            pkg = self._out(_run("shell", "pm", "path", KEYBOARD_PACKAGE))
+            package_present = pkg.startswith("package:")
+            package_hash = None
+            if package_present:
+                dev_path = pkg.split(":", 1)[1].strip()
+                h = self._out(_run("shell", "sha256sum", dev_path))
+                if h:
+                    package_hash = h.split()[0]
+            ime = self._out(_run("shell", "settings", "get", "secure", "enabled_input_methods"))
+            enabled_imes = [x for x in ime.split(":") if x]
+            default = self._out(_run("shell", "settings", "get", "secure", "default_input_method"))
+        except (ValueError, UnicodeDecodeError):
             return None
-
-        size_str = _run("shell", "wm", "size").stdout.decode().strip()
-        m = re.search(r"(\d+)x(\d+)", size_str)
-        if not m:
-            return None
-        sw, sh = int(m.group(1)), int(m.group(2))
-
-        pkg = _run("shell", "pm", "path", KEYBOARD_PACKAGE).stdout.decode().strip()
-        package_present = pkg.startswith("package:")
-        package_hash = None
-        if package_present:
-            dev_path = pkg.split(":", 1)[1].strip()
-            h = _run("shell", "sha256sum", dev_path).stdout.decode().strip()
-            if h:
-                package_hash = h.split()[0]
-
-        ime = _run("shell", "settings", "get", "secure", "enabled_input_methods").stdout.decode().strip()
-        enabled_imes = [x for x in ime.split(":") if x]
-        default = _run("shell", "settings", "get", "secure", "default_input_method").stdout.decode().strip()
 
         return PriorDeviceState(
             serial=self.serial,
@@ -355,11 +357,12 @@ class AdbHarness:
         if v_root is None:
             self._step(steps, "verify_candidate_rephrasing", v_res)
             return steps
-        actual = ""
-        for node in v_root.iter():
-            if node.attrib.get("class", "") == "android.widget.EditText":
-                actual = node.attrib.get("text", "")
-                break
+        v_field = self._find(v_root, SEARCH_RES_ID)
+        if v_field is None:
+            self._step(steps, "verify_candidate_rephrasing",
+                       self._fail("verify", b"editor not found in verify dump"))
+            return steps
+        actual = v_field.attrib.get("text", "")
         v_rc = 0 if actual == CANDIDATE_REPHRASING else 1
         self._step(steps, "verify_candidate_rephrasing",
                    CommandResult(argv=["verify"], start_utc=_UTC(), end_utc=_UTC(),
@@ -400,6 +403,13 @@ class AdbHarness:
                 with open(local_vid, "rb") as vfh:
                     if not evidence.validate_mp4(vfh.read()):
                         errors.append("journey.mp4 invalid")
+
+        pngs = sorted(f for f in os.listdir(evidence_dir) if f.endswith(".png"))
+        mp4s = sorted(f for f in os.listdir(evidence_dir) if f.endswith(".mp4"))
+        if len(pngs) != 7:
+            errors.append(f"expected 7 PNGs, found {len(pngs)}")
+        if len(mp4s) != 1:
+            errors.append(f"expected 1 MP4, found {len(mp4s)}")
 
         rc = 0 if not errors else 1
         return CommandResult(

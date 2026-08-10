@@ -100,7 +100,9 @@ def validate_mp4(data: bytes) -> bool:
             return False
         if btype == b"ftyp":
             saw_ftyp = True
-        elif btype in (b"moov", b"mdat"):
+        elif btype == b"moov":
+            saw_media = True
+        elif btype == b"mdat" and size > 8:
             saw_media = True
         offset += size
     return saw_ftyp and saw_media and offset == len(data)
