@@ -1,0 +1,39 @@
+#!/usr/bin/env python3
+import sys
+import os
+
+log_path = os.environ.get("MOCK_COMMANDS_LOG")
+if log_path:
+    with open(log_path, "a") as f:
+        f.write(f"adb: {' '.join(sys.argv[1:])}\n")
+
+cmd = " ".join(sys.argv[1:])
+
+if "getprop sys.boot_completed" in cmd:
+    print("1")
+elif "getprop ro.build.fingerprint" in cmd:
+    print("google/sdk_gphone64_arm64/emu64a:14/UE1A.230829.050/12077443:userdebug/dev-keys")
+elif "getprop ro.build.version.sdk" in cmd:
+    print("34")
+elif "wm size" in cmd:
+    print("Physical size: 1080x2400")
+elif "pm path" in cmd:
+    pass
+elif "settings get secure enabled_input_methods" in cmd:
+    print("com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME:com.google.android.inputmethod.latin/com.google.android.apps.inputmethod.latin.MockVoiceIME")
+elif "settings get secure default_input_method" in cmd:
+    print("com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME")
+elif "getprop persist.sys.timezone" in cmd:
+    print("Asia/Kolkata")
+elif "getprop ro.product.locale" in cmd:
+    print("en-US")
+elif "uiautomator dump" in cmd:
+    pass
+elif "pull /sdcard/window_dump.xml" in cmd:
+    dest_path = sys.argv[-1]
+    with open(dest_path, "w") as f:
+        f.write('<hierarchy rotation="0"><node index="0" text="" resource-id="com.android.settings:id/search_action_bar" class="android.widget.EditText" bounds="[100,200][900,300]"/></hierarchy>')
+elif "version" in cmd or "-version" in cmd or "--version" in cmd:
+    print("Android Debug Bridge version 1.0.41")
+
+sys.exit(0)
