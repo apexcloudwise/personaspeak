@@ -14,20 +14,24 @@ Newest first, like all respectable patch notes.
 
 - The M2 device-qualification harness gained a real evidence-capture
   path: seven screenshots and one video via `screencap`/`screenrecord`,
-  validated structurally before the journey record is sealed. The
-  journey's final step no longer fabricates a passing rephrasing check;
-  it re-dumps the hierarchy and compares the EditText text against the
-  pinned candidate. XML parse errors are no longer swallowed into a
-  silent coordinate fallback — a missing or malformed hierarchy stops
-  the journey. The search-field selector matches the exact pinned
-  resource-id instead of any EditText in the tree. `verify_release`
-  no longer treats every socket `OSError` as proof the emulator is
-  dead: only `ConnectionRefused` passes; timeout and other errors are
-  inconclusive and fail-closed. `CaptureContext` moved from the frozen
-  records module to the orchestration boundary, the fake-tool fixtures
-  gained stateful EditText tracking and valid media generation, and
-  the monkey-patching that masked the missing capture path is gone.
-  169 tests, no device contacted (#59).
+  validated structurally (PNG CRC + IHDR/IEND; MP4 now requires both
+  `ftyp` and `moov`/`mdat`, not an empty `ftyp`-only shell) before the
+  journey record is sealed. The journey verifies PersonaSpeak keyboard
+  states — Loading, Review, Apply — by reading the panel hierarchy, not
+  by substituting a Settings search-field demo. XML parse errors stop
+  the journey; the search-field selector matches the exact pinned
+  resource-id. Every `keyevent` return code is checked. `verify_release`
+  discriminates `ConnectionRefused` (released) from timeout and other
+  socket errors (inconclusive, fail-closed). `capture_prior_state`
+  returns `None` on any unparseable property instead of defaulting to
+  pinned values. All tool invocations use resolved paths from preflight,
+  never bare PATH-resolved names. `SIGINT`/`SIGTERM` converge on
+  restoration and a decodable failure receipt. The CLI verifies
+  `--apk-sha256` against the on-disk APK before mutation.
+  `CaptureContext` lives at the orchestration boundary; monkey-patching
+  is gone. The fake adb simulates keyboard state transitions; forbidden
+  `apksigner`/`keytool` canaries guard the ledger. 169 tests, no device
+  contacted (#59).
 
 ## 2026-08-10 — The Loading row learns the word "Cancel"
 

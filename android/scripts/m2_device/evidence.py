@@ -84,6 +84,7 @@ def validate_mp4(data: bytes) -> bool:
         return False
     offset = 0
     saw_ftyp = False
+    saw_media = False
     while offset < len(data):
         if offset + 8 > len(data):
             return False
@@ -99,8 +100,10 @@ def validate_mp4(data: bytes) -> bool:
             return False
         if btype == b"ftyp":
             saw_ftyp = True
+        elif btype in (b"moov", b"mdat"):
+            saw_media = True
         offset += size
-    return saw_ftyp and offset == len(data)
+    return saw_ftyp and saw_media and offset == len(data)
 
 
 def build_manifest(dir_path: str) -> dict[str, str]:

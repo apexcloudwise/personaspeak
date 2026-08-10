@@ -32,7 +32,7 @@ def cmd_capture(args: argparse.Namespace) -> int:
     os.makedirs(run_dir, exist_ok=False)
 
     harness = AdbHarness(run_dir=run_dir, apk_path=args.apk_path)
-    orchestrator = Orchestrator(harness=harness)
+    orchestrator = Orchestrator(harness=harness, apk_sha256=args.apk_sha256)
 
     record = orchestrator.execute()
     record_path = os.path.join(run_dir, "capture-record.json")

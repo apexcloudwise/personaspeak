@@ -11,18 +11,19 @@ if log_path:
         f.write(f"adb: {' '.join(sys.argv[1:])}\n")
 
 STATE_FILE = os.environ.get("FAKE_ADB_STATE", "/tmp/fake_adb_edittext.state")
+KB_FILE = os.environ.get("FAKE_ADB_KEYBOARD", "/tmp/fake_adb_keyboard.state")
 
 
-def _read_state():
+def _read(path):
     try:
-        with open(STATE_FILE) as f:
-            return f.read()
+        with open(path) as f:
+            return f.read().strip()
     except FileNotFoundError:
         return ""
 
 
-def _write_state(s):
-    with open(STATE_FILE, "w") as f:
+def _write(path, s):
+    with open(path, "w") as f:
         f.write(s)
 
 
@@ -33,8 +34,7 @@ def _write_png(path):
         struct.pack('>I', 13) + b'IHDR' + ihdr_data
         + struct.pack('>I', zlib.crc32(b'IHDR' + ihdr_data) & 0xFFFFFFFF)
     )
-    raw = b'\x00\xff\x00\x00'
-    comp = zlib.compress(raw)
+    comp = zlib.compress(b'\x00\xff\x00\x00')
     idat = (
         struct.pack('>I', len(comp)) + b'IDAT' + comp
         + struct.pack('>I', zlib.crc32(b'IDAT' + comp) & 0xFFFFFFFF)
@@ -49,17 +49,32 @@ def _write_png(path):
 
 def _write_mp4(path):
     payload = b'isom' + b'\x00\x00\x00\x00' + b'isom'
+    ftyp = struct.pack('>I', 8 + len(payload)) + b'ftyp' + payload
+    mdat = struct.pack('>I', 8) + b'mdat'
     with open(path, 'wb') as f:
-        f.write(struct.pack('>I', 8 + len(payload)) + b'ftyp' + payload)
+        f.write(ftyp + mdat)
 
 
-def _write_hierarchy(path, text=""):
+def _write_hierarchy(path):
+    text = _read(STATE_FILE)
+    kb = _read(KB_FILE)
+    kb_node = ""
+    if kb in ("LOADING", "REVIEW"):
+        kb_node = (
+            f'<node resource-id="biz.pixelperfectstudios.personaspeak:id/panel_state" '
+            f'text="{kb}" class="android.widget.TextView" bounds="[10,1810][1070,1850]"/>'
+            '<node resource-id="biz.pixelperfectstudios.personaspeak:id/apply_button" '
+            'content-desc="Apply" class="android.widget.Button" bounds="[100,2300][500,2380]"/>'
+            '<node resource-id="biz.pixelperfectstudios.personaspeak:id/cancel_button" '
+            'content-desc="Cancel" class="android.widget.Button" bounds="[580,2300][980,2380]"/>'
+        )
     with open(path, "w") as f:
         f.write(
             '<hierarchy rotation="0">'
             f'<node index="0" text="{text}" '
             'resource-id="com.android.settings:id/search_action_bar" '
             'class="android.widget.EditText" bounds="[100,200][900,300]"/>'
+            f'{kb_node}'
             '</hierarchy>'
         )
 
@@ -99,15 +114,17 @@ elif "screenrecord" in cmd:
 elif "input tap" in cmd:
     pass
 elif "input keyevent" in cmd:
-    _write_state(_read_state()[:-1])
+    cur = _read(STATE_FILE)
+    _write(STATE_FILE, cur[:-1])
 elif "input text" in cmd:
     idx = sys.argv.index("text")
     typed = sys.argv[idx + 1].replace("%s", " ")
     rephrasing = os.environ.get("FAKE_ADB_REPHRASING")
     if rephrasing and typed == "Tea at six.":
-        _write_state(rephrasing)
+        _write(STATE_FILE, rephrasing)
+        _write(KB_FILE, "LOADING")
     else:
-        _write_state(typed)
+        _write(STATE_FILE, typed)
 elif "emu snapshot load" in cmd:
     pass
 elif "emu kill" in cmd:
@@ -121,7 +138,9 @@ elif "pull" in sys.argv:
     elif dest.endswith(".mp4"):
         _write_mp4(dest)
     elif "window_dump.xml" in src:
-        _write_hierarchy(dest, _read_state())
+        _write_hierarchy(dest)
+        if _read(KB_FILE) == "LOADING":
+            _write(KB_FILE, "REVIEW")
 elif "version" in cmd or "-version" in cmd or "--version" in cmd:
     print("Android Debug Bridge version 1.0.41")
 

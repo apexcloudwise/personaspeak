@@ -87,6 +87,7 @@ class Orchestrator:
     ):
         self.harness = harness
         self.repo_head = repo_head
+        self._expected_apk_sha256 = apk_sha256
         self.apk_sha256 = apk_sha256
         self.tools = list(tools) if tools is not None else []
         self.steps: list[StepRecord] = []
@@ -97,7 +98,20 @@ class Orchestrator:
         self._emulator_launched = False
         self._reached: str | None = None
 
+    def _on_signal(self, signum, frame):
+        if self.terminal is None:
+            self.terminal = TerminalCause.SIGNAL_INTERRUPT
+
     def execute(self) -> CaptureRecord:
+        prev_int = signal.signal(signal.SIGINT, self._on_signal)
+        prev_term = signal.signal(signal.SIGTERM, self._on_signal)
+        try:
+            return self._execute_inner()
+        finally:
+            signal.signal(signal.SIGINT, prev_int)
+            signal.signal(signal.SIGTERM, prev_term)
+
+    def _execute_inner(self) -> CaptureRecord:
         self._run_phase("preflight", "toolchain preflight",
                         lambda: self.harness.preflight())
         if self.terminal: return self._record()
@@ -106,6 +120,9 @@ class Orchestrator:
         self.repo_head = ctx.repo_head
         self.apk_sha256 = ctx.apk_sha256
         self.tools = list(ctx.tools)
+        if self._expected_apk_sha256 and ctx.apk_sha256 != self._expected_apk_sha256:
+            self.terminal = TerminalCause.FIXTURE_MISMATCH
+            return self._record()
 
         self._run_phase("emulator_launch", "boot pinned snapshot",
                         lambda: self.harness.launch_emulator())

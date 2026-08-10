@@ -26,12 +26,16 @@ def main():
     with open(apk_path, "wb") as f:
         f.write(b"mock_apk_binary")
 
+    import hashlib
+    apk_sha256 = hashlib.sha256(b"mock_apk_binary").hexdigest()
+
     bin_dir = os.path.abspath(
         os.path.join(os.path.dirname(__file__), "fixtures", "bin")
     )
     os.environ["PATH"] = bin_dir + os.pathsep + os.environ.get("PATH", "")
     os.environ["MOCK_COMMANDS_LOG"] = os.path.join(test_dir, "mock_commands.log")
     os.environ["FAKE_ADB_STATE"] = os.path.join(test_dir, "edittext.state")
+    os.environ["FAKE_ADB_KEYBOARD"] = os.path.join(test_dir, "keyboard.state")
     os.environ["FAKE_ADB_REPHRASING"] = CANDIDATE_REPHRASING
 
     argv = [
@@ -39,7 +43,7 @@ def main():
         "--evidence-root", evidence_root,
         "--repo-root", repo_root,
         "--apk-path", apk_path,
-        "--apk-sha256", "mocksha256",
+        "--apk-sha256", apk_sha256,
     ]
 
     try:

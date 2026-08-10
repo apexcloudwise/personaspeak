@@ -27,6 +27,9 @@ class TestCliCapture(unittest.TestCase):
         with open(self.apk_path, "wb") as f:
             f.write(b"mock_apk_binary")
 
+        import hashlib
+        self.apk_sha256 = hashlib.sha256(b"mock_apk_binary").hexdigest()
+
         self.bin_dir = os.path.abspath(
             os.path.join(
                 os.path.dirname(__file__),
@@ -43,16 +46,17 @@ class TestCliCapture(unittest.TestCase):
         os.environ["MOCK_COMMANDS_LOG"] = self.log_path
 
         os.environ["FAKE_ADB_STATE"] = os.path.join(self.test_dir, "edittext.state")
+        os.environ["FAKE_ADB_KEYBOARD"] = os.path.join(self.test_dir, "keyboard.state")
         os.environ["FAKE_ADB_REPHRASING"] = CANDIDATE_REPHRASING
 
         self._orig_env = {
             k: os.environ.get(k)
-            for k in ("MOCK_COMMANDS_LOG", "FAKE_ADB_STATE", "FAKE_ADB_REPHRASING")
+            for k in ("MOCK_COMMANDS_LOG", "FAKE_ADB_STATE", "FAKE_ADB_KEYBOARD", "FAKE_ADB_REPHRASING")
         }
 
     def tearDown(self):
         os.environ["PATH"] = self.original_path
-        for key in ("MOCK_COMMANDS_LOG", "FAKE_ADB_STATE", "FAKE_ADB_REPHRASING"):
+        for key in ("MOCK_COMMANDS_LOG", "FAKE_ADB_STATE", "FAKE_ADB_KEYBOARD", "FAKE_ADB_REPHRASING"):
             os.environ.pop(key, None)
         if os.path.exists(self.test_dir):
             shutil.rmtree(self.test_dir)
@@ -63,13 +67,22 @@ class TestCliCapture(unittest.TestCase):
             "--evidence-root", self.evidence_root,
             "--repo-root", self.repo_root,
             "--apk-path", self.apk_path,
-            "--apk-sha256", "mocksha256",
+            "--apk-sha256", self.apk_sha256,
         ]
         rc = cli.main(argv)
         self.assertEqual(
             rc, 0,
             "CLI capture should succeed end-to-end with fake toolchain",
         )
+
+        with open(self.log_path) as f:
+            ledger = f.read()
+
+        self.assertIn("screencap", ledger)
+        self.assertIn("screenrecord", ledger)
+        self.assertIn("uiautomator dump", ledger)
+        self.assertIn("input text", ledger)
+        self.assertNotIn("FORBIDDEN", ledger)
 
 
 if __name__ == "__main__":
