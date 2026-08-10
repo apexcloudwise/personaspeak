@@ -9,6 +9,8 @@ import sys
 from datetime import datetime, timezone
 
 from android.scripts.m2_device import evidence
+from android.scripts.m2_device.adb_harness import AdbHarness
+from android.scripts.m2_device.orchestrator import Orchestrator
 from android.scripts.m2_device.records import (
     ApprovalRecord,
     CaptureRecord,
@@ -28,8 +30,19 @@ def cmd_capture(args: argparse.Namespace) -> int:
     run_id = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     run_dir = os.path.join(args.evidence_root, run_id)
     os.makedirs(run_dir, exist_ok=False)
-    print(f"run directory: {run_dir}")
-    print("capture entry point ready; harness wiring is a separate lease.")
+
+    harness = AdbHarness(run_dir=run_dir, apk_path=args.apk_path)
+    orchestrator = Orchestrator(harness=harness)
+
+    record = orchestrator.execute()
+    record_path = os.path.join(run_dir, "capture-record.json")
+    with open(record_path, "wb") as f:
+        f.write(encode(record))
+
+    if orchestrator.terminal is not None:
+        print(f"qualification failed: {orchestrator.terminal}", file=sys.stderr)
+        return 1
+
     return 0
 
 
@@ -97,6 +110,7 @@ def build_parser() -> argparse.ArgumentParser:
     cap = sub.add_parser("capture", help="run device qualification capture")
     cap.add_argument("--evidence-root", required=True)
     cap.add_argument("--repo-root", required=True)
+    cap.add_argument("--apk-path", required=True)
     cap.add_argument("--apk-sha256", required=True)
     cap.set_defaults(func=cmd_capture)
 

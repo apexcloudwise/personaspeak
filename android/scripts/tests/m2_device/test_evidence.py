@@ -256,8 +256,10 @@ class TestCLI(unittest.TestCase):
     def test_parser_capture(self):
         p = cli.build_parser()
         args = p.parse_args(["capture", "--evidence-root", "/opt/e",
-                            "--repo-root", "/repo", "--apk-sha256", "abc"])
+                            "--repo-root", "/repo", "--apk-path", "/opt/apk",
+                            "--apk-sha256", "abc"])
         self.assertEqual(args.evidence_root, "/opt/e")
+        self.assertEqual(args.apk_path, "/opt/apk")
 
     def test_parser_finalize(self):
         p = cli.build_parser()
