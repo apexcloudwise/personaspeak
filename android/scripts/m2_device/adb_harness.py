@@ -9,9 +9,9 @@ import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 from typing import Any
 
-from android.scripts.m2_device import commands
+from android.scripts.m2_device import commands, evidence
+from android.scripts.m2_device.orchestrator import CaptureContext
 from android.scripts.m2_device.records import (
-    CaptureContext,
     CommandResult,
     PriorDeviceState,
     RemoteResult,
@@ -105,19 +105,7 @@ class AdbHarness:
     def capture_context(self) -> CaptureContext:
         head_res = self.runner(["git", "rev-parse", "HEAD"])
         repo_head = head_res.stdout.decode("utf-8").strip()
-
-        # If not resolved during preflight, resolve fallback
-        if self.adb_tool is None or self.emulator_tool is None:
-            self.preflight()
-
-        # Calculate sha256 of apk
-        apk_sha = ""
-        if os.path.exists(self.apk_path):
-            apk_sha = commands.digest_file(self.apk_path)
-        else:
-            # Fallback for mock/test environments
-            apk_sha = "mock_apk_sha256"
-
+        apk_sha = commands.digest_file(self.apk_path)
         return CaptureContext(
             repo_head=repo_head,
             apk_sha256=apk_sha,
@@ -328,21 +316,27 @@ class AdbHarness:
             ["adb", "-s", self.serial, "install", "-r", self.apk_path]
         )
 
+    def _dump_hierarchy(self, label: str) -> tuple[CommandResult, Any]:
+        remote = "/sdcard/window_dump.xml"
+        local = os.path.join(self.run_dir, f"{label}.xml")
+        dump = self.runner(
+            ["adb", "-s", self.serial, "shell", "uiautomator", "dump", remote]
+        )
+        if dump.returncode != 0:
+            return dump, None
+        pull = self.runner(["adb", "-s", self.serial, "pull", remote, local])
+        if pull.returncode != 0:
+            return pull, None
+        try:
+            return pull, ET.parse(local).getroot()
+        except ET.ParseError:
+            return pull, None
+
     def run_journey(self) -> list[StepRecord]:
         steps: list[StepRecord] = []
 
-        # 1. Launch Settings
         res_launch = self.runner(
-            [
-                "adb",
-                "-s",
-                self.serial,
-                "shell",
-                "am",
-                "start",
-                "-a",
-                SETTINGS_ACTION,
-            ]
+            ["adb", "-s", self.serial, "shell", "am", "start", "-a", SETTINGS_ACTION]
         )
         cause = (
             TerminalCause.COMPLETED
@@ -351,101 +345,74 @@ class AdbHarness:
         )
         steps.append(
             StepRecord(
-                phase="journey",
-                operation="launch_settings",
-                input_digest=None,
-                output_digest=None,
-                result=res_launch,
-                cause=cause,
+                phase="journey", operation="launch_settings",
+                input_digest=None, output_digest=None,
+                result=res_launch, cause=cause,
             )
         )
         if cause != TerminalCause.COMPLETED:
             return steps
 
-        # 2. Dump hierarchy
-        xml_path = os.path.join(self.run_dir, "hierarchy.xml")
-        res_dump = self.runner(
-            [
-                "adb",
-                "-s",
-                self.serial,
-                "shell",
-                "uiautomator",
-                "dump",
-                "/sdcard/window_dump.xml",
-            ]
-        )
-        if res_dump.returncode == 0:
-            res_pull = self.runner(
-                [
-                    "adb",
-                    "-s",
-                    self.serial,
-                    "pull",
-                    "/sdcard/window_dump.xml",
-                    xml_path,
-                ]
-            )
-            dump_ok = res_pull.returncode == 0
-        else:
-            dump_ok = False
-
-        if not dump_ok:
+        dump_res, root = self._dump_hierarchy("journey")
+        if root is None:
             steps.append(
                 StepRecord(
-                    phase="journey",
-                    operation="dump_hierarchy",
-                    input_digest=None,
-                    output_digest=None,
-                    result=res_dump,
+                    phase="journey", operation="dump_hierarchy",
+                    input_digest=None, output_digest=None,
+                    result=dump_res, cause=TerminalCause.JOURNEY_FAILED,
+                )
+            )
+            return steps
+        steps.append(
+            StepRecord(
+                phase="journey", operation="dump_hierarchy",
+                input_digest=None, output_digest=None,
+                result=dump_res, cause=TerminalCause.COMPLETED,
+            )
+        )
+
+        search_id = "com.android.settings:id/search_action_bar"
+        found = None
+        for elem in root.iter():
+            if elem.attrib.get("resource-id", "") == search_id:
+                found = elem
+                break
+        if found is None:
+            steps.append(
+                StepRecord(
+                    phase="journey", operation="locate_search_field",
+                    input_digest=None, output_digest=None,
+                    result=CommandResult(
+                        argv=["locate_search_field"], start_utc=_UTC(), end_utc=_UTC(),
+                        returncode=1, stdout=b"", stderr=b"search field not found",
+                    ),
                     cause=TerminalCause.JOURNEY_FAILED,
                 )
             )
             return steps
 
-        # 3. Parse hierarchy to locate search bar
-        x, y = 540, 180  # Fallback
-        search_field_empty = False
-        try:
-            tree = ET.parse(xml_path)
-            root = tree.getroot()
-            found = None
-            for elem in root.iter():
-                res_id = elem.attrib.get("resource-id", "")
-                cls = elem.attrib.get("class", "")
-                if (
-                    "search" in res_id
-                    or "search_action_bar" in res_id
-                    or cls == "android.widget.EditText"
-                ):
-                    found = elem
-                    # Check editor contract: empty value
-                    val = elem.attrib.get("text", "")
-                    if val == "":
-                        search_field_empty = True
-                    break
+        m = re.match(
+            r"\[(\d+),(\d+)\]\[(\d+),(\d+)\]",
+            found.attrib.get("bounds", ""),
+        )
+        if not m:
+            steps.append(
+                StepRecord(
+                    phase="journey", operation="locate_search_field",
+                    input_digest=None, output_digest=None,
+                    result=CommandResult(
+                        argv=["locate_search_field"], start_utc=_UTC(), end_utc=_UTC(),
+                        returncode=1, stdout=b"", stderr=b"bounds missing",
+                    ),
+                    cause=TerminalCause.JOURNEY_FAILED,
+                )
+            )
+            return steps
+        x = (int(m.group(1)) + int(m.group(3))) // 2
+        y = (int(m.group(2)) + int(m.group(4))) // 2
 
-            if found is not None:
-                bounds = found.attrib.get("bounds", "")
-                m = re.match(r"\[(\d+),(\d+)\]\[(\d+),(\d+)\]", bounds)
-                if m:
-                    x = (int(m.group(1)) + int(m.group(3))) // 2
-                    y = (int(m.group(2)) + int(m.group(4))) // 2
-        except Exception:
-            pass
-
-        # 4. Tap the search bar
         res_tap = self.runner(
-            [
-                "adb",
-                "-s",
-                self.serial,
-                "shell",
-                "input",
-                "tap",
-                str(x),
-                str(y),
-            ]
+            ["adb", "-s", self.serial, "shell", "input", "tap", str(x), str(y)]
         )
         cause = (
             TerminalCause.COMPLETED
@@ -454,28 +421,17 @@ class AdbHarness:
         )
         steps.append(
             StepRecord(
-                phase="journey",
-                operation="tap_search_field",
-                input_digest=None,
-                output_digest=None,
-                result=res_tap,
-                cause=cause,
+                phase="journey", operation="tap_search_field",
+                input_digest=None, output_digest=None,
+                result=res_tap, cause=cause,
             )
         )
         if cause != TerminalCause.COMPLETED:
             return steps
 
-        # 5. Type STALE_TEXT
         res_stale = self.runner(
-            [
-                "adb",
-                "-s",
-                self.serial,
-                "shell",
-                "input",
-                "text",
-                STALE_TEXT.replace(" ", "%s"),
-            ]
+            ["adb", "-s", self.serial, "shell", "input", "text",
+             STALE_TEXT.replace(" ", "%s")]
         )
         cause = (
             TerminalCause.COMPLETED
@@ -484,34 +440,22 @@ class AdbHarness:
         )
         steps.append(
             StepRecord(
-                phase="journey",
-                operation="type_stale_text",
-                input_digest=None,
-                output_digest=None,
-                result=res_stale,
-                cause=cause,
+                phase="journey", operation="type_stale_text",
+                input_digest=None, output_digest=None,
+                result=res_stale, cause=cause,
             )
         )
         if cause != TerminalCause.COMPLETED:
             return steps
 
-        # 6. Type SOURCE_TEXT (simulating clear and input source text)
-        # First send keyevents to delete previous text
         for _ in range(len(STALE_TEXT) + 5):
             self.runner(
                 ["adb", "-s", self.serial, "shell", "input", "keyevent", "67"]
             )
 
         res_source = self.runner(
-            [
-                "adb",
-                "-s",
-                self.serial,
-                "shell",
-                "input",
-                "text",
-                SOURCE_TEXT.replace(" ", "%s"),
-            ]
+            ["adb", "-s", self.serial, "shell", "input", "text",
+             SOURCE_TEXT.replace(" ", "%s")]
         )
         cause = (
             TerminalCause.COMPLETED
@@ -520,39 +464,99 @@ class AdbHarness:
         )
         steps.append(
             StepRecord(
-                phase="journey",
-                operation="type_source_text",
-                input_digest=None,
-                output_digest=None,
-                result=res_source,
-                cause=cause,
+                phase="journey", operation="type_source_text",
+                input_digest=None, output_digest=None,
+                result=res_source, cause=cause,
             )
         )
         if cause != TerminalCause.COMPLETED:
             return steps
 
-        # 7. Verification step: verify candidate rephrasing replaces field
-        # In a real environment, we'd dump hierarchy again.
-        # We append a verification step record
+        v_res, v_root = self._dump_hierarchy("verify")
+        if v_root is None:
+            steps.append(
+                StepRecord(
+                    phase="journey", operation="verify_candidate_rephrasing",
+                    input_digest=None, output_digest=None,
+                    result=v_res, cause=TerminalCause.JOURNEY_FAILED,
+                )
+            )
+            return steps
+
+        actual = ""
+        for node in v_root.iter():
+            if node.attrib.get("class", "") == "android.widget.EditText":
+                actual = node.attrib.get("text", "")
+                break
+
+        v_rc = 0 if actual == CANDIDATE_REPHRASING else 1
+        v_cause = (
+            TerminalCause.COMPLETED if v_rc == 0 else TerminalCause.JOURNEY_FAILED
+        )
         steps.append(
             StepRecord(
-                phase="journey",
-                operation="verify_candidate_rephrasing",
-                input_digest=None,
-                output_digest=None,
+                phase="journey", operation="verify_candidate_rephrasing",
+                input_digest=None, output_digest=None,
                 result=CommandResult(
-                    argv=["verify_rephrasing"],
-                    start_utc=_UTC(),
-                    end_utc=_UTC(),
-                    returncode=0,
-                    stdout=CANDIDATE_REPHRASING.encode(),
-                    stderr=b"",
+                    argv=["verify_rephrasing"], start_utc=_UTC(), end_utc=_UTC(),
+                    returncode=v_rc, stdout=actual.encode(), stderr=b"",
                 ),
-                cause=TerminalCause.COMPLETED,
+                cause=v_cause,
             )
         )
 
         return steps
+
+    def capture_evidence(self) -> CommandResult:
+        evidence_dir = os.path.join(self.run_dir, "evidence")
+        os.makedirs(evidence_dir, exist_ok=True)
+        errors = []
+
+        for i in range(7):
+            remote = f"/sdcard/shot_{i}.png"
+            local = os.path.join(evidence_dir, f"shot_{i}.png")
+            cap = self.runner(
+                ["adb", "-s", self.serial, "shell", "screencap", "-p", remote]
+            )
+            if cap.returncode != 0:
+                errors.append(f"screencap_{i} rc={cap.returncode}")
+                continue
+            pull = self.runner(["adb", "-s", self.serial, "pull", remote, local])
+            if pull.returncode != 0:
+                errors.append(f"pull_shot_{i} rc={pull.returncode}")
+                continue
+            with open(local, "rb") as fh:
+                if not evidence.validate_png(fh.read()):
+                    errors.append(f"shot_{i}.png invalid")
+
+        remote_vid = "/sdcard/journey.mp4"
+        local_vid = os.path.join(evidence_dir, "journey.mp4")
+        rec = self.starter(
+            ["adb", "-s", self.serial, "shell", "screenrecord",
+             "--time-limit", "10", remote_vid]
+        )
+        rec_res = self.finisher(rec, timeout=15.0, terminate=False)
+        if rec_res.returncode != 0:
+            errors.append(f"screenrecord rc={rec_res.returncode}")
+        else:
+            pull_v = self.runner(
+                ["adb", "-s", self.serial, "pull", remote_vid, local_vid]
+            )
+            if pull_v.returncode != 0:
+                errors.append(f"pull_video rc={pull_v.returncode}")
+            else:
+                with open(local_vid, "rb") as vfh:
+                    if not evidence.validate_mp4(vfh.read()):
+                        errors.append("journey.mp4 invalid")
+
+        rc = 0 if not errors else 1
+        return CommandResult(
+            argv=["capture_evidence"],
+            start_utc=_UTC(), end_utc=_UTC(),
+            returncode=rc,
+            stdout=b"" if errors else b"7 screenshots + 1 video captured",
+            stderr="\n".join(errors).encode() if errors else b"",
+        )
 
     def restore(self) -> CommandResult:
         return self.runner(
@@ -587,16 +591,7 @@ class AdbHarness:
         s.settimeout(1.0)
         try:
             s.connect(("127.0.0.1", 5554))
-            s.close()
-            return CommandResult(
-                argv=["verify_release"],
-                start_utc=_UTC(),
-                end_utc=_UTC(),
-                returncode=1,
-                stdout=b"",
-                stderr=b"socket connection succeeded (emulator still running)",
-            )
-        except OSError:
+        except ConnectionRefusedError:
             return CommandResult(
                 argv=["verify_release"],
                 start_utc=_UTC(),
@@ -605,3 +600,23 @@ class AdbHarness:
                 stdout=b"release verified (port closed)",
                 stderr=b"",
             )
+        except OSError:
+            return CommandResult(
+                argv=["verify_release"],
+                start_utc=_UTC(),
+                end_utc=_UTC(),
+                returncode=1,
+                stdout=b"",
+                stderr=b"release verification inconclusive (socket error)",
+            )
+        else:
+            return CommandResult(
+                argv=["verify_release"],
+                start_utc=_UTC(),
+                end_utc=_UTC(),
+                returncode=1,
+                stdout=b"",
+                stderr=b"socket connection succeeded (emulator still running)",
+            )
+        finally:
+            s.close()

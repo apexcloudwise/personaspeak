@@ -10,6 +10,25 @@ Newest first, like all respectable patch notes.
 
 ---
 
+## 2026-08-10 — The inspector stops hallucinating and starts taking pictures
+
+- The M2 device-qualification harness gained a real evidence-capture
+  path: seven screenshots and one video via `screencap`/`screenrecord`,
+  validated structurally before the journey record is sealed. The
+  journey's final step no longer fabricates a passing rephrasing check;
+  it re-dumps the hierarchy and compares the EditText text against the
+  pinned candidate. XML parse errors are no longer swallowed into a
+  silent coordinate fallback — a missing or malformed hierarchy stops
+  the journey. The search-field selector matches the exact pinned
+  resource-id instead of any EditText in the tree. `verify_release`
+  no longer treats every socket `OSError` as proof the emulator is
+  dead: only `ConnectionRefused` passes; timeout and other errors are
+  inconclusive and fail-closed. `CaptureContext` moved from the frozen
+  records module to the orchestration boundary, the fake-tool fixtures
+  gained stateful EditText tracking and valid media generation, and
+  the monkey-patching that masked the missing capture path is gone.
+  169 tests, no device contacted (#59).
+
 ## 2026-08-10 — The Loading row learns the word "Cancel"
 
 - While PersonaSpeak is thinking, the row now shows a Cancel button next

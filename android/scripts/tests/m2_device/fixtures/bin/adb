@@ -1,11 +1,68 @@
 #!/usr/bin/env python3
-import sys
+"""Fake adb for device-free M2 harness qualification tests."""
 import os
+import struct
+import sys
+import zlib
 
 log_path = os.environ.get("MOCK_COMMANDS_LOG")
 if log_path:
     with open(log_path, "a") as f:
         f.write(f"adb: {' '.join(sys.argv[1:])}\n")
+
+STATE_FILE = os.environ.get("FAKE_ADB_STATE", "/tmp/fake_adb_edittext.state")
+
+
+def _read_state():
+    try:
+        with open(STATE_FILE) as f:
+            return f.read()
+    except FileNotFoundError:
+        return ""
+
+
+def _write_state(s):
+    with open(STATE_FILE, "w") as f:
+        f.write(s)
+
+
+def _write_png(path):
+    sig = b'\x89PNG\r\n\x1a\n'
+    ihdr_data = struct.pack('>IIBBBBB', 1, 1, 8, 2, 0, 0, 0)
+    ihdr = (
+        struct.pack('>I', 13) + b'IHDR' + ihdr_data
+        + struct.pack('>I', zlib.crc32(b'IHDR' + ihdr_data) & 0xFFFFFFFF)
+    )
+    raw = b'\x00\xff\x00\x00'
+    comp = zlib.compress(raw)
+    idat = (
+        struct.pack('>I', len(comp)) + b'IDAT' + comp
+        + struct.pack('>I', zlib.crc32(b'IDAT' + comp) & 0xFFFFFFFF)
+    )
+    iend = (
+        struct.pack('>I', 0) + b'IEND'
+        + struct.pack('>I', zlib.crc32(b'IEND') & 0xFFFFFFFF)
+    )
+    with open(path, 'wb') as f:
+        f.write(sig + ihdr + idat + iend)
+
+
+def _write_mp4(path):
+    payload = b'isom' + b'\x00\x00\x00\x00' + b'isom'
+    with open(path, 'wb') as f:
+        f.write(struct.pack('>I', 8 + len(payload)) + b'ftyp' + payload)
+
+
+def _write_hierarchy(path, text=""):
+    with open(path, "w") as f:
+        f.write(
+            '<hierarchy rotation="0">'
+            f'<node index="0" text="{text}" '
+            'resource-id="com.android.settings:id/search_action_bar" '
+            'class="android.widget.EditText" bounds="[100,200][900,300]"/>'
+            '</hierarchy>'
+        )
+
 
 cmd = " ".join(sys.argv[1:])
 
@@ -27,12 +84,44 @@ elif "getprop persist.sys.timezone" in cmd:
     print("Asia/Kolkata")
 elif "getprop ro.product.locale" in cmd:
     print("en-US")
+elif "am start" in cmd:
+    pass
+elif "install" in cmd and "pull" not in cmd:
+    pass
+elif "wait-for-device" in cmd:
+    pass
 elif "uiautomator dump" in cmd:
     pass
-elif "pull /sdcard/window_dump.xml" in cmd:
-    dest_path = sys.argv[-1]
-    with open(dest_path, "w") as f:
-        f.write('<hierarchy rotation="0"><node index="0" text="" resource-id="com.android.settings:id/search_action_bar" class="android.widget.EditText" bounds="[100,200][900,300]"/></hierarchy>')
+elif "screencap" in cmd:
+    pass
+elif "screenrecord" in cmd:
+    pass
+elif "input tap" in cmd:
+    pass
+elif "input keyevent" in cmd:
+    _write_state(_read_state()[:-1])
+elif "input text" in cmd:
+    idx = sys.argv.index("text")
+    typed = sys.argv[idx + 1].replace("%s", " ")
+    rephrasing = os.environ.get("FAKE_ADB_REPHRASING")
+    if rephrasing and typed == "Tea at six.":
+        _write_state(rephrasing)
+    else:
+        _write_state(typed)
+elif "emu snapshot load" in cmd:
+    pass
+elif "emu kill" in cmd:
+    pass
+elif "pull" in sys.argv:
+    idx = sys.argv.index("pull")
+    src = sys.argv[idx + 1]
+    dest = sys.argv[idx + 2]
+    if dest.endswith(".png"):
+        _write_png(dest)
+    elif dest.endswith(".mp4"):
+        _write_mp4(dest)
+    elif "window_dump.xml" in src:
+        _write_hierarchy(dest, _read_state())
 elif "version" in cmd or "-version" in cmd or "--version" in cmd:
     print("Android Debug Bridge version 1.0.41")
 

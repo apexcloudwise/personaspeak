@@ -24,8 +24,8 @@ from android.scripts.m2_device.adb_harness import (
     TIMEZONE,
     AdbHarness,
 )
+from android.scripts.m2_device.orchestrator import CaptureContext
 from android.scripts.m2_device.records import (
-    CaptureContext,
     CommandResult,
     PriorDeviceState,
     StepRecord,
@@ -43,6 +43,26 @@ def _cr(rc=0, stdout=b"", stderr=b"", argv=None):
         stdout=stdout,
         stderr=stderr,
     )
+
+
+def _write_valid_png(path):
+    import struct as _s
+    import zlib as _z
+    sig = b'\x89PNG\r\n\x1a\n'
+    ihdr_data = _s.pack('>IIBBBBB', 1, 1, 8, 2, 0, 0, 0)
+    ihdr = _s.pack('>I', 13) + b'IHDR' + ihdr_data + _s.pack('>I', _z.crc32(b'IHDR' + ihdr_data) & 0xFFFFFFFF)
+    comp = _z.compress(b'\x00\xff\x00\x00')
+    idat = _s.pack('>I', len(comp)) + b'IDAT' + comp + _s.pack('>I', _z.crc32(b'IDAT' + comp) & 0xFFFFFFFF)
+    iend = _s.pack('>I', 0) + b'IEND' + _s.pack('>I', _z.crc32(b'IEND') & 0xFFFFFFFF)
+    with open(path, 'wb') as f:
+        f.write(sig + ihdr + idat + iend)
+
+
+def _write_valid_mp4(path):
+    import struct as _s
+    payload = b'isom' + b'\x00\x00\x00\x00' + b'isom'
+    with open(path, 'wb') as f:
+        f.write(_s.pack('>I', 8 + len(payload)) + b'ftyp' + payload)
 
 
 class TestAdbHarness(unittest.TestCase):
@@ -212,11 +232,11 @@ class TestAdbHarness(unittest.TestCase):
         def side_effect(argv, **kwargs):
             cmd = " ".join(argv)
             if "pull" in cmd:
-                # We pull hierarchy.xml from device. Let's write mock hierarchy
                 dest_path = argv[-1]
+                text = CANDIDATE_REPHRASING if "verify" in dest_path else ""
                 with open(dest_path, "w") as f:
                     f.write(
-                        '<hierarchy rotation="0"><node index="0" text="" '
+                        f'<hierarchy rotation="0"><node index="0" text="{text}" '
                         'resource-id="com.android.settings:id/search_action_bar" '
                         'class="android.widget.EditText" bounds="[100,200][900,300]"/></hierarchy>'
                     )
@@ -229,19 +249,92 @@ class TestAdbHarness(unittest.TestCase):
         self.assertTrue(steps)
         operations = [s.operation for s in steps]
         self.assertIn("launch_settings", operations)
+        self.assertIn("dump_hierarchy", operations)
         self.assertIn("tap_search_field", operations)
         self.assertIn("type_stale_text", operations)
         self.assertIn("type_source_text", operations)
         self.assertIn("verify_candidate_rephrasing", operations)
 
-        # Confirm tap location was parsed correctly:
-        # x_center = (100 + 900) // 2 = 500
-        # y_center = (200 + 300) // 2 = 250
         tap_step = [s for s in steps if s.operation == "tap_search_field"][0]
         self.assertEqual(
             tap_step.result.argv,
             ["adb", "-s", "emulator-5554", "shell", "input", "tap", "500", "250"],
         )
+
+        for step in steps:
+            self.assertEqual(step.cause, TerminalCause.COMPLETED)
+
+    def test_run_journey_rephrasing_mismatch(self):
+
+        def side_effect(argv, **kwargs):
+            if "pull" in argv:
+                dest = argv[-1]
+                text = "wrong text" if "verify" in dest else ""
+                with open(dest, "w") as f:
+                    f.write(
+                        f'<hierarchy rotation="0"><node index="0" text="{text}" '
+                        'resource-id="com.android.settings:id/search_action_bar" '
+                        'class="android.widget.EditText" bounds="[100,200][900,300]"/></hierarchy>'
+                    )
+                return _cr(rc=0, argv=argv)
+            return _cr(rc=0, argv=argv)
+
+        self.mock_runner.side_effect = side_effect
+        steps = self.harness.run_journey()
+        verify = [s for s in steps if s.operation == "verify_candidate_rephrasing"]
+        self.assertTrue(verify)
+        self.assertEqual(verify[0].cause, TerminalCause.JOURNEY_FAILED)
+
+    def test_run_journey_field_not_found(self):
+
+        def side_effect(argv, **kwargs):
+            if "pull" in argv:
+                with open(argv[-1], "w") as f:
+                    f.write('<hierarchy rotation="0"></hierarchy>')
+                return _cr(rc=0, argv=argv)
+            return _cr(rc=0, argv=argv)
+
+        self.mock_runner.side_effect = side_effect
+        steps = self.harness.run_journey()
+        locate = [s for s in steps if s.operation == "locate_search_field"]
+        self.assertTrue(locate)
+        self.assertEqual(locate[0].cause, TerminalCause.JOURNEY_FAILED)
+
+    def test_capture_evidence_screencap_failure(self):
+        self.mock_runner.return_value = _cr(rc=1)
+        self.mock_finisher.return_value = _cr(rc=0)
+        res = self.harness.capture_evidence()
+        self.assertEqual(res.returncode, 1)
+
+    def test_capture_evidence_invalid_media(self):
+
+        def side_effect(argv, **kwargs):
+            if "pull" in argv:
+                with open(argv[-1], "wb") as f:
+                    f.write(b"not valid media")
+                return _cr(rc=0, argv=argv)
+            return _cr(rc=0, argv=argv)
+
+        self.mock_runner.side_effect = side_effect
+        self.mock_finisher.return_value = _cr(rc=0)
+        res = self.harness.capture_evidence()
+        self.assertEqual(res.returncode, 1)
+
+    def test_capture_evidence_success(self):
+
+        def side_effect(argv, **kwargs):
+            if "pull" in argv and argv[-1].endswith(".png"):
+                _write_valid_png(argv[-1])
+                return _cr(rc=0, argv=argv)
+            if "pull" in argv and argv[-1].endswith(".mp4"):
+                _write_valid_mp4(argv[-1])
+                return _cr(rc=0, argv=argv)
+            return _cr(rc=0, argv=argv)
+
+        self.mock_runner.side_effect = side_effect
+        self.mock_finisher.return_value = _cr(rc=0)
+        res = self.harness.capture_evidence()
+        self.assertEqual(res.returncode, 0)
 
     def test_restore(self):
         self.mock_runner.return_value = _cr(rc=0)
@@ -283,9 +376,8 @@ class TestAdbHarness(unittest.TestCase):
 
     @patch("socket.socket")
     def test_verify_release_dead(self, mock_socket):
-        # socket.connect raises error (port closed)
         mock_inst = MagicMock()
-        mock_inst.connect.side_effect = OSError("Connection refused")
+        mock_inst.connect.side_effect = ConnectionRefusedError(111, "Connection refused")
         mock_socket.return_value = mock_inst
 
         res = self.harness.verify_release()
@@ -293,8 +385,16 @@ class TestAdbHarness(unittest.TestCase):
 
     @patch("socket.socket")
     def test_verify_release_alive(self, mock_socket):
-        # socket.connect succeeds (emulator still running)
         mock_inst = MagicMock()
+        mock_socket.return_value = mock_inst
+
+        res = self.harness.verify_release()
+        self.assertEqual(res.returncode, 1)
+
+    @patch("socket.socket")
+    def test_verify_release_inconclusive(self, mock_socket):
+        mock_inst = MagicMock()
+        mock_inst.connect.side_effect = OSError("timed out")
         mock_socket.return_value = mock_inst
 
         res = self.harness.verify_release()

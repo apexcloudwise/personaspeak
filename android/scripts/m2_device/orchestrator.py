@@ -8,7 +8,6 @@ from enum import StrEnum
 from typing import Protocol, runtime_checkable
 
 from android.scripts.m2_device.records import (
-    CaptureContext,
     CaptureRecord,
     CommandResult,
     PriorDeviceState,
@@ -18,6 +17,13 @@ from android.scripts.m2_device.records import (
     ToolIdentity,
     VisualReview,
 )
+
+@dataclass(frozen=True)
+class CaptureContext:
+    repo_head: str
+    apk_sha256: str
+    tools: list[ToolIdentity]
+
 
 _PRE_MUTATION = frozenset({
     "preflight", "emulator_launch", "attach",
