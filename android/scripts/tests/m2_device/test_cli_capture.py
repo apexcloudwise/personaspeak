@@ -87,7 +87,8 @@ class TestCliCapture(unittest.TestCase):
         self.assertIn("screencap", ledger)
         self.assertIn("screenrecord", ledger)
         self.assertIn("uiautomator dump", ledger)
-        self.assertIn("input text", ledger)
+        self.assertIn("input tap", ledger)
+        self.assertNotIn("input text", ledger)
         self.assertNotIn("FORBIDDEN", ledger)
 
     def test_ledger_phase_order(self):

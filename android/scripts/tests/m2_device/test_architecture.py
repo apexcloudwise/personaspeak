@@ -44,7 +44,6 @@ class TestArchitecture(unittest.TestCase):
             if name.endswith('.py'):
                 actual_files.add(name)
 
-        # Ignore __init__.py
         actual_files.discard('__init__.py')
 
         extra_files = actual_files - self.allowed_modules
@@ -53,17 +52,33 @@ class TestArchitecture(unittest.TestCase):
             f"Unauthorized production modules found: {extra_files}"
         )
 
+        missing = self.allowed_modules - actual_files
+        self.assertFalse(
+            missing,
+            f"Required production modules missing: {missing}"
+        )
+
+    def test_no_subpackages(self):
+        for name in os.listdir(self.base_dir):
+            full = os.path.join(self.base_dir, name)
+            if os.path.isdir(full):
+                for root, _, files in os.walk(full):
+                    for f in files:
+                        if f.endswith('.py'):
+                            self.fail(
+                                f"Unauthorized subpackage .py: {os.path.join(root, f)}"
+                            )
+
     def test_line_budgets(self):
         total_lines = 0
         module_counts = {}
 
         for name in sorted(self.allowed_modules):
             path = os.path.join(self.base_dir, name)
-            if not os.path.exists(path):
-                # If a module does not exist yet (e.g. adb_harness during early U-units),
-                # we treat it as 0 lines so early tests can pass.
-                module_counts[name] = 0
-                continue
+            self.assertTrue(
+                os.path.exists(path),
+                f"Required module missing: {name}"
+            )
             count = count_lines(path)
             module_counts[name] = count
             total_lines += count

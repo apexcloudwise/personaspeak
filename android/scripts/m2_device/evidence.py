@@ -15,6 +15,7 @@ from android.scripts.m2_device.records import (
     ApprovalRecord,
     CaptureRecord,
     FinalReceipt,
+    TerminalCause,
     VisualReview,
     encode,
     record_digest,
@@ -174,8 +175,21 @@ def finalize(
         raise ValueError("manifest digest drift since approval")
     if approval.decision != VisualReview.APPROVED:
         raise ValueError(f"approval decision was {approval.decision!r}, not approved")
-    if restoration_verdict != "verified":
+    if capture.restoration is not None:
+        if capture.restoration.cause != TerminalCause.COMPLETED:
+            raise ValueError(
+                f"restoration step cause was {capture.restoration.cause!r}, not COMPLETED"
+            )
+    elif restoration_verdict != "verified":
         raise ValueError(f"restoration verdict was {restoration_verdict!r}, not 'verified'")
+    derived_counts = {
+        "png": sum(1 for n in manifest if n.endswith(".png")),
+        "mp4": sum(1 for n in manifest if n.endswith(".mp4")),
+    }
+    if counts.get("screenshots") is not None and counts["screenshots"] != derived_counts["png"]:
+        raise ValueError(
+            f"caller screenshot count {counts['screenshots']} != manifest PNG count {derived_counts['png']}"
+        )
     privacy_ok = scan_directory(evidence_dir)
     if not privacy_ok:
         raise ValueError("privacy scan failed — credential patterns detected in evidence")
@@ -194,7 +208,7 @@ def finalize(
         privacy_ok=privacy_ok,
         media_ok=media_ok,
         restoration_verdict=restoration_verdict,
-        counts=dict(counts),
+        counts=dict(counts) if counts else derived_counts,
         evidence_commit=evidence_commit,
         artifacts=dict(artifacts),
     )

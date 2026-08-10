@@ -212,7 +212,7 @@ class TestFinalize(unittest.TestCase):
                 f.write("clean log\n")
             receipt = evidence.finalize(
                 cap, appr, man, d,
-                restoration_verdict="verified", counts={"screenshots": 7},
+                restoration_verdict="verified", counts={},
                 evidence_commit="sha", artifacts=man,
             )
         self.assertTrue(receipt.privacy_ok)

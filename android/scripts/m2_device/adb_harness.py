@@ -53,6 +53,11 @@ CANDIDATE_REPHRASING = (
     "\u201cTea at six.\u201d \u2014 though I must confess the genuine article is still en route."
 )
 
+SCREENSHOT_NAMES = [
+    "01-idle-typed", "02-loading-cancel", "03-review",
+    "04-applied", "05-dismissed", "06-stale", "07-settings",
+]
+
 KEYBOARD_PACKAGE = "biz.pixelperfectstudios.personaspeak"
 PANEL_STATE_RES_ID = f"{KEYBOARD_PACKAGE}:id/panel_state"
 APPLY_RES_ID = f"{KEYBOARD_PACKAGE}:id/apply_button"
@@ -62,6 +67,14 @@ STATE_REVIEW = "REVIEW"
 CANDIDATE_RES_ID = f"{KEYBOARD_PACKAGE}:id/candidate_text"
 ANIMATION_SCALE = "1.0"
 SEARCH_RES_ID = f"{SETTINGS_PACKAGE}:id/search_action_bar"
+KEYBOARD_VIEW_RES_ID = f"{KEYBOARD_PACKAGE}:id/keyboard_view"
+SEARCH_CLEAR_RES_ID = f"{SETTINGS_PACKAGE}:id/search_close_btn"
+ASK_KEY_COORDS: dict[str, tuple[int, int]] = {
+    "T": (475, 1375), "E": (285, 1375), "A": (100, 1480),
+    "S": (195, 1480), "I": (760, 1375), "X": (245, 1585),
+    "V": (435, 1585), "N": (625, 1585),
+    " ": (540, 1690), ".": (730, 1690),
+}
 
 EXPECTED_VERSION_NAME = "0.1.0"
 EXPECTED_VERSION_CODE = "1"
@@ -381,8 +394,63 @@ class AdbHarness:
                    self._ok(label) if not active else self._fail(label, b"keyboard still active"))
         return not active
 
+    def _validate_keyboard(self, steps, root):
+        kb = self._find(root, KEYBOARD_VIEW_RES_ID)
+        if kb is None:
+            self._step(steps, "validate_keyboard",
+                       self._fail("kb", b"keyboard view not found"))
+            return False
+        self._step(steps, "validate_keyboard", self._ok("kb"))
+        return True
+
+    def _tap_ask_key(self, steps, ch):
+        key = ch.upper() if ch.isalpha() else ch
+        coord = ASK_KEY_COORDS.get(key)
+        if coord is None:
+            self._step(steps, f"tap_key_{ch}",
+                       self._fail(f"tap_{ch}", f"no coord for {ch}".encode()))
+            return False
+        res = self.runner(self._cmd("shell", "input", "tap", str(coord[0]), str(coord[1])))
+        return self._step(steps, f"tap_key_{ch}", res)
+
+    def _type_text(self, steps, text, op="type_text"):
+        for ch in text:
+            if not self._tap_ask_key(steps, ch):
+                return False
+        return True
+
+    def _clear_field(self, steps):
+        d_res, root = self._dump_hierarchy("clear")
+        if root is None:
+            self._step(steps, "clear_field", d_res)
+            return False
+        btn = self._find(root, SEARCH_CLEAR_RES_ID)
+        if btn is None:
+            self._step(steps, "clear_field", self._ok("clear", b"already empty"))
+            return True
+        center = self._center(btn)
+        if center is None:
+            self._step(steps, "clear_field", self._fail("clear", b"no bounds"))
+            return False
+        res = self.runner(self._cmd("shell", "input", "tap", *center))
+        return self._step(steps, "clear_field", res)
+
+    def _take_screenshot(self, name):
+        evidence_dir = os.path.join(self.run_dir, "evidence")
+        os.makedirs(evidence_dir, exist_ok=True)
+        remote = f"/sdcard/{name}.png"
+        local = os.path.join(evidence_dir, f"{name}.png")
+        self.runner(self._cmd("shell", "screencap", "-p", remote))
+        self.runner(self._cmd("pull", remote, local))
+        with open(local, "rb") as fh:
+            return evidence.validate_png(fh.read())
+
     def run_journey(self) -> list[StepRecord]:
         steps: list[StepRecord] = []
+
+        remote_vid = "/sdcard/journey.mp4"
+        self.screenrecord_process = self.starter(
+            self._cmd("shell", "screenrecord", "--time-limit", "30", remote_vid))
 
         res = self.runner(self._cmd("shell", "am", "start", "-a", SETTINGS_ACTION))
         if not self._step(steps, "launch_editor", res):
@@ -406,16 +474,21 @@ class AdbHarness:
         if not self._step(steps, "focus_editor", res):
             return steps
 
-        res = self.runner(self._cmd("shell", "input", "text", STALE_TEXT.replace(" ", "%s")))
-        if not self._step(steps, "type_stale_text", res):
-            return steps
-        if not self._clear_field(steps):
+        _, kb_root = self._dump_hierarchy("keyboard_check")
+        if kb_root is not None and not self._validate_keyboard(steps, kb_root):
             return steps
 
-        if not self._type_source(steps):
+        self._take_screenshot("01-idle-typed")
+        self._step(steps, "screenshot_01", self._ok("shot"))
+
+        if not self._type_text(steps, SOURCE_TEXT, "type_source_1"):
             return steps
+
         if self._verify_kb(steps, "loading_1", STATE_LOADING) is None:
             return steps
+        self._take_screenshot("02-loading-cancel")
+        self._step(steps, "screenshot_02", self._ok("shot"))
+
         review_root = self._verify_kb(steps, "review_1", STATE_REVIEW)
         if review_root is None:
             return steps
@@ -431,13 +504,16 @@ class AdbHarness:
         if not self._verify_text(steps, v_root, SOURCE_TEXT, "verify_cancel_unchanged"):
             return steps
 
-        if not self._clear_field(steps) or not self._type_source(steps):
+        if not self._clear_field(steps) or not self._type_text(steps, SOURCE_TEXT, "type_source_2"):
             return steps
         if self._verify_kb(steps, "loading_2", STATE_LOADING) is None:
             return steps
         review_root = self._verify_kb(steps, "review_2", STATE_REVIEW)
         if review_root is None:
             return steps
+
+        self._take_screenshot("03-review")
+        self._step(steps, "screenshot_03", self._ok("shot"))
 
         if not self._tap_btn(steps, review_root, "apply_rephrasing", APPLY_RES_ID):
             return steps
@@ -447,8 +523,10 @@ class AdbHarness:
                 return steps
             self._step(steps, "verify_apply", v_res)
             return steps
+        self._take_screenshot("04-applied")
+        self._step(steps, "screenshot_04", self._ok("shot"))
 
-        if not self._clear_field(steps) or not self._type_source(steps):
+        if not self._clear_field(steps) or not self._type_text(steps, SOURCE_TEXT, "type_source_3"):
             return steps
         if self._verify_kb(steps, "loading_3", STATE_LOADING) is None:
             return steps
@@ -466,6 +544,34 @@ class AdbHarness:
             return steps
         if not self._verify_text(steps, v_root, SOURCE_TEXT, "verify_dismiss_unchanged"):
             return steps
+        self._take_screenshot("05-dismissed")
+        self._step(steps, "screenshot_05", self._ok("shot"))
+
+        if not self._clear_field(steps) or not self._type_text(steps, SOURCE_TEXT, "type_source_4"):
+            return steps
+        if self._verify_kb(steps, "loading_4", STATE_LOADING) is None:
+            return steps
+        review_root = self._verify_kb(steps, "review_4", STATE_REVIEW)
+        if review_root is None:
+            return steps
+
+        if not self._clear_field(steps) or not self._type_text(steps, STALE_TEXT, "type_stale"):
+            return steps
+        if not self._tap_btn(steps, review_root, "apply_stale", APPLY_RES_ID):
+            return steps
+        v_res, v_root = self._dump_hierarchy("after_stale")
+        if v_root is None:
+            self._step(steps, "verify_stale", v_res)
+            return steps
+        if not self._verify_text(steps, v_root, STALE_TEXT, "verify_stale"):
+            return steps
+        self._take_screenshot("06-stale")
+        self._step(steps, "screenshot_06", self._ok("shot"))
+
+        res = self.runner(self._cmd("shell", "am", "start", "-a", SETTINGS_ACTION))
+        self._step(steps, "relaunch_settings", res)
+        self._take_screenshot("07-settings")
+        self._step(steps, "screenshot_07", self._ok("shot"))
 
         return steps
 
@@ -474,40 +580,34 @@ class AdbHarness:
         os.makedirs(evidence_dir, exist_ok=True)
         errors = []
 
-        for i in range(7):
-            remote = f"/sdcard/shot_{i}.png"
-            local = os.path.join(evidence_dir, f"shot_{i}.png")
-            cap = self.runner(self._cmd("shell", "screencap", "-p", remote))
-            if cap.returncode != 0:
-                errors.append(f"screencap_{i} rc={cap.returncode}")
-                continue
-            pull = self.runner(self._cmd("pull", remote, local))
-            if pull.returncode != 0:
-                errors.append(f"pull_shot_{i} rc={pull.returncode}")
-                continue
-            with open(local, "rb") as fh:
-                if not evidence.validate_png(fh.read()):
-                    errors.append(f"shot_{i}.png invalid")
-
         remote_vid = "/sdcard/journey.mp4"
         local_vid = os.path.join(evidence_dir, "journey.mp4")
-        rec = self.starter(self._cmd("shell", "screenrecord", "--time-limit", "10", remote_vid))
-        rec_res = self.finisher(rec, timeout=15.0, terminate=False)
-        if rec_res.returncode != 0:
-            errors.append(f"screenrecord rc={rec_res.returncode}")
+        if self.screenrecord_process is not None:
+            rec_res = self.finisher(self.screenrecord_process, timeout=15.0, terminate=False)
+            self.screenrecord_process = None
+            if rec_res.returncode != 0:
+                errors.append(f"screenrecord rc={rec_res.returncode}")
+        pull_v = self.runner(self._cmd("pull", remote_vid, local_vid))
+        if pull_v.returncode != 0:
+            errors.append(f"pull_video rc={pull_v.returncode}")
         else:
-            pull_v = self.runner(self._cmd("pull", remote_vid, local_vid))
-            if pull_v.returncode != 0:
-                errors.append(f"pull_video rc={pull_v.returncode}")
+            with open(local_vid, "rb") as vfh:
+                if not evidence.validate_mp4(vfh.read()):
+                    errors.append("journey.mp4 invalid")
+
+        for name in SCREENSHOT_NAMES:
+            path = os.path.join(evidence_dir, f"{name}.png")
+            if not os.path.isfile(path):
+                errors.append(f"missing screenshot: {name}.png")
             else:
-                with open(local_vid, "rb") as vfh:
-                    if not evidence.validate_mp4(vfh.read()):
-                        errors.append("journey.mp4 invalid")
+                with open(path, "rb") as fh:
+                    if not evidence.validate_png(fh.read()):
+                        errors.append(f"{name}.png invalid")
 
         pngs = sorted(f for f in os.listdir(evidence_dir) if f.endswith(".png"))
         mp4s = sorted(f for f in os.listdir(evidence_dir) if f.endswith(".mp4"))
-        if len(pngs) != 7:
-            errors.append(f"expected 7 PNGs, found {len(pngs)}")
+        if len(pngs) != len(SCREENSHOT_NAMES):
+            errors.append(f"expected {len(SCREENSHOT_NAMES)} PNGs, found {len(pngs)}")
         if len(mp4s) != 1:
             errors.append(f"expected 1 MP4, found {len(mp4s)}")
 
@@ -515,7 +615,7 @@ class AdbHarness:
         return CommandResult(
             argv=["capture_evidence"], start_utc=_UTC(), end_utc=_UTC(),
             returncode=rc,
-            stdout=b"" if errors else b"7 screenshots + 1 video captured",
+            stdout=b"" if errors else b"evidence verified",
             stderr="\n".join(errors).encode() if errors else b"",
         )
 
