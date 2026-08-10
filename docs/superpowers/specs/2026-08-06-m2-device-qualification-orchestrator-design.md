@@ -85,15 +85,16 @@ The implementation lives under `android/scripts/m2_device/`:
 | `records.py` | Immutable result/state types and deterministic JSON codec |
 | `commands.py` | Local process execution and the remote-result interface |
 | `orchestrator.py` | Phase ordering, stop causes, prior-state capture, restoration |
+| `adb_harness.py` | Pinned fixture configuration, device automation commands, and journey execution |
 | `evidence.py` | Digests, privacy checks, media validation, manifests, finalize |
 | `cli.py` | Argument parsing and `capture` / `finalize` entry points |
 
 Tests mirror those modules under `android/scripts/tests/m2_device/`. The
-production package is limited to these five modules and 900 nonblank,
-non-comment lines in total. Crossing either limit is an architecture stop that
-requires an owner-reviewed design amendment. Tests and fixtures do not count
-toward the line budget; the budget prevents the inspector from becoming the
-largest exhibit in its own case.
+production package is limited to these six modules and 1,800 nonblank,
+non-comment lines in total. `adb_harness.py` is individually capped at 650 lines.
+Crossing either limit is an architecture stop that requires an owner-reviewed
+design amendment. Tests and fixtures do not count toward the line budget; the
+budget prevents the inspector from becoming the largest exhibit in its own case.
 
 Python's standard library is sufficient. No new runtime dependency is added.
 Shell may provide a trivial launcher only; it may not orchestrate phases,

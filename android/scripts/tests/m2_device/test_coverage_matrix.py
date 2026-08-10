@@ -4,6 +4,8 @@ Parses orchestrator.py's AST and asserts every call to _rc_of or _timed_out
 is at an expected (method, function) location. If someone adds a new
 status-decision site without updating EXPECTED_SITES, this test fails
 loudly. A check that has never failed is not a check.
+
+Note: Module and line budget limits are tested separately in test_architecture.py.
 """
 
 import ast
