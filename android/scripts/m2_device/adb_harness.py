@@ -61,6 +61,10 @@ STATE_LOADING = "LOADING"
 STATE_REVIEW = "REVIEW"
 SEARCH_RES_ID = f"{SETTINGS_PACKAGE}:id/search_action_bar"
 
+EXPECTED_VERSION_NAME = "0.1.0"
+EXPECTED_VERSION_CODE = "1"
+EXPECTED_SIGNER = "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2"
+
 
 class AdbHarness:
 
@@ -72,6 +76,7 @@ class AdbHarness:
         runner: Any = None,
         starter: Any = None,
         finisher: Any = None,
+        repo_root: str = "",
     ):
         self.run_dir = run_dir
         self.apk_path = apk_path
@@ -79,6 +84,7 @@ class AdbHarness:
         self.runner = runner or commands.run
         self.starter = starter or commands.start
         self.finisher = finisher or commands.finish
+        self.repo_root = repo_root or os.getcwd()
         self.adb_tool: ToolIdentity | None = None
         self.emulator_tool: ToolIdentity | None = None
         self.emulator_process: commands.ManagedProcess | None = None
@@ -124,8 +130,11 @@ class AdbHarness:
             return self._fail("preflight", str(e).encode())
 
     def capture_context(self) -> CaptureContext:
-        head_res = self.runner(["git", "rev-parse", "HEAD"])
+        head_res = self.runner(["git", "rev-parse", "HEAD"], cwd=self.repo_root)
         repo_head = head_res.stdout.decode("utf-8").strip()
+        status_res = self.runner(["git", "status", "--porcelain"], cwd=self.repo_root)
+        if status_res.stdout.decode("utf-8").strip():
+            raise RuntimeError("repository not clean — uncommitted changes")
         apk_sha = commands.digest_file(self.apk_path)
         return CaptureContext(
             repo_head=repo_head, apk_sha256=apk_sha,
@@ -208,7 +217,21 @@ class AdbHarness:
         return self._ok("validate_fixture", b"Fixture identity validated.")
 
     def install_apk(self) -> CommandResult:
-        return self.runner(self._cmd("install", "-r", self.apk_path))
+        res = self.runner(self._cmd("install", "-r", self.apk_path))
+        if res.returncode != 0:
+            return res
+        dump = self.runner(self._cmd("shell", "dumpsys", "package", KEYBOARD_PACKAGE))
+        out = dump.stdout.decode("utf-8", errors="replace")
+        errors = []
+        if f"versionName={EXPECTED_VERSION_NAME}" not in out:
+            errors.append(f"versionName mismatch: expected {EXPECTED_VERSION_NAME}")
+        if f"versionCode={EXPECTED_VERSION_CODE}" not in out:
+            errors.append(f"versionCode mismatch: expected {EXPECTED_VERSION_CODE}")
+        if EXPECTED_SIGNER not in out:
+            errors.append("signer certificate mismatch")
+        if errors:
+            return self._fail("install_apk", "\n".join(errors).encode())
+        return self._ok("install_apk", b"APK installed and identity verified.")
 
     def _dump_hierarchy(self, label: str) -> tuple[CommandResult, Any]:
         remote = "/sdcard/window_dump.xml"

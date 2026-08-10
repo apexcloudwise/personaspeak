@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import dataclasses
 import json
 import os
 import sys
@@ -31,10 +32,22 @@ def cmd_capture(args: argparse.Namespace) -> int:
     run_dir = os.path.join(args.evidence_root, run_id)
     os.makedirs(run_dir, exist_ok=False)
 
-    harness = AdbHarness(run_dir=run_dir, apk_path=args.apk_path)
+    harness = AdbHarness(
+        run_dir=run_dir, apk_path=args.apk_path, repo_root=args.repo_root,
+    )
     orchestrator = Orchestrator(harness=harness, apk_sha256=args.apk_sha256)
 
     record = orchestrator.execute()
+
+    evidence_dir = os.path.join(run_dir, "evidence")
+    if os.path.isdir(evidence_dir):
+        manifest = evidence.build_manifest(evidence_dir)
+        manifest_d = evidence.manifest_digest(manifest)
+        manifest_path = os.path.join(run_dir, "manifest.json")
+        with open(manifest_path, "w") as f:
+            json.dump(manifest, f, sort_keys=True, indent=2)
+        record = dataclasses.replace(record, manifest_digest=manifest_d)
+
     record_path = os.path.join(run_dir, "capture-record.json")
     with open(record_path, "wb") as f:
         f.write(encode(record))

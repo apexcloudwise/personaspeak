@@ -168,14 +168,17 @@ def finalize(
     if approval.decision != VisualReview.APPROVED:
         raise ValueError(f"approval decision was {approval.decision!r}, not approved")
     privacy_ok = scan_directory(evidence_dir)
+    if not privacy_ok:
+        raise ValueError("privacy scan failed — credential patterns detected in evidence")
     media_files = [n for n in manifest if n.endswith((".png", ".mp4"))]
     if not media_files:
-        media_ok = False
-    else:
-        media_ok = all(
-            _validate_media(os.path.join(evidence_dir, name), name)
-            for name in media_files
-        )
+        raise ValueError("no media files in manifest")
+    media_ok = all(
+        _validate_media(os.path.join(evidence_dir, name), name)
+        for name in media_files
+    )
+    if not media_ok:
+        raise ValueError("media validation failed — one or more files are structurally invalid")
     return FinalReceipt(
         capture_digest=cap_d,
         approval_digest=appr_d,

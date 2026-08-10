@@ -103,6 +103,10 @@ elif "am start" in cmd:
     pass
 elif "install" in cmd and "pull" not in cmd:
     pass
+elif "dumpsys package" in cmd and "personaspeak" in cmd:
+    print("versionName=0.1.0")
+    print("versionCode=1")
+    print("signatures=[Signature [a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2]]")
 elif "wait-for-device" in cmd:
     pass
 elif "uiautomator dump" in cmd:

@@ -171,9 +171,20 @@ class TestFinalize(unittest.TestCase):
 
     def test_successful_finalize(self):
         cap = self._capture()
-        man = {"screenshot.png": "abc123"}
-        appr = self._make_approval(cap, man)
         with tempfile.TemporaryDirectory() as d:
+            import struct, zlib
+            sig = b'\x89PNG\r\n\x1a\n'
+            ihdr_data = struct.pack('>IIBBBBB', 1, 1, 8, 2, 0, 0, 0)
+            ihdr = struct.pack('>I', 13) + b'IHDR' + ihdr_data + struct.pack('>I', zlib.crc32(b'IHDR' + ihdr_data) & 0xFFFFFFFF)
+            comp = zlib.compress(b'\x00\xff\x00\x00')
+            idat = struct.pack('>I', len(comp)) + b'IDAT' + comp + struct.pack('>I', zlib.crc32(b'IDAT' + comp) & 0xFFFFFFFF)
+            iend = struct.pack('>I', 0) + b'IEND' + struct.pack('>I', zlib.crc32(b'IEND') & 0xFFFFFFFF)
+            png = sig + ihdr + idat + iend
+            with open(os.path.join(d, "screenshot.png"), "wb") as f:
+                f.write(png)
+            import hashlib
+            man = {"screenshot.png": hashlib.sha256(png).hexdigest()}
+            appr = self._make_approval(cap, man)
             with open(os.path.join(d, "log.txt"), "w") as f:
                 f.write("clean log\n")
             receipt = evidence.finalize(
@@ -182,6 +193,7 @@ class TestFinalize(unittest.TestCase):
                 evidence_commit="sha", artifacts=man,
             )
         self.assertTrue(receipt.privacy_ok)
+        self.assertTrue(receipt.media_ok)
 
     def test_drift_blocks_finalize(self):
         cap = self._capture()
@@ -230,12 +242,13 @@ class TestFinalize(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             with open(os.path.join(d, "log.txt"), "w") as f:
                 f.write("api_key=sk-1234567890abcdef\n")
-            receipt = evidence.finalize(
-                cap, appr, man, d,
-                restoration_verdict="verified", counts={},
-                evidence_commit="", artifacts=man,
-            )
-        self.assertFalse(receipt.privacy_ok)
+            with self.assertRaises(ValueError) as cm:
+                evidence.finalize(
+                    cap, appr, man, d,
+                    restoration_verdict="verified", counts={},
+                    evidence_commit="", artifacts=man,
+                )
+            self.assertIn("privacy", str(cm.exception))
 
     def test_empty_manifest_media_fails_closed(self):
         cap = self._capture()
@@ -244,12 +257,13 @@ class TestFinalize(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             with open(os.path.join(d, "log.txt"), "w") as f:
                 f.write("clean text\n")
-            receipt = evidence.finalize(
-                cap, appr, man, d,
-                restoration_verdict="verified", counts={},
-                evidence_commit="", artifacts={},
-            )
-        self.assertFalse(receipt.media_ok)
+            with self.assertRaises(ValueError) as cm:
+                evidence.finalize(
+                    cap, appr, man, d,
+                    restoration_verdict="verified", counts={},
+                    evidence_commit="", artifacts={},
+                )
+            self.assertIn("no media", str(cm.exception))
 
 
 class TestCLI(unittest.TestCase):

@@ -23,6 +23,12 @@ class TestCliCapture(unittest.TestCase):
         os.makedirs(self.evidence_root, exist_ok=True)
         os.makedirs(self.repo_root, exist_ok=True)
 
+        import subprocess
+        for args in (["git", "init"], ["git", "config", "user.email", "t@t"],
+                      ["git", "config", "user.name", "T"], ["git", "add", "-A"],
+                      ["git", "commit", "-m", "init"]):
+            subprocess.run(args, cwd=self.repo_root, capture_output=True)
+
         self.apk_path = os.path.join(self.test_dir, "mock_app.apk")
         with open(self.apk_path, "wb") as f:
             f.write(b"mock_apk_binary")

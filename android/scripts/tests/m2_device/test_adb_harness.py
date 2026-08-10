@@ -13,6 +13,9 @@ from android.scripts.m2_device.adb_harness import (
     API_LEVEL,
     AVD_NAME,
     CANDIDATE_REPHRASING,
+    EXPECTED_SIGNER,
+    EXPECTED_VERSION_CODE,
+    EXPECTED_VERSION_NAME,
     FINGERPRINT,
     LOCALE,
     SCREEN_HEIGHT,
@@ -115,7 +118,13 @@ class TestAdbHarness(unittest.TestCase):
         mock_resolve.side_effect = lambda name: ToolIdentity(
             name=name, path=f"/bin/{name}", version="1.0"
         )
-        self.mock_runner.return_value = _cr(stdout=b"abc123git\n")
+
+        def side_effect(argv, **kwargs):
+            if "status" in argv:
+                return _cr(stdout=b"")
+            return _cr(stdout=b"abc123git\n")
+
+        self.mock_runner.side_effect = side_effect
 
         ctx = self.harness.capture_context()
         self.assertEqual(ctx.repo_head, "abc123git")
@@ -224,12 +233,20 @@ class TestAdbHarness(unittest.TestCase):
         self.assertEqual(res.returncode, 1)
 
     def test_install_apk(self):
-        self.mock_runner.return_value = _cr(rc=0)
+
+        def side_effect(argv, **kwargs):
+            cmd = " ".join(argv)
+            if "dumpsys" in cmd:
+                return _cr(rc=0, stdout=(
+                    f"versionName={EXPECTED_VERSION_NAME}\n"
+                    f"versionCode={EXPECTED_VERSION_CODE}\n"
+                    f"signatures=[Signature [{EXPECTED_SIGNER}]]\n"
+                ).encode())
+            return _cr(rc=0)
+
+        self.mock_runner.side_effect = side_effect
         res = self.harness.install_apk()
         self.assertEqual(res.returncode, 0)
-        self.mock_runner.assert_called_once_with(
-            ["adb", "-s", "emulator-5554", "install", "-r", self.apk_path]
-        )
 
     def test_run_journey_success(self):
 
