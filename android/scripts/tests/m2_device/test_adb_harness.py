@@ -192,6 +192,16 @@ class TestAdbHarness(unittest.TestCase):
         self.assertEqual(len(state.enabled_imes), 2)
         self.assertEqual(state.default_ime, gboard)
 
+    def test_capture_prior_state_empty_streams(self):
+        self.mock_runner.return_value = _cr(stdout=b"")
+        state = self.harness.capture_prior_state()
+        self.assertIsNone(state)
+
+    def test_capture_prior_state_hostile_bytes(self):
+        self.mock_runner.return_value = _cr(stdout=b"\x00\xff\xfe\x00garbage\x80\x81")
+        state = self.harness.capture_prior_state()
+        self.assertIsNone(state)
+
     def test_validate_fixture_success(self):
         gboard = (
             "com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME"

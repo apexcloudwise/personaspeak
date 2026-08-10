@@ -53,6 +53,7 @@ class FakeHarness:
             repo_head=self._repo_head,
             apk_sha256=self._apk_sha256,
             tools=self._tools,
+            fixture_receipt_digest="dad6f7ac3b3c",
         )
 
     def launch_emulator(self):
@@ -247,6 +248,46 @@ class TestRestorationMismatch(unittest.TestCase):
         rec = orch.execute()
         self.assertEqual(orch.terminal, TerminalCause.RESTORATION_MISMATCH)
         self.assertIn("verify_restore", [s.phase for s in rec.steps])
+
+
+class TestDoubleRestorePrevention(unittest.TestCase):
+    """The _restored flag must prevent restore() from running twice."""
+
+    def test_direct_double_call(self):
+        h = FakeHarness()
+        orch = O.Orchestrator(h)
+        orch._emulator_launched = True
+        orch._restore()
+        orch._restore()
+        self.assertEqual(h.restore_count, 1)
+
+    def test_restore_exception_still_once(self):
+        class H(FakeHarness):
+            def restore(self):
+                raise RuntimeError("restore crashed")
+        h = H()
+        orch = O.Orchestrator(h)
+        orch._emulator_launched = True
+        orch._restore()
+        orch._restore()
+        self.assertEqual(h.restore_count, 0)
+        self.assertIsNotNone(orch.restoration)
+        self.assertEqual(orch.restoration.cause, TerminalCause.CLEANUP_PARTIAL)
+        self.assertIn(b"restore crashed", orch.restoration.result.stderr)
+
+
+class TestLateFailureRestoration(unittest.TestCase):
+    """Failure during evidence capture must still trigger restoration."""
+
+    def test_capture_failure_restores(self):
+        h = FakeHarness(fail_at="capture")
+        orch = O.Orchestrator(h, repo_head="a", apk_sha256="", tools=_tools())
+        rec = orch.execute()
+        self.assertEqual(orch.terminal, TerminalCause.CAPTURE_FAILED)
+        self.assertIn("restore", [s.phase for s in rec.steps])
+        self.assertEqual(h.restore_count, 1)
+        self.assertIn("release_emulator", [s.phase for s in rec.steps])
+        self.assertIn("verify_release", [s.phase for s in rec.steps])
 
 
 class TestMutationGuard(unittest.TestCase):

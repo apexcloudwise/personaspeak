@@ -125,6 +125,29 @@ class TestManifest(unittest.TestCase):
             evidence.manifest_digest(dict(reversed(list(m.items())))),
         )
 
+    def test_manifest_rejects_symlink(self):
+        with tempfile.TemporaryDirectory() as d:
+            target = os.path.join(d, "real.txt")
+            with open(target, "w") as f:
+                f.write("data")
+            link = os.path.join(d, "link.txt")
+            os.symlink(target, link)
+            with self.assertRaises(ValueError):
+                evidence.build_manifest(d)
+
+    def test_manifest_rejects_path_escape(self):
+        with tempfile.TemporaryDirectory() as d:
+            outside = os.path.join(os.path.dirname(d), "outside.txt")
+            with open(outside, "w") as f:
+                f.write("escaped")
+            link = os.path.join(d, "escape.txt")
+            try:
+                os.symlink(outside, link)
+                with self.assertRaises(ValueError):
+                    evidence.build_manifest(d)
+            finally:
+                os.remove(outside)
+
 
 class TestEvidenceRoot(unittest.TestCase):
     def test_rejects_repo_path(self):

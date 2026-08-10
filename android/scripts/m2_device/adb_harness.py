@@ -69,6 +69,10 @@ EXPECTED_SIGNER = "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2"
 EXPECTED_ADB_VERSION = "1.0.41"
 EXPECTED_EMULATOR_VERSION = "33.1.24.0"
 SYSTEM_IMAGE_ID = "google/sdk_gphone64_arm64/emu64a:14"
+FIXTURE_RECEIPT_DIGEST = (
+    "dad6f7ac3b3c10ac7b88dfe2397746acb11ee6a42957cf2d1fee7afe1325bdb0"
+)
+EXPECTED_BUILD_TOOLS_VERSION = "34.0.0"
 
 
 class AdbHarness:
@@ -92,6 +96,7 @@ class AdbHarness:
         self.repo_root = repo_root or os.getcwd()
         self.adb_tool: ToolIdentity | None = None
         self.emulator_tool: ToolIdentity | None = None
+        self.build_tools_tool: ToolIdentity | None = None
         self.emulator_process: commands.ManagedProcess | None = None
         self.screenrecord_process: commands.ManagedProcess | None = None
 
@@ -139,7 +144,18 @@ class AdbHarness:
             avds = self.runner([self.emulator_tool.path, "-list-avds"], timeout=10)
             if AVD_NAME not in avds.stdout.decode("utf-8", errors="replace"):
                 return self._fail("preflight", f"AVD {AVD_NAME} not found".encode())
-            return self._ok("preflight", b"Preflight check passed.")
+            sdk = os.environ.get("ANDROID_HOME") or os.environ.get("ANDROID_SDK_ROOT", "")
+            if sdk:
+                aapt2 = os.path.join(sdk, "build-tools", EXPECTED_BUILD_TOOLS_VERSION, "aapt2")
+                if os.path.isfile(aapt2):
+                    self.build_tools_tool = commands.resolve_tool(
+                        "aapt2", path=aapt2, version_args=["version"])
+            msg = (
+                f"preflight passed receipt={FIXTURE_RECEIPT_DIGEST[:12]}"
+                f" build_tools={EXPECTED_BUILD_TOOLS_VERSION}"
+                f" snapshot={SNAPSHOT_NAME}"
+            )
+            return self._ok("preflight", msg.encode())
         except Exception as e:
             return self._fail("preflight", str(e).encode())
 
@@ -150,9 +166,12 @@ class AdbHarness:
         if status_res.stdout.decode("utf-8").strip():
             raise RuntimeError("repository not clean — uncommitted changes")
         apk_sha = commands.digest_file(self.apk_path)
+        tools = [self.adb_tool, self.emulator_tool]
+        if self.build_tools_tool is not None:
+            tools.append(self.build_tools_tool)
         return CaptureContext(
             repo_head=repo_head, apk_sha256=apk_sha,
-            tools=[self.adb_tool, self.emulator_tool],
+            tools=tools, fixture_receipt_digest=FIXTURE_RECEIPT_DIGEST,
         )
 
     def launch_emulator(self) -> CommandResult:

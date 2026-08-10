@@ -23,6 +23,7 @@ class CaptureContext:
     repo_head: str
     apk_sha256: str
     tools: list[ToolIdentity]
+    fixture_receipt_digest: str = ""
 
 
 _PRE_MUTATION = frozenset({
@@ -97,6 +98,7 @@ class Orchestrator:
         self._restored = False
         self._emulator_launched = False
         self._reached: str | None = None
+        self.fixture_receipt_digest: str = ""
 
     def _on_signal(self, signum, frame):
         if self.terminal is None:
@@ -121,6 +123,7 @@ class Orchestrator:
             self.repo_head = ctx.repo_head
             self.apk_sha256 = ctx.apk_sha256
             self.tools = list(ctx.tools)
+            self.fixture_receipt_digest = ctx.fixture_receipt_digest
         except Exception as e:
             self.steps.append(_make_step(
                 "capture_context", "capture context",
