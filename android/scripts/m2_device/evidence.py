@@ -175,6 +175,16 @@ def finalize(
         raise ValueError("manifest digest drift since approval")
     if approval.decision != VisualReview.APPROVED:
         raise ValueError(f"approval decision was {approval.decision!r}, not approved")
+    if capture.manifest_digest is not None and capture.manifest_digest != man_d:
+        raise ValueError("capture-record manifest_digest does not match supplied manifest")
+    for name, expected_hash in manifest.items():
+        path = os.path.join(evidence_dir, name)
+        if not os.path.isfile(path):
+            raise ValueError(f"manifest file missing from evidence dir: {name}")
+        with open(path, "rb") as fh:
+            actual = hashlib.sha256(fh.read()).hexdigest()
+        if actual != expected_hash:
+            raise ValueError(f"manifest file digest mismatch: {name}")
     if capture.restoration is not None:
         if capture.restoration.cause != TerminalCause.COMPLETED:
             raise ValueError(
@@ -186,10 +196,13 @@ def finalize(
         "png": sum(1 for n in manifest if n.endswith(".png")),
         "mp4": sum(1 for n in manifest if n.endswith(".mp4")),
     }
-    if counts.get("screenshots") is not None and counts["screenshots"] != derived_counts["png"]:
-        raise ValueError(
-            f"caller screenshot count {counts['screenshots']} != manifest PNG count {derived_counts['png']}"
-        )
+    if counts:
+        for k, v in counts.items():
+            mapped = {"screenshots": "png", "videos": "mp4"}.get(k, k)
+            if mapped in derived_counts and v != derived_counts[mapped]:
+                raise ValueError(
+                    f"caller count {k}={v} != manifest-derived {mapped}={derived_counts[mapped]}"
+                )
     privacy_ok = scan_directory(evidence_dir)
     if not privacy_ok:
         raise ValueError("privacy scan failed — credential patterns detected in evidence")

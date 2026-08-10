@@ -157,6 +157,15 @@ class AdbHarness:
             avds = self.runner([self.emulator_tool.path, "-list-avds"], timeout=10)
             if AVD_NAME not in avds.stdout.decode("utf-8", errors="replace"):
                 return self._fail("preflight", f"AVD {AVD_NAME} not found".encode())
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.settimeout(1.0)
+            try:
+                s.connect(("127.0.0.1", 5554))
+                return self._fail("preflight", b"port 5554 occupied - another emulator may be running")
+            except (ConnectionRefusedError, OSError):
+                pass
+            finally:
+                s.close()
             sdk = os.environ.get("ANDROID_HOME") or os.environ.get("ANDROID_SDK_ROOT", "")
             if sdk:
                 aapt2 = os.path.join(sdk, "build-tools", EXPECTED_BUILD_TOOLS_VERSION, "aapt2")
@@ -190,7 +199,13 @@ class AdbHarness:
     def launch_emulator(self) -> CommandResult:
         argv = self._emu_argv()
         self.emulator_process = self.starter(argv)
-        return self._ok("emulator_launch", b"Emulator launch initiated.")
+        pid = self.emulator_process.proc.pid
+        start = self.emulator_process.start_utc
+        msg = (
+            f"launched pid={pid} start={start}"
+            f" exe={self.emulator_tool.path} avd={AVD_NAME}"
+        )
+        return self._ok("emulator_launch", msg.encode())
 
     def attach(self) -> CommandResult:
         return self.runner(self._cmd("wait-for-device"), timeout=30.0)
@@ -620,6 +635,9 @@ class AdbHarness:
         )
 
     def restore(self) -> CommandResult:
+        if self.screenrecord_process is not None:
+            self.finisher(self.screenrecord_process, timeout=5.0, terminate=True)
+            self.screenrecord_process = None
         return self.runner(self._cmd("emu", "snapshot", "load", SNAPSHOT_NAME))
 
     def verify_restore(self) -> PriorDeviceState:

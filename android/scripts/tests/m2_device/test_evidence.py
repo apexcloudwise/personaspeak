@@ -1,6 +1,7 @@
 """Tests for evidence validation, privacy scans, media checks, and CLI."""
 
 import io
+import hashlib
 import os
 import struct
 import sys
@@ -260,11 +261,12 @@ class TestFinalize(unittest.TestCase):
 
     def test_finalize_detects_privacy_violation(self):
         cap = self._capture()
-        man = {"log.txt": "abc"}
+        content = b"api_key=sk-1234567890abcdef\n"
+        man = {"log.txt": hashlib.sha256(content).hexdigest()}
         appr = self._make_approval(cap, man)
         with tempfile.TemporaryDirectory() as d:
-            with open(os.path.join(d, "log.txt"), "w") as f:
-                f.write("api_key=sk-1234567890abcdef\n")
+            with open(os.path.join(d, "log.txt"), "wb") as f:
+                f.write(content)
             with self.assertRaises(ValueError) as cm:
                 evidence.finalize(
                     cap, appr, man, d,
@@ -275,11 +277,12 @@ class TestFinalize(unittest.TestCase):
 
     def test_empty_manifest_media_fails_closed(self):
         cap = self._capture()
-        man = {"log.txt": "abc"}
+        content = b"clean text\n"
+        man = {"log.txt": hashlib.sha256(content).hexdigest()}
         appr = self._make_approval(cap, man)
         with tempfile.TemporaryDirectory() as d:
-            with open(os.path.join(d, "log.txt"), "w") as f:
-                f.write("clean text\n")
+            with open(os.path.join(d, "log.txt"), "wb") as f:
+                f.write(content)
             with self.assertRaises(ValueError) as cm:
                 evidence.finalize(
                     cap, appr, man, d,

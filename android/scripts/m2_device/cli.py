@@ -56,6 +56,20 @@ def cmd_capture(args: argparse.Namespace) -> int:
         print(f"qualification failed: {orchestrator.terminal}", file=sys.stderr)
         return 1
 
+    incomplete = []
+    if record.restoration is None:
+        incomplete.append("restoration")
+    phases = [s.phase for s in record.steps]
+    if "verify_restore" not in phases:
+        incomplete.append("verify_restore")
+    if "release_emulator" not in phases:
+        incomplete.append("release_emulator")
+    if "verify_release" not in phases:
+        incomplete.append("verify_release")
+    if incomplete:
+        print(f"qualification incomplete: missing {incomplete}", file=sys.stderr)
+        return 1
+
     return 0
 
 
@@ -72,8 +86,11 @@ def cmd_finalize(args: argparse.Namespace) -> int:
         return 1
     with open(args.manifest) as f:
         manifest = json.load(f)
+    evidence_subdir = os.path.join(args.run_dir, "evidence")
+    if not os.path.isdir(evidence_subdir):
+        evidence_subdir = args.run_dir
     receipt = evidence.finalize(
-        capture, approval, manifest, args.run_dir,
+        capture, approval, manifest, evidence_subdir,
         restoration_verdict=args.restoration_verdict,
         counts=json.loads(args.counts),
         evidence_commit=args.evidence_commit,
