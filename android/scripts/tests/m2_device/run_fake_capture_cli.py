@@ -2,8 +2,15 @@
 """Run fake capture CLI entry point using mock toolchain."""
 
 import os
-import shutil
 import sys
+
+_repo_root = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "..", "..", "..", "..", "..")
+)
+if _repo_root not in sys.path:
+    sys.path.insert(0, _repo_root)
+
+import shutil
 
 from android.scripts.m2_device import cli
 from android.scripts.m2_device.adb_harness import CANDIDATE_REPHRASING

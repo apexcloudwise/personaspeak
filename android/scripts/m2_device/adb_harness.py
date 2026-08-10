@@ -59,6 +59,8 @@ APPLY_RES_ID = f"{KEYBOARD_PACKAGE}:id/apply_button"
 DISMISS_RES_ID = f"{KEYBOARD_PACKAGE}:id/cancel_button"
 STATE_LOADING = "LOADING"
 STATE_REVIEW = "REVIEW"
+CANDIDATE_RES_ID = f"{KEYBOARD_PACKAGE}:id/candidate_text"
+ANIMATION_SCALE = "1.0"
 SEARCH_RES_ID = f"{SETTINGS_PACKAGE}:id/search_action_bar"
 
 EXPECTED_VERSION_NAME = "0.1.0"
@@ -125,6 +127,9 @@ class AdbHarness:
         try:
             self.adb_tool = commands.resolve_tool("adb")
             self.emulator_tool = commands.resolve_tool("emulator")
+            avds = self.runner([self.emulator_tool.path, "-list-avds"], timeout=10)
+            if AVD_NAME not in avds.stdout.decode("utf-8", errors="replace"):
+                return self._fail("preflight", f"AVD {AVD_NAME} not found".encode())
             return self._ok("preflight", b"Preflight check passed.")
         except Exception as e:
             return self._fail("preflight", str(e).encode())
@@ -214,6 +219,20 @@ class AdbHarness:
         if gboard not in prior.enabled_imes:
             errors.append("Gboard IME not enabled")
 
+        try:
+            abi = self._out(self.runner(self._cmd("shell", "getprop", "ro.product.cpu.abi")))
+            if abi != ABI:
+                errors.append(f"ABI mismatch: got {abi}")
+            density = self._out(self.runner(self._cmd("shell", "getprop", "ro.sf.lcd_density")))
+            if density != str(SCREEN_DPI):
+                errors.append(f"density mismatch: got {density}")
+            anim = self._out(self.runner(
+                self._cmd("shell", "settings", "get", "global", "window_animation_scale")))
+            if anim != ANIMATION_SCALE:
+                errors.append(f"animation scale mismatch: got {anim}")
+        except ValueError:
+            errors.append("fixture property query failed")
+
         if errors:
             return self._fail("validate_fixture", "\n".join(errors).encode())
         return self._ok("validate_fixture", b"Fixture identity validated.")
@@ -276,6 +295,55 @@ class AdbHarness:
         y = (int(m.group(2)) + int(m.group(4))) // 2
         return str(x), str(y)
 
+    def _verify_kb(self, steps, label, expected):
+        res, root = self._dump_hierarchy(label)
+        if root is None:
+            self._step(steps, f"verify_{label}", res)
+            return None
+        panel = self._find(root, PANEL_STATE_RES_ID)
+        ok = panel is not None and panel.attrib.get("text", "") == expected
+        self._step(steps, f"verify_{label}",
+                   self._ok(label) if ok else self._fail(label, f"expected {expected}".encode()))
+        return root if ok else None
+
+    def _tap_btn(self, steps, root, op, res_id):
+        btn = self._find(root, res_id)
+        if btn is None:
+            self._step(steps, op, self._fail(op, f"{res_id} not found".encode()))
+            return None
+        center = self._center(btn)
+        if center is None:
+            self._step(steps, op, self._fail(op, b"bounds missing"))
+            return None
+        res = self.runner(self._cmd("shell", "input", "tap", *center))
+        if not self._step(steps, op, res):
+            return None
+        return True
+
+    def _verify_text(self, steps, root, expected, op="verify_text"):
+        field = self._find(root, SEARCH_RES_ID)
+        if field is None:
+            self._step(steps, op, self._fail(op, b"editor not found"))
+            return False
+        actual = field.attrib.get("text", "")
+        ok = actual == expected
+        self._step(steps, op,
+                   self._ok(op) if ok else self._fail(op, f"got {actual[:40]}".encode()))
+        return ok
+
+    def _clear_field(self, steps):
+        for _ in range(len(CANDIDATE_REPHRASING) + len(SOURCE_TEXT) + 10):
+            del_res = self.runner(self._cmd("shell", "input", "keyevent", "67"))
+            if del_res.returncode != 0:
+                self._step(steps, "clear_field", del_res)
+                return False
+        self._step(steps, "clear_field", self._ok("clear"))
+        return True
+
+    def _type_source(self, steps):
+        res = self.runner(self._cmd("shell", "input", "text", SOURCE_TEXT.replace(" ", "%s")))
+        return self._step(steps, "type_source_text", res)
+
     def run_journey(self) -> list[StepRecord]:
         steps: list[StepRecord] = []
 
@@ -291,13 +359,12 @@ class AdbHarness:
 
         field = self._find(root, SEARCH_RES_ID)
         if field is None:
-            self._step(steps, "locate_editor", self._fail("locate_editor", b"editor not found"))
+            self._step(steps, "locate_editor", self._fail("locate", b"not found"))
             return steps
         center = self._center(field)
         if center is None:
-            self._step(steps, "locate_editor", self._fail("locate_editor", b"bounds missing"))
+            self._step(steps, "locate_editor", self._fail("locate", b"bounds"))
             return steps
-
         res = self.runner(self._cmd("shell", "input", "tap", *center))
         if not self._step(steps, "focus_editor", res):
             return steps
@@ -305,68 +372,60 @@ class AdbHarness:
         res = self.runner(self._cmd("shell", "input", "text", STALE_TEXT.replace(" ", "%s")))
         if not self._step(steps, "type_stale_text", res):
             return steps
+        if not self._clear_field(steps):
+            return steps
 
-        for _ in range(len(STALE_TEXT) + 5):
-            del_res = self.runner(self._cmd("shell", "input", "keyevent", "67"))
-            if del_res.returncode != 0:
-                self._step(steps, "clear_stale_text", del_res)
+        if not self._type_source(steps):
+            return steps
+        if self._verify_kb(steps, "loading_1", STATE_LOADING) is None:
+            return steps
+        review_root = self._verify_kb(steps, "review_1", STATE_REVIEW)
+        if review_root is None:
+            return steps
+
+        if not self._tap_btn(steps, review_root, "cancel_rephrasing", DISMISS_RES_ID):
+            return steps
+        v_res, v_root = self._dump_hierarchy("after_cancel")
+        if v_root is None or not self._verify_text(steps, v_root, SOURCE_TEXT, "verify_cancel_unchanged"):
+            if v_root is not None:
                 return steps
-        self._step(steps, "clear_stale_text", self._ok("clear"))
-
-        res = self.runner(self._cmd("shell", "input", "text", SOURCE_TEXT.replace(" ", "%s")))
-        if not self._step(steps, "type_source_text", res):
+            self._step(steps, "verify_cancel_unchanged", v_res)
             return steps
 
-        l_res, l_root = self._dump_hierarchy("loading")
-        if l_root is None:
-            self._step(steps, "verify_loading", l_res)
+        if not self._clear_field(steps) or not self._type_source(steps):
             return steps
-        panel = self._find(l_root, PANEL_STATE_RES_ID)
-        loading_ok = panel is not None and panel.attrib.get("text", "") == STATE_LOADING
-        self._step(steps, "verify_loading",
-                   self._ok("verify_loading") if loading_ok
-                   else self._fail("verify_loading", b"keyboard not in LOADING state"))
-        if not loading_ok:
+        if self._verify_kb(steps, "loading_2", STATE_LOADING) is None:
+            return steps
+        review_root = self._verify_kb(steps, "review_2", STATE_REVIEW)
+        if review_root is None:
             return steps
 
-        r_res, r_root = self._dump_hierarchy("review")
-        if r_root is None:
-            self._step(steps, "verify_review", r_res)
+        if not self._tap_btn(steps, review_root, "apply_rephrasing", APPLY_RES_ID):
             return steps
-        panel = self._find(r_root, PANEL_STATE_RES_ID)
-        review_ok = panel is not None and panel.attrib.get("text", "") == STATE_REVIEW
-        self._step(steps, "verify_review",
-                   self._ok("verify_review") if review_ok
-                   else self._fail("verify_review", b"keyboard not in REVIEW state"))
-        if not review_ok:
+        v_res, v_root = self._dump_hierarchy("after_apply")
+        if v_root is None or not self._verify_text(steps, v_root, CANDIDATE_REPHRASING, "verify_apply"):
+            if v_root is not None:
+                return steps
+            self._step(steps, "verify_apply", v_res)
             return steps
 
-        apply_btn = self._find(r_root, APPLY_RES_ID)
-        if apply_btn is None:
-            self._step(steps, "apply_rephrasing", self._fail("apply", b"apply button not found"))
+        if not self._clear_field(steps) or not self._type_source(steps):
             return steps
-        center = self._center(apply_btn)
-        if center is None:
-            self._step(steps, "apply_rephrasing", self._fail("apply", b"apply bounds missing"))
+        if self._verify_kb(steps, "loading_3", STATE_LOADING) is None:
             return steps
-        res = self.runner(self._cmd("shell", "input", "tap", *center))
-        if not self._step(steps, "apply_rephrasing", res):
+        review_root = self._verify_kb(steps, "review_3", STATE_REVIEW)
+        if review_root is None:
             return steps
 
-        v_res, v_root = self._dump_hierarchy("verify")
-        if v_root is None:
-            self._step(steps, "verify_candidate_rephrasing", v_res)
+        if not self._tap_btn(steps, review_root, "dismiss_rephrasing", DISMISS_RES_ID):
             return steps
-        v_field = self._find(v_root, SEARCH_RES_ID)
-        if v_field is None:
-            self._step(steps, "verify_candidate_rephrasing",
-                       self._fail("verify", b"editor not found in verify dump"))
+        v_res, v_root = self._dump_hierarchy("after_dismiss")
+        if v_root is None or not self._verify_text(steps, v_root, SOURCE_TEXT, "verify_dismiss_unchanged"):
+            if v_root is not None:
+                return steps
+            self._step(steps, "verify_dismiss_unchanged", v_res)
             return steps
-        actual = v_field.attrib.get("text", "")
-        v_rc = 0 if actual == CANDIDATE_REPHRASING else 1
-        self._step(steps, "verify_candidate_rephrasing",
-                   CommandResult(argv=["verify"], start_utc=_UTC(), end_utc=_UTC(),
-                                 returncode=v_rc, stdout=actual.encode(), stderr=b""))
+
         return steps
 
     def capture_evidence(self) -> CommandResult:

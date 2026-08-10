@@ -101,6 +101,7 @@ class TestAdbHarness(unittest.TestCase):
         mock_resolve.side_effect = lambda name: ToolIdentity(
             name=name, path=f"/bin/{name}", version="1.0"
         )
+        self.mock_runner.return_value = _cr(stdout=b"M2_Qual_Fixture\n")
         res = self.harness.preflight()
         self.assertEqual(res.returncode, 0)
         self.assertIsNotNone(self.harness.adb_tool)
@@ -209,6 +210,12 @@ class TestAdbHarness(unittest.TestCase):
                 return _cr(stdout=TIMEZONE.encode())
             if "getprop ro.product.locale" in cmd:
                 return _cr(stdout=LOCALE.encode())
+            if "ro.product.cpu.abi" in cmd:
+                return _cr(stdout=ABI.encode())
+            if "ro.sf.lcd_density" in cmd:
+                return _cr(stdout=b"420\n")
+            if "window_animation_scale" in cmd:
+                return _cr(stdout=b"1.0\n")
             return _cr()
 
         self.mock_runner.side_effect = side_effect
@@ -254,19 +261,26 @@ class TestAdbHarness(unittest.TestCase):
             if "pull" in argv:
                 dest = argv[-1]
                 label = os.path.basename(dest)
-                if label == "loading.xml":
-                    xml = ('<hierarchy><node text="" resource-id="com.android.settings:id/search_action_bar" '
+                if label.startswith("loading"):
+                    xml = ('<hierarchy><node text="Tea at six." resource-id="com.android.settings:id/search_action_bar" '
                            'class="android.widget.EditText" bounds="[100,200][900,300]"/>'
                            '<node text="LOADING" resource-id="biz.pixelperfectstudios.personaspeak:id/panel_state" '
                            'class="android.widget.TextView" bounds="[10,1810][1070,1850]"/></hierarchy>')
-                elif label == "review.xml":
-                    xml = ('<hierarchy><node text="" resource-id="com.android.settings:id/search_action_bar" '
+                elif label.startswith("review"):
+                    xml = ('<hierarchy><node text="Tea at six." resource-id="com.android.settings:id/search_action_bar" '
                            'class="android.widget.EditText" bounds="[100,200][900,300]"/>'
                            '<node text="REVIEW" resource-id="biz.pixelperfectstudios.personaspeak:id/panel_state" '
                            'class="android.widget.TextView" bounds="[10,1810][1070,1850]"/>'
+                           f'<node text="{CANDIDATE_REPHRASING}" resource-id="biz.pixelperfectstudios.personaspeak:id/candidate_text" '
+                           'class="android.widget.TextView" bounds="[10,1850][1070,1900]"/>'
                            '<node resource-id="biz.pixelperfectstudios.personaspeak:id/apply_button" '
-                           'content-desc="Apply" class="android.widget.Button" bounds="[100,2300][500,2380]"/></hierarchy>')
-                elif label == "verify.xml":
+                           'content-desc="Apply" class="android.widget.Button" bounds="[100,2300][500,2380]"/>'
+                           '<node resource-id="biz.pixelperfectstudios.personaspeak:id/cancel_button" '
+                           'content-desc="Cancel" class="android.widget.Button" bounds="[580,2300][980,2380]"/></hierarchy>')
+                elif "after_cancel" in label or "after_dismiss" in label:
+                    xml = ('<hierarchy><node text="Tea at six." resource-id="com.android.settings:id/search_action_bar" '
+                           'class="android.widget.EditText" bounds="[100,200][900,300]"/></hierarchy>')
+                elif "after_apply" in label:
                     xml = (f'<hierarchy><node text="{CANDIDATE_REPHRASING}" '
                            'resource-id="com.android.settings:id/search_action_bar" '
                            'class="android.widget.EditText" bounds="[100,200][900,300]"/></hierarchy>')
@@ -280,16 +294,15 @@ class TestAdbHarness(unittest.TestCase):
 
         self.mock_runner.side_effect = side_effect
         steps = self.harness.run_journey()
-
         operations = [s.operation for s in steps]
         self.assertIn("launch_editor", operations)
-        self.assertIn("focus_editor", operations)
-        self.assertIn("type_source_text", operations)
-        self.assertIn("verify_loading", operations)
-        self.assertIn("verify_review", operations)
+        self.assertIn("verify_loading_1", operations)
+        self.assertIn("verify_review_1", operations)
+        self.assertIn("cancel_rephrasing", operations)
+        self.assertIn("verify_loading_2", operations)
         self.assertIn("apply_rephrasing", operations)
-        self.assertIn("verify_candidate_rephrasing", operations)
-
+        self.assertIn("verify_apply", operations)
+        self.assertIn("dismiss_rephrasing", operations)
         for step in steps:
             self.assertEqual(step.cause, TerminalCause.COMPLETED, f"{step.operation} failed")
 
@@ -299,24 +312,26 @@ class TestAdbHarness(unittest.TestCase):
             if "pull" in argv:
                 dest = argv[-1]
                 label = os.path.basename(dest)
-                if label == "loading.xml":
-                    xml = ('<hierarchy><node text="" resource-id="com.android.settings:id/search_action_bar" '
+                if label.startswith("loading"):
+                    xml = ('<hierarchy><node text="Tea at six." resource-id="com.android.settings:id/search_action_bar" '
                            'class="android.widget.EditText" bounds="[100,200][900,300]"/>'
                            '<node text="LOADING" resource-id="biz.pixelperfectstudios.personaspeak:id/panel_state" '
                            'class="android.widget.TextView" bounds="[10,1810][1070,1850]"/></hierarchy>')
-                elif label == "review.xml":
-                    xml = ('<hierarchy><node text="" resource-id="com.android.settings:id/search_action_bar" '
+                elif label.startswith("review"):
+                    xml = ('<hierarchy><node text="Tea at six." resource-id="com.android.settings:id/search_action_bar" '
                            'class="android.widget.EditText" bounds="[100,200][900,300]"/>'
                            '<node text="REVIEW" resource-id="biz.pixelperfectstudios.personaspeak:id/panel_state" '
                            'class="android.widget.TextView" bounds="[10,1810][1070,1850]"/>'
                            '<node resource-id="biz.pixelperfectstudios.personaspeak:id/apply_button" '
-                           'content-desc="Apply" class="android.widget.Button" bounds="[100,2300][500,2380]"/></hierarchy>')
-                elif label == "verify.xml":
+                           'content-desc="Apply" class="android.widget.Button" bounds="[100,2300][500,2380]"/>'
+                           '<node resource-id="biz.pixelperfectstudios.personaspeak:id/cancel_button" '
+                           'content-desc="Cancel" class="android.widget.Button" bounds="[580,2300][980,2380]"/></hierarchy>')
+                elif "after_apply" in label:
                     xml = ('<hierarchy><node text="wrong text" '
                            'resource-id="com.android.settings:id/search_action_bar" '
                            'class="android.widget.EditText" bounds="[100,200][900,300]"/></hierarchy>')
                 else:
-                    xml = ('<hierarchy><node text="" resource-id="com.android.settings:id/search_action_bar" '
+                    xml = ('<hierarchy><node text="Tea at six." resource-id="com.android.settings:id/search_action_bar" '
                            'class="android.widget.EditText" bounds="[100,200][900,300]"/></hierarchy>')
                 with open(dest, "w") as f:
                     f.write(xml)
@@ -325,9 +340,9 @@ class TestAdbHarness(unittest.TestCase):
 
         self.mock_runner.side_effect = side_effect
         steps = self.harness.run_journey()
-        verify = [s for s in steps if s.operation == "verify_candidate_rephrasing"]
-        self.assertTrue(verify)
-        self.assertEqual(verify[0].cause, TerminalCause.JOURNEY_FAILED)
+        apply_verify = [s for s in steps if s.operation == "verify_apply"]
+        self.assertTrue(apply_verify)
+        self.assertEqual(apply_verify[0].cause, TerminalCause.JOURNEY_FAILED)
 
     def test_run_journey_field_not_found(self):
 

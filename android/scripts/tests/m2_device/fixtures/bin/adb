@@ -12,6 +12,11 @@ if log_path:
 
 STATE_FILE = os.environ.get("FAKE_ADB_STATE", "/tmp/fake_adb_edittext.state")
 KB_FILE = os.environ.get("FAKE_ADB_KEYBOARD", "/tmp/fake_adb_keyboard.state")
+CANDIDATE = os.environ.get("FAKE_ADB_REPHRASING", "")
+SOURCE = "Tea at six."
+
+APPLY_BOUNDS = (100, 2300, 500, 2380)
+CANCEL_BOUNDS = (580, 2300, 980, 2380)
 
 
 def _read(path):
@@ -58,11 +63,18 @@ def _write_mp4(path):
 def _write_hierarchy(path):
     text = _read(STATE_FILE)
     kb = _read(KB_FILE)
-    kb_node = ""
-    if kb in ("LOADING", "REVIEW"):
-        kb_node = (
-            f'<node resource-id="biz.pixelperfectstudios.personaspeak:id/panel_state" '
-            f'text="{kb}" class="android.widget.TextView" bounds="[10,1810][1070,1850]"/>'
+    nodes = ""
+    if kb == "LOADING":
+        nodes = (
+            '<node text="LOADING" resource-id="biz.pixelperfectstudios.personaspeak:id/panel_state" '
+            'class="android.widget.TextView" bounds="[10,1810][1070,1850]"/>'
+        )
+    elif kb == "REVIEW":
+        nodes = (
+            f'<node text="REVIEW" resource-id="biz.pixelperfectstudios.personaspeak:id/panel_state" '
+            'class="android.widget.TextView" bounds="[10,1810][1070,1850]"/>'
+            f'<node text="{CANDIDATE}" resource-id="biz.pixelperfectstudios.personaspeak:id/candidate_text" '
+            'class="android.widget.TextView" bounds="[10,1850][1070,1900]"/>'
             '<node resource-id="biz.pixelperfectstudios.personaspeak:id/apply_button" '
             'content-desc="Apply" class="android.widget.Button" bounds="[100,2300][500,2380]"/>'
             '<node resource-id="biz.pixelperfectstudios.personaspeak:id/cancel_button" '
@@ -74,7 +86,7 @@ def _write_hierarchy(path):
             f'<node index="0" text="{text}" '
             'resource-id="com.android.settings:id/search_action_bar" '
             'class="android.widget.EditText" bounds="[100,200][900,300]"/>'
-            f'{kb_node}'
+            f'{nodes}'
             '</hierarchy>'
         )
 
@@ -87,6 +99,12 @@ elif "getprop ro.build.fingerprint" in cmd:
     print("google/sdk_gphone64_arm64/emu64a:14/UE1A.230829.050/12077443:userdebug/dev-keys")
 elif "getprop ro.build.version.sdk" in cmd:
     print("34")
+elif "getprop ro.product.cpu.abi" in cmd:
+    print("arm64-v8a")
+elif "getprop ro.sf.lcd_density" in cmd:
+    print("420")
+elif "settings get global window_animation_scale" in cmd:
+    print("1.0")
 elif "wm size" in cmd:
     print("Physical size: 1080x2400")
 elif "pm path" in cmd:
@@ -116,16 +134,26 @@ elif "screencap" in cmd:
 elif "screenrecord" in cmd:
     pass
 elif "input tap" in cmd:
-    pass
+    parts = sys.argv
+    x_idx = parts.index("tap") + 1
+    x, y = int(parts[x_idx]), int(parts[x_idx + 1])
+    kb = _read(KB_FILE)
+    if kb == "REVIEW":
+        ax1, ay1, ax2, ay2 = APPLY_BOUNDS
+        cx1, cy1, cx2, cy2 = CANCEL_BOUNDS
+        if ax1 <= x <= ax2 and ay1 <= y <= ay2:
+            _write(STATE_FILE, CANDIDATE)
+            _write(KB_FILE, "")
+        elif cx1 <= x <= cx2 and cy1 <= y <= cy2:
+            _write(KB_FILE, "")
 elif "input keyevent" in cmd:
     cur = _read(STATE_FILE)
     _write(STATE_FILE, cur[:-1])
 elif "input text" in cmd:
     idx = sys.argv.index("text")
     typed = sys.argv[idx + 1].replace("%s", " ")
-    rephrasing = os.environ.get("FAKE_ADB_REPHRASING")
-    if rephrasing and typed == "Tea at six.":
-        _write(STATE_FILE, rephrasing)
+    if CANDIDATE and typed == SOURCE:
+        _write(STATE_FILE, typed)
         _write(KB_FILE, "LOADING")
     else:
         _write(STATE_FILE, typed)

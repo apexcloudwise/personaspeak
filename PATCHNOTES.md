@@ -14,24 +14,33 @@ Newest first, like all respectable patch notes.
 
 - The M2 device-qualification harness gained a real evidence-capture
   path: seven screenshots and one video via `screencap`/`screenrecord`,
-  validated structurally (PNG CRC + IHDR/IEND; MP4 now requires both
-  `ftyp` and `moov`/`mdat`, not an empty `ftyp`-only shell) before the
-  journey record is sealed. The journey verifies PersonaSpeak keyboard
-  states — Loading, Review, Apply — by reading the panel hierarchy, not
-  by substituting a Settings search-field demo. XML parse errors stop
-  the journey; the search-field selector matches the exact pinned
-  resource-id. Every `keyevent` return code is checked. `verify_release`
-  discriminates `ConnectionRefused` (released) from timeout and other
-  socket errors (inconclusive, fail-closed). `capture_prior_state`
-  returns `None` on any unparseable property instead of defaulting to
-  pinned values. All tool invocations use resolved paths from preflight,
-  never bare PATH-resolved names. `SIGINT`/`SIGTERM` converge on
-  restoration and a decodable failure receipt. The CLI verifies
-  `--apk-sha256` against the on-disk APK before mutation.
-  `CaptureContext` lives at the orchestration boundary; monkey-patching
-  is gone. The fake adb simulates keyboard state transitions; forbidden
-  `apksigner`/`keytool` canaries guard the ledger. 169 tests, no device
-  contacted (#59).
+  validated structurally (PNG CRC + IHDR/IEND; MP4 requires `ftyp`
+  plus `moov` or non-empty `mdat`) with exact count enforcement (7+1)
+  before the journey record is sealed. The journey verifies PersonaSpeak
+  keyboard panel states through a complete ASK cycle: Loading, Review,
+  Cancel (text unchanged), Again, Review, Apply (text becomes
+  candidate), Review, Dismiss (text unchanged) — with stale-input
+  clearing and mutation-proof text verification at each transition.
+  Preflight verifies the AVD exists before launch; post-attach
+  fixture checks pin ABI, density, and animation scale. XML parse
+  errors stop the journey; the search-field selector matches the exact
+  pinned resource-id. Every `keyevent` return code is checked.
+  `verify_release` discriminates `ConnectionRefused` from timeout and
+  other socket errors. `capture_prior_state` checks every command rc
+  and returns `None` on any failure. All tool invocations use resolved
+  preflight paths. `SIGINT`/`SIGTERM` converge on restoration and a
+  decodable failure receipt; `capture_context` exceptions produce a
+  `PREFLIGHT_FAILED` record. The CLI verifies `--apk-sha256` against
+  the on-disk APK, binds `--repo-root` with clean-head check, builds
+  and writes the evidence manifest, and rejects dirty trees.
+  `install_apk` verifies version/signer via `dumpsys package`.
+  `finalize` raises on privacy/media/restoration failure — no
+  approvable false receipt. `build_manifest` rejects symlinks and path
+  escapes. `CaptureContext` lives at the orchestration boundary;
+  monkey-patching is gone. The fake adb simulates keyboard state
+  transitions with Apply/Cancel tap detection; forbidden
+  `apksigner`/`keytool` canaries guard the ledger. The direct root
+  runner works without `PYTHONPATH`. 169 tests, no device contacted (#59).
 
 ## 2026-08-10 — The Loading row learns the word "Cancel"
 

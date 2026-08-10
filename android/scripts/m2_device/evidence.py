@@ -110,11 +110,16 @@ def validate_mp4(data: bytes) -> bool:
 
 def build_manifest(dir_path: str) -> dict[str, str]:
     manifest: dict[str, str] = {}
-    base = Path(dir_path)
+    base = os.path.realpath(dir_path)
     for root, _, files in os.walk(dir_path):
         for f in sorted(files):
             p = os.path.join(root, f)
-            rel = str(Path(p).relative_to(base))
+            if os.path.islink(p):
+                raise ValueError(f"symlink rejected in evidence dir: {p}")
+            real = os.path.realpath(p)
+            if not (real == base or real.startswith(base + os.sep)):
+                raise ValueError(f"path escape rejected: {p}")
+            rel = str(Path(p).relative_to(Path(dir_path)))
             with open(p, "rb") as fh:
                 manifest[rel] = hashlib.sha256(fh.read()).hexdigest()
     return dict(sorted(manifest.items()))
