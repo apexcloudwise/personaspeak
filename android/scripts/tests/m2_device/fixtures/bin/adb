@@ -87,6 +87,8 @@ def _write_hierarchy(path):
         nodes += (
             '<node text="LOADING" resource-id="biz.pixelperfectstudios.personaspeak:id/panel_state" '
             'class="android.widget.TextView" bounds="[10,1810][1070,1850]"/>'
+            '<node resource-id="biz.pixelperfectstudios.personaspeak:id/cancel_button" '
+            'content-desc="Cancel" class="android.widget.Button" bounds="[580,2300][980,2380]"/>'
         )
     elif kb == "REVIEW":
         nodes += (
@@ -149,9 +151,7 @@ elif "wait-for-device" in cmd:
 elif "uiautomator dump" in cmd:
     pass
 elif "screencap" in cmd:
-    idx = sys.argv.index("screencap") + 2
-    remote = sys.argv[idx]
-    _write_png(remote)
+    pass
 elif "screenrecord" in cmd:
     pass
 elif "input tap" in cmd:

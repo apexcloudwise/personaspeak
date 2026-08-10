@@ -75,6 +75,7 @@ ASK_KEY_COORDS: dict[str, tuple[int, int]] = {
     "V": (435, 1585), "N": (625, 1585),
     " ": (540, 1690), ".": (730, 1690),
 }
+KEYBOARD_EXPECTED_BOUNDS = "[0,1300][1080,2400]"
 
 EXPECTED_VERSION_NAME = "0.1.0"
 EXPECTED_VERSION_CODE = "1"
@@ -161,11 +162,13 @@ class AdbHarness:
             s.settimeout(1.0)
             try:
                 s.connect(("127.0.0.1", 5554))
-                return self._fail("preflight", b"port 5554 occupied - another emulator may be running")
-            except (ConnectionRefusedError, OSError):
-                pass
-            finally:
                 s.close()
+                return self._fail("preflight", b"port 5554 occupied - another emulator may be running")
+            except ConnectionRefusedError:
+                pass
+            except OSError as e:
+                s.close()
+                return self._fail("preflight", f"port probe inconclusive: {e}".encode())
             sdk = os.environ.get("ANDROID_HOME") or os.environ.get("ANDROID_SDK_ROOT", "")
             if sdk:
                 aapt2 = os.path.join(sdk, "build-tools", EXPECTED_BUILD_TOOLS_VERSION, "aapt2")
@@ -339,10 +342,11 @@ class AdbHarness:
 
     @staticmethod
     def _find(root: Any, res_id: str) -> Any | None:
-        for elem in root.iter():
-            if elem.attrib.get("resource-id", "") == res_id:
-                return elem
-        return None
+        matches = [elem for elem in root.iter()
+                   if elem.attrib.get("resource-id", "") == res_id]
+        if len(matches) != 1:
+            return None
+        return matches[0]
 
     @staticmethod
     def _center(elem: Any) -> tuple[str, str] | None:
@@ -415,6 +419,11 @@ class AdbHarness:
             self._step(steps, "validate_keyboard",
                        self._fail("kb", b"keyboard view not found"))
             return False
+        actual = kb.attrib.get("bounds", "")
+        if actual != KEYBOARD_EXPECTED_BOUNDS:
+            self._step(steps, "validate_keyboard",
+                       self._fail("kb", f"bounds mismatch: {actual}".encode()))
+            return False
         self._step(steps, "validate_keyboard", self._ok("kb"))
         return True
 
@@ -455,8 +464,12 @@ class AdbHarness:
         os.makedirs(evidence_dir, exist_ok=True)
         remote = f"/sdcard/{name}.png"
         local = os.path.join(evidence_dir, f"{name}.png")
-        self.runner(self._cmd("shell", "screencap", "-p", remote))
-        self.runner(self._cmd("pull", remote, local))
+        cap = self.runner(self._cmd("shell", "screencap", "-p", remote))
+        if cap.returncode != 0:
+            return False
+        pull = self.runner(self._cmd("pull", remote, local))
+        if pull.returncode != 0:
+            return False
         with open(local, "rb") as fh:
             return evidence.validate_png(fh.read())
 
@@ -493,28 +506,29 @@ class AdbHarness:
         if kb_root is not None and not self._validate_keyboard(steps, kb_root):
             return steps
 
-        self._take_screenshot("01-idle-typed")
-        self._step(steps, "screenshot_01", self._ok("shot"))
-
         if not self._type_text(steps, SOURCE_TEXT, "type_source_1"):
             return steps
 
-        if self._verify_kb(steps, "loading_1", STATE_LOADING) is None:
+        if not self._take_screenshot("01-idle-typed"):
+            self._step(steps, "screenshot_fail", self._fail("shot", b"screenshot failed"))
             return steps
-        self._take_screenshot("02-loading-cancel")
+        self._step(steps, "screenshot_01", self._ok("shot"))
+
+        loading_root = self._verify_kb(steps, "loading_1", STATE_LOADING)
+        if loading_root is None:
+            return steps
+        if not self._take_screenshot("02-loading-cancel"):
+            self._step(steps, "screenshot_fail", self._fail("shot", b"screenshot failed"))
+            return steps
         self._step(steps, "screenshot_02", self._ok("shot"))
 
-        review_root = self._verify_kb(steps, "review_1", STATE_REVIEW)
-        if review_root is None:
+        if not self._tap_btn(steps, loading_root, "cancel_loading", DISMISS_RES_ID):
             return steps
-
-        if not self._tap_btn(steps, review_root, "cancel_rephrasing", DISMISS_RES_ID):
-            return steps
-        v_res, v_root = self._dump_hierarchy("after_cancel")
+        v_res, v_root = self._dump_hierarchy("after_cancel_loading")
         if v_root is None:
             self._step(steps, "verify_cancel_unchanged", v_res)
             return steps
-        if not self._verify_idle(steps, v_root, "after_cancel"):
+        if not self._verify_idle(steps, v_root, "after_cancel_loading"):
             return steps
         if not self._verify_text(steps, v_root, SOURCE_TEXT, "verify_cancel_unchanged"):
             return steps
@@ -527,7 +541,9 @@ class AdbHarness:
         if review_root is None:
             return steps
 
-        self._take_screenshot("03-review")
+        if not self._take_screenshot("03-review"):
+            self._step(steps, "screenshot_fail", self._fail("shot", b"screenshot failed"))
+            return steps
         self._step(steps, "screenshot_03", self._ok("shot"))
 
         if not self._tap_btn(steps, review_root, "apply_rephrasing", APPLY_RES_ID):
@@ -538,7 +554,9 @@ class AdbHarness:
                 return steps
             self._step(steps, "verify_apply", v_res)
             return steps
-        self._take_screenshot("04-applied")
+        if not self._take_screenshot("04-applied"):
+            self._step(steps, "screenshot_fail", self._fail("shot", b"screenshot failed"))
+            return steps
         self._step(steps, "screenshot_04", self._ok("shot"))
 
         if not self._clear_field(steps) or not self._type_text(steps, SOURCE_TEXT, "type_source_3"):
@@ -559,7 +577,9 @@ class AdbHarness:
             return steps
         if not self._verify_text(steps, v_root, SOURCE_TEXT, "verify_dismiss_unchanged"):
             return steps
-        self._take_screenshot("05-dismissed")
+        if not self._take_screenshot("05-dismissed"):
+            self._step(steps, "screenshot_fail", self._fail("shot", b"screenshot failed"))
+            return steps
         self._step(steps, "screenshot_05", self._ok("shot"))
 
         if not self._clear_field(steps) or not self._type_text(steps, SOURCE_TEXT, "type_source_4"):
@@ -580,12 +600,16 @@ class AdbHarness:
             return steps
         if not self._verify_text(steps, v_root, STALE_TEXT, "verify_stale"):
             return steps
-        self._take_screenshot("06-stale")
+        if not self._take_screenshot("06-stale"):
+            self._step(steps, "screenshot_fail", self._fail("shot", b"screenshot failed"))
+            return steps
         self._step(steps, "screenshot_06", self._ok("shot"))
 
         res = self.runner(self._cmd("shell", "am", "start", "-a", SETTINGS_ACTION))
         self._step(steps, "relaunch_settings", res)
-        self._take_screenshot("07-settings")
+        if not self._take_screenshot("07-settings"):
+            self._step(steps, "screenshot_fail", self._fail("shot", b"screenshot failed"))
+            return steps
         self._step(steps, "screenshot_07", self._ok("shot"))
 
         return steps

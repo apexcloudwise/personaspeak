@@ -272,6 +272,13 @@ class TestAdbHarness(unittest.TestCase):
 
     def test_run_journey_success(self):
 
+        kb = ('<node resource-id="biz.pixelperfectstudios.personaspeak:id/keyboard_view" '
+              'class="android.widget.FrameLayout" bounds="[0,1300][1080,2400]"/>')
+        close = ('<node resource-id="com.android.settings:id/search_close_btn" '
+                 'content-desc="Clear" class="android.widget.ImageView" bounds="[950,200][1020,270]"/>')
+        cancel_btn = ('<node resource-id="biz.pixelperfectstudios.personaspeak:id/cancel_button" '
+                      'content-desc="Cancel" class="android.widget.Button" bounds="[580,2300][980,2380]"/>')
+
         def side_effect(argv, **kwargs):
             if "pull" in argv:
                 dest = argv[-1]
@@ -283,56 +290,19 @@ class TestAdbHarness(unittest.TestCase):
                     _write_valid_mp4(dest)
                     return _cr(rc=0, argv=argv)
                 if label.startswith("loading"):
-                    xml = ('<hierarchy><node text="Tea at six." resource-id="com.android.settings:id/search_action_bar" '
-                           'class="android.widget.EditText" bounds="[100,200][900,300]"/>'
-                           '<node resource-id="biz.pixelperfectstudios.personaspeak:id/keyboard_view" '
-                           'class="android.widget.FrameLayout" bounds="[0,1300][1080,2400]"/>'
-                           '<node resource-id="com.android.settings:id/search_close_btn" '
-                           'content-desc="Clear" class="android.widget.ImageView" bounds="[950,200][1020,270]"/>'
-                           '<node text="LOADING" resource-id="biz.pixelperfectstudios.personaspeak:id/panel_state" '
-                           'class="android.widget.TextView" bounds="[10,1810][1070,1850]"/></hierarchy>')
+                    xml = f'<hierarchy><node text="Tea at six." resource-id="com.android.settings:id/search_action_bar" class="android.widget.EditText" bounds="[100,200][900,300]"/>{kb}{close}<node text="LOADING" resource-id="biz.pixelperfectstudios.personaspeak:id/panel_state" class="android.widget.TextView" bounds="[10,1810][1070,1850]"/>{cancel_btn}</hierarchy>'
                 elif label.startswith("review"):
-                    xml = ('<hierarchy><node text="Tea at six." resource-id="com.android.settings:id/search_action_bar" '
-                           'class="android.widget.EditText" bounds="[100,200][900,300]"/>'
-                           '<node resource-id="biz.pixelperfectstudios.personaspeak:id/keyboard_view" '
-                           'class="android.widget.FrameLayout" bounds="[0,1300][1080,2400]"/>'
-                           '<node resource-id="com.android.settings:id/search_close_btn" '
-                           'content-desc="Clear" class="android.widget.ImageView" bounds="[950,200][1020,270]"/>'
-                           '<node text="REVIEW" resource-id="biz.pixelperfectstudios.personaspeak:id/panel_state" '
-                           'class="android.widget.TextView" bounds="[10,1810][1070,1850]"/>'
-                           f'<node text="{CANDIDATE_REPHRASING}" resource-id="biz.pixelperfectstudios.personaspeak:id/candidate_text" '
-                           'class="android.widget.TextView" bounds="[10,1850][1070,1900]"/>'
-                           '<node resource-id="biz.pixelperfectstudios.personaspeak:id/apply_button" '
-                           'content-desc="Apply" class="android.widget.Button" bounds="[100,2300][500,2380]"/>'
-                           '<node resource-id="biz.pixelperfectstudios.personaspeak:id/cancel_button" '
-                           'content-desc="Cancel" class="android.widget.Button" bounds="[580,2300][980,2380]"/></hierarchy>')
+                    xml = f'<hierarchy><node text="Tea at six." resource-id="com.android.settings:id/search_action_bar" class="android.widget.EditText" bounds="[100,200][900,300]"/>{kb}{close}<node text="REVIEW" resource-id="biz.pixelperfectstudios.personaspeak:id/panel_state" class="android.widget.TextView" bounds="[10,1810][1070,1850]"/><node text="{CANDIDATE_REPHRASING}" resource-id="biz.pixelperfectstudios.personaspeak:id/candidate_text" class="android.widget.TextView" bounds="[10,1850][1070,1900]"/><node resource-id="biz.pixelperfectstudios.personaspeak:id/apply_button" content-desc="Apply" class="android.widget.Button" bounds="[100,2300][500,2380]"/>{cancel_btn}</hierarchy>'
                 elif "after_cancel" in label or "after_dismiss" in label:
-                    xml = ('<hierarchy><node text="Tea at six." resource-id="com.android.settings:id/search_action_bar" '
-                           'class="android.widget.EditText" bounds="[100,200][900,300]"/>'
-                           '<node resource-id="biz.pixelperfectstudios.personaspeak:id/keyboard_view" '
-                           'class="android.widget.FrameLayout" bounds="[0,1300][1080,2400]"/></hierarchy>')
+                    xml = f'<hierarchy><node text="Tea at six." resource-id="com.android.settings:id/search_action_bar" class="android.widget.EditText" bounds="[100,200][900,300]"/>{kb}</hierarchy>'
                 elif "after_apply" in label:
-                    xml = (f'<hierarchy><node text="{CANDIDATE_REPHRASING}" '
-                           'resource-id="com.android.settings:id/search_action_bar" '
-                           'class="android.widget.EditText" bounds="[100,200][900,300]"/>'
-                           '<node resource-id="biz.pixelperfectstudios.personaspeak:id/keyboard_view" '
-                           'class="android.widget.FrameLayout" bounds="[0,1300][1080,2400]"/></hierarchy>')
+                    xml = f'<hierarchy><node text="{CANDIDATE_REPHRASING}" resource-id="com.android.settings:id/search_action_bar" class="android.widget.EditText" bounds="[100,200][900,300]"/>{kb}</hierarchy>'
                 elif "after_stale" in label:
-                    xml = (f'<hierarchy><node text="{STALE_TEXT}" '
-                           'resource-id="com.android.settings:id/search_action_bar" '
-                           'class="android.widget.EditText" bounds="[100,200][900,300]"/>'
-                           '<node resource-id="biz.pixelperfectstudios.personaspeak:id/keyboard_view" '
-                           'class="android.widget.FrameLayout" bounds="[0,1300][1080,2400]"/></hierarchy>')
+                    xml = f'<hierarchy><node text="{STALE_TEXT}" resource-id="com.android.settings:id/search_action_bar" class="android.widget.EditText" bounds="[100,200][900,300]"/>{kb}</hierarchy>'
                 elif "clear" in label:
-                    xml = ('<hierarchy><node text="" resource-id="com.android.settings:id/search_action_bar" '
-                           'class="android.widget.EditText" bounds="[100,200][900,300]"/>'
-                           '<node resource-id="biz.pixelperfectstudios.personaspeak:id/keyboard_view" '
-                           'class="android.widget.FrameLayout" bounds="[0,1300][1080,2400]"/></hierarchy>')
+                    xml = f'<hierarchy><node text="" resource-id="com.android.settings:id/search_action_bar" class="android.widget.EditText" bounds="[100,200][900,300]"/>{kb}</hierarchy>'
                 else:
-                    xml = ('<hierarchy><node text="" resource-id="com.android.settings:id/search_action_bar" '
-                           'class="android.widget.EditText" bounds="[100,200][900,300]"/>'
-                           '<node resource-id="biz.pixelperfectstudios.personaspeak:id/keyboard_view" '
-                           'class="android.widget.FrameLayout" bounds="[0,1300][1080,2400]"/></hierarchy>')
+                    xml = f'<hierarchy><node text="" resource-id="com.android.settings:id/search_action_bar" class="android.widget.EditText" bounds="[100,200][900,300]"/>{kb}</hierarchy>'
                 with open(dest, "w") as f:
                     f.write(xml)
                 return _cr(rc=0, argv=argv)
@@ -344,9 +314,8 @@ class TestAdbHarness(unittest.TestCase):
         operations = [s.operation for s in steps]
         self.assertIn("launch_editor", operations)
         self.assertIn("verify_loading_1", operations)
-        self.assertIn("verify_review_1", operations)
-        self.assertIn("cancel_rephrasing", operations)
-        self.assertIn("verify_loading_2", operations)
+        self.assertIn("cancel_loading", operations)
+        self.assertIn("verify_review_2", operations)
         self.assertIn("apply_rephrasing", operations)
         self.assertIn("verify_apply", operations)
         self.assertIn("dismiss_rephrasing", operations)
@@ -358,6 +327,13 @@ class TestAdbHarness(unittest.TestCase):
 
     def test_run_journey_rephrasing_mismatch(self):
 
+        kb = ('<node resource-id="biz.pixelperfectstudios.personaspeak:id/keyboard_view" '
+              'class="android.widget.FrameLayout" bounds="[0,1300][1080,2400]"/>')
+        close = ('<node resource-id="com.android.settings:id/search_close_btn" '
+                 'content-desc="Clear" class="android.widget.ImageView" bounds="[950,200][1020,270]"/>')
+        cancel_btn = ('<node resource-id="biz.pixelperfectstudios.personaspeak:id/cancel_button" '
+                      'content-desc="Cancel" class="android.widget.Button" bounds="[580,2300][980,2380]"/>')
+
         def side_effect(argv, **kwargs):
             if "pull" in argv:
                 dest = argv[-1]
@@ -365,18 +341,16 @@ class TestAdbHarness(unittest.TestCase):
                 if dest.endswith(".png"):
                     _write_valid_png(dest)
                     return _cr(rc=0, argv=argv)
-                kb = ('<node resource-id="biz.pixelperfectstudios.personaspeak:id/keyboard_view" '
-                      'class="android.widget.FrameLayout" bounds="[0,1300][1080,2400]"/>')
-                close = ('<node resource-id="com.android.settings:id/search_close_btn" '
-                         'content-desc="Clear" class="android.widget.ImageView" bounds="[950,200][1020,270]"/>')
                 if label.startswith("loading"):
-                    xml = f'<hierarchy><node text="Tea at six." resource-id="com.android.settings:id/search_action_bar" class="android.widget.EditText" bounds="[100,200][900,300]"/>{kb}{close}<node text="LOADING" resource-id="biz.pixelperfectstudios.personaspeak:id/panel_state" class="android.widget.TextView" bounds="[10,1810][1070,1850]"/></hierarchy>'
+                    xml = f'<hierarchy><node text="Tea at six." resource-id="com.android.settings:id/search_action_bar" class="android.widget.EditText" bounds="[100,200][900,300]"/>{kb}{close}<node text="LOADING" resource-id="biz.pixelperfectstudios.personaspeak:id/panel_state" class="android.widget.TextView" bounds="[10,1810][1070,1850]"/>{cancel_btn}</hierarchy>'
                 elif label.startswith("review"):
-                    xml = f'<hierarchy><node text="Tea at six." resource-id="com.android.settings:id/search_action_bar" class="android.widget.EditText" bounds="[100,200][900,300]"/>{kb}{close}<node text="REVIEW" resource-id="biz.pixelperfectstudios.personaspeak:id/panel_state" class="android.widget.TextView" bounds="[10,1810][1070,1850]"/><node resource-id="biz.pixelperfectstudios.personaspeak:id/apply_button" content-desc="Apply" class="android.widget.Button" bounds="[100,2300][500,2380]"/><node resource-id="biz.pixelperfectstudios.personaspeak:id/cancel_button" content-desc="Cancel" class="android.widget.Button" bounds="[580,2300][980,2380]"/></hierarchy>'
+                    xml = f'<hierarchy><node text="Tea at six." resource-id="com.android.settings:id/search_action_bar" class="android.widget.EditText" bounds="[100,200][900,300]"/>{kb}{close}<node text="REVIEW" resource-id="biz.pixelperfectstudios.personaspeak:id/panel_state" class="android.widget.TextView" bounds="[10,1810][1070,1850]"/><node resource-id="biz.pixelperfectstudios.personaspeak:id/apply_button" content-desc="Apply" class="android.widget.Button" bounds="[100,2300][500,2380]"/>{cancel_btn}</hierarchy>'
                 elif "after_apply" in label:
                     xml = f'<hierarchy><node text="wrong text" resource-id="com.android.settings:id/search_action_bar" class="android.widget.EditText" bounds="[100,200][900,300]"/>{kb}</hierarchy>'
                 elif "clear" in label:
                     xml = f'<hierarchy><node text="" resource-id="com.android.settings:id/search_action_bar" class="android.widget.EditText" bounds="[100,200][900,300]"/>{kb}</hierarchy>'
+                elif "after_cancel" in label or "after_dismiss" in label:
+                    xml = f'<hierarchy><node text="Tea at six." resource-id="com.android.settings:id/search_action_bar" class="android.widget.EditText" bounds="[100,200][900,300]"/>{kb}</hierarchy>'
                 else:
                     xml = f'<hierarchy><node text="Tea at six." resource-id="com.android.settings:id/search_action_bar" class="android.widget.EditText" bounds="[100,200][900,300]"/>{kb}</hierarchy>'
                 with open(dest, "w") as f:

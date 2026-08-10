@@ -175,15 +175,21 @@ def finalize(
         raise ValueError("manifest digest drift since approval")
     if approval.decision != VisualReview.APPROVED:
         raise ValueError(f"approval decision was {approval.decision!r}, not approved")
-    if capture.manifest_digest is not None and capture.manifest_digest != man_d:
+    if capture.manifest_digest is None:
+        raise ValueError("capture record has no manifest digest")
+    if capture.manifest_digest != man_d:
         raise ValueError("capture-record manifest_digest does not match supplied manifest")
-    for name, expected_hash in manifest.items():
+    for name in manifest:
+        if "/" in name or ".." in name or os.path.isabs(name):
+            raise ValueError(f"manifest key traverses path: {name}")
         path = os.path.join(evidence_dir, name)
-        if not os.path.isfile(path):
-            raise ValueError(f"manifest file missing from evidence dir: {name}")
+        if not os.path.isfile(path) or os.path.islink(path):
+            raise ValueError(f"manifest entry is not a regular file: {name}")
+        if os.stat(path).st_nlink > 1:
+            raise ValueError(f"manifest entry has multiple hard links: {name}")
         with open(path, "rb") as fh:
             actual = hashlib.sha256(fh.read()).hexdigest()
-        if actual != expected_hash:
+        if actual != manifest[name]:
             raise ValueError(f"manifest file digest mismatch: {name}")
     if capture.restoration is not None:
         if capture.restoration.cause != TerminalCause.COMPLETED:

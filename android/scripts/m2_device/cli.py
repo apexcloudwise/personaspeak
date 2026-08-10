@@ -15,6 +15,7 @@ from android.scripts.m2_device.orchestrator import Orchestrator
 from android.scripts.m2_device.records import (
     ApprovalRecord,
     CaptureRecord,
+    TerminalCause,
     VisualReview,
     decode,
     encode,
@@ -57,15 +58,12 @@ def cmd_capture(args: argparse.Namespace) -> int:
         return 1
 
     incomplete = []
-    if record.restoration is None:
+    if record.restoration is None or record.restoration.cause != TerminalCause.COMPLETED:
         incomplete.append("restoration")
-    phases = [s.phase for s in record.steps]
-    if "verify_restore" not in phases:
-        incomplete.append("verify_restore")
-    if "release_emulator" not in phases:
-        incomplete.append("release_emulator")
-    if "verify_release" not in phases:
-        incomplete.append("verify_release")
+    for s in record.steps:
+        if s.phase in ("verify_restore", "release_emulator", "verify_release"):
+            if s.cause != TerminalCause.COMPLETED:
+                incomplete.append(s.phase)
     if incomplete:
         print(f"qualification incomplete: missing {incomplete}", file=sys.stderr)
         return 1

@@ -139,8 +139,8 @@ class Orchestrator:
 
         self._run_phase("emulator_launch", "boot pinned snapshot",
                         lambda: self.harness.launch_emulator())
-        if self.terminal: return self._record()
         self._emulator_launched = True
+        if self.terminal: return self._record()
 
         try:
             try:
@@ -178,11 +178,17 @@ class Orchestrator:
         if self.terminal:
             return
         self._reached = phase
-        result = fn()
-        rc = _rc_of(result)
-        cause = TerminalCause.COMPLETED if rc == 0 else fail_cause
-        if _timed_out(result):
-            cause = TerminalCause.TIMEOUT
+        try:
+            result = fn()
+            rc = _rc_of(result)
+            cause = TerminalCause.COMPLETED if rc == 0 else fail_cause
+            if _timed_out(result):
+                cause = TerminalCause.TIMEOUT
+        except Exception as e:
+            result = CommandResult(
+                argv=[], start_utc="", end_utc="",
+                returncode=1, stdout=b"", stderr=str(e).encode())
+            cause = fail_cause
         self.steps.append(_make_step(phase, operation, result, cause))
         if cause != TerminalCause.COMPLETED:
             self.terminal = cause
@@ -268,27 +274,36 @@ class Orchestrator:
     def _release_emulator(self):
         if not self._emulator_launched:
             return
-        result = self.harness.release_emulator()
-        rc = _rc_of(result)
-        cause = TerminalCause.COMPLETED if rc == 0 else TerminalCause.CLEANUP_PARTIAL
-        if _timed_out(result):
-            cause = TerminalCause.TIMEOUT
-        self.steps.append(_make_step(
-            "release_emulator", "release owned emulator", result, cause
-        ))
-        if cause != TerminalCause.COMPLETED and self.terminal is None:
-            self.terminal = cause
+        try:
+            result = self.harness.release_emulator()
+            rc = _rc_of(result)
+            cause = TerminalCause.COMPLETED if rc == 0 else TerminalCause.CLEANUP_PARTIAL
+            if _timed_out(result):
+                cause = TerminalCause.TIMEOUT
+            self.steps.append(_make_step(
+                "release_emulator", "release owned emulator", result, cause
+            ))
+            if cause != TerminalCause.COMPLETED and self.terminal is None:
+                self.terminal = cause
 
-        v_res = self.harness.verify_release()
-        v_rc = _rc_of(v_res)
-        v_cause = TerminalCause.COMPLETED if v_rc == 0 else TerminalCause.CLEANUP_PARTIAL
-        if _timed_out(v_res):
-            v_cause = TerminalCause.TIMEOUT
-        self.steps.append(_make_step(
-            "verify_release", "verify emulator release", v_res, v_cause
-        ))
-        if v_cause != TerminalCause.COMPLETED and self.terminal is None:
-            self.terminal = v_cause
+            v_res = self.harness.verify_release()
+            v_rc = _rc_of(v_res)
+            v_cause = TerminalCause.COMPLETED if v_rc == 0 else TerminalCause.CLEANUP_PARTIAL
+            if _timed_out(v_res):
+                v_cause = TerminalCause.TIMEOUT
+            self.steps.append(_make_step(
+                "verify_release", "verify emulator release", v_res, v_cause
+            ))
+            if v_cause != TerminalCause.COMPLETED and self.terminal is None:
+                self.terminal = v_cause
+        except Exception as e:
+            self.steps.append(_make_step(
+                "release_emulator", "release owned emulator",
+                CommandResult(argv=[], start_utc="", end_utc="",
+                              returncode=1, stdout=b"", stderr=str(e).encode()),
+                TerminalCause.CLEANUP_PARTIAL))
+            if self.terminal is None:
+                self.terminal = TerminalCause.CLEANUP_PARTIAL
 
     def _record(self) -> CaptureRecord:
         return CaptureRecord(

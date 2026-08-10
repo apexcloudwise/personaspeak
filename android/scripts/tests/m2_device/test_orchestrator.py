@@ -353,8 +353,11 @@ class TestUnknownResultType(unittest.TestCase):
             def install_apk(self): return "not-a-valid-result"
         h = H()
         orch = O.Orchestrator(h, repo_head="a", apk_sha256="", tools=_tools())
-        with self.assertRaises(TypeError):
-            orch.execute()
+        rec = orch.execute()
+        self.assertIsNotNone(orch.terminal)
+        install_steps = [s for s in orch.steps if s.phase == "install"]
+        self.assertTrue(install_steps)
+        self.assertEqual(install_steps[0].cause, TerminalCause.INSTALL_FAILED)
 
 
 class TestPreflightFailure(unittest.TestCase):

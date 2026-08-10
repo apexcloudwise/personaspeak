@@ -180,10 +180,11 @@ class TestEvidenceRoot(unittest.TestCase):
 
 
 class TestFinalize(unittest.TestCase):
-    def _capture(self):
+    def _capture(self, manifest_digest=None):
         return CaptureRecord(
             repo_head="abc", apk_sha256="def", tools=[],
-            prior_state=None, steps=[], restoration=None, manifest_digest=None,
+            prior_state=None, steps=[], restoration=None,
+            manifest_digest=manifest_digest,
         )
 
     def _make_approval(self, cap, man, decision=VisualReview.APPROVED):
@@ -194,7 +195,6 @@ class TestFinalize(unittest.TestCase):
         )
 
     def test_successful_finalize(self):
-        cap = self._capture()
         with tempfile.TemporaryDirectory() as d:
             import struct, zlib
             sig = b'\x89PNG\r\n\x1a\n'
@@ -206,8 +206,8 @@ class TestFinalize(unittest.TestCase):
             png = sig + ihdr + idat + iend
             with open(os.path.join(d, "screenshot.png"), "wb") as f:
                 f.write(png)
-            import hashlib
             man = {"screenshot.png": hashlib.sha256(png).hexdigest()}
+            cap = self._capture(manifest_digest=evidence.manifest_digest(man))
             appr = self._make_approval(cap, man)
             with open(os.path.join(d, "log.txt"), "w") as f:
                 f.write("clean log\n")
@@ -260,9 +260,9 @@ class TestFinalize(unittest.TestCase):
             )
 
     def test_finalize_detects_privacy_violation(self):
-        cap = self._capture()
         content = b"api_key=sk-1234567890abcdef\n"
         man = {"log.txt": hashlib.sha256(content).hexdigest()}
+        cap = self._capture(manifest_digest=evidence.manifest_digest(man))
         appr = self._make_approval(cap, man)
         with tempfile.TemporaryDirectory() as d:
             with open(os.path.join(d, "log.txt"), "wb") as f:
@@ -276,9 +276,9 @@ class TestFinalize(unittest.TestCase):
             self.assertIn("privacy", str(cm.exception))
 
     def test_empty_manifest_media_fails_closed(self):
-        cap = self._capture()
         content = b"clean text\n"
         man = {"log.txt": hashlib.sha256(content).hexdigest()}
+        cap = self._capture(manifest_digest=evidence.manifest_digest(man))
         appr = self._make_approval(cap, man)
         with tempfile.TemporaryDirectory() as d:
             with open(os.path.join(d, "log.txt"), "wb") as f:
