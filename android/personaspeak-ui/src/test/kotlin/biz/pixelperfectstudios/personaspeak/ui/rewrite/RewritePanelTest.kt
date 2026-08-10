@@ -1,12 +1,15 @@
 package biz.pixelperfectstudios.personaspeak.ui.rewrite
 
+import androidx.compose.ui.test.assertDoesNotExist
 import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.height
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import biz.pixelperfectstudios.personaspeak.ui.editor.EditorSessionToken
 import biz.pixelperfectstudios.personaspeak.ui.editor.EditorSnapshot
@@ -58,13 +61,14 @@ class RewritePanelTest {
     private fun setPanel(
         state: RewritePanelState,
         preExpansionImeHeightPx: Int = 1000,
+        onDismiss: () -> Unit = {},
     ) {
         composeRule.setContent {
             RewritePanel(
                 state = state,
                 onRewrite = {},
                 onApply = {},
-                onDismiss = {},
+                onDismiss = onDismiss,
                 onSettings = {},
                 preExpansionImeHeightPx = { preExpansionImeHeightPx },
             )
@@ -84,13 +88,52 @@ class RewritePanelTest {
     }
 
     @Test
-    fun `loading exposes a loading indicator and keeps settings reachable`() {
+    fun `loading exposes a loading indicator, a 48dp cancel control, and settings`() {
         setPanel(RewritePanelState.Loading)
 
         composeRule.onNodeWithTag("personaspeak_loading").assertIsDisplayed()
+        composeRule.onNodeWithTag("personaspeak_cancel")
+            .assertIsDisplayed()
+            .assertHeightIsAtLeast(48.dp)
         composeRule.onNodeWithTag("personaspeak_settings")
             .assertIsDisplayed()
             .assertHeightIsAtLeast(48.dp)
+    }
+
+    @Test
+    fun `loading cancel invokes the dismiss callback`() {
+        var dismissCount = 0
+        setPanel(RewritePanelState.Loading, onDismiss = { dismissCount++ })
+
+        composeRule.onNodeWithTag("personaspeak_cancel").performClick()
+
+        assertEquals(
+            "Loading Cancel must route through the existing onDismiss path",
+            1,
+            dismissCount,
+        )
+    }
+
+    @Test
+    fun `idle has no cancel control`() {
+        setPanel(RewritePanelState.Idle)
+
+        composeRule.onNodeWithTag("personaspeak_cancel").assertDoesNotExist()
+    }
+
+    @Test
+    fun `message has no cancel control`() {
+        setPanel(RewritePanelState.Message(RewriteMessage.ProviderFailure))
+
+        composeRule.onNodeWithTag("personaspeak_cancel").assertDoesNotExist()
+    }
+
+    @Test
+    fun `review uses its own dismiss control, not the loading cancel`() {
+        setPanel(RewritePanelState.Review(candidate))
+
+        composeRule.onNodeWithTag("personaspeak_cancel").assertDoesNotExist()
+        composeRule.onNodeWithTag("personaspeak_dismiss").assertIsDisplayed()
     }
 
     @Test
