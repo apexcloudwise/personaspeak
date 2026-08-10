@@ -217,9 +217,15 @@ class Orchestrator:
         self._restored = True
         if not self._emulator_launched:
             return
-        result = self.harness.restore()
-        rc = _rc_of(result)
-        cause = TerminalCause.COMPLETED if rc == 0 else TerminalCause.CLEANUP_PARTIAL
+        try:
+            result = self.harness.restore()
+            rc = _rc_of(result)
+            cause = TerminalCause.COMPLETED if rc == 0 else TerminalCause.CLEANUP_PARTIAL
+        except Exception as e:
+            result = CommandResult(
+                argv=[], start_utc="", end_utc="",
+                returncode=1, stdout=b"", stderr=str(e).encode())
+            cause = TerminalCause.CLEANUP_PARTIAL
         self.restoration = _make_step(
             "restore", "restore device state", result, cause,
         )

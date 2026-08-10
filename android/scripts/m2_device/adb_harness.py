@@ -355,6 +355,13 @@ class AdbHarness:
         res = self.runner(self._cmd("shell", "input", "text", SOURCE_TEXT.replace(" ", "%s")))
         return self._step(steps, "type_source_text", res)
 
+    def _verify_idle(self, steps, root, label):
+        panel = self._find(root, PANEL_STATE_RES_ID)
+        active = panel is not None and panel.attrib.get("text", "") in (STATE_LOADING, STATE_REVIEW)
+        self._step(steps, f"verify_idle_{label}",
+                   self._ok(label) if not active else self._fail(label, b"keyboard still active"))
+        return not active
+
     def run_journey(self) -> list[StepRecord]:
         steps: list[StepRecord] = []
 
@@ -397,10 +404,12 @@ class AdbHarness:
         if not self._tap_btn(steps, review_root, "cancel_rephrasing", DISMISS_RES_ID):
             return steps
         v_res, v_root = self._dump_hierarchy("after_cancel")
-        if v_root is None or not self._verify_text(steps, v_root, SOURCE_TEXT, "verify_cancel_unchanged"):
-            if v_root is not None:
-                return steps
+        if v_root is None:
             self._step(steps, "verify_cancel_unchanged", v_res)
+            return steps
+        if not self._verify_idle(steps, v_root, "after_cancel"):
+            return steps
+        if not self._verify_text(steps, v_root, SOURCE_TEXT, "verify_cancel_unchanged"):
             return steps
 
         if not self._clear_field(steps) or not self._type_source(steps):
@@ -431,10 +440,12 @@ class AdbHarness:
         if not self._tap_btn(steps, review_root, "dismiss_rephrasing", DISMISS_RES_ID):
             return steps
         v_res, v_root = self._dump_hierarchy("after_dismiss")
-        if v_root is None or not self._verify_text(steps, v_root, SOURCE_TEXT, "verify_dismiss_unchanged"):
-            if v_root is not None:
-                return steps
+        if v_root is None:
             self._step(steps, "verify_dismiss_unchanged", v_res)
+            return steps
+        if not self._verify_idle(steps, v_root, "after_dismiss"):
+            return steps
+        if not self._verify_text(steps, v_root, SOURCE_TEXT, "verify_dismiss_unchanged"):
             return steps
 
         return steps

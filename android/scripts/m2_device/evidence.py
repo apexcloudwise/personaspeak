@@ -174,6 +174,8 @@ def finalize(
         raise ValueError("manifest digest drift since approval")
     if approval.decision != VisualReview.APPROVED:
         raise ValueError(f"approval decision was {approval.decision!r}, not approved")
+    if restoration_verdict != "verified":
+        raise ValueError(f"restoration verdict was {restoration_verdict!r}, not 'verified'")
     privacy_ok = scan_directory(evidence_dir)
     if not privacy_ok:
         raise ValueError("privacy scan failed — credential patterns detected in evidence")
