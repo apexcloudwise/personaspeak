@@ -90,6 +90,52 @@ class TestCliCapture(unittest.TestCase):
         self.assertIn("input text", ledger)
         self.assertNotIn("FORBIDDEN", ledger)
 
+    def test_ledger_phase_order(self):
+        argv = [
+            "capture",
+            "--evidence-root", self.evidence_root,
+            "--repo-root", self.repo_root,
+            "--apk-path", self.apk_path,
+            "--apk-sha256", self.apk_sha256,
+        ]
+        rc = cli.main(argv)
+        self.assertEqual(rc, 0)
+
+        with open(self.log_path) as f:
+            lines = [l.strip() for l in f if l.strip()]
+
+        phases = []
+        for line in lines:
+            if line.startswith("emulator:") and "-list-avds" in line:
+                phases.append("preflight")
+            elif line.startswith("emulator:") and "-avd" in line:
+                phases.append("launch")
+            elif "wait-for-device" in line:
+                phases.append("attach")
+            elif "install" in line and "pull" not in line:
+                phases.append("install")
+            elif "dumpsys" in line:
+                phases.append("verify_package")
+            elif "am start" in line:
+                phases.append("journey_start")
+            elif "screencap" in line:
+                phases.append("evidence_capture")
+            elif "screenrecord" in line:
+                phases.append("evidence_video")
+            elif "snapshot load" in line:
+                phases.append("restore")
+
+        expected = ["preflight", "launch", "attach", "install", "verify_package",
+                     "journey_start", "evidence_capture", "restore"]
+        for i in range(len(expected) - 1):
+            a, b = expected[i], expected[i + 1]
+            self.assertIn(a, phases, f"phase {a} missing from ledger")
+            self.assertIn(b, phases, f"phase {b} missing from ledger")
+            self.assertLess(
+                phases.index(a), phases.index(b),
+                f"phase {a} must precede {b} in ledger",
+            )
+
 
 if __name__ == "__main__":
     unittest.main()

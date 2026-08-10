@@ -98,9 +98,14 @@ class TestAdbHarness(unittest.TestCase):
 
     @patch("android.scripts.m2_device.commands.resolve_tool")
     def test_preflight_success(self, mock_resolve):
-        mock_resolve.side_effect = lambda name: ToolIdentity(
-            name=name, path=f"/bin/{name}", version="1.0"
-        )
+        def fake_resolve(name):
+            return ToolIdentity(
+                name=name, path=f"/bin/{name}",
+                version=f"Android {'Debug Bridge' if name == 'adb' else 'emulator'} version "
+                        f"{'1.0.41' if name == 'adb' else '33.1.24.0'}",
+                digest="abc123",
+            )
+        mock_resolve.side_effect = fake_resolve
         self.mock_runner.return_value = _cr(stdout=b"M2_Qual_Fixture\n")
         res = self.harness.preflight()
         self.assertEqual(res.returncode, 0)

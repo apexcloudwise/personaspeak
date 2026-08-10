@@ -66,6 +66,9 @@ SEARCH_RES_ID = f"{SETTINGS_PACKAGE}:id/search_action_bar"
 EXPECTED_VERSION_NAME = "0.1.0"
 EXPECTED_VERSION_CODE = "1"
 EXPECTED_SIGNER = "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2"
+EXPECTED_ADB_VERSION = "1.0.41"
+EXPECTED_EMULATOR_VERSION = "33.1.24.0"
+SYSTEM_IMAGE_ID = "google/sdk_gphone64_arm64/emu64a:14"
 
 
 class AdbHarness:
@@ -127,6 +130,12 @@ class AdbHarness:
         try:
             self.adb_tool = commands.resolve_tool("adb")
             self.emulator_tool = commands.resolve_tool("emulator")
+            if EXPECTED_ADB_VERSION not in self.adb_tool.version:
+                return self._fail("preflight", f"adb version mismatch: {self.adb_tool.version}".encode())
+            if EXPECTED_EMULATOR_VERSION not in self.emulator_tool.version:
+                return self._fail("preflight", f"emulator version mismatch: {self.emulator_tool.version}".encode())
+            if self.adb_tool.digest is None or self.emulator_tool.digest is None:
+                return self._fail("preflight", b"tool digest unavailable")
             avds = self.runner([self.emulator_tool.path, "-list-avds"], timeout=10)
             if AVD_NAME not in avds.stdout.decode("utf-8", errors="replace"):
                 return self._fail("preflight", f"AVD {AVD_NAME} not found".encode())
@@ -201,6 +210,8 @@ class AdbHarness:
         errors = []
         if prior.fingerprint != FINGERPRINT:
             errors.append(f"fingerprint mismatch: got {prior.fingerprint}")
+        if not prior.fingerprint.startswith(SYSTEM_IMAGE_ID):
+            errors.append(f"system image mismatch: {prior.fingerprint}")
         if prior.api_level != API_LEVEL:
             errors.append(f"api_level mismatch: got {prior.api_level}")
         if prior.screen_width != SCREEN_WIDTH or prior.screen_height != SCREEN_HEIGHT:
