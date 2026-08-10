@@ -1,10 +1,10 @@
 package biz.pixelperfectstudios.personaspeak.ui.rewrite
 
-import androidx.compose.ui.test.assertDoesNotExist
 import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.dp
@@ -118,21 +118,21 @@ class RewritePanelTest {
     fun `idle has no cancel control`() {
         setPanel(RewritePanelState.Idle)
 
-        composeRule.onNodeWithTag("personaspeak_cancel").assertDoesNotExist()
+        assertCancelNodeCount(0)
     }
 
     @Test
     fun `message has no cancel control`() {
         setPanel(RewritePanelState.Message(RewriteMessage.ProviderFailure))
 
-        composeRule.onNodeWithTag("personaspeak_cancel").assertDoesNotExist()
+        assertCancelNodeCount(0)
     }
 
     @Test
     fun `review uses its own dismiss control, not the loading cancel`() {
         setPanel(RewritePanelState.Review(candidate))
 
-        composeRule.onNodeWithTag("personaspeak_cancel").assertDoesNotExist()
+        assertCancelNodeCount(0)
         composeRule.onNodeWithTag("personaspeak_dismiss").assertIsDisplayed()
     }
 
@@ -179,6 +179,22 @@ class RewritePanelTest {
         assertTrue(
             "review body $height exceeds the 120dp cap",
             height <= 120.dp,
+        )
+    }
+
+    /**
+     * Absence/presence of `personaspeak_cancel` as a direct node count. The
+     * pinned Compose BOM (2025.05.01 / ui-test 1.8.2) does not resolve
+     * `assertDoesNotExist`, so the count is measured directly — the same
+     * fallback the cap test above uses for an unavailable convenience
+     * assertion.
+     */
+    private fun assertCancelNodeCount(expected: Int) {
+        assertEquals(
+            "personaspeak_cancel node count",
+            expected,
+            composeRule.onAllNodesWithTag("personaspeak_cancel")
+                .fetchSemanticsNodes().size,
         )
     }
 }
