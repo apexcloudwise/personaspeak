@@ -4,6 +4,7 @@ on:
   push:
     branches: [main]
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
 
 jobs:
   personas-and-cli:
@@ -72,6 +73,9 @@ jobs:
 
   android-build:
     name: Milestone 2 gate
+    # Draft integration PRs receive the cheap checks above; run the costly
+    # Android qualification when the PR is ready, and always on main pushes.
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
