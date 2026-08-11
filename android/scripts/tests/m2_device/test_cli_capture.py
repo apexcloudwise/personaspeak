@@ -50,13 +50,18 @@ class TestCliCapture(unittest.TestCase):
             shutil.rmtree(self.test_dir)
 
     def _run_cli(self):
+        import subprocess as sp
+        head = sp.run(["git", "rev-parse", "HEAD"],
+                       cwd=self.repo_root, capture_output=True).stdout.decode().strip()
+        python_dir = os.path.dirname(sys.executable)
         env = {
-            "PATH": self.bin_dir + os.pathsep + os.environ.get("PATH", ""),
+            "PATH": self.bin_dir + os.pathsep + python_dir,
             "HOME": os.environ.get("HOME", "/tmp"),
             "MOCK_COMMANDS_LOG": self.log_path,
             "FAKE_ADB_STATE": os.path.join(self.test_dir, "edittext.state"),
             "FAKE_ADB_KEYBOARD": os.path.join(self.test_dir, "keyboard.state"),
             "FAKE_ADB_REPHRASING": CANDIDATE_REPHRASING,
+            "FAKE_GIT_HEAD": head,
             "PYTHONPATH": self.repo_root_abs,
         }
         with open(env["FAKE_ADB_STATE"], "w") as f:
@@ -82,12 +87,32 @@ class TestCliCapture(unittest.TestCase):
         with open(self.log_path) as f:
             ledger = f.read()
 
-        self.assertIn("screencap", ledger)
-        self.assertIn("screenrecord", ledger)
-        self.assertIn("uiautomator dump", ledger)
-        self.assertIn("input tap", ledger)
-        self.assertNotIn("input text", ledger)
-        self.assertNotIn("FORBIDDEN", ledger)
+        lines = [l.strip() for l in ledger.splitlines() if l.strip()]
+        adb_lines = [l for l in lines if l.startswith("adb:")]
+        emu_lines = [l for l in lines if l.startswith("emulator:")]
+
+        self.assertTrue(any("screencap" in l for l in adb_lines),
+                        "no screencap in ledger")
+        self.assertTrue(any("screenrecord" in l for l in adb_lines),
+                        "no screenrecord in ledger")
+        self.assertTrue(any("uiautomator dump" in l for l in adb_lines),
+                        "no uiautomator dump in ledger")
+        self.assertTrue(any("input tap" in l for l in adb_lines),
+                        "no input tap in ledger")
+        self.assertFalse(any("input text" in l for l in adb_lines),
+                         "input text found in ledger — forbidden")
+        self.assertFalse(any("FORBIDDEN" in l for l in lines),
+                         "FORBIDDEN marker in ledger")
+
+        self.assertTrue(any("-list-avds" in l for l in emu_lines),
+                        "no -list-avds in emulator ledger")
+        self.assertTrue(any("-avd" in l for l in emu_lines),
+                        "no -avd launch in emulator ledger")
+
+        launch_lines = [l for l in emu_lines if "-avd" in l and "-list-avds" not in l]
+        for l in launch_lines:
+            self.assertIn("M2_Qual_Fixture", l,
+                          f"emulator launched with wrong AVD: {l}")
 
     def test_ledger_phase_order(self):
         result = self._run_cli()

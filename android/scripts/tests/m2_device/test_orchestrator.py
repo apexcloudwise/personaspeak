@@ -233,12 +233,15 @@ class TestRestoration(unittest.TestCase):
         self.assertIsNotNone(orch.restoration)
         self.assertEqual(orch.restoration.cause, TerminalCause.CLEANUP_PARTIAL)
 
-    def test_no_restore_without_emulator(self):
+    def test_launch_failure_still_releases(self):
         h = FakeHarness(fail_at="launch")
         orch = O.Orchestrator(h, repo_head="a", apk_sha256="", tools=_tools())
-        orch.execute()
-        self.assertEqual(h.restore_count, 0)
-        self.assertIsNone(orch.restoration)
+        rec = orch.execute()
+        self.assertEqual(orch.terminal, TerminalCause.TOOL_FAILURE)
+        self.assertIn("release_emulator", [s.phase for s in rec.steps])
+        self.assertIn("verify_release", [s.phase for s in rec.steps])
+        self.assertEqual(h.release_count, 1)
+        self.assertEqual(h.verify_release_count, 1)
 
 
 class TestRestorationMismatch(unittest.TestCase):
@@ -472,6 +475,20 @@ class TestEmulatorRelease(unittest.TestCase):
         orch = O.Orchestrator(h)
         orch.execute()
         self.assertEqual(orch.terminal, TerminalCause.INSTALL_FAILED)
+
+    def test_verify_release_runs_when_release_raises(self):
+        class H(FakeHarness):
+            def release_emulator(self):
+                raise RuntimeError("release crashed")
+        h = H()
+        orch = O.Orchestrator(h)
+        orch.execute()
+        release_steps = [s for s in orch.steps if s.phase == "release_emulator"]
+        verify_steps = [s for s in orch.steps if s.phase == "verify_release"]
+        self.assertTrue(release_steps)
+        self.assertEqual(release_steps[0].cause, TerminalCause.CLEANUP_PARTIAL)
+        self.assertTrue(verify_steps)
+        self.assertEqual(h.verify_release_count, 1)
 
 
 if __name__ == "__main__":

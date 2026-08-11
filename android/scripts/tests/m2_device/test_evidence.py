@@ -183,7 +183,14 @@ class TestFinalize(unittest.TestCase):
     def _capture(self, manifest_digest=None):
         return CaptureRecord(
             repo_head="abc", apk_sha256="def", tools=[],
-            prior_state=None, steps=[], restoration=None,
+            prior_state=None, steps=[],
+            restoration=StepRecord(
+                phase="restore", operation="restore device state",
+                input_digest=None, output_digest=None,
+                result=CommandResult(argv=[], start_utc="", end_utc="",
+                                     returncode=0, stdout=b"ok", stderr=b""),
+                cause=TerminalCause.COMPLETED,
+            ),
             manifest_digest=manifest_digest,
         )
 
@@ -211,6 +218,9 @@ class TestFinalize(unittest.TestCase):
             appr = self._make_approval(cap, man)
             with open(os.path.join(d, "log.txt"), "w") as f:
                 f.write("clean log\n")
+            man["log.txt"] = hashlib.sha256(b"clean log\n").hexdigest()
+            cap = self._capture(manifest_digest=evidence.manifest_digest(man))
+            appr = self._make_approval(cap, man)
             receipt = evidence.finalize(
                 cap, appr, man, d,
                 restoration_verdict="verified", counts={},
@@ -274,6 +284,75 @@ class TestFinalize(unittest.TestCase):
                     evidence_commit="", artifacts=man,
                 )
             self.assertIn("privacy", str(cm.exception))
+
+    def test_finalize_rejects_missing_restoration(self):
+        man = {"s.png": hashlib.sha256(b"x").hexdigest()}
+        cap = CaptureRecord(
+            repo_head="a", apk_sha256="b", tools=[],
+            prior_state=None, steps=[], restoration=None,
+            manifest_digest=evidence.manifest_digest(man),
+        )
+        appr = self._make_approval(cap, man)
+        with tempfile.TemporaryDirectory() as d:
+            with open(os.path.join(d, "s.png"), "wb") as f:
+                f.write(b"x")
+            with self.assertRaises(ValueError) as cm:
+                evidence.finalize(
+                    cap, appr, man, d,
+                    restoration_verdict="verified", counts={},
+                    evidence_commit="", artifacts=man,
+                )
+            self.assertIn("no restoration", str(cm.exception))
+
+    def test_finalize_rejects_unknown_count_keys(self):
+        import struct, zlib
+        sig = b'\x89PNG\r\n\x1a\n'
+        ihdr_data = struct.pack('>IIBBBBB', 1, 1, 8, 2, 0, 0, 0)
+        ihdr = struct.pack('>I', 13) + b'IHDR' + ihdr_data + struct.pack('>I', zlib.crc32(b'IHDR' + ihdr_data) & 0xFFFFFFFF)
+        comp = zlib.compress(b'\x00\xff\x00\x00')
+        idat = struct.pack('>I', len(comp)) + b'IDAT' + comp + struct.pack('>I', zlib.crc32(b'IDAT' + comp) & 0xFFFFFFFF)
+        iend = struct.pack('>I', 0) + b'IEND' + struct.pack('>I', zlib.crc32(b'IEND') & 0xFFFFFFFF)
+        png = sig + ihdr + idat + iend
+        with tempfile.TemporaryDirectory() as d:
+            with open(os.path.join(d, "s.png"), "wb") as f:
+                f.write(png)
+            man = {"s.png": hashlib.sha256(png).hexdigest()}
+            cap = self._capture(manifest_digest=evidence.manifest_digest(man))
+            appr = self._make_approval(cap, man)
+            with self.assertRaises(ValueError) as cm:
+                evidence.finalize(
+                    cap, appr, man, d,
+                    restoration_verdict="verified",
+                    counts={"screenshots": 1, "bogus": 99},
+                    evidence_commit="", artifacts=man,
+                )
+            self.assertIn("unknown count", str(cm.exception))
+
+    def test_finalize_rejects_unlisted_files(self):
+        import struct, zlib
+        sig = b'\x89PNG\r\n\x1a\n'
+        ihdr_data = struct.pack('>IIBBBBB', 1, 1, 8, 2, 0, 0, 0)
+        ihdr = struct.pack('>I', 13) + b'IHDR' + ihdr_data + struct.pack('>I', zlib.crc32(b'IHDR' + ihdr_data) & 0xFFFFFFFF)
+        comp = zlib.compress(b'\x00\xff\x00\x00')
+        idat = struct.pack('>I', len(comp)) + b'IDAT' + comp + struct.pack('>I', zlib.crc32(b'IDAT' + comp) & 0xFFFFFFFF)
+        iend = struct.pack('>I', 0) + b'IEND' + struct.pack('>I', zlib.crc32(b'IEND') & 0xFFFFFFFF)
+        png = sig + ihdr + idat + iend
+        with tempfile.TemporaryDirectory() as d:
+            with open(os.path.join(d, "s.png"), "wb") as f:
+                f.write(png)
+            with open(os.path.join(d, "extra.txt"), "w") as f:
+                f.write("unlisted")
+            man = {"s.png": hashlib.sha256(png).hexdigest()}
+            cap = self._capture(manifest_digest=evidence.manifest_digest(man))
+            appr = self._make_approval(cap, man)
+            with self.assertRaises(ValueError) as cm:
+                evidence.finalize(
+                    cap, appr, man, d,
+                    restoration_verdict="verified", counts={},
+                    evidence_commit="", artifacts=man,
+                )
+            self.assertIn("unlisted", str(cm.exception))
+
 
     def test_empty_manifest_media_fails_closed(self):
         content = b"clean text\n"

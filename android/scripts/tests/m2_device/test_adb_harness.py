@@ -203,9 +203,7 @@ class TestAdbHarness(unittest.TestCase):
         self.assertIsNone(state)
 
     def test_validate_fixture_success(self):
-        gboard = (
-            "com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME"
-        )
+        from android.scripts.m2_device.adb_harness import EXPECTED_ENABLED_IMES
         prior = PriorDeviceState(
             serial="emulator-5554",
             emulator_state="booted",
@@ -215,8 +213,8 @@ class TestAdbHarness(unittest.TestCase):
             screen_height=SCREEN_HEIGHT,
             package_present=False,
             package_hash=None,
-            enabled_imes=[gboard],
-            default_ime=gboard,
+            enabled_imes=list(EXPECTED_ENABLED_IMES),
+            default_ime=EXPECTED_ENABLED_IMES[0],
         )
 
         def side_effect(argv, **kwargs):
@@ -449,13 +447,11 @@ class TestAdbHarness(unittest.TestCase):
 
     def test_release_emulator_fallback(self):
         self.harness.emulator_process = None
-        self.mock_runner.return_value = _cr(rc=0)
+        self.harness._owned_pid = None
 
         res = self.harness.release_emulator()
-        self.assertEqual(res.returncode, 0)
-        self.mock_runner.assert_called_once_with(
-            ["adb", "-s", "emulator-5554", "emu", "kill"]
-        )
+        self.assertEqual(res.returncode, 1)
+        self.assertIn(b"no owned emulator", res.stderr)
 
     @patch("socket.socket")
     def test_verify_release_dead(self, mock_socket):

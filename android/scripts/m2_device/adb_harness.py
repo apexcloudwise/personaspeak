@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import re
+import signal
 import socket
 import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
@@ -87,6 +88,11 @@ FIXTURE_RECEIPT_DIGEST = (
     "dad6f7ac3b3c10ac7b88dfe2397746acb11ee6a42957cf2d1fee7afe1325bdb0"
 )
 EXPECTED_BUILD_TOOLS_VERSION = "34.0.0"
+EXPECTED_ENABLED_IMES = [
+    "com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME",
+    "com.google.android.inputmethod.latin/com.google.android.apps.inputmethod.latin.MockVoiceIME",
+]
+EXPECTED_EDITOR_CLASS = "android.widget.EditText"
 
 
 class AdbHarness:
@@ -113,6 +119,7 @@ class AdbHarness:
         self.build_tools_tool: ToolIdentity | None = None
         self.emulator_process: commands.ManagedProcess | None = None
         self.screenrecord_process: commands.ManagedProcess | None = None
+        self._owned_pid: int | None = None
 
     @property
     def _adb(self) -> str:
@@ -202,6 +209,7 @@ class AdbHarness:
     def launch_emulator(self) -> CommandResult:
         argv = self._emu_argv()
         self.emulator_process = self.starter(argv)
+        self._owned_pid = self.emulator_process.proc.pid
         pid = self.emulator_process.proc.pid
         start = self.emulator_process.start_utc
         msg = (
@@ -276,9 +284,8 @@ class AdbHarness:
         if loc != LOCALE:
             errors.append(f"locale mismatch: got {loc}")
 
-        gboard = "com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME"
-        if gboard not in prior.enabled_imes:
-            errors.append("Gboard IME not enabled")
+        if prior.enabled_imes != EXPECTED_ENABLED_IMES:
+            errors.append(f"IME list mismatch: got {prior.enabled_imes}")
 
         try:
             abi = self._out(self.runner(self._cmd("shell", "getprop", "ro.product.cpu.abi")))
@@ -316,8 +323,10 @@ class AdbHarness:
         return self._ok("install_apk", b"APK installed and identity verified.")
 
     def _dump_hierarchy(self, label: str) -> tuple[CommandResult, Any]:
+        evidence_dir = os.path.join(self.run_dir, "evidence")
+        os.makedirs(evidence_dir, exist_ok=True)
         remote = "/sdcard/window_dump.xml"
-        local = os.path.join(self.run_dir, f"{label}.xml")
+        local = os.path.join(evidence_dir, f"{label}.xml")
         dump = self.runner(self._cmd("shell", "uiautomator", "dump", remote))
         if dump.returncode != 0:
             return dump, None
@@ -387,24 +396,15 @@ class AdbHarness:
         if field is None:
             self._step(steps, op, self._fail(op, b"editor not found"))
             return False
+        cls = field.attrib.get("class", "")
+        if cls != EXPECTED_EDITOR_CLASS:
+            self._step(steps, op, self._fail(op, f"editor class mismatch: {cls}".encode()))
+            return False
         actual = field.attrib.get("text", "")
         ok = actual == expected
         self._step(steps, op,
                    self._ok(op) if ok else self._fail(op, f"got {actual[:40]}".encode()))
         return ok
-
-    def _clear_field(self, steps):
-        for _ in range(len(CANDIDATE_REPHRASING) + len(SOURCE_TEXT) + 10):
-            del_res = self.runner(self._cmd("shell", "input", "keyevent", "67"))
-            if del_res.returncode != 0:
-                self._step(steps, "clear_field", del_res)
-                return False
-        self._step(steps, "clear_field", self._ok("clear"))
-        return True
-
-    def _type_source(self, steps):
-        res = self.runner(self._cmd("shell", "input", "text", SOURCE_TEXT.replace(" ", "%s")))
-        return self._step(steps, "type_source_text", res)
 
     def _verify_idle(self, steps, root, label):
         panel = self._find(root, PANEL_STATE_RES_ID)
@@ -600,6 +600,12 @@ class AdbHarness:
             return steps
         if not self._verify_text(steps, v_root, STALE_TEXT, "verify_stale"):
             return steps
+        panel = self._find(v_root, PANEL_STATE_RES_ID)
+        if panel is not None:
+            self._step(steps, "verify_stale_outcome",
+                       self._fail("stale_outcome", b"panel still active"))
+            return steps
+        self._step(steps, "verify_stale_outcome", self._ok("stale_outcome"))
         if not self._take_screenshot("06-stale"):
             self._step(steps, "screenshot_fail", self._fail("shot", b"screenshot failed"))
             return steps
@@ -622,10 +628,13 @@ class AdbHarness:
         remote_vid = "/sdcard/journey.mp4"
         local_vid = os.path.join(evidence_dir, "journey.mp4")
         if self.screenrecord_process is not None:
-            rec_res = self.finisher(self.screenrecord_process, timeout=15.0, terminate=False)
+            try:
+                rec_res = self.finisher(self.screenrecord_process, timeout=15.0, terminate=False)
+                if rec_res.returncode != 0:
+                    errors.append(f"screenrecord rc={rec_res.returncode}")
+            except Exception as e:
+                errors.append(f"screenrecord finisher error: {e}")
             self.screenrecord_process = None
-            if rec_res.returncode != 0:
-                errors.append(f"screenrecord rc={rec_res.returncode}")
         pull_v = self.runner(self._cmd("pull", remote_vid, local_vid))
         if pull_v.returncode != 0:
             errors.append(f"pull_video rc={pull_v.returncode}")
@@ -660,7 +669,10 @@ class AdbHarness:
 
     def restore(self) -> CommandResult:
         if self.screenrecord_process is not None:
-            self.finisher(self.screenrecord_process, timeout=5.0, terminate=True)
+            try:
+                self.finisher(self.screenrecord_process, timeout=5.0, terminate=True)
+            except Exception:
+                pass
             self.screenrecord_process = None
         return self.runner(self._cmd("emu", "snapshot", "load", SNAPSHOT_NAME))
 
@@ -675,9 +687,26 @@ class AdbHarness:
             res = self.finisher(self.emulator_process, terminate=True)
             self.emulator_process = None
             return res
-        return self.runner(self._cmd("emu", "kill"))
+        if self._owned_pid is not None:
+            try:
+                os.kill(self._owned_pid, signal.SIGTERM)
+            except ProcessLookupError:
+                pass
+            except OSError as e:
+                return self._fail("release", f"PID kill failed: {e}".encode())
+            return self._ok("release", b"released by owned PID")
+        return self._fail("release", b"no owned emulator to release")
 
     def verify_release(self) -> CommandResult:
+        if self._owned_pid is not None:
+            try:
+                os.kill(self._owned_pid, 0)
+                return self._fail("verify_release",
+                                  f"owned PID {self._owned_pid} still alive".encode())
+            except ProcessLookupError:
+                pass
+            except OSError:
+                pass
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.settimeout(1.0)
         try:

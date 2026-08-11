@@ -85,9 +85,11 @@ class Orchestrator:
         repo_head: str = "",
         apk_sha256: str = "",
         tools: list[ToolIdentity] | None = None,
+        expected_head: str = "",
     ):
         self.harness = harness
         self.repo_head = repo_head
+        self._expected_head = expected_head
         self._expected_apk_sha256 = apk_sha256
         self.apk_sha256 = apk_sha256
         self.tools = list(tools) if tools is not None else []
@@ -133,19 +135,22 @@ class Orchestrator:
                 TerminalCause.PREFLIGHT_FAILED))
             self.terminal = TerminalCause.PREFLIGHT_FAILED
             return self._record()
+        if self._expected_head and ctx.repo_head != self._expected_head:
+            self.terminal = TerminalCause.FIXTURE_MISMATCH
+            return self._record()
         if self._expected_apk_sha256 and ctx.apk_sha256 != self._expected_apk_sha256:
             self.terminal = TerminalCause.FIXTURE_MISMATCH
             return self._record()
 
+        self._emulator_launched = True
         self._run_phase("emulator_launch", "boot pinned snapshot",
                         lambda: self.harness.launch_emulator())
-        self._emulator_launched = True
-        if self.terminal: return self._record()
 
         try:
             try:
-                self._run_phase("attach", "adb attach serial",
-                                lambda: self.harness.attach())
+                if not self.terminal:
+                    self._run_phase("attach", "adb attach serial",
+                                    lambda: self.harness.attach())
                 if not self.terminal:
                     self._capture_prior()
                 if not self.terminal and self.prior_state:
@@ -274,36 +279,38 @@ class Orchestrator:
     def _release_emulator(self):
         if not self._emulator_launched:
             return
+
         try:
             result = self.harness.release_emulator()
             rc = _rc_of(result)
             cause = TerminalCause.COMPLETED if rc == 0 else TerminalCause.CLEANUP_PARTIAL
             if _timed_out(result):
                 cause = TerminalCause.TIMEOUT
-            self.steps.append(_make_step(
-                "release_emulator", "release owned emulator", result, cause
-            ))
-            if cause != TerminalCause.COMPLETED and self.terminal is None:
-                self.terminal = cause
+        except Exception as e:
+            result = CommandResult(
+                argv=[], start_utc="", end_utc="",
+                returncode=1, stdout=b"", stderr=str(e).encode())
+            cause = TerminalCause.CLEANUP_PARTIAL
+        self.steps.append(_make_step(
+            "release_emulator", "release owned emulator", result, cause))
+        if cause != TerminalCause.COMPLETED and self.terminal is None:
+            self.terminal = cause
 
+        try:
             v_res = self.harness.verify_release()
             v_rc = _rc_of(v_res)
             v_cause = TerminalCause.COMPLETED if v_rc == 0 else TerminalCause.CLEANUP_PARTIAL
             if _timed_out(v_res):
                 v_cause = TerminalCause.TIMEOUT
-            self.steps.append(_make_step(
-                "verify_release", "verify emulator release", v_res, v_cause
-            ))
-            if v_cause != TerminalCause.COMPLETED and self.terminal is None:
-                self.terminal = v_cause
         except Exception as e:
-            self.steps.append(_make_step(
-                "release_emulator", "release owned emulator",
-                CommandResult(argv=[], start_utc="", end_utc="",
-                              returncode=1, stdout=b"", stderr=str(e).encode()),
-                TerminalCause.CLEANUP_PARTIAL))
-            if self.terminal is None:
-                self.terminal = TerminalCause.CLEANUP_PARTIAL
+            v_res = CommandResult(
+                argv=[], start_utc="", end_utc="",
+                returncode=1, stdout=b"", stderr=str(e).encode())
+            v_cause = TerminalCause.CLEANUP_PARTIAL
+        self.steps.append(_make_step(
+            "verify_release", "verify emulator release", v_res, v_cause))
+        if v_cause != TerminalCause.COMPLETED and self.terminal is None:
+            self.terminal = v_cause
 
     def _record(self) -> CaptureRecord:
         return CaptureRecord(

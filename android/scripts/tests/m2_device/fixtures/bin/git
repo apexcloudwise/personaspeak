@@ -1,0 +1,16 @@
+#!/usr/bin/env python3
+import os
+import sys
+
+log_path = os.environ.get("MOCK_COMMANDS_LOG")
+if log_path:
+    with open(log_path, "a") as f:
+        f.write(f"git: {' '.join(sys.argv[1:])}\n")
+
+cmd = " ".join(sys.argv[1:])
+if "rev-parse" in cmd and "HEAD" in cmd:
+    print(os.environ.get("FAKE_GIT_HEAD", "deadbeef"))
+elif "status" in cmd:
+    pass
+elif "init" in cmd:
+    pass

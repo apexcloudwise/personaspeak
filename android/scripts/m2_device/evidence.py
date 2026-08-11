@@ -117,6 +117,10 @@ def build_manifest(dir_path: str) -> dict[str, str]:
             p = os.path.join(root, f)
             if os.path.islink(p):
                 raise ValueError(f"symlink rejected in evidence dir: {p}")
+            if not os.path.isfile(p):
+                raise ValueError(f"non-regular file in evidence dir: {p}")
+            if os.stat(p).st_nlink > 1:
+                raise ValueError(f"hard link rejected in evidence dir: {p}")
             real = os.path.realpath(p)
             if not (real == base or real.startswith(base + os.sep)):
                 raise ValueError(f"path escape rejected: {p}")
@@ -191,21 +195,34 @@ def finalize(
             actual = hashlib.sha256(fh.read()).hexdigest()
         if actual != manifest[name]:
             raise ValueError(f"manifest file digest mismatch: {name}")
+    actual_files: set[str] = set()
+    for root, _, files in os.walk(evidence_dir):
+        for f in files:
+            p = os.path.join(root, f)
+            rel = str(Path(p).relative_to(Path(evidence_dir)))
+            actual_files.add(rel)
+    extras = actual_files - set(manifest.keys())
+    if extras:
+        raise ValueError(f"unlisted files in evidence dir: {sorted(extras)}")
     if capture.restoration is not None:
         if capture.restoration.cause != TerminalCause.COMPLETED:
             raise ValueError(
                 f"restoration step cause was {capture.restoration.cause!r}, not COMPLETED"
             )
-    elif restoration_verdict != "verified":
-        raise ValueError(f"restoration verdict was {restoration_verdict!r}, not 'verified'")
+    else:
+        raise ValueError("capture record has no restoration step")
     derived_counts = {
         "png": sum(1 for n in manifest if n.endswith(".png")),
         "mp4": sum(1 for n in manifest if n.endswith(".mp4")),
     }
     if counts:
+        allowed = {"screenshots": "png", "videos": "mp4"}
+        unknown = set(counts) - set(allowed)
+        if unknown:
+            raise ValueError(f"unknown count keys: {sorted(unknown)}")
         for k, v in counts.items():
-            mapped = {"screenshots": "png", "videos": "mp4"}.get(k, k)
-            if mapped in derived_counts and v != derived_counts[mapped]:
+            mapped = allowed[k]
+            if v != derived_counts[mapped]:
                 raise ValueError(
                     f"caller count {k}={v} != manifest-derived {mapped}={derived_counts[mapped]}"
                 )

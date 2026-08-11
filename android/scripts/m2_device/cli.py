@@ -36,7 +36,10 @@ def cmd_capture(args: argparse.Namespace) -> int:
     harness = AdbHarness(
         run_dir=run_dir, apk_path=args.apk_path, repo_root=args.repo_root,
     )
-    orchestrator = Orchestrator(harness=harness, apk_sha256=args.apk_sha256)
+    orchestrator = Orchestrator(
+        harness=harness, apk_sha256=args.apk_sha256,
+        expected_head=args.expected_head,
+    )
 
     record = orchestrator.execute()
 
@@ -57,15 +60,19 @@ def cmd_capture(args: argparse.Namespace) -> int:
         print(f"qualification failed: {orchestrator.terminal}", file=sys.stderr)
         return 1
 
+    required = {"verify_restore", "release_emulator", "verify_release"}
+    found = {s.phase for s in record.steps}
     incomplete = []
     if record.restoration is None or record.restoration.cause != TerminalCause.COMPLETED:
         incomplete.append("restoration")
-    for s in record.steps:
-        if s.phase in ("verify_restore", "release_emulator", "verify_release"):
-            if s.cause != TerminalCause.COMPLETED:
-                incomplete.append(s.phase)
+    for phase in required:
+        phase_steps = [s for s in record.steps if s.phase == phase]
+        if not phase_steps:
+            incomplete.append(f"{phase}(missing)")
+        elif phase_steps[-1].cause != TerminalCause.COMPLETED:
+            incomplete.append(phase)
     if incomplete:
-        print(f"qualification incomplete: missing {incomplete}", file=sys.stderr)
+        print(f"qualification incomplete: {incomplete}", file=sys.stderr)
         return 1
 
     return 0
@@ -140,6 +147,7 @@ def build_parser() -> argparse.ArgumentParser:
     cap.add_argument("--repo-root", required=True)
     cap.add_argument("--apk-path", required=True)
     cap.add_argument("--apk-sha256", required=True)
+    cap.add_argument("--expected-head", default="")
     cap.set_defaults(func=cmd_capture)
 
     fin = sub.add_parser("finalize", help="produce final receipt")
