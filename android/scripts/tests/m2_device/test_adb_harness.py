@@ -229,6 +229,10 @@ class TestAdbHarness(unittest.TestCase):
                 return _cr(stdout=b"420\n")
             if "window_animation_scale" in cmd:
                 return _cr(stdout=b"1.0\n")
+            if "transition_animation_scale" in cmd:
+                return _cr(stdout=b"1.0\n")
+            if "default_input_method" in cmd:
+                return _cr(stdout=EXPECTED_ENABLED_IMES[0].encode())
             return _cr()
 
         self.mock_runner.side_effect = side_effect
@@ -267,6 +271,37 @@ class TestAdbHarness(unittest.TestCase):
         self.mock_runner.side_effect = side_effect
         res = self.harness.install_apk()
         self.assertEqual(res.returncode, 0)
+
+    def test_install_apk_returns_remote_result(self):
+        from android.scripts.m2_device.records import RemoteResult as RR
+
+        def side_effect(argv, **kwargs):
+            cmd = " ".join(argv)
+            if "install" in cmd and "pull" not in cmd:
+                return _cr(rc=0, stdout=b"Success")
+            if "dumpsys" in cmd:
+                return _cr(rc=0, stdout=(
+                    f"versionName={EXPECTED_VERSION_NAME}\n"
+                    f"versionCode={EXPECTED_VERSION_CODE}\n"
+                    f"signatures=[Signature [{EXPECTED_SIGNER}]]\n"
+                ).encode())
+            return _cr(rc=0)
+
+        self.mock_runner.side_effect = side_effect
+        res = self.harness.install_apk()
+        self.assertEqual(res.returncode, 0)
+
+    def test_install_apk_remote_ambiguous(self):
+        def side_effect(argv, **kwargs):
+            cmd = " ".join(argv)
+            if "install" in cmd and "pull" not in cmd:
+                return _cr(rc=1, stderr=b"device not found")
+            return _cr(rc=0)
+
+        self.mock_runner.side_effect = side_effect
+        res = self.harness.install_apk()
+        self.assertEqual(res.returncode, 1)
+        self.assertIn(b"ambiguous", res.stderr)
 
     def test_run_journey_success(self):
 
@@ -399,7 +434,7 @@ class TestAdbHarness(unittest.TestCase):
         self.assertEqual(res.returncode, 1)
 
     def test_capture_evidence_success(self):
-        evidence_dir = os.path.join(self.run_dir, "evidence")
+        evidence_dir = os.path.join(self.run_dir, "artifacts")
         os.makedirs(evidence_dir, exist_ok=True)
         for name in ("01-idle-typed", "02-loading-cancel", "03-review",
                       "04-applied", "05-dismissed", "06-stale", "07-settings"):

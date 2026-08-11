@@ -41,9 +41,10 @@ def main():
     bin_dir = os.path.abspath(
         os.path.join(os.path.dirname(__file__), "fixtures", "bin"))
     log_path = os.path.join(test_dir, "mock_commands.log")
+    python_dir = os.path.dirname(sys.executable)
 
     env = {
-        "PATH": bin_dir,
+        "PATH": bin_dir + os.pathsep + python_dir,
         "HOME": os.environ.get("HOME", "/tmp"),
         "MOCK_COMMANDS_LOG": log_path,
         "FAKE_ADB_STATE": os.path.join(test_dir, "edittext.state"),

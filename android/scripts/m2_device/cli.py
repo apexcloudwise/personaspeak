@@ -43,7 +43,7 @@ def cmd_capture(args: argparse.Namespace) -> int:
 
     record = orchestrator.execute()
 
-    evidence_dir = os.path.join(run_dir, "evidence")
+    evidence_dir = os.path.join(run_dir, "artifacts")
     if os.path.isdir(evidence_dir):
         manifest = evidence.build_manifest(evidence_dir)
         manifest_d = evidence.manifest_digest(manifest)
@@ -91,7 +91,7 @@ def cmd_finalize(args: argparse.Namespace) -> int:
         return 1
     with open(args.manifest) as f:
         manifest = json.load(f)
-    evidence_subdir = os.path.join(args.run_dir, "evidence")
+    evidence_subdir = os.path.join(args.run_dir, "artifacts")
     if not os.path.isdir(evidence_subdir):
         evidence_subdir = args.run_dir
     receipt = evidence.finalize(

@@ -154,6 +154,43 @@ class TestCliCapture(unittest.TestCase):
                 f"phase {a} must precede {b} in ledger",
             )
 
+    def test_adversarial_install_failure(self):
+        env_override = {"FAKE_ADB_INSTALL_FAIL": "1"}
+        result = self._run_cli_with_override(env_override)
+        self.assertNotEqual(result.returncode, 0,
+                            "CLI should fail when install fails")
+        self.assertIn(b"install", result.stderr.lower() +
+                      result.stdout.lower())
+
+    def _run_cli_with_override(self, extra_env):
+        import subprocess as sp
+        head = sp.run(["git", "rev-parse", "HEAD"],
+                       cwd=self.repo_root, capture_output=True).stdout.decode().strip()
+        python_dir = os.path.dirname(sys.executable)
+        env = {
+            "PATH": self.bin_dir + os.pathsep + python_dir,
+            "HOME": os.environ.get("HOME", "/tmp"),
+            "MOCK_COMMANDS_LOG": self.log_path,
+            "FAKE_ADB_STATE": os.path.join(self.test_dir, "edittext.state"),
+            "FAKE_ADB_KEYBOARD": os.path.join(self.test_dir, "keyboard.state"),
+            "FAKE_ADB_REPHRASING": CANDIDATE_REPHRASING,
+            "FAKE_GIT_HEAD": head,
+            "PYTHONPATH": self.repo_root_abs,
+        }
+        env.update(extra_env)
+        for k in ("FAKE_ADB_STATE", "FAKE_ADB_KEYBOARD"):
+            with open(env[k], "w") as f:
+                f.write("")
+        return subprocess.run(
+            [sys.executable, "-m", "android.scripts.m2_device.cli",
+             "capture",
+             "--evidence-root", self.evidence_root,
+             "--repo-root", self.repo_root,
+             "--apk-path", self.apk_path,
+             "--apk-sha256", self.apk_sha256],
+            env=env, capture_output=True, cwd=self.repo_root_abs, timeout=30,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

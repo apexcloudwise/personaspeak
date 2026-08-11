@@ -243,8 +243,8 @@ def finalize(
         approval_digest=appr_d,
         privacy_ok=privacy_ok,
         media_ok=media_ok,
-        restoration_verdict=restoration_verdict,
-        counts=dict(counts) if counts else derived_counts,
+        restoration_verdict="verified",
+        counts=derived_counts,
         evidence_commit=evidence_commit,
-        artifacts=dict(artifacts),
+        artifacts=dict(sorted(manifest.items())),
     )

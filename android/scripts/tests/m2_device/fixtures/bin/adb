@@ -126,6 +126,10 @@ elif "getprop ro.sf.lcd_density" in cmd:
     print("420")
 elif "settings get global window_animation_scale" in cmd:
     print("1.0")
+elif "settings get global transition_animation_scale" in cmd:
+    print("1.0")
+elif "settings get secure default_input_method" in cmd:
+    print("com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME")
 elif "wm size" in cmd:
     print("Physical size: 1080x2400")
 elif "pm path" in cmd:
@@ -141,7 +145,8 @@ elif "getprop ro.product.locale" in cmd:
 elif "am start" in cmd:
     pass
 elif "install" in cmd and "pull" not in cmd:
-    pass
+    if os.environ.get("FAKE_ADB_INSTALL_FAIL"):
+        sys.exit(1)
 elif "dumpsys package" in cmd and "personaspeak" in cmd:
     print("versionName=0.1.0")
     print("versionCode=1")

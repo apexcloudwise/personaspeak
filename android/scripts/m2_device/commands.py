@@ -171,6 +171,25 @@ def run_remote(
     return RemoteResult(transport=transport, remote_rc=remote_rc)
 
 
+def to_remote(transport: CommandResult) -> RemoteResult:
+    return RemoteResult(
+        transport=transport,
+        remote_rc=AdbRemoteStatusReader().extract_rc(transport),
+    )
+
+
+def remote_stdout(res: CommandResult | RemoteResult) -> str:
+    if isinstance(res, RemoteResult):
+        if res.remote_rc is None:
+            raise ValueError("remote status ambiguous")
+        if res.remote_rc != 0:
+            raise ValueError(f"remote rc={res.remote_rc}")
+        return res.transport.stdout.decode("utf-8").strip()
+    if res.returncode != 0:
+        raise ValueError(f"command rc={res.returncode}")
+    return res.stdout.decode("utf-8").strip()
+
+
 def digest_file(path: str) -> str:
     h = hashlib.sha256()
     with open(path, "rb") as f:

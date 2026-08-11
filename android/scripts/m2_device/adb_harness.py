@@ -120,6 +120,9 @@ class AdbHarness:
         self.emulator_process: commands.ManagedProcess | None = None
         self.screenrecord_process: commands.ManagedProcess | None = None
         self._owned_pid: int | None = None
+        self._owned_start: str = ""
+        self._owned_exe: str = ""
+        self._owned_avd: str = ""
 
     @property
     def _adb(self) -> str:
@@ -210,6 +213,9 @@ class AdbHarness:
         argv = self._emu_argv()
         self.emulator_process = self.starter(argv)
         self._owned_pid = self.emulator_process.proc.pid
+        self._owned_start = self.emulator_process.start_utc
+        self._owned_exe = self.emulator_tool.path if self.emulator_tool else ""
+        self._owned_avd = AVD_NAME
         pid = self.emulator_process.proc.pid
         start = self.emulator_process.start_utc
         msg = (
@@ -221,14 +227,15 @@ class AdbHarness:
     def attach(self) -> CommandResult:
         return self.runner(self._cmd("wait-for-device"), timeout=30.0)
 
-    @staticmethod
-    def _out(res: CommandResult) -> str:
-        if res.returncode != 0:
-            raise ValueError(f"command rc={res.returncode}")
-        return res.stdout.decode("utf-8").strip()
+    def _shell(self, *args: str) -> RemoteResult:
+        return commands.to_remote(self.runner(self._cmd("shell", *args)))
+
+    _out = staticmethod(commands.remote_stdout)
 
     def capture_prior_state(self) -> PriorDeviceState | None:
         def _run(*args):
+            if args[0] == "shell":
+                return self._shell(*args[1:])
             return self.runner(self._cmd(*args))
 
         try:
@@ -277,40 +284,40 @@ class AdbHarness:
         if prior.package_present:
             errors.append(f"{KEYBOARD_PACKAGE} present before test")
 
-        tz = self.runner(self._cmd("shell", "getprop", "persist.sys.timezone")).stdout.decode().strip()
-        if tz != TIMEZONE:
-            errors.append(f"timezone mismatch: got {tz}")
-        loc = self.runner(self._cmd("shell", "getprop", "ro.product.locale")).stdout.decode().strip()
-        if loc != LOCALE:
-            errors.append(f"locale mismatch: got {loc}")
-
         if prior.enabled_imes != EXPECTED_ENABLED_IMES:
             errors.append(f"IME list mismatch: got {prior.enabled_imes}")
 
-        try:
-            abi = self._out(self.runner(self._cmd("shell", "getprop", "ro.product.cpu.abi")))
-            if abi != ABI:
-                errors.append(f"ABI mismatch: got {abi}")
-            density = self._out(self.runner(self._cmd("shell", "getprop", "ro.sf.lcd_density")))
-            if density != str(SCREEN_DPI):
-                errors.append(f"density mismatch: got {density}")
-            anim = self._out(self.runner(
-                self._cmd("shell", "settings", "get", "global", "window_animation_scale")))
-            if anim != ANIMATION_SCALE:
-                errors.append(f"animation scale mismatch: got {anim}")
-        except ValueError:
-            errors.append("fixture property query failed")
+        fixture_props = [
+            (("getprop", "persist.sys.timezone"), TIMEZONE),
+            (("getprop", "ro.product.locale"), LOCALE),
+            (("getprop", "ro.product.cpu.abi"), ABI),
+            (("getprop", "ro.sf.lcd_density"), str(SCREEN_DPI)),
+            (("settings", "get", "global", "window_animation_scale"), ANIMATION_SCALE),
+            (("settings", "get", "global", "transition_animation_scale"), ANIMATION_SCALE),
+            (("settings", "get", "secure", "default_input_method"), EXPECTED_ENABLED_IMES[0]),
+        ]
+        for args, expected in fixture_props:
+            try:
+                actual = self._out(self._shell(*args))
+                if actual != expected:
+                    errors.append(f"{' '.join(args)} mismatch: got {actual}")
+            except ValueError:
+                errors.append(f"{' '.join(args)} query failed")
 
         if errors:
             return self._fail("validate_fixture", "\n".join(errors).encode())
         return self._ok("validate_fixture", b"Fixture identity validated.")
 
-    def install_apk(self) -> CommandResult:
-        res = self.runner(self._cmd("install", "-r", self.apk_path))
-        if res.returncode != 0:
+    def install_apk(self) -> CommandResult | RemoteResult:
+        res = commands.to_remote(self.runner(self._cmd("install", "-r", self.apk_path)))
+        if res.remote_rc is None:
+            return self._fail("install_apk", b"install status ambiguous")
+        if res.remote_rc != 0:
             return res
-        dump = self.runner(self._cmd("shell", "dumpsys", "package", KEYBOARD_PACKAGE))
-        out = dump.stdout.decode("utf-8", errors="replace")
+        dump = self._shell("dumpsys", "package", KEYBOARD_PACKAGE)
+        if dump.remote_rc is None:
+            return self._fail("install_apk", b"dumpsys remote status ambiguous")
+        out = dump.transport.stdout.decode("utf-8", errors="replace")
         errors = []
         if f"versionName={EXPECTED_VERSION_NAME}" not in out:
             errors.append(f"versionName mismatch: expected {EXPECTED_VERSION_NAME}")
@@ -323,7 +330,7 @@ class AdbHarness:
         return self._ok("install_apk", b"APK installed and identity verified.")
 
     def _dump_hierarchy(self, label: str) -> tuple[CommandResult, Any]:
-        evidence_dir = os.path.join(self.run_dir, "evidence")
+        evidence_dir = os.path.join(self.run_dir, "artifacts")
         os.makedirs(evidence_dir, exist_ok=True)
         remote = "/sdcard/window_dump.xml"
         local = os.path.join(evidence_dir, f"{label}.xml")
@@ -379,17 +386,11 @@ class AdbHarness:
 
     def _tap_btn(self, steps, root, op, res_id):
         btn = self._find(root, res_id)
-        if btn is None:
-            self._step(steps, op, self._fail(op, f"{res_id} not found".encode()))
-            return None
-        center = self._center(btn)
+        center = self._center(btn) if btn is not None else None
         if center is None:
-            self._step(steps, op, self._fail(op, b"bounds missing"))
+            self._step(steps, op, self._fail(op, b"button unavailable"))
             return None
-        res = self.runner(self._cmd("shell", "input", "tap", *center))
-        if not self._step(steps, op, res):
-            return None
-        return True
+        return self._step(steps, op, self.runner(self._cmd("shell", "input", "tap", *center))) or None
 
     def _verify_text(self, steps, root, expected, op="verify_text"):
         field = self._find(root, SEARCH_RES_ID)
@@ -415,17 +416,11 @@ class AdbHarness:
 
     def _validate_keyboard(self, steps, root):
         kb = self._find(root, KEYBOARD_VIEW_RES_ID)
-        if kb is None:
-            self._step(steps, "validate_keyboard",
-                       self._fail("kb", b"keyboard view not found"))
-            return False
-        actual = kb.attrib.get("bounds", "")
-        if actual != KEYBOARD_EXPECTED_BOUNDS:
-            self._step(steps, "validate_keyboard",
-                       self._fail("kb", f"bounds mismatch: {actual}".encode()))
-            return False
-        self._step(steps, "validate_keyboard", self._ok("kb"))
-        return True
+        actual = kb.attrib.get("bounds", "") if kb is not None else None
+        ok = actual == KEYBOARD_EXPECTED_BOUNDS
+        self._step(steps, "validate_keyboard",
+                   self._ok("kb") if ok else self._fail("kb", f"bounds: {actual}".encode()))
+        return ok
 
     def _tap_ask_key(self, steps, ch):
         key = ch.upper() if ch.isalpha() else ch
@@ -460,7 +455,7 @@ class AdbHarness:
         return self._step(steps, "clear_field", res)
 
     def _take_screenshot(self, name):
-        evidence_dir = os.path.join(self.run_dir, "evidence")
+        evidence_dir = os.path.join(self.run_dir, "artifacts")
         os.makedirs(evidence_dir, exist_ok=True)
         remote = f"/sdcard/{name}.png"
         local = os.path.join(evidence_dir, f"{name}.png")
@@ -600,10 +595,10 @@ class AdbHarness:
             return steps
         if not self._verify_text(steps, v_root, STALE_TEXT, "verify_stale"):
             return steps
-        panel = self._find(v_root, PANEL_STATE_RES_ID)
-        if panel is not None:
+        candidate = self._find(v_root, CANDIDATE_RES_ID)
+        if candidate is not None:
             self._step(steps, "verify_stale_outcome",
-                       self._fail("stale_outcome", b"panel still active"))
+                       self._fail("stale_outcome", b"candidate present after stale apply"))
             return steps
         self._step(steps, "verify_stale_outcome", self._ok("stale_outcome"))
         if not self._take_screenshot("06-stale"):
@@ -621,7 +616,7 @@ class AdbHarness:
         return steps
 
     def capture_evidence(self) -> CommandResult:
-        evidence_dir = os.path.join(self.run_dir, "evidence")
+        evidence_dir = os.path.join(self.run_dir, "artifacts")
         os.makedirs(evidence_dir, exist_ok=True)
         errors = []
 
