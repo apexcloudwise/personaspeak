@@ -31,6 +31,7 @@ from android.scripts.m2_device.orchestrator import CaptureContext
 from android.scripts.m2_device.records import (
     CommandResult,
     PriorDeviceState,
+    RemoteResult,
     StepRecord,
     TerminalCause,
     ToolIdentity,
@@ -272,9 +273,7 @@ class TestAdbHarness(unittest.TestCase):
         res = self.harness.install_apk()
         self.assertEqual(res.returncode, 0)
 
-    def test_install_apk_returns_remote_result(self):
-        from android.scripts.m2_device.records import RemoteResult as RR
-
+    def test_install_apk_returns_command_result(self):
         def side_effect(argv, **kwargs):
             cmd = " ".join(argv)
             if "install" in cmd and "pull" not in cmd:
@@ -290,8 +289,9 @@ class TestAdbHarness(unittest.TestCase):
         self.mock_runner.side_effect = side_effect
         res = self.harness.install_apk()
         self.assertEqual(res.returncode, 0)
+        self.assertNotIsInstance(res, RemoteResult)
 
-    def test_install_apk_remote_ambiguous(self):
+    def test_install_apk_host_failure(self):
         def side_effect(argv, **kwargs):
             cmd = " ".join(argv)
             if "install" in cmd and "pull" not in cmd:
@@ -301,7 +301,6 @@ class TestAdbHarness(unittest.TestCase):
         self.mock_runner.side_effect = side_effect
         res = self.harness.install_apk()
         self.assertEqual(res.returncode, 1)
-        self.assertIn(b"ambiguous", res.stderr)
 
     def test_run_journey_success(self):
 
@@ -471,13 +470,10 @@ class TestAdbHarness(unittest.TestCase):
     def test_release_emulator_process(self):
         mock_process = MagicMock()
         self.harness.emulator_process = mock_process
-        self.mock_finisher.return_value = _cr(rc=0)
 
         res = self.harness.release_emulator()
         self.assertEqual(res.returncode, 0)
-        self.mock_finisher.assert_called_once_with(
-            mock_process, terminate=True
-        )
+        mock_process.proc.terminate.assert_called_once()
         self.assertIsNone(self.harness.emulator_process)
 
     def test_release_emulator_fallback(self):

@@ -123,6 +123,7 @@ class AdbHarness:
         self._owned_start: str = ""
         self._owned_exe: str = ""
         self._owned_avd: str = ""
+        self.ledger = commands.CommandLedger()
 
     @property
     def _adb(self) -> str:
@@ -212,23 +213,37 @@ class AdbHarness:
     def launch_emulator(self) -> CommandResult:
         argv = self._emu_argv()
         self.emulator_process = self.starter(argv)
-        self._owned_pid = self.emulator_process.proc.pid
-        self._owned_start = self.emulator_process.start_utc
-        self._owned_exe = self.emulator_tool.path if self.emulator_tool else ""
-        self._owned_avd = AVD_NAME
         pid = self.emulator_process.proc.pid
-        start = self.emulator_process.start_utc
         msg = (
-            f"launched pid={pid} start={start}"
+            f"launched pid={pid} start={self.emulator_process.start_utc}"
             f" exe={self.emulator_tool.path} avd={AVD_NAME}"
         )
         return self._ok("emulator_launch", msg.encode())
+
+    def establish_ownership(self) -> CommandResult:
+        if self.emulator_process is None:
+            return self._fail("ownership", b"no emulator process")
+        pid = self.emulator_process.proc.pid
+        start = commands.pid_identity(pid)
+        if start is None:
+            return self._fail("ownership", f"pid {pid} not running".encode())
+        self._owned_pid = pid
+        self._owned_start = start
+        self._owned_exe = self.emulator_tool.path if self.emulator_tool else ""
+        self._owned_avd = AVD_NAME
+        return self._ok("ownership", f"owned pid={pid} start={start}".encode())
 
     def attach(self) -> CommandResult:
         return self.runner(self._cmd("wait-for-device"), timeout=30.0)
 
     def _shell(self, *args: str) -> RemoteResult:
-        return commands.to_remote(self.runner(self._cmd("shell", *args)))
+        transport = self.runner(self._cmd("shell", *args))
+        res = commands.to_remote(transport)
+        self.ledger.record(
+            ["shell", *args], transport.start_utc, transport.end_utc,
+            transport.returncode, res.remote_rc, transport.timed_out, "shell",
+        )
+        return res
 
     _out = staticmethod(commands.remote_stdout)
 
@@ -308,11 +323,14 @@ class AdbHarness:
             return self._fail("validate_fixture", "\n".join(errors).encode())
         return self._ok("validate_fixture", b"Fixture identity validated.")
 
-    def install_apk(self) -> CommandResult | RemoteResult:
-        res = commands.to_remote(self.runner(self._cmd("install", "-r", self.apk_path)))
-        if res.remote_rc is None:
-            return self._fail("install_apk", b"install status ambiguous")
-        if res.remote_rc != 0:
+    def install_apk(self) -> CommandResult:
+        res = self.runner(self._cmd("install", "-r", self.apk_path))
+        self.ledger.record(
+            ["install", "-r", self.apk_path],
+            res.start_utc, res.end_utc,
+            res.returncode, None, res.timed_out, "host",
+        )
+        if res.returncode != 0:
             return res
         dump = self._shell("dumpsys", "package", KEYBOARD_PACKAGE)
         if dump.remote_rc is None:
@@ -677,31 +695,42 @@ class AdbHarness:
             raise RuntimeError("verification prior state unavailable")
         return state
 
+    def _revalidate_ownership(self) -> bool:
+        if self._owned_pid is None or not self._owned_start:
+            return False
+        current = commands.pid_identity(self._owned_pid)
+        if current is None:
+            return False
+        return current == self._owned_start
+
     def release_emulator(self) -> CommandResult:
         if self.emulator_process is not None:
-            res = self.finisher(self.emulator_process, terminate=True)
+            try:
+                commands.bounded_terminate(self.emulator_process.proc)
+            except Exception:
+                pass
             self.emulator_process = None
-            return res
+            return self._ok("release", b"released via process handle")
         if self._owned_pid is not None:
+            if not self._revalidate_ownership():
+                self._owned_pid = None
+                return self._fail("release",
+                                  b"PID reuse or stale ownership - refuse kill")
             try:
                 os.kill(self._owned_pid, signal.SIGTERM)
             except ProcessLookupError:
-                pass
+                return self._ok("release", b"process already exited")
             except OSError as e:
-                return self._fail("release", f"PID kill failed: {e}".encode())
+                return self._fail("release", f"SIGTERM failed: {e}".encode())
             return self._ok("release", b"released by owned PID")
         return self._fail("release", b"no owned emulator to release")
 
     def verify_release(self) -> CommandResult:
-        if self._owned_pid is not None:
-            try:
-                os.kill(self._owned_pid, 0)
+        if self._owned_pid is not None and self._owned_start:
+            current = commands.pid_identity(self._owned_pid)
+            if current is not None and current == self._owned_start:
                 return self._fail("verify_release",
                                   f"owned PID {self._owned_pid} still alive".encode())
-            except ProcessLookupError:
-                pass
-            except OSError:
-                pass
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.settimeout(1.0)
         try:

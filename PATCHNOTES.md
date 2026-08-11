@@ -10,6 +10,30 @@ Newest first, like all respectable patch notes.
 
 ---
 
+## 2026-08-11 — The execution boundary becomes total
+
+- The M2 harness now structurally distinguishes wrapper failure, transport
+  failure, remote status, timeout, signal, and ambiguity through every
+  command path. `adb install` is no longer mislabeled as a remote shell
+  result — only `adb shell` commands produce `RemoteResult`. Ambiguous
+  remote results (`remote_rc=None`) map to `TOOL_FAILURE`, not the
+  phase-specific cause, so the record says what actually happened.
+- A private structured/redacted command ledger records exact argv and
+  status dimensions (transport rc, remote rc, timeout, kind) for every
+  production command. Content is never stored — redacted by design.
+- Emulator ownership is established only after successful identity
+  capture (attach + prior state + validate_fixture), not at launch.
+  `establish_ownership()` captures the process start-time via `ps` and
+  revalidates before termination; PID reuse is detected and refused.
+  Release uses bounded SIGTERM → SIGKILL escalation via
+  `bounded_terminate()` instead of unguarded `os.kill`.
+- 45 new adversarial tests cover wrapper/remote collisions, ambiguity,
+  exec failure, timeout, signals, launch races, PID reuse, resistant
+  children, cleanup failure independence, and ledger redaction/ordering.
+  Every failure path produces a decodable record. 230 tests total.
+
+---
+
 ## 2026-08-10 — The inspector stops hallucinating and starts taking pictures
 
 - The M2 device-qualification harness gained a real evidence-capture

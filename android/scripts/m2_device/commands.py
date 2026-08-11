@@ -59,6 +59,45 @@ class ManagedProcess:
     start_utc: str
 
 
+@dataclass(frozen=True)
+class LedgerEntry:
+    argv: list[str]
+    start_utc: str
+    end_utc: str
+    transport_rc: int
+    remote_rc: int | None
+    timed_out: bool
+    kind: str
+
+
+class CommandLedger:
+    """Private structured/redacted command ledger.
+
+    Records exact argv and status dimensions for every production
+    command. Content (stdout/stderr) is never stored — redacted by
+    design.
+    """
+
+    def __init__(self):
+        self._entries: list[LedgerEntry] = []
+
+    def record(
+        self, argv, start_utc, end_utc,
+        transport_rc, remote_rc=None, timed_out=False, kind="host",
+    ):
+        self._entries.append(LedgerEntry(
+            argv=list(argv), start_utc=start_utc, end_utc=end_utc,
+            transport_rc=transport_rc, remote_rc=remote_rc,
+            timed_out=timed_out, kind=kind,
+        ))
+
+    def entries(self) -> list[LedgerEntry]:
+        return list(self._entries)
+
+    def __len__(self):
+        return len(self._entries)
+
+
 def start(
     argv: list[str],
     *,
@@ -119,6 +158,58 @@ def finish(
         stderr=stderr or b"",
         timed_out=timed_out,
     )
+
+
+def bounded_terminate(
+    proc: subprocess.Popen,
+    *,
+    term_timeout: float = 5.0,
+    kill_timeout: float = 5.0,
+) -> bool:
+    """SIGTERM → bounded wait → SIGKILL → bounded wait.
+
+    Returns True if SIGKILL was required.
+    """
+    killed = False
+    try:
+        proc.terminate()
+    except OSError:
+        pass
+    try:
+        proc.communicate(timeout=term_timeout)
+    except subprocess.TimeoutExpired:
+        try:
+            proc.kill()
+            killed = True
+        except OSError:
+            pass
+        try:
+            proc.communicate(timeout=kill_timeout)
+        except subprocess.TimeoutExpired:
+            pass
+    return killed
+
+
+def pid_identity(pid: int) -> str | None:
+    """Portable process start-time string, or None if PID is gone.
+
+    Tries ``/bin/ps`` (macOS, most Linux) then ``/usr/bin/ps`` (some
+    Linux distros) to avoid PATH resolution issues in restricted
+    environments.
+    """
+    for ps_path in ("/bin/ps", "/usr/bin/ps"):
+        if not (os.path.isfile(ps_path) and os.access(ps_path, os.X_OK)):
+            continue
+        try:
+            r = subprocess.run(
+                [ps_path, "-p", str(pid), "-o", "lstart="],
+                capture_output=True, timeout=3,
+            )
+            if r.returncode == 0:
+                return r.stdout.decode("utf-8", errors="replace").strip()
+        except (OSError, subprocess.TimeoutExpired):
+            pass
+    return None
 
 
 def run(

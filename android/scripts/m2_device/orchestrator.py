@@ -41,6 +41,7 @@ class JourneyHarness(Protocol):
     def attach(self) -> CommandResult | RemoteResult: ...
     def capture_prior_state(self) -> PriorDeviceState | None: ...
     def validate_fixture(self, prior: PriorDeviceState) -> CommandResult | RemoteResult: ...
+    def establish_ownership(self) -> CommandResult | RemoteResult: ...
     def install_apk(self) -> CommandResult | RemoteResult: ...
     def run_journey(self) -> list[StepRecord]: ...
     def capture_evidence(self) -> CommandResult | RemoteResult: ...
@@ -68,6 +69,14 @@ def _timed_out(result) -> bool:
         return result.timed_out
     if isinstance(result, RemoteResult):
         return result.transport.timed_out
+    raise TypeError(f"unknown result type: {type(result).__name__}")
+
+
+def _is_ambiguous(result) -> bool:
+    if isinstance(result, CommandResult):
+        return False
+    if isinstance(result, RemoteResult):
+        return result.remote_rc is None and not result.transport.timed_out
     raise TypeError(f"unknown result type: {type(result).__name__}")
 
 
@@ -158,6 +167,9 @@ class Orchestrator:
                                     lambda: self.harness.validate_fixture(self.prior_state),
                                     TerminalCause.FIXTURE_MISMATCH)
                 if not self.terminal:
+                    self._run_phase("establish_ownership", "capture ownership identity",
+                                    lambda: self.harness.establish_ownership())
+                if not self.terminal:
                     self._guard_mutation("install")
                     self._run_phase("install", "install exact APK",
                                     lambda: self.harness.install_apk(),
@@ -189,6 +201,8 @@ class Orchestrator:
             cause = TerminalCause.COMPLETED if rc == 0 else fail_cause
             if _timed_out(result):
                 cause = TerminalCause.TIMEOUT
+            elif _is_ambiguous(result):
+                cause = TerminalCause.TOOL_FAILURE
         except Exception as e:
             result = CommandResult(
                 argv=[], start_utc="", end_utc="",

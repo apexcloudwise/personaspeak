@@ -31,6 +31,7 @@ class FakeHarness:
     def __init__(self, *, prior=_prior(), fail_at=None,
                  restore_fail=False, verify_mismatch=False,
                  release_fail=False, verify_release_fail=False,
+                 ownership_fail=False,
                  repo_head="abc", apk_sha256="def", tools=None):
         self._prior = prior
         self._fail_at = fail_at
@@ -38,12 +39,14 @@ class FakeHarness:
         self._verify_mismatch = verify_mismatch
         self._release_fail = release_fail
         self._verify_release_fail = verify_release_fail
+        self._ownership_fail = ownership_fail
         self._repo_head = repo_head
         self._apk_sha256 = apk_sha256
         self._tools = tools if tools is not None else [ToolIdentity(name="adb", path="/adb", version="1.0")]
         self.restore_count = 0
         self.release_count = 0
         self.verify_release_count = 0
+        self.ownership_count = 0
 
     def preflight(self):
         return _cr(rc=5 if self._fail_at == "preflight" else 0)
@@ -69,6 +72,10 @@ class FakeHarness:
 
     def validate_fixture(self, prior):
         return _cr(rc=5 if self._fail_at == "validate" else 0)
+
+    def establish_ownership(self):
+        self.ownership_count += 1
+        return _cr(rc=5 if self._ownership_fail or self._fail_at == "ownership" else 0)
 
     def install_apk(self):
         return _cr(rc=5 if self._fail_at == "install" else 0)
@@ -341,7 +348,7 @@ class TestRemoteResultDispatch(unittest.TestCase):
         h = H()
         orch = O.Orchestrator(h, repo_head="a", apk_sha256="", tools=_tools())
         orch.execute()
-        self.assertEqual(orch.terminal, TerminalCause.INSTALL_FAILED)
+        self.assertEqual(orch.terminal, TerminalCause.TOOL_FAILURE)
 
 
 class TestUnknownResultType(unittest.TestCase):
