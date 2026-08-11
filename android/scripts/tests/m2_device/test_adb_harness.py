@@ -456,24 +456,19 @@ class TestAdbHarness(unittest.TestCase):
         res = self.harness.restore()
         self.assertEqual(res.returncode, 0)
         self.mock_runner.assert_called_once_with(
-            [
-                "adb",
-                "-s",
-                "emulator-5554",
-                "emu",
-                "snapshot",
-                "load",
-                SNAPSHOT_NAME,
-            ]
+            ["adb", "-s", "emulator-5554", "emu", "snapshot", "load", SNAPSHOT_NAME],
+            timeout=30.0,
         )
 
     def test_release_emulator_process(self):
         mock_process = MagicMock()
+        mock_process.proc.poll.return_value = 0
+        mock_process.new_session = False
         self.harness.emulator_process = mock_process
 
         res = self.harness.release_emulator()
         self.assertEqual(res.returncode, 0)
-        mock_process.proc.terminate.assert_called_once()
+        mock_process.proc.send_signal.assert_called_once()
         self.assertIsNone(self.harness.emulator_process)
 
     def test_release_emulator_fallback(self):

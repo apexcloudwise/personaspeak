@@ -4,8 +4,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import hashlib
+import json
 import os
 import shutil
+import signal
 import subprocess
 from datetime import datetime, timezone
 from typing import Protocol
@@ -57,6 +59,24 @@ class ManagedProcess:
     proc: subprocess.Popen
     argv: list[str]
     start_utc: str
+    new_session: bool = False
+
+
+@dataclass(frozen=True)
+class ProcessIdentity:
+    """Observed identity of a running process.
+
+    ``start`` is the lstart string from ps (second-resolution).
+    ``command`` is the full command line (executable + arguments).
+    Together they detect PID reuse: a different start time or a
+    different command means the original process is gone.
+    """
+    start: str
+    command: str
+
+
+class RemoteAmbiguousError(Exception):
+    """Remote command status could not be determined (remote_rc=None)."""
 
 
 @dataclass(frozen=True)
@@ -97,12 +117,21 @@ class CommandLedger:
     def __len__(self):
         return len(self._entries)
 
+    def serialize(self) -> str:
+        return json.dumps([
+            {"argv": e.argv, "start_utc": e.start_utc, "end_utc": e.end_utc,
+             "transport_rc": e.transport_rc, "remote_rc": e.remote_rc,
+             "timed_out": e.timed_out, "kind": e.kind}
+            for e in self._entries
+        ], indent=2)
+
 
 def start(
     argv: list[str],
     *,
     env: dict[str, str] | None = None,
     cwd: str | None = None,
+    new_session: bool = False,
 ) -> ManagedProcess:
     start_time = _UTC()
     proc = subprocess.Popen(
@@ -111,8 +140,12 @@ def start(
         stderr=subprocess.PIPE,
         env=env,
         cwd=cwd,
+        start_new_session=new_session,
     )
-    return ManagedProcess(proc=proc, argv=list(argv), start_utc=start_time)
+    return ManagedProcess(
+        proc=proc, argv=list(argv), start_utc=start_time,
+        new_session=new_session,
+    )
 
 
 def finish(
@@ -137,7 +170,10 @@ def finish(
             proc.kill()
         except OSError:
             pass
-        stdout, stderr = proc.communicate()
+        try:
+            stdout, stderr = proc.communicate(timeout=5.0)
+        except subprocess.TimeoutExpired:
+            stdout, stderr = b"", b""
         rc = proc.returncode if proc.returncode is not None else -9
         timed_out = True
     except Exception:
@@ -145,7 +181,10 @@ def finish(
             proc.kill()
         except OSError:
             pass
-        proc.communicate()
+        try:
+            proc.communicate(timeout=5.0)
+        except subprocess.TimeoutExpired:
+            pass
         raise
 
     end = _UTC()
@@ -165,23 +204,34 @@ def bounded_terminate(
     *,
     term_timeout: float = 5.0,
     kill_timeout: float = 5.0,
+    group: bool = False,
 ) -> bool:
     """SIGTERM → bounded wait → SIGKILL → bounded wait.
 
+    When *group* is True, signals the entire process group (the
+    process must have been started with ``start_new_session=True``).
     Returns True if SIGKILL was required.
     """
+    pid = proc.pid
     killed = False
+
+    def _sig(sig: int) -> None:
+        if group:
+            os.killpg(os.getpgid(pid), sig)
+        else:
+            proc.send_signal(sig)
+
     try:
-        proc.terminate()
-    except OSError:
+        _sig(signal.SIGTERM)
+    except (OSError, ProcessLookupError):
         pass
     try:
         proc.communicate(timeout=term_timeout)
     except subprocess.TimeoutExpired:
         try:
-            proc.kill()
+            _sig(signal.SIGKILL)
             killed = True
-        except OSError:
+        except (OSError, ProcessLookupError):
             pass
         try:
             proc.communicate(timeout=kill_timeout)
@@ -190,23 +240,34 @@ def bounded_terminate(
     return killed
 
 
-def pid_identity(pid: int) -> str | None:
-    """Portable process start-time string, or None if PID is gone.
+def pid_identity(pid: int) -> ProcessIdentity | None:
+    """Observed process identity (start + full command) or None if gone.
 
-    Tries ``/bin/ps`` (macOS, most Linux) then ``/usr/bin/ps`` (some
-    Linux distros) to avoid PATH resolution issues in restricted
-    environments.
+    Tries ``/bin/ps`` then ``/usr/bin/ps``. Two queries: ``lstart=``
+    for start time (PID-reuse detection) and ``command=`` for the
+    full command line (executable + args, read from the process
+    itself — not copied from expectations).
     """
     for ps_path in ("/bin/ps", "/usr/bin/ps"):
         if not (os.path.isfile(ps_path) and os.access(ps_path, os.X_OK)):
             continue
         try:
-            r = subprocess.run(
+            r_start = subprocess.run(
                 [ps_path, "-p", str(pid), "-o", "lstart="],
                 capture_output=True, timeout=3,
             )
-            if r.returncode == 0:
-                return r.stdout.decode("utf-8", errors="replace").strip()
+            if r_start.returncode != 0:
+                return None
+            r_cmd = subprocess.run(
+                [ps_path, "-p", str(pid), "-o", "command="],
+                capture_output=True, timeout=3,
+            )
+            if r_cmd.returncode != 0:
+                return None
+            return ProcessIdentity(
+                start=r_start.stdout.decode("utf-8", errors="replace").strip(),
+                command=r_cmd.stdout.decode("utf-8", errors="replace").strip(),
+            )
         except (OSError, subprocess.TimeoutExpired):
             pass
     return None
@@ -233,7 +294,10 @@ def run(
         rc = proc.returncode
     except subprocess.TimeoutExpired:
         proc.kill()
-        stdout, stderr = proc.communicate()
+        try:
+            stdout, stderr = proc.communicate(timeout=5.0)
+        except subprocess.TimeoutExpired:
+            stdout, stderr = b"", b""
         rc = proc.returncode if proc.returncode is not None else -9
         timed_out = True
     end = _UTC()

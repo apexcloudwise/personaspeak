@@ -120,9 +120,8 @@ class AdbHarness:
         self.emulator_process: commands.ManagedProcess | None = None
         self.screenrecord_process: commands.ManagedProcess | None = None
         self._owned_pid: int | None = None
-        self._owned_start: str = ""
-        self._owned_exe: str = ""
-        self._owned_avd: str = ""
+        self._owned_identity: commands.ProcessIdentity | None = None
+        self._session_launched = False
         self.ledger = commands.CommandLedger()
 
     @property
@@ -212,11 +211,13 @@ class AdbHarness:
 
     def launch_emulator(self) -> CommandResult:
         argv = self._emu_argv()
-        self.emulator_process = self.starter(argv)
+        self.emulator_process = self.starter(argv, new_session=True)
+        self._session_launched = True
         pid = self.emulator_process.proc.pid
         msg = (
             f"launched pid={pid} start={self.emulator_process.start_utc}"
             f" exe={self.emulator_tool.path} avd={AVD_NAME}"
+            f" session={'yes' if self._session_launched else 'no'}"
         )
         return self._ok("emulator_launch", msg.encode())
 
@@ -224,56 +225,93 @@ class AdbHarness:
         if self.emulator_process is None:
             return self._fail("ownership", b"no emulator process")
         pid = self.emulator_process.proc.pid
-        start = commands.pid_identity(pid)
-        if start is None:
+        identity = commands.pid_identity(pid)
+        if identity is None:
             return self._fail("ownership", f"pid {pid} not running".encode())
         self._owned_pid = pid
-        self._owned_start = start
-        self._owned_exe = self.emulator_tool.path if self.emulator_tool else ""
-        self._owned_avd = AVD_NAME
-        return self._ok("ownership", f"owned pid={pid} start={start}".encode())
+        self._owned_identity = identity
+        return self._ok(
+            "ownership",
+            f"owned pid={pid} start={identity.start}"
+            f" cmd={identity.command[:80]}".encode(),
+        )
 
     def attach(self) -> CommandResult:
-        return self.runner(self._cmd("wait-for-device"), timeout=30.0)
+        return self._host("wait-for-device", timeout=30.0)
 
-    def _shell(self, *args: str) -> RemoteResult:
-        transport = self.runner(self._cmd("shell", *args))
+    def _shell(self, *args: str, timeout: float = 30.0) -> RemoteResult:
+        argv = self._cmd("shell", *args)
+        transport = self.runner(argv, timeout=timeout)
         res = commands.to_remote(transport)
         self.ledger.record(
-            ["shell", *args], transport.start_utc, transport.end_utc,
+            argv, transport.start_utc, transport.end_utc,
             transport.returncode, res.remote_rc, transport.timed_out, "shell",
+        )
+        return res
+
+    def _host(self, *args: str, timeout: float = 60.0) -> CommandResult:
+        argv = self._cmd(*args)
+        res = self.runner(argv, timeout=timeout)
+        self.ledger.record(
+            argv, res.start_utc, res.end_utc,
+            res.returncode, None, res.timed_out, "host",
         )
         return res
 
     _out = staticmethod(commands.remote_stdout)
 
+    @staticmethod
+    def _rc_of(result) -> int:
+        if isinstance(result, RemoteResult):
+            if result.transport.returncode != 0:
+                return result.transport.returncode
+            return result.remote_rc if result.remote_rc is not None else 1
+        return result.returncode
+
+    @staticmethod
+    def _timed_out(result) -> bool:
+        if isinstance(result, RemoteResult):
+            return result.transport.timed_out
+        return result.timed_out
+
+    @staticmethod
+    def _ambiguous(result) -> bool:
+        if isinstance(result, RemoteResult):
+            return result.remote_rc is None and not result.transport.timed_out
+        return False
+
     def capture_prior_state(self) -> PriorDeviceState | None:
-        def _run(*args):
-            if args[0] == "shell":
-                return self._shell(*args[1:])
-            return self.runner(self._cmd(*args))
+        def _query(*args):
+            res = self._shell(*args)
+            if res.remote_rc is None:
+                raise commands.RemoteAmbiguousError(" ".join(args))
+            if res.remote_rc != 0:
+                raise ValueError(f"{' '.join(args)} rc={res.remote_rc}")
+            return res.transport.stdout.decode("utf-8", errors="replace").strip()
 
         try:
-            boot = self._out(_run("shell", "getprop", "sys.boot_completed"))
-            fp = self._out(_run("shell", "getprop", "ro.build.fingerprint"))
-            sdk_raw = self._out(_run("shell", "getprop", "ro.build.version.sdk"))
+            boot = _query("getprop", "sys.boot_completed")
+            fp = _query("getprop", "ro.build.fingerprint")
+            sdk_raw = _query("getprop", "ro.build.version.sdk")
             api_level = int(sdk_raw)
-            size_str = self._out(_run("shell", "wm", "size"))
+            size_str = _query("wm", "size")
             m = re.search(r"(\d+)x(\d+)", size_str)
             if not m:
                 return None
             sw, sh = int(m.group(1)), int(m.group(2))
-            pkg = self._out(_run("shell", "pm", "path", KEYBOARD_PACKAGE))
+            pkg = _query("pm", "path", KEYBOARD_PACKAGE)
             package_present = pkg.startswith("package:")
             package_hash = None
             if package_present:
                 dev_path = pkg.split(":", 1)[1].strip()
-                h = self._out(_run("shell", "sha256sum", dev_path))
+                h = _query("sha256sum", dev_path)
                 if h:
                     package_hash = h.split()[0]
-            ime = self._out(_run("shell", "settings", "get", "secure", "enabled_input_methods"))
+            ime = _query("settings", "get", "secure", "enabled_input_methods")
             enabled_imes = [x for x in ime.split(":") if x]
-            default = self._out(_run("shell", "settings", "get", "secure", "default_input_method"))
+            default = _query("settings", "get", "secure", "default_input_method")
+        except commands.RemoteAmbiguousError:
+            raise
         except (ValueError, UnicodeDecodeError):
             return None
 
@@ -312,29 +350,29 @@ class AdbHarness:
             (("settings", "get", "secure", "default_input_method"), EXPECTED_ENABLED_IMES[0]),
         ]
         for args, expected in fixture_props:
-            try:
-                actual = self._out(self._shell(*args))
+            res = self._shell(*args)
+            if self._ambiguous(res):
+                return res
+            if self._rc_of(res) != 0:
+                errors.append(f"{' '.join(args)} query failed: rc={self._rc_of(res)}")
+            else:
+                actual = res.transport.stdout.decode("utf-8", errors="replace").strip()
                 if actual != expected:
                     errors.append(f"{' '.join(args)} mismatch: got {actual}")
-            except ValueError:
-                errors.append(f"{' '.join(args)} query failed")
 
         if errors:
             return self._fail("validate_fixture", "\n".join(errors).encode())
         return self._ok("validate_fixture", b"Fixture identity validated.")
 
     def install_apk(self) -> CommandResult:
-        res = self.runner(self._cmd("install", "-r", self.apk_path))
-        self.ledger.record(
-            ["install", "-r", self.apk_path],
-            res.start_utc, res.end_utc,
-            res.returncode, None, res.timed_out, "host",
-        )
+        res = self._host("install", "-r", self.apk_path, timeout=120.0)
         if res.returncode != 0:
             return res
         dump = self._shell("dumpsys", "package", KEYBOARD_PACKAGE)
-        if dump.remote_rc is None:
-            return self._fail("install_apk", b"dumpsys remote status ambiguous")
+        if self._ambiguous(dump):
+            return dump
+        if self._rc_of(dump) != 0:
+            return self._fail("install_apk", f"dumpsys rc={self._rc_of(dump)}".encode())
         out = dump.transport.stdout.decode("utf-8", errors="replace")
         errors = []
         if f"versionName={EXPECTED_VERSION_NAME}" not in out:
@@ -352,10 +390,10 @@ class AdbHarness:
         os.makedirs(evidence_dir, exist_ok=True)
         remote = "/sdcard/window_dump.xml"
         local = os.path.join(evidence_dir, f"{label}.xml")
-        dump = self.runner(self._cmd("shell", "uiautomator", "dump", remote))
-        if dump.returncode != 0:
+        dump = self._shell("uiautomator", "dump", remote)
+        if self._ambiguous(dump) or self._rc_of(dump) != 0:
             return dump, None
-        pull = self.runner(self._cmd("pull", remote, local))
+        pull = self._host("pull", remote, local)
         if pull.returncode != 0:
             return pull, None
         try:
@@ -367,12 +405,18 @@ class AdbHarness:
         self, steps: list[StepRecord], op: str, result: CommandResult,
         fail: TerminalCause = TerminalCause.JOURNEY_FAILED,
     ) -> bool:
-        ok = result.returncode == 0
+        if self._ambiguous(result):
+            cause = TerminalCause.TOOL_FAILURE
+        elif self._timed_out(result):
+            cause = TerminalCause.TIMEOUT
+        elif self._rc_of(result) == 0:
+            cause = TerminalCause.COMPLETED
+        else:
+            cause = fail
         steps.append(StepRecord(
             phase="journey", operation=op, input_digest=None,
-            output_digest=None, result=result,
-            cause=TerminalCause.COMPLETED if ok else fail))
-        return ok
+            output_digest=None, result=result, cause=cause))
+        return cause == TerminalCause.COMPLETED
 
     @staticmethod
     def _find(root: Any, res_id: str) -> Any | None:
@@ -408,7 +452,7 @@ class AdbHarness:
         if center is None:
             self._step(steps, op, self._fail(op, b"button unavailable"))
             return None
-        return self._step(steps, op, self.runner(self._cmd("shell", "input", "tap", *center))) or None
+        return self._step(steps, op, self._shell("input", "tap", *center)) or None
 
     def _verify_text(self, steps, root, expected, op="verify_text"):
         field = self._find(root, SEARCH_RES_ID)
@@ -447,7 +491,7 @@ class AdbHarness:
             self._step(steps, f"tap_key_{ch}",
                        self._fail(f"tap_{ch}", f"no coord for {ch}".encode()))
             return False
-        res = self.runner(self._cmd("shell", "input", "tap", str(coord[0]), str(coord[1])))
+        res = self._shell("input", "tap", str(coord[0]), str(coord[1]))
         return self._step(steps, f"tap_key_{ch}", res)
 
     def _type_text(self, steps, text, op="type_text"):
@@ -469,22 +513,28 @@ class AdbHarness:
         if center is None:
             self._step(steps, "clear_field", self._fail("clear", b"no bounds"))
             return False
-        res = self.runner(self._cmd("shell", "input", "tap", *center))
+        res = self._shell("input", "tap", *center)
         return self._step(steps, "clear_field", res)
 
-    def _take_screenshot(self, name):
+    def _take_screenshot(self, steps, name):
         evidence_dir = os.path.join(self.run_dir, "artifacts")
         os.makedirs(evidence_dir, exist_ok=True)
         remote = f"/sdcard/{name}.png"
         local = os.path.join(evidence_dir, f"{name}.png")
-        cap = self.runner(self._cmd("shell", "screencap", "-p", remote))
-        if cap.returncode != 0:
+        cap = self._shell("screencap", "-p", remote)
+        if self._ambiguous(cap) or self._rc_of(cap) != 0:
+            self._step(steps, f"screenshot_{name}", cap)
             return False
-        pull = self.runner(self._cmd("pull", remote, local))
+        pull = self._host("pull", remote, local)
         if pull.returncode != 0:
+            self._step(steps, f"screenshot_{name}", pull)
             return False
         with open(local, "rb") as fh:
-            return evidence.validate_png(fh.read())
+            if not evidence.validate_png(fh.read()):
+                self._step(steps, f"screenshot_{name}", self._fail(name, b"invalid PNG"))
+                return False
+        self._step(steps, f"screenshot_{name}", self._ok(name))
+        return True
 
     def run_journey(self) -> list[StepRecord]:
         steps: list[StepRecord] = []
@@ -493,7 +543,7 @@ class AdbHarness:
         self.screenrecord_process = self.starter(
             self._cmd("shell", "screenrecord", "--time-limit", "30", remote_vid))
 
-        res = self.runner(self._cmd("shell", "am", "start", "-a", SETTINGS_ACTION))
+        res = self._shell("am", "start", "-a", SETTINGS_ACTION)
         if not self._step(steps, "launch_editor", res):
             return steps
 
@@ -511,7 +561,7 @@ class AdbHarness:
         if center is None:
             self._step(steps, "locate_editor", self._fail("locate", b"bounds"))
             return steps
-        res = self.runner(self._cmd("shell", "input", "tap", *center))
+        res = self._shell("input", "tap", *center)
         if not self._step(steps, "focus_editor", res):
             return steps
 
@@ -522,18 +572,14 @@ class AdbHarness:
         if not self._type_text(steps, SOURCE_TEXT, "type_source_1"):
             return steps
 
-        if not self._take_screenshot("01-idle-typed"):
-            self._step(steps, "screenshot_fail", self._fail("shot", b"screenshot failed"))
+        if not self._take_screenshot(steps, "01-idle-typed"):
             return steps
-        self._step(steps, "screenshot_01", self._ok("shot"))
 
         loading_root = self._verify_kb(steps, "loading_1", STATE_LOADING)
         if loading_root is None:
             return steps
-        if not self._take_screenshot("02-loading-cancel"):
-            self._step(steps, "screenshot_fail", self._fail("shot", b"screenshot failed"))
+        if not self._take_screenshot(steps, "02-loading-cancel"):
             return steps
-        self._step(steps, "screenshot_02", self._ok("shot"))
 
         if not self._tap_btn(steps, loading_root, "cancel_loading", DISMISS_RES_ID):
             return steps
@@ -554,10 +600,8 @@ class AdbHarness:
         if review_root is None:
             return steps
 
-        if not self._take_screenshot("03-review"):
-            self._step(steps, "screenshot_fail", self._fail("shot", b"screenshot failed"))
+        if not self._take_screenshot(steps, "03-review"):
             return steps
-        self._step(steps, "screenshot_03", self._ok("shot"))
 
         if not self._tap_btn(steps, review_root, "apply_rephrasing", APPLY_RES_ID):
             return steps
@@ -567,10 +611,8 @@ class AdbHarness:
                 return steps
             self._step(steps, "verify_apply", v_res)
             return steps
-        if not self._take_screenshot("04-applied"):
-            self._step(steps, "screenshot_fail", self._fail("shot", b"screenshot failed"))
+        if not self._take_screenshot(steps, "04-applied"):
             return steps
-        self._step(steps, "screenshot_04", self._ok("shot"))
 
         if not self._clear_field(steps) or not self._type_text(steps, SOURCE_TEXT, "type_source_3"):
             return steps
@@ -590,10 +632,8 @@ class AdbHarness:
             return steps
         if not self._verify_text(steps, v_root, SOURCE_TEXT, "verify_dismiss_unchanged"):
             return steps
-        if not self._take_screenshot("05-dismissed"):
-            self._step(steps, "screenshot_fail", self._fail("shot", b"screenshot failed"))
+        if not self._take_screenshot(steps, "05-dismissed"):
             return steps
-        self._step(steps, "screenshot_05", self._ok("shot"))
 
         if not self._clear_field(steps) or not self._type_text(steps, SOURCE_TEXT, "type_source_4"):
             return steps
@@ -619,17 +659,13 @@ class AdbHarness:
                        self._fail("stale_outcome", b"candidate present after stale apply"))
             return steps
         self._step(steps, "verify_stale_outcome", self._ok("stale_outcome"))
-        if not self._take_screenshot("06-stale"):
-            self._step(steps, "screenshot_fail", self._fail("shot", b"screenshot failed"))
+        if not self._take_screenshot(steps, "06-stale"):
             return steps
-        self._step(steps, "screenshot_06", self._ok("shot"))
 
-        res = self.runner(self._cmd("shell", "am", "start", "-a", SETTINGS_ACTION))
+        res = self._shell("am", "start", "-a", SETTINGS_ACTION)
         self._step(steps, "relaunch_settings", res)
-        if not self._take_screenshot("07-settings"):
-            self._step(steps, "screenshot_fail", self._fail("shot", b"screenshot failed"))
+        if not self._take_screenshot(steps, "07-settings"):
             return steps
-        self._step(steps, "screenshot_07", self._ok("shot"))
 
         return steps
 
@@ -648,7 +684,7 @@ class AdbHarness:
             except Exception as e:
                 errors.append(f"screenrecord finisher error: {e}")
             self.screenrecord_process = None
-        pull_v = self.runner(self._cmd("pull", remote_vid, local_vid))
+        pull_v = self._host("pull", remote_vid, local_vid)
         if pull_v.returncode != 0:
             errors.append(f"pull_video rc={pull_v.returncode}")
         else:
@@ -687,7 +723,7 @@ class AdbHarness:
             except Exception:
                 pass
             self.screenrecord_process = None
-        return self.runner(self._cmd("emu", "snapshot", "load", SNAPSHOT_NAME))
+        return self._host("emu", "snapshot", "load", SNAPSHOT_NAME, timeout=30.0)
 
     def verify_restore(self) -> PriorDeviceState:
         state = self.capture_prior_state()
@@ -696,24 +732,51 @@ class AdbHarness:
         return state
 
     def _revalidate_ownership(self) -> bool:
-        if self._owned_pid is None or not self._owned_start:
+        if self._owned_pid is None or self._owned_identity is None:
             return False
         current = commands.pid_identity(self._owned_pid)
         if current is None:
             return False
-        return current == self._owned_start
+        return current == self._owned_identity
+
+    def dump_ledger(self) -> CommandResult:
+        evidence_dir = os.path.join(self.run_dir, "artifacts")
+        os.makedirs(evidence_dir, exist_ok=True)
+        path = os.path.join(evidence_dir, "command_ledger.json")
+        try:
+            with open(path, "w") as fh:
+                fh.write(self.ledger.serialize())
+            return self._ok("ledger", f"{len(self.ledger)} entries -> {path}".encode())
+        except OSError as e:
+            return self._fail("ledger", str(e).encode())
 
     def release_emulator(self) -> CommandResult:
         if self.emulator_process is not None:
+            proc = self.emulator_process.proc
+            if self._owned_pid == proc.pid and not self._revalidate_ownership():
+                self.emulator_process = None
+                return self._fail("release",
+                                  b"ownership revalidation failed - refuse kill")
             try:
-                commands.bounded_terminate(self.emulator_process.proc)
-            except Exception:
-                pass
+                killed = commands.bounded_terminate(
+                    proc, group=self._session_launched)
+            except Exception as e:
+                self.emulator_process = None
+                return self._fail("release", f"termination error: {e}".encode())
+            alive = proc.poll() is None
             self.emulator_process = None
-            return self._ok("release", b"released via process handle")
+            if alive:
+                return self._fail("release", b"process still alive after escalation")
+            msg = b"released via process handle"
+            if killed:
+                msg += b" (SIGKILL required)"
+            if self._session_launched:
+                msg += b" (group)"
+            return self._ok("release", msg)
         if self._owned_pid is not None:
             if not self._revalidate_ownership():
                 self._owned_pid = None
+                self._owned_identity = None
                 return self._fail("release",
                                   b"PID reuse or stale ownership - refuse kill")
             try:
@@ -726,9 +789,9 @@ class AdbHarness:
         return self._fail("release", b"no owned emulator to release")
 
     def verify_release(self) -> CommandResult:
-        if self._owned_pid is not None and self._owned_start:
+        if self._owned_pid is not None and self._owned_identity is not None:
             current = commands.pid_identity(self._owned_pid)
-            if current is not None and current == self._owned_start:
+            if current is not None and current == self._owned_identity:
                 return self._fail("verify_release",
                                   f"owned PID {self._owned_pid} still alive".encode())
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

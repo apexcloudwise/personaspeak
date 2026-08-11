@@ -14,23 +14,42 @@ Newest first, like all respectable patch notes.
 
 - The M2 harness now structurally distinguishes wrapper failure, transport
   failure, remote status, timeout, signal, and ambiguity through every
-  command path. `adb install` is no longer mislabeled as a remote shell
-  result — only `adb shell` commands produce `RemoteResult`. Ambiguous
-  remote results (`remote_rc=None`) map to `TOOL_FAILURE`, not the
-  phase-specific cause, so the record says what actually happened.
-- A private structured/redacted command ledger records exact argv and
-  status dimensions (transport rc, remote rc, timeout, kind) for every
-  production command. Content is never stored — redacted by design.
-- Emulator ownership is established only after successful identity
-  capture (attach + prior state + validate_fixture), not at launch.
-  `establish_ownership()` captures the process start-time via `ps` and
-  revalidates before termination; PID reuse is detected and refused.
-  Release uses bounded SIGTERM → SIGKILL escalation via
-  `bounded_terminate()` instead of unguarded `os.kill`.
-- 45 new adversarial tests cover wrapper/remote collisions, ambiguity,
-  exec failure, timeout, signals, launch races, PID reuse, resistant
-  children, cleanup failure independence, and ledger redaction/ordering.
-  Every failure path produces a decodable record. 230 tests total.
+  command path. Every `adb shell` operation — hierarchy dumps, taps,
+  screenshots, activity launches, screenrecord, getprops, settings,
+  dumpsys — routes through `_shell()` and produces `RemoteResult` with
+  ledger recording. `adb install`, `adb pull`, `adb emu`, and
+  `wait-for-device` route through `_host()` as host commands. No
+  production command bypasses the ledger or the timeout boundary.
+- `commands.run()` and `commands.finish()` post-kill `communicate()` are
+  now bounded (5 s ceiling). The previous unbounded calls could hang
+  indefinitely on a process that ignored SIGKILL (pipe full, kernel
+  stuck).
+- Ambiguous remote results (`remote_rc=None`) propagate as
+  `TOOL_FAILURE` through every path — prior-state, fixture, install,
+  journey, restoration — not collapsed into the phase-specific cause.
+  `RemoteAmbiguousError` propagates from `capture_prior_state`;
+  `validate_fixture` and `install_apk` return the ambiguous
+  `RemoteResult` directly.
+- The command ledger records full absolute adb/serial argv for every
+  production command, serialized to `artifacts/command_ledger.json` at
+  release. Content (stdout/stderr) is never stored.
+- `ProcessIdentity` reads start time AND full command line from the
+  actual process via `ps lstart=` + `ps command=`. `establish_ownership`
+  observes the real identity; `_revalidate_ownership` compares both
+  dimensions. The process-handle release path also revalidates before
+  termination.
+- The emulator launches in its own session (`start_new_session=True`).
+  `bounded_terminate(group=True)` signals the entire process group
+  (SIGTERM → bounded wait → SIGKILL → bounded reap), killing resistant
+  descendants. `release_emulator` reports truthfully: whether SIGKILL
+  was required, whether group signaling was used, and whether the
+  process is still alive after escalation.
+- 59 adversarial tests exercise real hazards: actual `os.kill` signal
+  delivery, `os.fork` descendants that ignore SIGTERM, PID identity with
+  observed argv (not expectations), `ProcessIdentity` comparison on
+  command substitution, bounded post-kill communicate, ledger
+  serialization to artifact, and ambiguity propagation from every path.
+  244 tests total.
 
 ---
 

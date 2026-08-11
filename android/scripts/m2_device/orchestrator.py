@@ -7,6 +7,7 @@ from dataclasses import dataclass, field
 from enum import StrEnum
 from typing import Protocol, runtime_checkable
 
+from android.scripts.m2_device import commands
 from android.scripts.m2_device.records import (
     CaptureRecord,
     CommandResult,
@@ -214,16 +215,29 @@ class Orchestrator:
 
     def _capture_prior(self):
         self._reached = "prior_state"
-        prior = self.harness.capture_prior_state()
+        cause = TerminalCause.COMPLETED
+        prior = None
+        err = b""
+        try:
+            prior = self.harness.capture_prior_state()
+            if prior is None:
+                cause = TerminalCause.PRIOR_STATE_UNAVAILABLE
+        except commands.RemoteAmbiguousError as e:
+            cause = TerminalCause.TOOL_FAILURE
+            err = str(e).encode()
+        except Exception as e:
+            cause = TerminalCause.PRIOR_STATE_UNAVAILABLE
+            err = str(e).encode()
         self.prior_state = prior
-        ok = prior is not None
-        if not ok:
-            self.terminal = TerminalCause.PRIOR_STATE_UNAVAILABLE
         self.steps.append(_make_step(
             "prior_state", "capture prior device state",
-            CommandResult(argv=[], start_utc="", end_utc="", returncode=0 if ok else 1,
-                          stdout=b"prior-state-captured" if ok else b"", stderr=b""),
-            TerminalCause.COMPLETED if ok else TerminalCause.PRIOR_STATE_UNAVAILABLE))
+            CommandResult(argv=[], start_utc="", end_utc="",
+                          returncode=0 if cause == TerminalCause.COMPLETED else 1,
+                          stdout=b"prior-state-captured" if prior else b"",
+                          stderr=err),
+            cause))
+        if cause != TerminalCause.COMPLETED:
+            self.terminal = cause
 
     def _journey(self):
         journey_steps = self.harness.run_journey()
@@ -325,6 +339,13 @@ class Orchestrator:
             "verify_release", "verify emulator release", v_res, v_cause))
         if v_cause != TerminalCause.COMPLETED and self.terminal is None:
             self.terminal = v_cause
+
+        dump = getattr(self.harness, "dump_ledger", None)
+        if dump is not None:
+            try:
+                dump()
+            except Exception:
+                pass
 
     def _record(self) -> CaptureRecord:
         return CaptureRecord(
