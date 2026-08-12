@@ -10,6 +10,19 @@ Newest first, like all respectable patch notes.
 
 ---
 
+## 2026-08-13 — The test suite learns to mind its own environment
+
+- `test_preflight_success` now mocks `socket.socket` (ConnectionRefused) and
+  clears `ANDROID_HOME`/`ANDROID_SDK_ROOT` so preflight skips the
+  build-tools aapt2 probe — no more env-coupled TypeErrors from resolve_tool
+  kwargs, no more port-5554 probe collisions.
+- `test_ledger_phase_order` now reads deterministic `capture-record.json`
+  step phases instead of parsing `MOCK_COMMANDS_LOG` line order, which was
+  racy between `launch_emulator` (Popen background) and `attach` (synchronous
+  wait-for-device).
+
+---
+
 ## 2026-08-11 — The execution boundary becomes total
 
 - The M2 harness now structurally distinguishes wrapper failure, transport

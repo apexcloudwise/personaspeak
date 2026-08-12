@@ -115,43 +115,34 @@ class TestCliCapture(unittest.TestCase):
                           f"emulator launched with wrong AVD: {l}")
 
     def test_ledger_phase_order(self):
+        import glob as _glob
+        import json
+
         result = self._run_cli()
         self.assertEqual(result.returncode, 0,
                          f"CLI failed: {result.stderr.decode()}")
 
-        with open(self.log_path) as f:
-            lines = [l.strip() for l in f if l.strip()]
+        run_dirs = sorted(_glob.glob(os.path.join(self.evidence_root, "????????T??????Z")))
+        self.assertTrue(run_dirs, "no run directory found under evidence root")
+        run_dir = run_dirs[-1]
+        record_path = os.path.join(run_dir, "capture-record.json")
+        self.assertTrue(os.path.isfile(record_path),
+                        f"capture-record.json not found at {record_path}")
 
-        phases = []
-        for line in lines:
-            if line.startswith("emulator:") and "-list-avds" in line:
-                phases.append("preflight")
-            elif line.startswith("emulator:") and "-avd" in line:
-                phases.append("launch")
-            elif "wait-for-device" in line:
-                phases.append("attach")
-            elif "install" in line and "pull" not in line:
-                phases.append("install")
-            elif "dumpsys" in line:
-                phases.append("verify_package")
-            elif "am start" in line:
-                phases.append("journey_start")
-            elif "screencap" in line:
-                phases.append("evidence_capture")
-            elif "screenrecord" in line:
-                phases.append("evidence_video")
-            elif "snapshot load" in line:
-                phases.append("restore")
+        with open(record_path) as f:
+            record = json.load(f)
 
-        expected = ["preflight", "launch", "attach", "install", "verify_package",
-                     "journey_start", "evidence_capture", "restore"]
+        phases = [s["phase"] for s in record["steps"]]
+
+        expected = ["preflight", "emulator_launch", "attach", "install",
+                     "evidence_capture", "restore"]
         for i in range(len(expected) - 1):
             a, b = expected[i], expected[i + 1]
-            self.assertIn(a, phases, f"phase {a} missing from ledger")
-            self.assertIn(b, phases, f"phase {b} missing from ledger")
+            self.assertIn(a, phases, f"phase {a} missing from record")
+            self.assertIn(b, phases, f"phase {b} missing from record")
             self.assertLess(
                 phases.index(a), phases.index(b),
-                f"phase {a} must precede {b} in ledger",
+                f"phase {a} must precede {b} in record",
             )
 
     def test_adversarial_install_failure(self):

@@ -97,9 +97,11 @@ class TestAdbHarness(unittest.TestCase):
     def tearDown(self):
         self.tmp_dir.cleanup()
 
+    @patch.dict(os.environ, {"ANDROID_HOME": "", "ANDROID_SDK_ROOT": ""})
+    @patch("socket.socket")
     @patch("android.scripts.m2_device.commands.resolve_tool")
-    def test_preflight_success(self, mock_resolve):
-        def fake_resolve(name):
+    def test_preflight_success(self, mock_resolve, mock_socket_cls):
+        def fake_resolve(name, **kwargs):
             return ToolIdentity(
                 name=name, path=f"/bin/{name}",
                 version=f"Android {'Debug Bridge' if name == 'adb' else 'emulator'} version "
@@ -107,6 +109,9 @@ class TestAdbHarness(unittest.TestCase):
                 digest="abc123",
             )
         mock_resolve.side_effect = fake_resolve
+        mock_sock = MagicMock()
+        mock_sock.connect.side_effect = ConnectionRefusedError(111, "Connection refused")
+        mock_socket_cls.return_value = mock_sock
         self.mock_runner.return_value = _cr(stdout=b"M2_Qual_Fixture\n")
         res = self.harness.preflight()
         self.assertEqual(res.returncode, 0)
