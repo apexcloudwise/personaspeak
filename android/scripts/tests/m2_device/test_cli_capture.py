@@ -135,7 +135,7 @@ class TestCliCapture(unittest.TestCase):
         phases = [s["phase"] for s in record["steps"]]
 
         expected = ["preflight", "emulator_launch", "attach", "install",
-                     "evidence_capture", "restore"]
+                     "journey", "capture", "restore"]
         for i in range(len(expected) - 1):
             a, b = expected[i], expected[i + 1]
             self.assertIn(a, phases, f"phase {a} missing from record")

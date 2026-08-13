@@ -19,7 +19,8 @@ Newest first, like all respectable patch notes.
 - `test_ledger_phase_order` now reads deterministic `capture-record.json`
   step phases instead of parsing `MOCK_COMMANDS_LOG` line order, which was
   racy between `launch_emulator` (Popen background) and `attach` (synchronous
-  wait-for-device).
+  wait-for-device). Expected phases use the orchestrator's real vocabulary
+  (`journey`, `capture`) rather than retired mock-log labels.
 
 ---
 
