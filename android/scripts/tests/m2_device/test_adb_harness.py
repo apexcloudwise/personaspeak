@@ -620,6 +620,17 @@ class TestAdbHarness(unittest.TestCase):
         self.assertTrue(pin)
         self.assertEqual(pin[0].cause, TerminalCause.JOURNEY_FAILED)
 
+    def test_rejected_pristine_observation_not_retained_as_baseline(self):
+        # Review finding: a rejected observation must not survive as the
+        # restoration baseline, or the receipt blames a correct restore
+        # for what was a precondition failure.
+        self._run_journey_with_override(
+            "journey.xml", _journey_xml("leftover text"))
+        self.assertIsNone(self.harness._pristine_private)
+        with patch.object(self.harness, "capture_prior_state",
+                          return_value=object()):
+            self.harness.verify_restore()  # must not raise
+
     def test_run_journey_rejects_unfocused_editor(self):
         steps = self._run_journey_with_override(
             "keyboard_check", _journey_xml("", focused=False))

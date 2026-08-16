@@ -132,6 +132,9 @@ class AdbHarness:
         self.fixture_digests = dict(FIXTURE_FILES)
         self._injected_fixture_digests = bool(fixture_digests)
         if fixture_digests:
+            # Deliberately merges rather than replaces: a typo'd key in
+            # override JSON adds an entry while the pinned one stays in
+            # force, so a mistyped override fails closed on drift.
             self.fixture_digests.update(fixture_digests)
         self.adb_tool: ToolIdentity | None = None
         self.emulator_tool: ToolIdentity | None = None
@@ -604,8 +607,13 @@ class AdbHarness:
         if self._pristine_private != {
                 "editor_text": "", "editor_focused": False,
                 "panel_present": False}:
+            detail = self._pristine_private
+            # A rejected observation must not survive as the restoration
+            # baseline — otherwise the receipt blames a correct restore
+            # for what was a precondition failure.
+            self._pristine_private = None
             self._step(steps, "pin_pristine_state",
-                       self._fail("pristine", f"not pristine: {self._pristine_private}".encode()))
+                       self._fail("pristine", f"not pristine: {detail}".encode()))
             return False
         self._step(steps, "pin_pristine_state", self._ok("pristine"))
         return True
@@ -636,11 +644,11 @@ class AdbHarness:
         uniquely identified observed key. Missing, duplicate, or
         malformed key facts fail closed."""
         errors = []
-        used = sorted({ch for ch in (SOURCE_TEXT + STALE_TEXT)})
+        used = sorted({ch.upper() if ch.isalpha() else ch
+                       for ch in (SOURCE_TEXT + STALE_TEXT)})
         for ch in used:
-            label = KEY_LABELS.get(ch, ch.upper())
-            lookup = ch.upper() if ch.isalpha() else ch
-            coord = ASK_KEY_COORDS.get(lookup)
+            label = KEY_LABELS.get(ch, ch)
+            coord = ASK_KEY_COORDS.get(ch)
             if coord is None:
                 errors.append(f"no pinned coordinate for {ch!r}")
                 continue

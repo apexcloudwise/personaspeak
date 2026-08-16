@@ -19,14 +19,18 @@ We amend the project complexity budget to exactly six production modules and at 
 - Static tests enforce these limits.
 
 Amended 2026-08-11 (issue #65 execution-boundary totality) to 750/2,100, amended
-2026-08-16 (issue #65 review findings) to 850/2,300, and amended again the same
-day (issue #63 fixture transaction) to `adb_harness.py` ≤ 1,000 and total ≤
-2,500. The #65 raises cover the provisional-ownership gate, the ledgered
-screenrecord boundary, bounded fallback PID termination, `SignalInterrupt`, and
-`TerminateOutcome` group-extinction verification; the #63 raise covers the
-fixture-byte transaction, pristine/editor pins, key-geometry validation, stale
-candidate retention, and private restoration facts. The budget's purpose — a
-small, reviewable, stdlib-only instrument — is unchanged.
+2026-08-16 (issue #65 review findings) to 850/2,300, again the same day (issue
+#63 fixture transaction) to 1,000/2,500, and once more that day to the round
+numbers `adb_harness.py` ≤ 1,100 and total ≤ 2,700 — the fourth raise was taken
+at review suggestion because 997/1,000 left no headroom and per-change
+amendments cost more than one deliberate round-number raise covering the
+remaining #64/#62 stages. The #65 raises cover the provisional-ownership gate,
+the ledgered screenrecord boundary, bounded fallback PID termination,
+`SignalInterrupt`, and `TerminateOutcome` group-extinction verification; the
+#63 raises cover the fixture-byte transaction, pristine/editor pins,
+key-geometry validation, stale candidate retention, and private restoration
+facts. The budget's purpose — a small, reviewable, stdlib-only instrument —
+is unchanged.
 
 ### 2. UI-Automation Mechanism
 We use subprocess-driven, argv-only commands dispatching to `adb shell input tap`, hierarchy XML dumps parsed with Python's standard library `xml.etree.ElementTree`, package/IME commands, `screencap`, and `screenrecord`.
