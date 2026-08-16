@@ -28,6 +28,65 @@ _CREDENTIAL_PATTERNS = [
     re.compile(rb"AIza[0-9A-Za-z_\-]{35}"),
 ]
 
+# One exact flat artifact set (issue #64): seven named screenshots, one
+# named video, the journey's required UI hierarchies, and the private
+# redacted command ledger — which is also the run's status log: it
+# records every production command's argv and status dimensions. Any
+# manifest that is not exactly this set is rejected.
+CANONICAL_PNG_NAMES = (
+    "01-idle-typed", "02-loading-cancel", "03-review",
+    "04-applied", "05-dismissed", "06-stale", "07-settings",
+)
+CANONICAL_MP4_NAME = "journey"
+CANONICAL_HIERARCHY_LABELS = (
+    "journey", "keyboard_check", "clear",
+    "loading_1", "after_cancel_loading",
+    "loading_2", "review_2", "after_apply",
+    "loading_3", "review_3", "after_dismiss",
+    "loading_4", "review_4", "after_stale", "after_stale_dismiss",
+    "verify_restore",
+)
+CANONICAL_LEDGER_NAME = "command_ledger.json"
+CANONICAL_ARTIFACTS = frozenset(
+    f"{n}.png" for n in CANONICAL_PNG_NAMES
+) | {f"{CANONICAL_MP4_NAME}.mp4"} | {
+    f"{label}.xml" for label in CANONICAL_HIERARCHY_LABELS
+} | {CANONICAL_LEDGER_NAME}
+
+
+def enforce_canonical_set(manifest: dict[str, str]) -> None:
+    """The manifest must be exactly the canonical artifact set — no
+    missing, extra, renamed, or nested entries."""
+    actual = set(manifest)
+    missing = sorted(CANONICAL_ARTIFACTS - actual)
+    extra = sorted(actual - CANONICAL_ARTIFACTS)
+    if missing:
+        raise ValueError(f"canonical artifacts missing: {missing}")
+    if extra:
+        raise ValueError(f"non-canonical artifacts rejected: {extra}")
+
+
+def write_private_atomic(path: str, data: bytes) -> None:
+    """Private (0600) atomic write: same-dir temp file, fsync, replace.
+    An interrupted write can never leave a truncated artifact behind."""
+    directory = os.path.dirname(os.path.abspath(path))
+    tmp_path = None
+    try:
+        fd, tmp_path = tempfile.mkstemp(
+            prefix="." + os.path.basename(path) + ".", dir=directory)
+        with os.fdopen(fd, "wb") as fh:
+            fh.write(data)
+            fh.flush()
+            os.fsync(fh.fileno())
+        os.replace(tmp_path, path)
+        tmp_path = None
+    finally:
+        if tmp_path is not None:
+            try:
+                os.unlink(tmp_path)
+            except OSError:
+                pass
+
 
 def scan_text(data: bytes) -> list[str]:
     findings = []
@@ -165,11 +224,11 @@ def finalize(
     manifest: dict[str, str],
     evidence_dir: str,
     *,
-    restoration_verdict: str,
-    counts: dict[str, int],
-    evidence_commit: str,
-    artifacts: dict[str, str],
+    evidence_commit: str = "",
 ) -> FinalReceipt:
+    """Produce the final receipt with every dimension derived from the
+    exact bytes and the named capture steps. No caller-supplied verdict,
+    count, or artifact list survives into the receipt."""
     cap_d = record_digest(capture)
     appr_d = record_digest(approval)
     man_d = manifest_digest(manifest)
@@ -183,6 +242,7 @@ def finalize(
         raise ValueError("capture record has no manifest digest")
     if capture.manifest_digest != man_d:
         raise ValueError("capture-record manifest_digest does not match supplied manifest")
+    enforce_canonical_set(manifest)
     for name in manifest:
         if "/" in name or ".." in name or os.path.isabs(name):
             raise ValueError(f"manifest key traverses path: {name}")
@@ -211,21 +271,23 @@ def finalize(
             )
     else:
         raise ValueError("capture record has no restoration step")
+
+    # Derived dimensions: counts come from bytes; journey, release, and
+    # verification verdicts come from the named capture steps.
+    def _step_completed(phase: str) -> bool:
+        steps = [s for s in capture.steps if s.phase == phase]
+        return bool(steps) and steps[-1].cause == TerminalCause.COMPLETED
+
     derived_counts = {
         "png": sum(1 for n in manifest if n.endswith(".png")),
         "mp4": sum(1 for n in manifest if n.endswith(".mp4")),
+        "journey_steps_completed": sum(
+            1 for s in capture.steps
+            if s.phase == "journey" and s.cause == TerminalCause.COMPLETED
+        ),
+        "release_ok": 1 if _step_completed("release_emulator") else 0,
+        "verify_release_ok": 1 if _step_completed("verify_release") else 0,
     }
-    if counts:
-        allowed = {"screenshots": "png", "videos": "mp4"}
-        unknown = set(counts) - set(allowed)
-        if unknown:
-            raise ValueError(f"unknown count keys: {sorted(unknown)}")
-        for k, v in counts.items():
-            mapped = allowed[k]
-            if v != derived_counts[mapped]:
-                raise ValueError(
-                    f"caller count {k}={v} != manifest-derived {mapped}={derived_counts[mapped]}"
-                )
     privacy_ok = scan_directory(evidence_dir)
     if not privacy_ok:
         raise ValueError("privacy scan failed — credential patterns detected in evidence")

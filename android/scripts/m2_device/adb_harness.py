@@ -11,6 +11,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 from android.scripts.m2_device import commands, evidence
+from android.scripts.m2_device.evidence import CANONICAL_PNG_NAMES
 from android.scripts.m2_device.orchestrator import CaptureContext
 from android.scripts.m2_device.records import (
     CommandResult,
@@ -54,10 +55,7 @@ CANDIDATE_REPHRASING = (
     "\u201cTea at six.\u201d \u2014 though I must confess the genuine article is still en route."
 )
 
-SCREENSHOT_NAMES = [
-    "01-idle-typed", "02-loading-cancel", "03-review",
-    "04-applied", "05-dismissed", "06-stale", "07-settings",
-]
+SCREENSHOT_NAMES = list(CANONICAL_PNG_NAMES)
 
 KEYBOARD_PACKAGE = "biz.pixelperfectstudios.personaspeak"
 PANEL_STATE_RES_ID = f"{KEYBOARD_PACKAGE}:id/panel_state"
@@ -236,6 +234,9 @@ class AdbHarness:
         # from claiming the accepted fixture receipt: the recorded
         # digest is blanked, so no capture over arbitrary snapshot bytes
         # can present itself as an accepted-fixture qualification.
+        # Defense-in-depth only — the authoritative boundary is the
+        # verdict serialized into the validate_fixture step's stdout
+        # (this context field is not carried into CaptureRecord).
         receipt = "" if self._injected_fixture_digests else FIXTURE_RECEIPT_DIGEST
         return CaptureContext(
             repo_head=repo_head, apk_sha256=apk_sha,
@@ -463,6 +464,9 @@ class AdbHarness:
                 "validate_fixture",
                 b"fake-only fixture transaction: injected digests verified"
                 b" - not an accepted-fixture qualification")
+        # The pinned-success branch is only reachable on the real
+        # fixture (#55): no fake can forge the pinned digests, so its
+        # stdout is device-only coverage by design.
         return self._ok(
             "validate_fixture",
             f"Fixture identity validated against pinned receipt"

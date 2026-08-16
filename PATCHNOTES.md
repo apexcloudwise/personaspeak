@@ -35,6 +35,31 @@ Newest first, like all respectable patch notes.
 
 ---
 
+## 2026-08-16, night — The receipt learns to count for itself
+
+- One exact flat artifact set is now enforced, not assumed: seven named
+  screenshots, one named video, the sixteen journey hierarchies, and the
+  private redacted command ledger (which is also the run's status log —
+  every production command's argv and status dimensions). A manifest
+  that is not exactly this set is rejected — missing, extra, renamed,
+  or nested entries alike — and the CLI now requires that
+  capture-manifest binding before it will report success; failed runs
+  still write their record, but partial artifacts can never pass.
+- The final receipt derives every dimension itself: media counts from
+  the exact bytes, journey/release/verification verdicts from the named
+  capture steps, privacy and structural media validation fail-closed.
+  The caller-controlled verdict, count, and artifact inputs are gone
+  from `finalize` and from the CLI — there is nothing left to vouch
+  for. Every run artifact (manifest, capture record, approval, receipt)
+  is written privately (0600) and atomically, so an interrupted write
+  can no longer leave a truncated file behind a success code. The
+  screenshot names are now sourced from the one canonical definition,
+  and the two deferred review notes from Stage 2 are documented
+  (defense-in-depth receipt blanking; device-only pinned-branch
+  coverage).
+
+---
+
 ## 2026-08-16, evening — The harness stops taking the fixture's word for it
 
 - The qualification journey now proves its preconditions instead of
