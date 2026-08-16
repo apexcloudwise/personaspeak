@@ -4,6 +4,7 @@ R17: Proves the real CLI end-to-end with an isolated fake-only PATH.
 The CLI is invoked as a child process using an absolute Python interpreter.
 """
 
+import json
 import os
 import shutil
 import subprocess
@@ -23,6 +24,24 @@ class TestCliCapture(unittest.TestCase):
         os.makedirs(self.evidence_root, exist_ok=True)
         os.makedirs(self.repo_root, exist_ok=True)
 
+        # Fake AVD fixture tree with honestly computed digests; the
+        # fixture transaction in validate_fixture verifies these bytes.
+        import hashlib
+        self.fixture_root = os.path.join(self.test_dir, "avd")
+        self.fixture_digests_path = os.path.join(self.test_dir, "fixture_digests.json")
+        digests = {}
+        for rel in ("M2_Qual_Fixture.avd/hardware.ini",
+                    "M2_Qual_Fixture.avd/snapshots/m2_pristine/ram.bin",
+                    "M2_Qual_Fixture.avd/snapshots/m2_pristine/textures.bin"):
+            path = os.path.join(self.fixture_root, *rel.split("/"))
+            os.makedirs(os.path.dirname(path), exist_ok=True)
+            content = f"fake-fixture:{rel}".encode()
+            with open(path, "wb") as f:
+                f.write(content)
+            digests[rel] = hashlib.sha256(content).hexdigest()
+        with open(self.fixture_digests_path, "w") as f:
+            json.dump(digests, f)
+
         for args in (["git", "init"], ["git", "config", "user.email", "t@t"],
                       ["git", "config", "user.name", "T"], ["git", "add", "-A"],
                       ["git", "commit", "-m", "init"]):
@@ -32,7 +51,6 @@ class TestCliCapture(unittest.TestCase):
         with open(self.apk_path, "wb") as f:
             f.write(b"mock_apk_binary")
 
-        import hashlib
         self.apk_sha256 = hashlib.sha256(b"mock_apk_binary").hexdigest()
 
         self.bin_dir = os.path.abspath(
@@ -60,6 +78,7 @@ class TestCliCapture(unittest.TestCase):
             "MOCK_COMMANDS_LOG": self.log_path,
             "FAKE_ADB_STATE": os.path.join(self.test_dir, "edittext.state"),
             "FAKE_ADB_KEYBOARD": os.path.join(self.test_dir, "keyboard.state"),
+            "FAKE_ADB_FOCUS": os.path.join(self.test_dir, "focus.state"),
             "FAKE_ADB_REPHRASING": CANDIDATE_REPHRASING,
             "FAKE_GIT_HEAD": head,
             "PYTHONPATH": self.repo_root_abs,
@@ -68,13 +87,17 @@ class TestCliCapture(unittest.TestCase):
             f.write("")
         with open(env["FAKE_ADB_KEYBOARD"], "w") as f:
             f.write("")
+        with open(env["FAKE_ADB_FOCUS"], "w") as f:
+            f.write("")
         result = subprocess.run(
             [sys.executable, "-m", "android.scripts.m2_device.cli",
              "capture",
              "--evidence-root", self.evidence_root,
              "--repo-root", self.repo_root,
              "--apk-path", self.apk_path,
-             "--apk-sha256", self.apk_sha256],
+             "--apk-sha256", self.apk_sha256,
+             "--fixture-root", self.fixture_root,
+             "--fixture-digests", self.fixture_digests_path],
             env=env, capture_output=True, cwd=self.repo_root_abs, timeout=30,
         )
         return result
@@ -164,12 +187,13 @@ class TestCliCapture(unittest.TestCase):
             "MOCK_COMMANDS_LOG": self.log_path,
             "FAKE_ADB_STATE": os.path.join(self.test_dir, "edittext.state"),
             "FAKE_ADB_KEYBOARD": os.path.join(self.test_dir, "keyboard.state"),
+            "FAKE_ADB_FOCUS": os.path.join(self.test_dir, "focus.state"),
             "FAKE_ADB_REPHRASING": CANDIDATE_REPHRASING,
             "FAKE_GIT_HEAD": head,
             "PYTHONPATH": self.repo_root_abs,
         }
         env.update(extra_env)
-        for k in ("FAKE_ADB_STATE", "FAKE_ADB_KEYBOARD"):
+        for k in ("FAKE_ADB_STATE", "FAKE_ADB_KEYBOARD", "FAKE_ADB_FOCUS"):
             with open(env[k], "w") as f:
                 f.write("")
         return subprocess.run(
@@ -178,9 +202,25 @@ class TestCliCapture(unittest.TestCase):
              "--evidence-root", self.evidence_root,
              "--repo-root", self.repo_root,
              "--apk-path", self.apk_path,
-             "--apk-sha256", self.apk_sha256],
+             "--apk-sha256", self.apk_sha256,
+             "--fixture-root", self.fixture_root,
+             "--fixture-digests", self.fixture_digests_path],
             env=env, capture_output=True, cwd=self.repo_root_abs, timeout=30,
         )
+
+    def test_adversarial_fixture_drift(self):
+        # Corrupt one pinned snapshot file: the fixture transaction must
+        # fail closed before any mutation.
+        ram = os.path.join(
+            self.fixture_root, "M2_Qual_Fixture.avd",
+            "snapshots", "m2_pristine", "ram.bin")
+        with open(ram, "ab") as f:
+            f.write(b"drift")
+        result = self._run_cli()
+        self.assertNotEqual(result.returncode, 0,
+                            "CLI should fail on fixture digest drift")
+        combined = result.stderr.decode().lower()
+        self.assertIn("fixture", combined)
 
 
 if __name__ == "__main__":

@@ -93,6 +93,17 @@ EXPECTED_ENABLED_IMES = [
     "com.google.android.inputmethod.latin/com.google.android.apps.inputmethod.latin.MockVoiceIME",
 ]
 EXPECTED_EDITOR_CLASS = "android.widget.EditText"
+ANIMATOR_SCALE = "null"  # fixture pins animator unset
+
+# Fixture transaction: the snapshot files whose exact bytes the
+# accepted #56 receipt pins. Defaults are the pinned digests; fake-only
+# runs inject digests computed from their own fixture files.
+FIXTURE_FILES = {
+    "M2_Qual_Fixture.avd/hardware.ini": HARDWARE_INI_HASH,
+    "M2_Qual_Fixture.avd/snapshots/m2_pristine/ram.bin": RAM_BIN_HASH,
+    "M2_Qual_Fixture.avd/snapshots/m2_pristine/textures.bin": TEXTURES_BIN_HASH,
+}
+KEY_LABELS = {" ": "Space", ".": "Period"}
 
 
 class AdbHarness:
@@ -106,6 +117,8 @@ class AdbHarness:
         starter: Any = None,
         finisher: Any = None,
         repo_root: str = "",
+        fixture_root: str = "",
+        fixture_digests: dict[str, str] | None = None,
     ):
         self.run_dir = run_dir
         self.apk_path = apk_path
@@ -114,6 +127,11 @@ class AdbHarness:
         self.starter = starter or commands.start
         self.finisher = finisher or commands.finish
         self.repo_root = repo_root or os.getcwd()
+        self.fixture_root = fixture_root or os.path.join(
+            os.path.expanduser("~"), ".android", "avd")
+        self.fixture_digests = dict(FIXTURE_FILES)
+        if fixture_digests:
+            self.fixture_digests.update(fixture_digests)
         self.adb_tool: ToolIdentity | None = None
         self.emulator_tool: ToolIdentity | None = None
         self.build_tools_tool: ToolIdentity | None = None
@@ -124,6 +142,11 @@ class AdbHarness:
         self._launch_identity: commands.ProcessIdentity | None = None
         self._session_launched = False
         self.ledger = commands.CommandLedger()
+        # Runtime-only private restoration facts (editor text/focus/panel).
+        # Deliberately never serialized into records: private facts stay
+        # harness-local; the public record carries only the comparison
+        # verdict.
+        self._pristine_private: dict | None = None
 
     @property
     def _adb(self) -> str:
@@ -389,6 +412,7 @@ class AdbHarness:
             (("getprop", "ro.sf.lcd_density"), str(SCREEN_DPI)),
             (("settings", "get", "global", "window_animation_scale"), ANIMATION_SCALE),
             (("settings", "get", "global", "transition_animation_scale"), ANIMATION_SCALE),
+            (("settings", "get", "global", "animator_duration_scale"), ANIMATOR_SCALE),
             (("settings", "get", "secure", "default_input_method"), EXPECTED_ENABLED_IMES[0]),
         ]
         for args, expected in fixture_props:
@@ -401,6 +425,23 @@ class AdbHarness:
                 actual = res.transport.stdout.decode("utf-8", errors="replace").strip()
                 if actual != expected:
                     errors.append(f"{' '.join(args)} mismatch: got {actual}")
+
+        # Fixture transaction: the pinned snapshot bytes are verified
+        # before any mutation. Missing or drifted files fail closed.
+        for rel, expected_digest in sorted(self.fixture_digests.items()):
+            path = os.path.join(self.fixture_root, *rel.split("/"))
+            if not os.path.isfile(path):
+                errors.append(f"fixture file missing: {rel}")
+                continue
+            try:
+                actual_digest = commands.digest_file(path)
+            except OSError as e:
+                errors.append(f"fixture file unreadable: {rel}: {e}")
+                continue
+            if actual_digest != expected_digest:
+                errors.append(
+                    f"fixture digest drift: {rel}: "
+                    f"expected {expected_digest[:12]} got {actual_digest[:12]}")
 
         if errors:
             return self._fail("validate_fixture", "\n".join(errors).encode())
@@ -526,6 +567,88 @@ class AdbHarness:
                    self._ok("kb") if ok else self._fail("kb", f"bounds: {actual}".encode()))
         return ok
 
+    def _pin_pristine(self, steps, root) -> bool:
+        """Pre-mutation pristine pins, observed before anything is
+        typed: editor empty and unfocused, no panel. The observed facts
+        become the runtime-private restoration baseline."""
+        field = self._find(root, SEARCH_RES_ID)
+        if field is None:
+            self._step(steps, "pin_pristine_state",
+                       self._fail("pristine", b"editor not found"))
+            return False
+        self._pristine_private = {
+            "editor_text": field.attrib.get("text", ""),
+            "editor_focused": field.attrib.get("focused", "") == "true",
+            "panel_present": self._find(root, PANEL_STATE_RES_ID) is not None,
+        }
+        # Selection is cursor-at-end (uiautomator exposes no selection);
+        # pristine selection 0 is implied by empty text.
+        if self._pristine_private != {
+                "editor_text": "", "editor_focused": False,
+                "panel_present": False}:
+            self._step(steps, "pin_pristine_state",
+                       self._fail("pristine", f"not pristine: {self._pristine_private}".encode()))
+            return False
+        self._step(steps, "pin_pristine_state", self._ok("pristine"))
+        return True
+
+    def _pin_editor_focused_empty(self, steps, root) -> bool:
+        """After the focus tap: the editor must already be empty (the
+        fixture guarantees it; we clear nothing on faith) and focused."""
+        field = self._find(root, SEARCH_RES_ID)
+        errors = []
+        if field is None:
+            errors.append("editor not found")
+        else:
+            if field.attrib.get("text", "") != "":
+                errors.append(
+                    f"editor not empty: {field.attrib.get('text', '')[:40]!r}")
+            if field.attrib.get("focused", "") != "true":
+                errors.append(
+                    f"editor not focused: {field.attrib.get('focused', '')!r}")
+        if errors:
+            self._step(steps, "pin_editor_focused_empty",
+                       self._fail("pin", "\n".join(errors).encode()))
+            return False
+        self._step(steps, "pin_editor_focused_empty", self._ok("pin"))
+        return True
+
+    def _validate_key_geometry(self, steps, root) -> bool:
+        """Every pinned ASK coordinate must land inside exactly one
+        uniquely identified observed key. Missing, duplicate, or
+        malformed key facts fail closed."""
+        errors = []
+        used = sorted({ch for ch in (SOURCE_TEXT + STALE_TEXT)})
+        for ch in used:
+            label = KEY_LABELS.get(ch, ch.upper())
+            lookup = ch.upper() if ch.isalpha() else ch
+            coord = ASK_KEY_COORDS.get(lookup)
+            if coord is None:
+                errors.append(f"no pinned coordinate for {ch!r}")
+                continue
+            matches = [e for e in root.iter()
+                       if e.attrib.get("content-desc", "") == label]
+            if len(matches) != 1:
+                errors.append(
+                    f"key {label}: {len(matches)} matching nodes, need exactly 1")
+                continue
+            m = re.match(r"\[(\d+),(\d+)\]\[(\d+),(\d+)\]",
+                         matches[0].attrib.get("bounds", ""))
+            if not m:
+                errors.append(f"key {label}: malformed bounds")
+                continue
+            x1, y1, x2, y2 = (int(g) for g in m.groups())
+            if not (x1 <= coord[0] <= x2 and y1 <= coord[1] <= y2):
+                errors.append(
+                    f"key {label}: pinned ({coord[0]},{coord[1]})"
+                    f" outside [{x1},{y1}][{x2},{y2}]")
+        if errors:
+            self._step(steps, "validate_key_geometry",
+                       self._fail("keys", "\n".join(errors).encode()))
+            return False
+        self._step(steps, "validate_key_geometry", self._ok("keys"))
+        return True
+
     def _tap_ask_key(self, steps, ch):
         key = ch.upper() if ch.isalpha() else ch
         coord = ASK_KEY_COORDS.get(key)
@@ -595,6 +718,9 @@ class AdbHarness:
             return steps
         self._step(steps, "dump_hierarchy", d_res)
 
+        if not self._pin_pristine(steps, root):
+            return steps
+
         field = self._find(root, SEARCH_RES_ID)
         if field is None:
             self._step(steps, "locate_editor", self._fail("locate", b"not found"))
@@ -609,6 +735,10 @@ class AdbHarness:
 
         _, kb_root = self._dump_hierarchy("keyboard_check")
         if kb_root is not None and not self._validate_keyboard(steps, kb_root):
+            return steps
+        if kb_root is not None and not self._pin_editor_focused_empty(steps, kb_root):
+            return steps
+        if kb_root is not None and not self._validate_key_geometry(steps, kb_root):
             return steps
 
         if not self._type_text(steps, SOURCE_TEXT, "type_source_1"):
@@ -685,23 +815,41 @@ class AdbHarness:
         if review_root is None:
             return steps
 
+        # Explicit stale: applying a candidate whose source changed
+        # must make zero mutations and RETAIN the candidate in REVIEW
+        # for an explicit dismiss — it is never silently dropped.
         if not self._clear_field(steps) or not self._type_text(steps, STALE_TEXT, "type_stale"):
             return steps
         if not self._tap_btn(steps, review_root, "apply_stale", APPLY_RES_ID):
             return steps
         v_res, v_root = self._dump_hierarchy("after_stale")
         if v_root is None:
-            self._step(steps, "verify_stale", v_res)
+            self._step(steps, "verify_stale_retained", v_res)
             return steps
-        if not self._verify_text(steps, v_root, STALE_TEXT, "verify_stale"):
+        if not self._verify_text(steps, v_root, STALE_TEXT, "verify_stale_retained"):
             return steps
-        candidate = self._find(v_root, CANDIDATE_RES_ID)
-        if candidate is not None:
-            self._step(steps, "verify_stale_outcome",
-                       self._fail("stale_outcome", b"candidate present after stale apply"))
+        panel = self._find(v_root, PANEL_STATE_RES_ID)
+        retained = (
+            panel is not None
+            and panel.attrib.get("text", "") == STATE_REVIEW
+            and self._find(v_root, CANDIDATE_RES_ID) is not None)
+        self._step(steps, "verify_stale_candidate_retained",
+                   self._ok("stale") if retained
+                   else self._fail("stale", b"stale candidate not retained in REVIEW"))
+        if not retained:
             return steps
-        self._step(steps, "verify_stale_outcome", self._ok("stale_outcome"))
         if not self._take_screenshot(steps, "06-stale"):
+            return steps
+
+        if not self._tap_btn(steps, v_root, "dismiss_stale_candidate", DISMISS_RES_ID):
+            return steps
+        d_res, d_root = self._dump_hierarchy("after_stale_dismiss")
+        if d_root is None:
+            self._step(steps, "verify_stale_dismissed", d_res)
+            return steps
+        if not self._verify_idle(steps, d_root, "after_stale_dismiss"):
+            return steps
+        if not self._verify_text(steps, d_root, STALE_TEXT, "verify_stale_dismissed"):
             return steps
 
         res = self._shell("am", "start", "-a", SETTINGS_ACTION)
@@ -786,6 +934,26 @@ class AdbHarness:
         state = self.capture_prior_state()
         if state is None:
             raise RuntimeError("verification prior state unavailable")
+        # Private restoration facts: editor text/focus and panel presence
+        # must equal the runtime-only baseline observed before mutation.
+        if self._pristine_private is not None:
+            _, root = self._dump_hierarchy("verify_restore")
+            if root is None:
+                raise RuntimeError(
+                    "restoration mismatch: hierarchy unavailable for private facts")
+            field = self._find(root, SEARCH_RES_ID)
+            if field is None:
+                raise RuntimeError(
+                    "restoration mismatch: editor node absent after restore")
+            observed = {
+                "editor_text": field.attrib.get("text", ""),
+                "editor_focused": field.attrib.get("focused", "") == "true",
+                "panel_present": self._find(root, PANEL_STATE_RES_ID) is not None,
+            }
+            if observed != self._pristine_private:
+                raise RuntimeError(
+                    f"restoration mismatch: private facts {observed}"
+                    f" != pristine {self._pristine_private}")
         return state
 
     def _revalidate_ownership(self) -> bool:

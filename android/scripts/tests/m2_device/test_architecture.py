@@ -2,11 +2,10 @@
 
 Verifies that only allowed production modules exist in android/scripts/m2_device/
 and that their nonblank, non-comment line counts fit within the complexity budget:
-- adb_harness.py <= 850 lines (raised 2026-08-16 for #65 review findings:
-  provisional-ownership gate, ledgered screenrecord boundary, bounded
-  fallback PID lifecycle)
-- Total of all 6 modules combined <= 2300 lines (same round; adds
-  SignalInterrupt, TerminateOutcome, group-extinction verification)
+- adb_harness.py <= 1000 lines (raised 2026-08-16 for #63: fixture transaction,
+  pristine/editor pins, key-geometry validation, stale retention, private
+  restoration facts)
+- Total of all 6 modules combined <= 2500 lines (same #63 round)
 """
 
 import os
@@ -86,21 +85,19 @@ class TestArchitecture(unittest.TestCase):
             module_counts[name] = count
             total_lines += count
 
-        # adb_harness.py <= 850 lines (2026-08-16 #65 correction round:
-        # provisional-ownership gate, ledgered screenrecord, bounded PID
-        # fallback)
+        # adb_harness.py <= 1000 lines (2026-08-16 #63: fixture
+        # transaction, pins, key geometry, stale retention)
         self.assertLessEqual(
             module_counts.get('adb_harness.py', 0),
-            850,
-            f"adb_harness.py exceeds 850 lines: {module_counts.get('adb_harness.py', 0)}"
+            1000,
+            f"adb_harness.py exceeds 1000 lines: {module_counts.get('adb_harness.py', 0)}"
         )
 
-        # total <= 2300 lines (2026-08-16 #65 correction round:
-        # SignalInterrupt, TerminateOutcome, group-extinction checks)
+        # total <= 2500 lines (2026-08-16 #63)
         self.assertLessEqual(
             total_lines,
-            2300,
-            f"Total production line count exceeds 2300 lines: {total_lines} ({module_counts})"
+            2500,
+            f"Total production line count exceeds 2500 lines: {total_lines} ({module_counts})"
         )
 
 

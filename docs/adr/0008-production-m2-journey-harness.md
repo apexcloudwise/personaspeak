@@ -18,12 +18,15 @@ We amend the project complexity budget to exactly six production modules and at 
 - The remaining five files (`cli.py`, `commands.py`, `orchestrator.py`, `evidence.py`, `records.py`) have a remaining budget of 1,150 lines.
 - Static tests enforce these limits.
 
-Amended 2026-08-11 (issue #65 execution-boundary totality) to 750/2,100, and
-amended again 2026-08-16 (issue #65 review findings) to `adb_harness.py` ≤ 850
-and total ≤ 2,300. The second raise covers the provisional-ownership gate, the
-ledgered screenrecord boundary, bounded fallback PID termination,
-`SignalInterrupt`, and `TerminateOutcome` group-extinction verification. The
-budget's purpose — a small, reviewable, stdlib-only instrument — is unchanged.
+Amended 2026-08-11 (issue #65 execution-boundary totality) to 750/2,100, amended
+2026-08-16 (issue #65 review findings) to 850/2,300, and amended again the same
+day (issue #63 fixture transaction) to `adb_harness.py` ≤ 1,000 and total ≤
+2,500. The #65 raises cover the provisional-ownership gate, the ledgered
+screenrecord boundary, bounded fallback PID termination, `SignalInterrupt`, and
+`TerminateOutcome` group-extinction verification; the #63 raise covers the
+fixture-byte transaction, pristine/editor pins, key-geometry validation, stale
+candidate retention, and private restoration facts. The budget's purpose — a
+small, reviewable, stdlib-only instrument — is unchanged.
 
 ### 2. UI-Automation Mechanism
 We use subprocess-driven, argv-only commands dispatching to `adb shell input tap`, hierarchy XML dumps parsed with Python's standard library `xml.etree.ElementTree`, package/IME commands, `screencap`, and `screenrecord`.

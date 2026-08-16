@@ -33,8 +33,13 @@ def cmd_capture(args: argparse.Namespace) -> int:
     run_dir = os.path.join(args.evidence_root, run_id)
     os.makedirs(run_dir, exist_ok=False)
 
+    fixture_digests = None
+    if args.fixture_digests:
+        with open(args.fixture_digests) as f:
+            fixture_digests = json.load(f)
     harness = AdbHarness(
         run_dir=run_dir, apk_path=args.apk_path, repo_root=args.repo_root,
+        fixture_root=args.fixture_root, fixture_digests=fixture_digests,
     )
     orchestrator = Orchestrator(
         harness=harness, apk_sha256=args.apk_sha256,
@@ -148,6 +153,12 @@ def build_parser() -> argparse.ArgumentParser:
     cap.add_argument("--apk-path", required=True)
     cap.add_argument("--apk-sha256", required=True)
     cap.add_argument("--expected-head", default="")
+    cap.add_argument("--fixture-root", default="",
+                     help="AVD root holding M2_Qual_Fixture.avd "
+                          "(default: ~/.android/avd)")
+    cap.add_argument("--fixture-digests", default="",
+                     help="JSON file of fixture-relative-path → sha256; "
+                          "overrides the pinned digests (fake-only runs)")
     cap.set_defaults(func=cmd_capture)
 
     fin = sub.add_parser("finalize", help="produce final receipt")
