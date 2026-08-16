@@ -9,6 +9,7 @@ import os
 import shutil
 import signal
 import subprocess
+import time
 from datetime import datetime, timezone
 from typing import Protocol
 
@@ -79,6 +80,21 @@ class RemoteAmbiguousError(Exception):
     """Remote command status could not be determined (remote_rc=None)."""
 
 
+class SignalInterrupt(BaseException):
+    """SIGINT/SIGTERM arrived while an active phase was executing.
+
+    Deliberately a BaseException: phase code that catches ``Exception``
+    must not convert an interrupt into an ordinary tool failure. The
+    orchestrator catches it above the cleanup ``finally`` blocks, so
+    restore/release still run. Execution helpers kill and reap the
+    interrupted child before re-raising.
+    """
+
+    def __init__(self, signum: int):
+        super().__init__(f"signal {signum}")
+        self.signum = signum
+
+
 @dataclass(frozen=True)
 class LedgerEntry:
     argv: list[str]
@@ -126,6 +142,17 @@ class CommandLedger:
         ], indent=2)
 
 
+def _reap_after_kill(proc: subprocess.Popen) -> None:
+    try:
+        proc.kill()
+    except OSError:
+        pass
+    try:
+        proc.communicate(timeout=5.0)
+    except (subprocess.TimeoutExpired, OSError):
+        pass
+
+
 def start(
     argv: list[str],
     *,
@@ -165,6 +192,9 @@ def finish(
     try:
         stdout, stderr = proc.communicate(timeout=timeout)
         rc = proc.returncode
+    except SignalInterrupt:
+        _reap_after_kill(proc)
+        raise
     except subprocess.TimeoutExpired:
         try:
             proc.kill()
@@ -199,44 +229,165 @@ def finish(
     )
 
 
+@dataclass(frozen=True)
+class TerminateOutcome:
+    """Result of bounded_terminate.
+
+    ``killed`` is True when SIGKILL was required. ``group_extinct`` is
+    True when the stored process group no longer exists (always True
+    when group=False); a False value means descendants survived
+    escalation and the caller must not report a clean release.
+    """
+    killed: bool
+    group_extinct: bool = True
+
+
+def _group_alive(pgid: int) -> bool:
+    try:
+        os.killpg(pgid, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+    except OSError:
+        return False
+    return True
+
+
+def _wait_group_extinct(pgid: int, grace: float, interval: float = 0.05) -> bool:
+    deadline = time.monotonic() + grace
+    while True:
+        if not _group_alive(pgid):
+            return True
+        if time.monotonic() >= deadline:
+            return False
+        time.sleep(interval)
+
+
 def bounded_terminate(
     proc: subprocess.Popen,
     *,
     term_timeout: float = 5.0,
     kill_timeout: float = 5.0,
     group: bool = False,
-) -> bool:
-    """SIGTERM → bounded wait → SIGKILL → bounded wait.
+    extinct_grace: float = 1.0,
+) -> TerminateOutcome:
+    """SIGTERM → bounded wait → SIGKILL → bounded wait → extinction check.
 
-    When *group* is True, signals the entire process group (the
-    process must have been started with ``start_new_session=True``).
-    Returns True if SIGKILL was required.
+    When *group* is True, signals the entire process group (the process
+    must have been started with ``start_new_session=True``, so the group
+    id equals the leader pid). The pgid is captured once, before any
+    signal: if the leader exits after SIGTERM while a resistant
+    descendant holds the group open, escalation and extinction checks
+    still target the stored group instead of a failing re-lookup.
     """
     pid = proc.pid
+    pgid: int | None = None
+    if group:
+        try:
+            pgid = os.getpgid(pid)
+        except (OSError, ProcessLookupError):
+            # New-session leader: pgid == pid even after leader exit.
+            pgid = pid
     killed = False
 
     def _sig(sig: int) -> None:
-        if group:
-            os.killpg(os.getpgid(pid), sig)
+        if pgid is not None:
+            try:
+                os.killpg(pgid, sig)
+            except (OSError, ProcessLookupError):
+                pass
         else:
-            proc.send_signal(sig)
+            try:
+                proc.send_signal(sig)
+            except (OSError, ProcessLookupError):
+                pass
 
-    try:
-        _sig(signal.SIGTERM)
-    except (OSError, ProcessLookupError):
-        pass
+    _sig(signal.SIGTERM)
     try:
         proc.communicate(timeout=term_timeout)
     except subprocess.TimeoutExpired:
-        try:
-            _sig(signal.SIGKILL)
-            killed = True
-        except (OSError, ProcessLookupError):
-            pass
+        pass
+    if (pgid is not None and _group_alive(pgid)) or (
+        pgid is None and proc.poll() is None
+    ):
+        # Leader resisted SIGTERM, or it exited while descendants hold
+        # the stored group open — either way, escalate.
+        _sig(signal.SIGKILL)
+        killed = True
         try:
             proc.communicate(timeout=kill_timeout)
         except subprocess.TimeoutExpired:
             pass
+    group_extinct = (
+        _wait_group_extinct(pgid, extinct_grace) if pgid is not None else True
+    )
+    return TerminateOutcome(killed=killed, group_extinct=group_extinct)
+
+
+def _wait_identity_gone(
+    pid: int, identity: "ProcessIdentity", timeout: float,
+    interval: float = 0.1,
+) -> bool:
+    """True when *pid* no longer runs *identity* within *timeout*.
+
+    A pid now carrying a different identity means the original exited
+    and the pid was reused — the original is gone, and the new
+    occupant must not be signaled. A direct child that exited but was
+    never reaped (zombie keeps its identity in ``ps``) is reaped here:
+    when we are the parent, ``waitpid`` both detects and collects it.
+    """
+    deadline = time.monotonic() + timeout
+    while True:
+        try:
+            waited, _ = os.waitpid(pid, os.WNOHANG)
+            if waited == pid:
+                return True
+        except ChildProcessError:
+            pass
+        except OSError:
+            pass
+        current = pid_identity(pid)
+        if current is None or current != identity:
+            # Dead (possibly our own unreaped zombie — ps shows it as
+            # defunct with a different command) or the pid was reused.
+            # Either way the original process is gone and must not be
+            # signaled; reap if it is ours.
+            try:
+                os.waitpid(pid, os.WNOHANG)
+            except (ChildProcessError, OSError):
+                pass
+            return True
+        if time.monotonic() >= deadline:
+            return False
+        time.sleep(interval)
+
+
+def bounded_terminate_pid(
+    pid: int,
+    identity: "ProcessIdentity",
+    *,
+    term_timeout: float = 3.0,
+    kill_timeout: float = 3.0,
+) -> bool:
+    """Bounded validated lifecycle for a process whose handle was dropped.
+
+    SIGTERM → bounded identity wait → SIGKILL → bounded wait. Signals
+    only while *pid* still carries *identity*; pid reuse is never
+    signaled. Returns True when SIGKILL was required.
+    """
+    try:
+        os.kill(pid, signal.SIGTERM)
+    except (OSError, ProcessLookupError):
+        return False
+    if _wait_identity_gone(pid, identity, term_timeout):
+        return False
+    killed = True
+    try:
+        os.kill(pid, signal.SIGKILL)
+    except (OSError, ProcessLookupError):
+        pass
+    _wait_identity_gone(pid, identity, kill_timeout)
     return killed
 
 
@@ -292,6 +443,9 @@ def run(
     try:
         stdout, stderr = proc.communicate(timeout=timeout)
         rc = proc.returncode
+    except SignalInterrupt:
+        _reap_after_kill(proc)
+        raise
     except subprocess.TimeoutExpired:
         proc.kill()
         try:

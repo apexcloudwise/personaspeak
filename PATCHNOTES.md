@@ -10,6 +10,32 @@ Newest first, like all respectable patch notes.
 
 ---
 
+## 2026-08-16 — Cleanup learns to check the name badge before it swings
+
+- The six remaining execution-boundary findings from the 2026-08-13 review
+  are closed. `screenrecord` start/finish now crosses the same boundary as
+  every other shell-v2 operation (bounded finish, `RemoteResult` conversion,
+  ledger entry — including on the failure path through `restore`).
+  Cleanup refuses to signal an emulator whose observed command or AVD does
+  not match the launch argv, requires validated provisional ownership before
+  any signal, and refuses when a live process is unobservable.
+- `bounded_terminate` captures the process-group id once, before signaling;
+  escalation and a bounded extinction check target the stored group, so a
+  leader that exits mid-terminate can no longer shield its resistant
+  descendants (and a release with group members alive now fails closed
+  instead of reporting success). SIGINT/SIGTERM during an active phase
+  raise `SignalInterrupt` through the blocked command (the child is killed
+  and reaped on the way out) and converge into bounded cleanup; signals
+  during cleanup are recorded without aborting it. Ledger persistence is
+  now a recorded step — a failed ledger write marks cleanup partial while
+  preserving the primary failure. The fallback PID path gets the same
+  bounded, identity-validated lifecycle (SIGTERM → wait → SIGKILL → reap,
+  never signaling a reused pid). Twenty adversarial regressions ride
+  along, including a real blocked-child signal test.
+
+---
+
+
 ## 2026-08-13 — The test suite learns to mind its own environment
 
 - `test_preflight_success` now mocks `socket.socket` (ConnectionRefused) and

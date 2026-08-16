@@ -109,18 +109,29 @@ class Orchestrator:
         self.terminal: TerminalCause | None = None
         self._restored = False
         self._emulator_launched = False
+        self._in_cleanup = False
         self._reached: str | None = None
-        self.fixture_receipt_digest: str = ""
+        self.fixture_receipt_digest = ""
 
     def _on_signal(self, signum, frame):
         if self.terminal is None:
             self.terminal = TerminalCause.SIGNAL_INTERRUPT
+        if not self._in_cleanup:
+            # Interrupt the active phase (blocked subprocesses included)
+            # so the run converges into bounded cleanup instead of
+            # sleeping out its command timeout. During cleanup the
+            # signal is only recorded — cleanup must complete.
+            raise commands.SignalInterrupt(signum)
 
     def execute(self) -> CaptureRecord:
         prev_int = signal.signal(signal.SIGINT, self._on_signal)
         prev_term = signal.signal(signal.SIGTERM, self._on_signal)
         try:
             return self._execute_inner()
+        except commands.SignalInterrupt:
+            if self.terminal is None:
+                self.terminal = TerminalCause.SIGNAL_INTERRUPT
+            return self._record()
         finally:
             signal.signal(signal.SIGINT, prev_int)
             signal.signal(signal.SIGTERM, prev_term)
@@ -184,9 +195,11 @@ class Orchestrator:
                                     lambda: self.harness.capture_evidence(),
                                     TerminalCause.CAPTURE_FAILED)
             finally:
+                self._in_cleanup = True
                 self._restore()
                 self._verify()
         finally:
+            self._in_cleanup = True
             self._release_emulator()
 
         return self._record()
@@ -343,9 +356,22 @@ class Orchestrator:
         dump = getattr(self.harness, "dump_ledger", None)
         if dump is not None:
             try:
-                dump()
-            except Exception:
-                pass
+                l_res = dump()
+                l_rc = _rc_of(l_res)
+                l_cause = (
+                    TerminalCause.COMPLETED
+                    if l_rc == 0 and not _timed_out(l_res)
+                    else TerminalCause.CLEANUP_PARTIAL
+                )
+            except Exception as e:
+                l_res = CommandResult(
+                    argv=[], start_utc="", end_utc="",
+                    returncode=1, stdout=b"", stderr=str(e).encode())
+                l_cause = TerminalCause.CLEANUP_PARTIAL
+            self.steps.append(_make_step(
+                "ledger", "persist command ledger", l_res, l_cause))
+            if l_cause != TerminalCause.COMPLETED and self.terminal is None:
+                self.terminal = l_cause
 
     def _record(self) -> CaptureRecord:
         return CaptureRecord(

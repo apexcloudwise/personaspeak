@@ -16,6 +16,7 @@ import subprocess
 import sys
 import tempfile
 import textwrap
+import threading
 import time
 import unittest
 from unittest.mock import MagicMock, patch
@@ -83,7 +84,7 @@ class FakeHarness:
     def __init__(self, *, prior=_prior(), fail_at=None,
                  restore_fail=False, release_fail=False,
                  ownership_fail=False, verify_release_fail=False,
-                 ambiguous_at=None):
+                 ambiguous_at=None, ledger=None):
         self._prior = prior
         self._fail_at = fail_at
         self._restore_fail = restore_fail
@@ -91,6 +92,7 @@ class FakeHarness:
         self._ownership_fail = ownership_fail
         self._verify_release_fail = verify_release_fail
         self._ambiguous_at = ambiguous_at or set()
+        self._ledger = ledger
         self.restore_count = 0
         self.release_count = 0
         self.ownership_count = 0
@@ -167,6 +169,11 @@ class FakeHarness:
 
     def verify_release(self):
         return _cr(rc=5 if self._verify_release_fail else 0)
+
+    def dump_ledger(self):
+        if self._ledger == "raise":
+            raise RuntimeError("ledger write failed")
+        return _cr(rc=1 if self._ledger == "fail" else 0)
 
 
 # --- Ambiguity classification ---
@@ -351,6 +358,15 @@ class TestSignalConvergence(unittest.TestCase):
         h = FakeHarness(fail_at="install")
         orch = Orchestrator(h, repo_head="a", apk_sha256="", tools=_tools())
         orch.terminal = TerminalCause.INSTALL_FAILED
+        with self.assertRaises(C.SignalInterrupt):
+            orch._on_signal(signal.SIGTERM, None)
+        self.assertEqual(orch.terminal, TerminalCause.INSTALL_FAILED)
+
+    def test_signal_during_cleanup_does_not_raise(self):
+        h = FakeHarness(fail_at="install")
+        orch = Orchestrator(h, repo_head="a", apk_sha256="", tools=_tools())
+        orch.terminal = TerminalCause.INSTALL_FAILED
+        orch._in_cleanup = True
         orch._on_signal(signal.SIGTERM, None)
         self.assertEqual(orch.terminal, TerminalCause.INSTALL_FAILED)
 
@@ -495,8 +511,9 @@ class TestBoundedTerminate(unittest.TestCase):
 
     def test_terminates_cooperative_process(self):
         proc = subprocess.Popen(["sleep", "30"])
-        killed = C.bounded_terminate(proc, term_timeout=1.0, kill_timeout=1.0)
-        self.assertFalse(killed)
+        outcome = C.bounded_terminate(proc, term_timeout=1.0, kill_timeout=1.0)
+        self.assertFalse(outcome.killed)
+        self.assertTrue(outcome.group_extinct)
         self.assertIsNotNone(proc.returncode)
 
     def test_escalates_to_kill(self):
@@ -507,8 +524,8 @@ class TestBoundedTerminate(unittest.TestCase):
              "time.sleep(30)"],
         )
         time.sleep(0.3)
-        killed = C.bounded_terminate(proc, term_timeout=0.5, kill_timeout=2.0)
-        self.assertTrue(killed)
+        outcome = C.bounded_terminate(proc, term_timeout=0.5, kill_timeout=2.0)
+        self.assertTrue(outcome.killed)
         self.assertIsNotNone(proc.returncode)
 
     def test_group_terminate_kills_resistant_descendants(self):
@@ -534,12 +551,75 @@ class TestBoundedTerminate(unittest.TestCase):
             child_pid = int(f.read())
         self.assertIsNotNone(C.pid_identity(child_pid))
 
-        killed = C.bounded_terminate(
+        outcome = C.bounded_terminate(
             proc, group=True, term_timeout=0.5, kill_timeout=2.0)
-        self.assertTrue(killed)
+        self.assertTrue(outcome.killed)
+        self.assertTrue(outcome.group_extinct)
         time.sleep(0.3)
         self.assertIsNone(C.pid_identity(child_pid))
         os.unlink(child_pid_file)
+
+    def test_group_kill_lands_when_leader_dies_after_sigterm(self):
+        # The exact P1-3 hazard: a cooperative leader exits on SIGTERM
+        # while a resistant descendant holds the group open. Escalation
+        # must target the stored pgid (leader pid), not a re-lookup.
+        child_pid_file = tempfile.mktemp()
+        parent_script = textwrap.dedent(f"""\
+            import os, signal, time
+            pid = os.fork()
+            if pid == 0:
+                signal.signal(signal.SIGTERM, signal.SIG_IGN)
+                time.sleep(30)
+            else:
+                with open("{child_pid_file}", "w") as f:
+                    f.write(str(pid))
+                time.sleep(30)
+        """)
+        proc = subprocess.Popen(
+            [sys.executable, "-c", parent_script],
+            start_new_session=True,
+        )
+        time.sleep(0.5)
+        with open(child_pid_file) as f:
+            child_pid = int(f.read())
+        self.assertIsNotNone(C.pid_identity(child_pid))
+
+        outcome = C.bounded_terminate(
+            proc, group=True, term_timeout=0.5, kill_timeout=2.0)
+        self.assertTrue(outcome.killed)
+        self.assertTrue(outcome.group_extinct)
+        self.assertIsNotNone(proc.returncode)
+        self.assertIsNone(C.pid_identity(child_pid))
+        os.unlink(child_pid_file)
+
+    def test_release_fails_when_group_survives_escalation(self):
+        # Simulated survivor: real signals are delivered (the leader
+        # dies), but the liveness probe keeps reporting the group
+        # alive → release must fail closed instead of reporting success.
+        proc = subprocess.Popen(
+            ["sleep", "30"], start_new_session=True)
+        time.sleep(0.2)
+        h, _ = _harness()
+        mp = C.ManagedProcess(
+            proc=proc, argv=["sleep", "30"],
+            start_utc="2026-08-11T12:00:00Z", new_session=True)
+        h.emulator_process = mp
+        h._session_launched = True
+
+        real_killpg = os.killpg
+
+        def fake_killpg(target, sig):
+            if sig == 0:
+                return None  # probe: group still "alive"
+            real_killpg(target, sig)
+
+        with patch("os.killpg", side_effect=fake_killpg):
+            res = h.release_emulator()
+        self.assertEqual(res.returncode, 1)
+        self.assertIn(b"still alive", res.stderr)
+        if proc.poll() is None:
+            proc.kill()
+        proc.wait()
 
     def test_release_emulator_uses_group_termination(self):
         proc = subprocess.Popen(
@@ -732,6 +812,215 @@ class TestDecodableFailureRecords(unittest.TestCase):
         encoded = encode(rec)
         decoded = decode(encoded)
         self.assertEqual(encoded, encode(decoded))
+
+
+# --- Provisional ownership before any signal (P1) ---
+
+class TestProvisionalOwnership(unittest.TestCase):
+
+    def test_release_refuses_command_mismatch_and_spares_process(self):
+        # Launched argv claims the emulator; the live process is not it.
+        proc = subprocess.Popen(["sleep", "30"], start_new_session=True)
+        time.sleep(0.2)
+        try:
+            h, _ = _harness()
+            h.emulator_process = C.ManagedProcess(
+                proc=proc,
+                argv=["/usr/bin/emulator", "-avd", "M2_Qual_Fixture",
+                      "-port", "5554"],
+                start_utc="2026-08-11T12:00:00Z", new_session=True)
+            h._session_launched = True
+            res = h.release_emulator()
+            self.assertEqual(res.returncode, 1)
+            self.assertIn(b"refuse", res.stderr)
+            self.assertIsNone(proc.poll(),
+                              "refused cleanup must not signal the process")
+        finally:
+            proc.terminate()
+            proc.wait()
+
+    def test_release_refuses_avd_mismatch(self):
+        proc = subprocess.Popen(["sleep", "30"], start_new_session=True)
+        time.sleep(0.2)
+        try:
+            fake_identity = C.ProcessIdentity(
+                start="Mon Aug 11 12:00:00 2026",
+                command="/usr/bin/emulator -avd Other_AVD -port 5554")
+            with patch(
+                "android.scripts.m2_device.commands.pid_identity",
+                return_value=fake_identity,
+            ):
+                h, _ = _harness()
+                h.emulator_process = C.ManagedProcess(
+                    proc=proc,
+                    argv=["/usr/bin/emulator", "-avd", "M2_Qual_Fixture",
+                          "-port", "5554"],
+                    start_utc="2026-08-11T12:00:00Z", new_session=True)
+                h._session_launched = True
+                res = h.release_emulator()
+            self.assertEqual(res.returncode, 1)
+            self.assertIn(b"refuse", res.stderr)
+            self.assertIsNone(proc.poll())
+        finally:
+            proc.terminate()
+            proc.wait()
+
+    def test_release_refuses_unobservable_live_process(self):
+        proc = subprocess.Popen(["sleep", "30"], start_new_session=True)
+        time.sleep(0.2)
+        try:
+            with patch(
+                "android.scripts.m2_device.commands.pid_identity",
+                return_value=None,
+            ):
+                h, _ = _harness()
+                h.emulator_process = C.ManagedProcess(
+                    proc=proc, argv=["sleep", "30"],
+                    start_utc="2026-08-11T12:00:00Z", new_session=True)
+                h._session_launched = True
+                res = h.release_emulator()
+            self.assertEqual(res.returncode, 1)
+            self.assertIn(b"unobservable", res.stderr)
+            self.assertIsNone(proc.poll())
+        finally:
+            proc.terminate()
+            proc.wait()
+
+    def test_provisional_release_terminates_matching_launch(self):
+        # Ownership was never established (early-phase failure), but the
+        # observed identity matches the launch argv → cleanup proceeds.
+        proc = subprocess.Popen(["sleep", "30"], start_new_session=True)
+        time.sleep(0.2)
+        h, _ = _harness()
+        h.emulator_process = C.ManagedProcess(
+            proc=proc, argv=["sleep", "30"],
+            start_utc="2026-08-11T12:00:00Z", new_session=True)
+        h._session_launched = True
+        res = h.release_emulator()
+        self.assertEqual(res.returncode, 0)
+        self.assertIsNotNone(proc.returncode)
+
+
+# --- Signal convergence with a real blocked child (P1) ---
+
+class TestSignalBlockedChild(unittest.TestCase):
+
+    def test_sigint_interrupts_blocked_child_and_converges(self):
+        pid_file = tempfile.mktemp()
+        script = textwrap.dedent(f"""\
+            import os, time
+            with open("{pid_file}", "w") as f:
+                f.write(str(os.getpid()))
+            time.sleep(30)
+        """)
+
+        class H(FakeHarness):
+            def install_apk(self):
+                return C.run(
+                    [sys.executable, "-c", script], timeout=60)
+
+        h = H()
+        orch = Orchestrator(h, repo_head="a", apk_sha256="", tools=_tools())
+        timer = threading.Timer(
+            0.8, lambda: os.kill(os.getpid(), signal.SIGINT))
+        timer.start()
+        try:
+            start = time.monotonic()
+            rec = orch.execute()
+            elapsed = time.monotonic() - start
+        finally:
+            timer.cancel()
+        self.assertLess(elapsed, 10.0,
+                        "signal must not wait out the 60s command timeout")
+        self.assertEqual(orch.terminal, TerminalCause.SIGNAL_INTERRUPT)
+        with open(pid_file) as f:
+            child_pid = int(f.read())
+        self.assertIsNone(C.pid_identity(child_pid),
+                          "interrupted child must be killed and reaped")
+        self.assertEqual(h.restore_count, 1)
+        self.assertEqual(h.release_count, 1)
+        self.assertEqual(decode(encode(rec)).repo_head, rec.repo_head)
+        os.unlink(pid_file)
+
+    def test_signal_during_cleanup_records_without_aborting(self):
+        class H(FakeHarness):
+            def restore(self):
+                os.kill(os.getpid(), signal.SIGINT)
+                return _cr(rc=0)
+
+        h = H()
+        orch = Orchestrator(h, repo_head="a", apk_sha256="", tools=_tools())
+        rec = orch.execute()
+        self.assertEqual(orch.terminal, TerminalCause.SIGNAL_INTERRUPT)
+        self.assertEqual(h.release_count, 1)
+        restore_steps = [s for s in rec.steps if s.phase == "restore"]
+        self.assertEqual(restore_steps[0].cause, TerminalCause.COMPLETED)
+
+
+# --- Ledger persistence as a recorded step (P1) ---
+
+class TestLedgerPersistence(unittest.TestCase):
+
+    def test_ledger_step_recorded_on_success(self):
+        h = FakeHarness(ledger="ok")
+        orch = Orchestrator(h, repo_head="a", apk_sha256="", tools=_tools())
+        rec = orch.execute()
+        steps = [s for s in rec.steps if s.phase == "ledger"]
+        self.assertEqual(len(steps), 1)
+        self.assertEqual(steps[0].cause, TerminalCause.COMPLETED)
+        self.assertIsNone(orch.terminal)
+
+    def test_ledger_failure_marks_cleanup_partial(self):
+        h = FakeHarness(ledger="fail")
+        orch = Orchestrator(h, repo_head="a", apk_sha256="", tools=_tools())
+        rec = orch.execute()
+        steps = [s for s in rec.steps if s.phase == "ledger"]
+        self.assertEqual(len(steps), 1)
+        self.assertEqual(steps[0].cause, TerminalCause.CLEANUP_PARTIAL)
+        self.assertEqual(orch.terminal, TerminalCause.CLEANUP_PARTIAL)
+
+    def test_ledger_exception_preserves_primary_cause(self):
+        h = FakeHarness(fail_at="install", ledger="raise")
+        orch = Orchestrator(h, repo_head="a", apk_sha256="", tools=_tools())
+        rec = orch.execute()
+        self.assertEqual(orch.terminal, TerminalCause.INSTALL_FAILED)
+        steps = [s for s in rec.steps if s.phase == "ledger"]
+        self.assertEqual(len(steps), 1)
+        self.assertEqual(steps[0].cause, TerminalCause.CLEANUP_PARTIAL)
+
+
+# --- Bounded fallback PID lifecycle (P2) ---
+
+class TestFallbackPidRelease(unittest.TestCase):
+
+    def test_fallback_releases_cooperative_process(self):
+        proc = subprocess.Popen(["sleep", "30"])
+        time.sleep(0.2)
+        h, _ = _harness()
+        h._owned_pid = proc.pid
+        h._owned_identity = C.pid_identity(proc.pid)
+        res = h.release_emulator()
+        self.assertEqual(res.returncode, 0)
+        self.assertIn(b"released by owned PID", res.stdout)
+        self.assertIsNotNone(proc.poll())
+        self.assertNotEqual(C.pid_identity(proc.pid), h._owned_identity)
+
+    def test_fallback_escalates_to_kill(self):
+        proc = subprocess.Popen(
+            [sys.executable, "-c",
+             "import signal,time;"
+             "signal.signal(signal.SIGTERM,lambda*s:None);"
+             "time.sleep(30)"],
+        )
+        time.sleep(0.3)
+        h, _ = _harness()
+        h._owned_pid = proc.pid
+        h._owned_identity = C.pid_identity(proc.pid)
+        res = h.release_emulator()
+        self.assertEqual(res.returncode, 0)
+        self.assertIn(b"SIGKILL", res.stdout)
+        self.assertIsNotNone(proc.poll())
+        self.assertNotEqual(C.pid_identity(proc.pid), h._owned_identity)
 
 
 if __name__ == "__main__":

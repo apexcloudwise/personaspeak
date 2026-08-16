@@ -511,5 +511,115 @@ class TestAdbHarness(unittest.TestCase):
         self.assertEqual(res.returncode, 1)
 
 
+class TestScreenrecordBoundary(unittest.TestCase):
+    """screenrecord start/finish must cross the execution boundary:
+    shell-v2 argv, bounded finish, RemoteResult conversion, ledger."""
+
+    def setUp(self):
+        self.tmp_dir = tempfile.TemporaryDirectory()
+        self.run_dir = self.tmp_dir.name
+        self.apk_path = os.path.join(self.run_dir, "test.apk")
+        with open(self.apk_path, "wb") as f:
+            f.write(b"apk content")
+        self.mock_runner = MagicMock()
+        self.mock_starter = MagicMock()
+        self.mock_finisher = MagicMock()
+        self.harness = AdbHarness(
+            run_dir=self.run_dir,
+            apk_path=self.apk_path,
+            runner=self.mock_runner,
+            starter=self.mock_starter,
+            finisher=self.mock_finisher,
+        )
+        self.harness.adb_tool = ToolIdentity(name="adb", path="adb", version="1.0")
+
+    def tearDown(self):
+        self.tmp_dir.cleanup()
+
+    def _recording(self):
+        argv = ["adb", "-s", "emulator-5554", "shell", "screenrecord",
+                "--time-limit", "30", "/sdcard/journey.mp4"]
+        return commands.ManagedProcess(
+            proc=MagicMock(), argv=argv,
+            start_utc="2026-08-11T12:00:00Z")
+
+    def test_shell_start_uses_shell_v2_argv(self):
+        self.mock_starter.return_value = MagicMock()
+        self.harness._shell_start(
+            "screenrecord", "--time-limit", "30", "/sdcard/journey.mp4")
+        self.mock_starter.assert_called_once_with(
+            ["adb", "-s", "emulator-5554", "shell", "screenrecord",
+             "--time-limit", "30", "/sdcard/journey.mp4"])
+
+    def test_shell_finish_ledgers_and_converts_status(self):
+        mp = self._recording()
+        self.harness.screenrecord_process = mp
+        self.mock_finisher.return_value = _cr(rc=0)
+        res = self.harness._shell_finish(mp, timeout=15.0)
+        self.assertEqual(res.remote_rc, 0)
+        self.mock_finisher.assert_called_once_with(
+            mp, timeout=15.0, terminate=False)
+        entries = self.harness.ledger.entries()
+        self.assertEqual(len(entries), 1)
+        self.assertEqual(entries[0].kind, "shell")
+        self.assertIn("screenrecord", " ".join(entries[0].argv))
+
+    def _stage_valid_media(self):
+        evidence_dir = os.path.join(self.run_dir, "artifacts")
+        os.makedirs(evidence_dir, exist_ok=True)
+        for name in ("01-idle-typed", "02-loading-cancel", "03-review",
+                     "04-applied", "05-dismissed", "06-stale", "07-settings"):
+            _write_valid_png(os.path.join(evidence_dir, f"{name}.png"))
+
+        def side_effect(argv, **kwargs):
+            if "pull" in argv and argv[-1].endswith(".mp4"):
+                _write_valid_mp4(argv[-1])
+                return _cr(rc=0, argv=argv)
+            return _cr(rc=0, argv=argv)
+
+        self.mock_runner.side_effect = side_effect
+
+    def test_capture_evidence_reports_ambiguous_screenrecord(self):
+        self._stage_valid_media()
+        self.mock_finisher.return_value = _cr(rc=1, stderr=b"device offline")
+        self.harness.screenrecord_process = self._recording()
+        res = self.harness.capture_evidence()
+        self.assertEqual(res.returncode, 1)
+        self.assertIn(b"screenrecord status ambiguous", res.stderr)
+
+    def test_capture_evidence_reports_screenrecord_timeout(self):
+        self._stage_valid_media()
+        self.mock_finisher.return_value = CommandResult(
+            argv=["adb", "shell", "screenrecord"],
+            start_utc="2026-08-11T12:00:00Z",
+            end_utc="2026-08-11T12:00:30Z",
+            returncode=-9, stdout=b"", stderr=b"", timed_out=True,
+        )
+        self.harness.screenrecord_process = self._recording()
+        res = self.harness.capture_evidence()
+        self.assertEqual(res.returncode, 1)
+        self.assertIn(b"screenrecord timed out", res.stderr)
+
+    def test_capture_evidence_reports_screenrecord_rc(self):
+        self._stage_valid_media()
+        self.mock_finisher.return_value = _cr(rc=3)
+        self.harness.screenrecord_process = self._recording()
+        res = self.harness.capture_evidence()
+        self.assertEqual(res.returncode, 1)
+        self.assertIn(b"screenrecord rc=3", res.stderr)
+
+    def test_restore_finishes_and_ledgers_recording(self):
+        mp = self._recording()
+        self.harness.screenrecord_process = mp
+        self.mock_runner.return_value = _cr(rc=0)
+        self.mock_finisher.return_value = _cr(rc=0)
+        res = self.harness.restore()
+        self.assertEqual(res.returncode, 0)
+        self.mock_finisher.assert_called_once_with(
+            mp, timeout=5.0, terminate=True)
+        self.assertIsNone(self.harness.screenrecord_process)
+        self.assertEqual(len(self.harness.ledger.entries()), 2)
+
+
 if __name__ == "__main__":
     unittest.main()

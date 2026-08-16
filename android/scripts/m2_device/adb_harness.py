@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import os
 import re
-import signal
 import socket
 import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
@@ -255,6 +254,25 @@ class AdbHarness:
         self.ledger.record(
             argv, res.start_utc, res.end_utc,
             res.returncode, None, res.timed_out, "host",
+        )
+        return res
+
+    def _shell_start(self, *args: str) -> commands.ManagedProcess:
+        """Start a long-running shell-v2 command (e.g. screenrecord)."""
+        return self.starter(self._cmd("shell", *args))
+
+    def _shell_finish(
+        self, process: commands.ManagedProcess,
+        *, timeout: float, terminate: bool = False,
+    ) -> RemoteResult:
+        """Boundedly finish a started shell-v2 command through the
+        execution boundary: transport → RemoteResult conversion plus a
+        ledger entry, so no shell-v2 operation escapes status tracking."""
+        transport = self.finisher(process, timeout=timeout, terminate=terminate)
+        res = commands.to_remote(transport)
+        self.ledger.record(
+            process.argv, transport.start_utc, transport.end_utc,
+            transport.returncode, res.remote_rc, transport.timed_out, "shell",
         )
         return res
 
@@ -540,8 +558,8 @@ class AdbHarness:
         steps: list[StepRecord] = []
 
         remote_vid = "/sdcard/journey.mp4"
-        self.screenrecord_process = self.starter(
-            self._cmd("shell", "screenrecord", "--time-limit", "30", remote_vid))
+        self.screenrecord_process = self._shell_start(
+            "screenrecord", "--time-limit", "30", remote_vid)
 
         res = self._shell("am", "start", "-a", SETTINGS_ACTION)
         if not self._step(steps, "launch_editor", res):
@@ -678,9 +696,16 @@ class AdbHarness:
         local_vid = os.path.join(evidence_dir, "journey.mp4")
         if self.screenrecord_process is not None:
             try:
-                rec_res = self.finisher(self.screenrecord_process, timeout=15.0, terminate=False)
-                if rec_res.returncode != 0:
-                    errors.append(f"screenrecord rc={rec_res.returncode}")
+                rec = self._shell_finish(
+                    self.screenrecord_process, timeout=15.0)
+                if rec.transport.timed_out:
+                    errors.append("screenrecord timed out")
+                elif rec.remote_rc is None:
+                    errors.append("screenrecord status ambiguous")
+                elif rec.transport.returncode != 0 or rec.remote_rc != 0:
+                    errors.append(
+                        f"screenrecord rc={rec.transport.returncode}"
+                        f"/remote={rec.remote_rc}")
             except Exception as e:
                 errors.append(f"screenrecord finisher error: {e}")
             self.screenrecord_process = None
@@ -719,7 +744,8 @@ class AdbHarness:
     def restore(self) -> CommandResult:
         if self.screenrecord_process is not None:
             try:
-                self.finisher(self.screenrecord_process, timeout=5.0, terminate=True)
+                self._shell_finish(
+                    self.screenrecord_process, timeout=5.0, terminate=True)
             except Exception:
                 pass
             self.screenrecord_process = None
@@ -739,6 +765,29 @@ class AdbHarness:
             return False
         return current == self._owned_identity
 
+    def _identity_matches_launch(
+        self, identity: commands.ProcessIdentity,
+    ) -> bool:
+        """Provisional ownership: the observed command must be the
+        process we launched — same executable, same AVD token — read
+        from the live process, never from our expectations.
+
+        The executable is matched as a whitespace token, not a prefix:
+        shebang-launched scripts appear in ``ps`` behind their
+        interpreter (``python3 /path/to/emulator -avd ...``)."""
+        launched = (
+            self.emulator_process.argv if self.emulator_process is not None
+            else None
+        )
+        if not launched:
+            return False
+        exe = launched[0]
+        if exe not in identity.command.split():
+            return False
+        if AVD_NAME in launched and AVD_NAME not in identity.command:
+            return False
+        return True
+
     def dump_ledger(self) -> CommandResult:
         evidence_dir = os.path.join(self.run_dir, "artifacts")
         os.makedirs(evidence_dir, exist_ok=True)
@@ -753,22 +802,37 @@ class AdbHarness:
     def release_emulator(self) -> CommandResult:
         if self.emulator_process is not None:
             proc = self.emulator_process.proc
-            if self._owned_pid == proc.pid and not self._revalidate_ownership():
+            identity = commands.pid_identity(proc.pid)
+            if identity is None and proc.poll() is None:
+                # Running but unobservable: we cannot prove ownership,
+                # so we refuse to signal it.
                 self.emulator_process = None
-                return self._fail("release",
-                                  b"ownership revalidation failed - refuse kill")
+                return self._fail(
+                    "release", b"identity unobservable - refuse kill")
+            if identity is not None and not self._identity_matches_launch(identity):
+                self.emulator_process = None
+                return self._fail(
+                    "release", b"identity does not match launch - refuse kill")
+            if (identity is not None and self._owned_pid == proc.pid
+                    and self._owned_identity is not None
+                    and identity != self._owned_identity):
+                self.emulator_process = None
+                return self._fail(
+                    "release", b"PID reuse detected - refuse kill")
             try:
-                killed = commands.bounded_terminate(
+                outcome = commands.bounded_terminate(
                     proc, group=self._session_launched)
             except Exception as e:
                 self.emulator_process = None
                 return self._fail("release", f"termination error: {e}".encode())
             alive = proc.poll() is None
             self.emulator_process = None
-            if alive:
-                return self._fail("release", b"process still alive after escalation")
+            if alive or not outcome.group_extinct:
+                return self._fail(
+                    "release",
+                    b"process or group members still alive after escalation")
             msg = b"released via process handle"
-            if killed:
+            if outcome.killed:
                 msg += b" (SIGKILL required)"
             if self._session_launched:
                 msg += b" (group)"
@@ -779,13 +843,15 @@ class AdbHarness:
                 self._owned_identity = None
                 return self._fail("release",
                                   b"PID reuse or stale ownership - refuse kill")
-            try:
-                os.kill(self._owned_pid, signal.SIGTERM)
-            except ProcessLookupError:
-                return self._ok("release", b"process already exited")
-            except OSError as e:
-                return self._fail("release", f"SIGTERM failed: {e}".encode())
-            return self._ok("release", b"released by owned PID")
+            killed = commands.bounded_terminate_pid(
+                self._owned_pid, self._owned_identity)
+            if self._revalidate_ownership():
+                return self._fail("release",
+                                  b"process survived bounded escalation")
+            msg = b"released by owned PID"
+            if killed:
+                msg += b" (SIGKILL required)"
+            return self._ok("release", msg)
         return self._fail("release", b"no owned emulator to release")
 
     def verify_release(self) -> CommandResult:
