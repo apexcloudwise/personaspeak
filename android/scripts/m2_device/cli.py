@@ -49,20 +49,42 @@ def cmd_capture(args: argparse.Namespace) -> int:
     record = orchestrator.execute()
 
     evidence_dir = os.path.join(run_dir, "artifacts")
+    manifest = None
+    manifest_error = None
     if os.path.isdir(evidence_dir):
-        manifest = evidence.build_manifest(evidence_dir)
-        manifest_d = evidence.manifest_digest(manifest)
-        manifest_path = os.path.join(run_dir, "manifest.json")
-        with open(manifest_path, "w") as f:
-            json.dump(manifest, f, sort_keys=True, indent=2)
-        record = dataclasses.replace(record, manifest_digest=manifest_d)
+        try:
+            manifest = evidence.build_manifest(evidence_dir)
+            manifest_d = evidence.manifest_digest(manifest)
+            record = dataclasses.replace(record, manifest_digest=manifest_d)
+            evidence.write_private_atomic(
+                os.path.join(run_dir, "manifest.json"),
+                json.dumps(manifest, sort_keys=True, indent=2).encode(),
+            )
+        except ValueError as e:
+            # A failed run may leave partial artifacts; the record is
+            # still written — canonical binding gates the success
+            # return below, not the failure record. Adversarial
+            # manifest findings (links, escapes) surface in the failure
+            # text rather than masquerading as "no artifacts".
+            manifest_error = e
 
-    record_path = os.path.join(run_dir, "capture-record.json")
-    with open(record_path, "wb") as f:
-        f.write(encode(record))
+    evidence.write_private_atomic(
+        os.path.join(run_dir, "capture-record.json"), encode(record))
 
     if orchestrator.terminal is not None:
         print(f"qualification failed: {orchestrator.terminal}", file=sys.stderr)
+        return 1
+
+    # Capture-manifest binding before success: the run's artifacts must
+    # be exactly the canonical set, or the capture does not succeed.
+    if manifest is None:
+        reason = manifest_error if manifest_error else "no artifacts produced"
+        print(f"qualification failed: {reason}", file=sys.stderr)
+        return 1
+    try:
+        evidence.enforce_canonical_set(manifest)
+    except ValueError as e:
+        print(f"qualification failed: {e}", file=sys.stderr)
         return 1
 
     required = {"verify_restore", "release_emulator", "verify_release"}
@@ -101,15 +123,11 @@ def cmd_finalize(args: argparse.Namespace) -> int:
         evidence_subdir = args.run_dir
     receipt = evidence.finalize(
         capture, approval, manifest, evidence_subdir,
-        restoration_verdict=args.restoration_verdict,
-        counts=json.loads(args.counts),
         evidence_commit=args.evidence_commit,
-        artifacts={name: manifest[name] for name in sorted(manifest)},
     )
     out = encode(receipt)
     if args.output:
-        with open(args.output, "wb") as f:
-            f.write(out)
+        evidence.write_private_atomic(args.output, out)
     else:
         sys.stdout.buffer.write(out)
     return 0
@@ -133,8 +151,7 @@ def cmd_approve(args: argparse.Namespace) -> int:
     )
     out = encode(rec)
     if args.output:
-        with open(args.output, "wb") as f:
-            f.write(out)
+        evidence.write_private_atomic(args.output, out)
     else:
         sys.stdout.buffer.write(out)
     return 0
@@ -168,8 +185,6 @@ def build_parser() -> argparse.ArgumentParser:
     fin.add_argument("--approval", required=True)
     fin.add_argument("--manifest", required=True)
     fin.add_argument("--run-dir", required=True)
-    fin.add_argument("--restoration-verdict", default="verified")
-    fin.add_argument("--counts", default="{}")
     fin.add_argument("--evidence-commit", default="")
     fin.add_argument("--output", default=None)
     fin.set_defaults(func=cmd_finalize)

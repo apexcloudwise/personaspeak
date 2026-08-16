@@ -35,6 +35,49 @@ Newest first, like all respectable patch notes.
 
 ---
 
+## 2026-08-16, night — The receipt learns to count for itself
+
+- One exact flat artifact set is now enforced, not assumed: seven named
+  screenshots, one named video, the sixteen journey hierarchies, and the
+  private redacted command ledger (which is also the run's status log —
+  every production command's argv and status dimensions). A manifest
+  that is not exactly this set is rejected — missing, extra, renamed,
+  or nested entries alike — and the CLI now requires that
+  capture-manifest binding before it will report success; failed runs
+  still write their record, but partial artifacts can never pass.
+- The final receipt derives every dimension itself: media counts from
+  the exact bytes, journey/release/verification verdicts from the named
+  capture steps, privacy and structural media validation fail-closed.
+  The caller-controlled verdict, count, and artifact inputs are gone
+  from `finalize` and from the CLI — there is nothing left to vouch
+  for. Every run artifact (manifest, capture record, approval, receipt)
+  is written privately (0600) and atomically, so an interrupted write
+  can no longer leave a truncated file behind a success code. The
+  screenshot names are now sourced from the one canonical definition,
+  and the two deferred review notes from Stage 2 are documented
+  (defense-in-depth receipt blanking; device-only pinned-branch
+  coverage). Review round: the receipt now refuses to mint itself
+  unless the verify_restore step completed (loading the snapshot is
+  not the same as checking it came home) and unless release and
+  verify_release completed — recorded-but-failed is no longer
+  mintable; subdirectories, symlinked or empty, are rejected from the
+  flat set at both manifest and finalize; canonical XML must parse
+  with a `<hierarchy>` root and the command ledger must decode in its
+  serialized entry shape, digest agreement notwithstanding; manifest
+  failures surface their actual diagnostic instead of masquerading as
+  "no artifacts"; `dump_ledger` consolidated onto the one atomic-write
+  path; and the harness cannot express a non-canonical hierarchy
+  label. Second review round: the ledger check now enforces the exact
+  LedgerEntry schema — field set, types, known kind, and at least one
+  entry; a ledger written in interpretive dance no longer mints a
+  receipt, and the canonical fixture binds to the real
+  `CommandLedger.serialize()` so a key rename in `commands.py` fails
+  every canonical test rather than none — and a receipt is refused
+  unless the journey recorded at least one step and every capture step
+  completed. A failed journey is no longer countable-and-mintable.
+
+---
+
 ## 2026-08-16, evening — The harness stops taking the fixture's word for it
 
 - The qualification journey now proves its preconditions instead of
