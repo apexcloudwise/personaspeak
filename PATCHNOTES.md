@@ -47,7 +47,11 @@ Newest first, like all respectable patch notes.
   the observed facts become the runtime-private restoration baseline,
   which `verify_restore` re-checks after the snapshot reload. Private
   facts never enter the public record; only the comparison verdict
-  does.
+  does. Review round: an unparsable or undumpable keyboard hierarchy
+  now fails closed before the first tap (absent facts never authorize
+  one), and injected fake-only digests mechanically blank the recorded
+  fixture receipt — a run over arbitrary snapshot bytes can no longer
+  present itself as an accepted-fixture qualification.
 - Every ASK tap coordinate is now validated against uniquely observed
   key geometry: missing, duplicated, malformed, or non-containing key
   facts fail closed before the first tap. The stale path became

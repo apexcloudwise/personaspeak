@@ -157,8 +157,10 @@ def build_parser() -> argparse.ArgumentParser:
                      help="AVD root holding M2_Qual_Fixture.avd "
                           "(default: ~/.android/avd)")
     cap.add_argument("--fixture-digests", default="",
-                     help="JSON file of fixture-relative-path → sha256; "
-                          "overrides the pinned digests (fake-only runs)")
+                     help="JSON file of fixture-relative-path → sha256 for "
+                          "fake-only runs. Mechanical boundary: providing "
+                          "it blanks the recorded fixture receipt digest, "
+                          "so the run cannot claim the accepted fixture")
     cap.set_defaults(func=cmd_capture)
 
     fin = sub.add_parser("finalize", help="produce final receipt")

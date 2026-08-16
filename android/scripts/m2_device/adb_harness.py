@@ -130,6 +130,7 @@ class AdbHarness:
         self.fixture_root = fixture_root or os.path.join(
             os.path.expanduser("~"), ".android", "avd")
         self.fixture_digests = dict(FIXTURE_FILES)
+        self._injected_fixture_digests = bool(fixture_digests)
         if fixture_digests:
             self.fixture_digests.update(fixture_digests)
         self.adb_tool: ToolIdentity | None = None
@@ -228,9 +229,14 @@ class AdbHarness:
         tools = [self.adb_tool, self.emulator_tool]
         if self.build_tools_tool is not None:
             tools.append(self.build_tools_tool)
+        # A run over injected (fake-only) digests is mechanically barred
+        # from claiming the accepted fixture receipt: the recorded
+        # digest is blanked, so no capture over arbitrary snapshot bytes
+        # can present itself as an accepted-fixture qualification.
+        receipt = "" if self._injected_fixture_digests else FIXTURE_RECEIPT_DIGEST
         return CaptureContext(
             repo_head=repo_head, apk_sha256=apk_sha,
-            tools=tools, fixture_receipt_digest=FIXTURE_RECEIPT_DIGEST,
+            tools=tools, fixture_receipt_digest=receipt,
         )
 
     def launch_emulator(self) -> CommandResult:
@@ -733,12 +739,21 @@ class AdbHarness:
         if not self._step(steps, "focus_editor", res):
             return steps
 
-        _, kb_root = self._dump_hierarchy("keyboard_check")
-        if kb_root is not None and not self._validate_keyboard(steps, kb_root):
+        # The keyboard hierarchy carries the pre-tap pins; if it cannot
+        # be dumped, pulled, or parsed, fail closed — never tap on the
+        # strength of absent facts.
+        kb_res, kb_root = self._dump_hierarchy("keyboard_check")
+        if kb_root is None:
+            if self._rc_of(kb_res) == 0 and not self._timed_out(kb_res):
+                kb_res = self._fail(
+                    "keyboard_check", b"hierarchy missing or unparsable")
+            self._step(steps, "keyboard_hierarchy", kb_res)
             return steps
-        if kb_root is not None and not self._pin_editor_focused_empty(steps, kb_root):
+        if not self._validate_keyboard(steps, kb_root):
             return steps
-        if kb_root is not None and not self._validate_key_geometry(steps, kb_root):
+        if not self._pin_editor_focused_empty(steps, kb_root):
+            return steps
+        if not self._validate_key_geometry(steps, kb_root):
             return steps
 
         if not self._type_text(steps, SOURCE_TEXT, "type_source_1"):

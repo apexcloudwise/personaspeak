@@ -262,6 +262,70 @@ class TestAdbHarness(unittest.TestCase):
         self.assertEqual(ctx.repo_head, "abc123git")
         self.assertTrue(ctx.apk_sha256)
         self.assertEqual(len(ctx.tools), 2)
+        # setUp injects fake-only digests → the run must be mechanically
+        # barred from claiming the accepted fixture receipt.
+        self.assertEqual(ctx.fixture_receipt_digest, "")
+
+    def test_capture_context_records_accepted_receipt_when_pinned(self):
+        h = AdbHarness(
+            run_dir=self.run_dir, apk_path=self.apk_path,
+            runner=self.mock_runner,
+            fixture_root=self.fixture_root,
+        )
+
+        def side_effect(argv, **kwargs):
+            if "status" in argv:
+                return _cr(stdout=b"")
+            return _cr(stdout=b"abc123git\n")
+
+        self.mock_runner.side_effect = side_effect
+        from android.scripts.m2_device.adb_harness import FIXTURE_RECEIPT_DIGEST
+        ctx = h.capture_context()
+        self.assertEqual(ctx.fixture_receipt_digest, FIXTURE_RECEIPT_DIGEST)
+
+    def test_run_journey_fails_closed_on_unparsable_keyboard_hierarchy(self):
+        # Reviewer reproduction: malformed keyboard_check XML must stop
+        # the journey before any tap — absent facts never authorize one.
+        writer = _journey_pull_writer()
+
+        def side_effect(argv, **kwargs):
+            if "pull" in argv and "keyboard_check" in argv[-1]:
+                with open(argv[-1], "w") as f:
+                    f.write("<not-xml")
+                return _cr(rc=0, argv=argv)
+            return writer(argv, **kwargs)
+
+        self.mock_runner.side_effect = side_effect
+        self.mock_starter.return_value = MagicMock()
+        steps = self.harness.run_journey()
+        failed = [s for s in steps if s.operation == "keyboard_hierarchy"]
+        self.assertTrue(failed)
+        self.assertNotEqual(failed[0].cause, TerminalCause.COMPLETED)
+        self.assertIn(b"unparsable", failed[0].result.stderr)
+        self.assertFalse(
+            [s for s in steps if s.operation.startswith("tap_key")],
+            "taps must not run on the strength of absent hierarchy facts")
+
+    def test_run_journey_fails_closed_on_failed_keyboard_dump(self):
+        writer = _journey_pull_writer()
+        dump_calls = {"n": 0}
+
+        def side_effect(argv, **kwargs):
+            cmd = " ".join(argv)
+            if "uiautomator" in cmd:
+                dump_calls["n"] += 1
+                if dump_calls["n"] == 2:  # keyboard_check is the 2nd dump
+                    return _cr(rc=1, stderr=b"dump failed")
+            return writer(argv, **kwargs)
+
+        self.mock_runner.side_effect = side_effect
+        self.mock_starter.return_value = MagicMock()
+        steps = self.harness.run_journey()
+        failed = [s for s in steps if s.operation == "keyboard_hierarchy"]
+        self.assertTrue(failed)
+        self.assertNotEqual(failed[0].cause, TerminalCause.COMPLETED)
+        self.assertFalse(
+            [s for s in steps if s.operation.startswith("tap_key")])
 
     def test_launch_emulator(self):
         self.mock_starter.return_value = MagicMock()
