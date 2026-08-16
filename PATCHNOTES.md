@@ -35,6 +35,39 @@ Newest first, like all respectable patch notes.
 
 ---
 
+## 2026-08-16 (later that day) — The corpse is identified, reaped, and given a clean receipt
+
+- Post-merge review round (two independent findings sets, same P1): a
+  crashed or failed-boot emulator — the most common non-nominal path —
+  was refused by cleanup instead of reaped. `ps` reports an unreaped
+  leader as `<defunct>`, which failed the argv match, stamped the run
+  `CLEANUP_PARTIAL`, and dropped the only handle. `release_emulator` now
+  polls and reaps an already-exited leader first and returns a clean
+  release, never group-terminating after the reap (a freed pid's group
+  could belong to someone else by then).
+- Live-process validation now compares start-time continuity against an
+  identity *observed from the process* and retained at launch/ownership —
+  launch argv is not a stable runtime identity, because the SDK emulator
+  launcher execs its engine and engines rewrite their titles.
+  `establish_ownership` rejects unrecognizable commands (a bare
+  `<defunct>` among them) via start-continuity plus executable-or-AVD
+  tokens, space-tolerant for SDK paths.
+- The command ledger gains the one entry it was missing — the emulator
+  launch itself (`kind="launch"`). `dump_ledger` now writes privately
+  (0600) and atomically (same-dir temp file, fsync, `os.replace`), so an
+  interrupted write can no longer report `COMPLETED` over a truncated
+  file. A signal arriving during cleanup always leaves a recorded step,
+  even when a primary cause already holds the terminal. The fallback PID
+  lifecycle validates identity before its *first* signal, group-liveness
+  checks no longer count unreaped zombies as survivors (macOS `killpg(0)`
+  EPERM quirk included), the launch phase moved inside the cleanup guard
+  so a signal in the launch window converges to release, and
+  screenrecord is now stopped explicitly (SIGTERM accepted as a normal
+  stop, closing the 30-second-limit vs 15-second-finish disagreement).
+  Ten new regressions, including a real exec-transformed process and a
+  real zombie-held group.
+
+---
 
 ## 2026-08-13 — The test suite learns to mind its own environment
 

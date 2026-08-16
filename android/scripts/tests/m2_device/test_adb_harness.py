@@ -2,8 +2,13 @@
 
 from __future__ import annotations
 
+import json
 import os
+import stat
+import subprocess
+import sys
 import tempfile
+import time
 import unittest
 from unittest.mock import MagicMock, patch
 
@@ -473,7 +478,8 @@ class TestAdbHarness(unittest.TestCase):
 
         res = self.harness.release_emulator()
         self.assertEqual(res.returncode, 0)
-        mock_process.proc.send_signal.assert_called_once()
+        self.assertIn(b"already exited", res.stdout)
+        mock_process.proc.communicate.assert_called_once()
         self.assertIsNone(self.harness.emulator_process)
 
     def test_release_emulator_fallback(self):
@@ -608,7 +614,7 @@ class TestScreenrecordBoundary(unittest.TestCase):
         self.assertEqual(res.returncode, 1)
         self.assertIn(b"screenrecord rc=3", res.stderr)
 
-    def test_restore_finishes_and_ledgers_recording(self):
+    def test_release_finishes_and_ledgers_recording(self):
         mp = self._recording()
         self.harness.screenrecord_process = mp
         self.mock_runner.return_value = _cr(rc=0)
@@ -619,6 +625,125 @@ class TestScreenrecordBoundary(unittest.TestCase):
             mp, timeout=5.0, terminate=True)
         self.assertIsNone(self.harness.screenrecord_process)
         self.assertEqual(len(self.harness.ledger.entries()), 2)
+
+    def test_capture_evidence_accepts_sigterm_stopped_recording(self):
+        self._stage_valid_media()
+        self.mock_finisher.return_value = _cr(rc=-15)
+        self.harness.screenrecord_process = self._recording()
+        res = self.harness.capture_evidence()
+        self.assertEqual(res.returncode, 0)
+        self.assertNotIn(b"screenrecord", res.stderr)
+
+    def test_launch_emulator_records_launch_ledger_entry(self):
+        self.harness.emulator_tool = ToolIdentity(
+            name="emulator", path="/usr/bin/emulator", version="1.0")
+        real_proc = subprocess.Popen(["sleep", "30"])
+        self.mock_starter.return_value = commands.ManagedProcess(
+            proc=real_proc,
+            argv=["/usr/bin/emulator", "-avd", "M2_Qual_Fixture",
+                  "-snapshot", "m2_pristine", "-no-snapshot-save",
+                  "-port", "5554"],
+            start_utc="2026-08-16T12:00:00Z", new_session=True)
+        try:
+            res = self.harness.launch_emulator()
+            self.assertEqual(res.returncode, 0)
+            entries = self.harness.ledger.entries()
+            self.assertEqual(len(entries), 1)
+            self.assertEqual(entries[0].kind, "launch")
+            self.assertIn("M2_Qual_Fixture", " ".join(entries[0].argv))
+            self.assertIsNotNone(self.harness._launch_identity)
+        finally:
+            real_proc.terminate()
+            real_proc.wait()
+
+    def test_establish_ownership_rejects_defunct_identity(self):
+        self.harness.emulator_process = commands.ManagedProcess(
+            proc=MagicMock(),
+            argv=["/usr/bin/emulator", "-avd", "M2_Qual_Fixture"],
+            start_utc="2026-08-16T12:00:00Z")
+        with patch(
+            "android.scripts.m2_device.commands.pid_identity",
+            return_value=commands.ProcessIdentity(
+                start="Sun Aug 16 12:00:00 2026", command="<defunct>"),
+        ):
+            res = self.harness.establish_ownership()
+        self.assertEqual(res.returncode, 1)
+        self.assertIn(b"neither executable nor AVD", res.stderr)
+
+    def test_establish_ownership_accepts_exec_engine_command(self):
+        # The SDK launcher execs its engine: the command line changes
+        # but keeps the pinned AVD; start time is continuous.
+        self.harness.emulator_process = commands.ManagedProcess(
+            proc=MagicMock(),
+            argv=["/usr/bin/emulator", "-avd", "M2_Qual_Fixture"],
+            start_utc="2026-08-16T12:00:00Z")
+        observed = commands.ProcessIdentity(
+            start="Sun Aug 16 12:00:00 2026",
+            command="/sdk/qemu-system-arm64-headless -avd M2_Qual_Fixture -port 5554")
+        with patch(
+            "android.scripts.m2_device.commands.pid_identity",
+            return_value=observed,
+        ):
+            res = self.harness.establish_ownership()
+        self.assertEqual(res.returncode, 0)
+        self.assertEqual(self.harness._owned_identity, observed)
+
+    def test_release_reaps_already_exited_process(self):
+        # The P1: a crashed emulator must be reaped and reported clean,
+        # not refused as an identity mismatch (<defunct>).
+        proc = subprocess.Popen(
+            ["sleep", "0.3"], start_new_session=True)
+        time.sleep(0.8)  # exited, deliberately not reaped yet
+        self.harness.emulator_process = commands.ManagedProcess(
+            proc=proc, argv=["/usr/bin/emulator", "-avd", "M2_Qual_Fixture"],
+            start_utc="2026-08-16T12:00:00Z", new_session=True)
+        self.harness._session_launched = True
+        res = self.harness.release_emulator()
+        self.assertEqual(res.returncode, 0)
+        self.assertIn(b"already exited", res.stdout)
+        self.assertIsNotNone(proc.returncode)  # reaped
+
+    def test_release_uses_start_continuity_not_argv(self):
+        # Launcher exec'd its engine: command differs from launch argv,
+        # start time matches the retained observation → release proceeds.
+        proc = subprocess.Popen(
+            [sys.executable, "-c",
+             "import os; os.execvp('sleep', ['sleep', '30'])"],
+            start_new_session=True)
+        time.sleep(0.5)
+        try:
+            self.harness._launch_identity = commands.pid_identity(proc.pid)
+            self.assertNotIn(
+                "/usr/bin/emulator", self.harness._launch_identity.command)
+            self.harness.emulator_process = commands.ManagedProcess(
+                proc=proc,
+                argv=["/usr/bin/emulator", "-avd", "M2_Qual_Fixture",
+                      "-port", "5554"],
+                start_utc="2026-08-16T12:00:00Z", new_session=True)
+            self.harness._session_launched = True
+            res = self.harness.release_emulator()
+            self.assertEqual(res.returncode, 0)
+            self.assertIsNotNone(proc.returncode)
+        finally:
+            if proc.poll() is None:
+                proc.kill()
+            proc.wait()
+
+    def test_dump_ledger_is_private_and_atomic(self):
+        self.harness.ledger.record(
+            ["adb", "-s", "emulator-5554", "shell", "getprop"],
+            "2026-08-16T12:00:00Z", "2026-08-16T12:00:01Z", 0, 0, False,
+            "shell")
+        res = self.harness.dump_ledger()
+        self.assertEqual(res.returncode, 0)
+        path = os.path.join(self.run_dir, "artifacts", "command_ledger.json")
+        mode = stat.S_IMODE(os.stat(path).st_mode)
+        self.assertEqual(mode, 0o600)
+        leftovers = [f for f in os.listdir(os.path.dirname(path))
+                     if f.startswith(".command_ledger.")]
+        self.assertEqual(leftovers, [])
+        with open(path) as fh:
+            self.assertEqual(json.load(fh)[0]["kind"], "shell")
 
 
 if __name__ == "__main__":
