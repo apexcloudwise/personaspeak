@@ -51,7 +51,13 @@ Newest first, like all respectable patch notes.
   now fails closed before the first tap (absent facts never authorize
   one), and injected fake-only digests mechanically blank the recorded
   fixture receipt — a run over arbitrary snapshot bytes can no longer
-  present itself as an accepted-fixture qualification.
+  present itself as an accepted-fixture qualification. Re-review round:
+  the pinned-versus-injected verdict now rides in the validate_fixture
+  step's own serialized stdout ("fake-only … not an accepted-fixture
+  qualification" vs the pinned receipt prefix), so the boundary
+  survives into the persisted CaptureRecord instead of an attribute
+  the receipt politely forgot; asserted end-to-end against the decoded
+  capture record.
 - Every ASK tap coordinate is now validated against uniquely observed
   key geometry: missing, duplicated, malformed, or non-containing key
   facts fail closed before the first tap. The stale path became

@@ -430,6 +430,8 @@ class TestAdbHarness(unittest.TestCase):
         self.mock_runner.side_effect = side_effect
         res = self.harness.validate_fixture(prior)
         self.assertEqual(res.returncode, 0)
+        self.assertIn(b"fake-only", res.stdout)
+        self.assertIn(b"not an accepted-fixture qualification", res.stdout)
 
     def test_validate_fixture_failure(self):
         # Fingerprint mismatch

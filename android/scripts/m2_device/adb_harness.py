@@ -451,7 +451,19 @@ class AdbHarness:
 
         if errors:
             return self._fail("validate_fixture", "\n".join(errors).encode())
-        return self._ok("validate_fixture", b"Fixture identity validated.")
+        # The pinned-versus-injected verdict is carried in the step's own
+        # serialized stdout, so the persisted CaptureRecord mechanically
+        # distinguishes an accepted-fixture qualification from a fake-only
+        # run over injected digests — the boundary survives serialization.
+        if self._injected_fixture_digests:
+            return self._ok(
+                "validate_fixture",
+                b"fake-only fixture transaction: injected digests verified"
+                b" - not an accepted-fixture qualification")
+        return self._ok(
+            "validate_fixture",
+            f"Fixture identity validated against pinned receipt"
+            f" {FIXTURE_RECEIPT_DIGEST[:12]}.".encode())
 
     def install_apk(self) -> CommandResult:
         res = self._host("install", "-r", self.apk_path, timeout=120.0)

@@ -157,6 +157,18 @@ class TestCliCapture(unittest.TestCase):
 
         phases = [s["phase"] for s in record["steps"]]
 
+        # End-to-end mechanical boundary: an injected-digest run's
+        # persisted record must carry the fake-only verdict in the
+        # validate_fixture step itself — indistinguishable-from-pinned
+        # is what the boundary exists to prevent.
+        import base64
+        vf_steps = [s for s in record["steps"]
+                    if s["phase"] == "validate_fixture"]
+        self.assertTrue(vf_steps, "validate_fixture step missing")
+        vf_stdout = base64.b64decode(vf_steps[0]["result"]["stdout"])
+        self.assertIn(b"fake-only", vf_stdout)
+        self.assertIn(b"not an accepted-fixture qualification", vf_stdout)
+
         expected = ["preflight", "emulator_launch", "attach", "install",
                      "journey", "capture", "restore"]
         for i in range(len(expected) - 1):
