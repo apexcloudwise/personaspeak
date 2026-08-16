@@ -7,6 +7,7 @@ from dataclasses import dataclass, field
 from enum import StrEnum
 from typing import Protocol, runtime_checkable
 
+from android.scripts.m2_device import commands
 from android.scripts.m2_device.records import (
     CaptureRecord,
     CommandResult,
@@ -41,6 +42,7 @@ class JourneyHarness(Protocol):
     def attach(self) -> CommandResult | RemoteResult: ...
     def capture_prior_state(self) -> PriorDeviceState | None: ...
     def validate_fixture(self, prior: PriorDeviceState) -> CommandResult | RemoteResult: ...
+    def establish_ownership(self) -> CommandResult | RemoteResult: ...
     def install_apk(self) -> CommandResult | RemoteResult: ...
     def run_journey(self) -> list[StepRecord]: ...
     def capture_evidence(self) -> CommandResult | RemoteResult: ...
@@ -68,6 +70,14 @@ def _timed_out(result) -> bool:
         return result.timed_out
     if isinstance(result, RemoteResult):
         return result.transport.timed_out
+    raise TypeError(f"unknown result type: {type(result).__name__}")
+
+
+def _is_ambiguous(result) -> bool:
+    if isinstance(result, CommandResult):
+        return False
+    if isinstance(result, RemoteResult):
+        return result.remote_rc is None and not result.transport.timed_out
     raise TypeError(f"unknown result type: {type(result).__name__}")
 
 
@@ -99,18 +109,29 @@ class Orchestrator:
         self.terminal: TerminalCause | None = None
         self._restored = False
         self._emulator_launched = False
+        self._in_cleanup = False
         self._reached: str | None = None
-        self.fixture_receipt_digest: str = ""
+        self.fixture_receipt_digest = ""
 
     def _on_signal(self, signum, frame):
         if self.terminal is None:
             self.terminal = TerminalCause.SIGNAL_INTERRUPT
+        if not self._in_cleanup:
+            # Interrupt the active phase (blocked subprocesses included)
+            # so the run converges into bounded cleanup instead of
+            # sleeping out its command timeout. During cleanup the
+            # signal is only recorded — cleanup must complete.
+            raise commands.SignalInterrupt(signum)
 
     def execute(self) -> CaptureRecord:
         prev_int = signal.signal(signal.SIGINT, self._on_signal)
         prev_term = signal.signal(signal.SIGTERM, self._on_signal)
         try:
             return self._execute_inner()
+        except commands.SignalInterrupt:
+            if self.terminal is None:
+                self.terminal = TerminalCause.SIGNAL_INTERRUPT
+            return self._record()
         finally:
             signal.signal(signal.SIGINT, prev_int)
             signal.signal(signal.SIGTERM, prev_term)
@@ -158,6 +179,9 @@ class Orchestrator:
                                     lambda: self.harness.validate_fixture(self.prior_state),
                                     TerminalCause.FIXTURE_MISMATCH)
                 if not self.terminal:
+                    self._run_phase("establish_ownership", "capture ownership identity",
+                                    lambda: self.harness.establish_ownership())
+                if not self.terminal:
                     self._guard_mutation("install")
                     self._run_phase("install", "install exact APK",
                                     lambda: self.harness.install_apk(),
@@ -171,9 +195,11 @@ class Orchestrator:
                                     lambda: self.harness.capture_evidence(),
                                     TerminalCause.CAPTURE_FAILED)
             finally:
+                self._in_cleanup = True
                 self._restore()
                 self._verify()
         finally:
+            self._in_cleanup = True
             self._release_emulator()
 
         return self._record()
@@ -189,6 +215,8 @@ class Orchestrator:
             cause = TerminalCause.COMPLETED if rc == 0 else fail_cause
             if _timed_out(result):
                 cause = TerminalCause.TIMEOUT
+            elif _is_ambiguous(result):
+                cause = TerminalCause.TOOL_FAILURE
         except Exception as e:
             result = CommandResult(
                 argv=[], start_utc="", end_utc="",
@@ -200,16 +228,29 @@ class Orchestrator:
 
     def _capture_prior(self):
         self._reached = "prior_state"
-        prior = self.harness.capture_prior_state()
+        cause = TerminalCause.COMPLETED
+        prior = None
+        err = b""
+        try:
+            prior = self.harness.capture_prior_state()
+            if prior is None:
+                cause = TerminalCause.PRIOR_STATE_UNAVAILABLE
+        except commands.RemoteAmbiguousError as e:
+            cause = TerminalCause.TOOL_FAILURE
+            err = str(e).encode()
+        except Exception as e:
+            cause = TerminalCause.PRIOR_STATE_UNAVAILABLE
+            err = str(e).encode()
         self.prior_state = prior
-        ok = prior is not None
-        if not ok:
-            self.terminal = TerminalCause.PRIOR_STATE_UNAVAILABLE
         self.steps.append(_make_step(
             "prior_state", "capture prior device state",
-            CommandResult(argv=[], start_utc="", end_utc="", returncode=0 if ok else 1,
-                          stdout=b"prior-state-captured" if ok else b"", stderr=b""),
-            TerminalCause.COMPLETED if ok else TerminalCause.PRIOR_STATE_UNAVAILABLE))
+            CommandResult(argv=[], start_utc="", end_utc="",
+                          returncode=0 if cause == TerminalCause.COMPLETED else 1,
+                          stdout=b"prior-state-captured" if prior else b"",
+                          stderr=err),
+            cause))
+        if cause != TerminalCause.COMPLETED:
+            self.terminal = cause
 
     def _journey(self):
         journey_steps = self.harness.run_journey()
@@ -311,6 +352,26 @@ class Orchestrator:
             "verify_release", "verify emulator release", v_res, v_cause))
         if v_cause != TerminalCause.COMPLETED and self.terminal is None:
             self.terminal = v_cause
+
+        dump = getattr(self.harness, "dump_ledger", None)
+        if dump is not None:
+            try:
+                l_res = dump()
+                l_rc = _rc_of(l_res)
+                l_cause = (
+                    TerminalCause.COMPLETED
+                    if l_rc == 0 and not _timed_out(l_res)
+                    else TerminalCause.CLEANUP_PARTIAL
+                )
+            except Exception as e:
+                l_res = CommandResult(
+                    argv=[], start_utc="", end_utc="",
+                    returncode=1, stdout=b"", stderr=str(e).encode())
+                l_cause = TerminalCause.CLEANUP_PARTIAL
+            self.steps.append(_make_step(
+                "ledger", "persist command ledger", l_res, l_cause))
+            if l_cause != TerminalCause.COMPLETED and self.terminal is None:
+                self.terminal = l_cause
 
     def _record(self) -> CaptureRecord:
         return CaptureRecord(

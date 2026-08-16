@@ -10,6 +10,89 @@ Newest first, like all respectable patch notes.
 
 ---
 
+## 2026-08-16 — Cleanup learns to check the name badge before it swings
+
+- The six remaining execution-boundary findings from the 2026-08-13 review
+  are closed. `screenrecord` start/finish now crosses the same boundary as
+  every other shell-v2 operation (bounded finish, `RemoteResult` conversion,
+  ledger entry — including on the failure path through `restore`).
+  Cleanup refuses to signal an emulator whose observed command or AVD does
+  not match the launch argv, requires validated provisional ownership before
+  any signal, and refuses when a live process is unobservable.
+- `bounded_terminate` captures the process-group id once, before signaling;
+  escalation and a bounded extinction check target the stored group, so a
+  leader that exits mid-terminate can no longer shield its resistant
+  descendants (and a release with group members alive now fails closed
+  instead of reporting success). SIGINT/SIGTERM during an active phase
+  raise `SignalInterrupt` through the blocked command (the child is killed
+  and reaped on the way out) and converge into bounded cleanup; signals
+  during cleanup are recorded without aborting it. Ledger persistence is
+  now a recorded step — a failed ledger write marks cleanup partial while
+  preserving the primary failure. The fallback PID path gets the same
+  bounded, identity-validated lifecycle (SIGTERM → wait → SIGKILL → reap,
+  never signaling a reused pid). Twenty adversarial regressions ride
+  along, including a real blocked-child signal test.
+
+---
+
+
+## 2026-08-13 — The test suite learns to mind its own environment
+
+- `test_preflight_success` now mocks `socket.socket` (ConnectionRefused) and
+  clears `ANDROID_HOME`/`ANDROID_SDK_ROOT` so preflight skips the
+  build-tools aapt2 probe — no more env-coupled TypeErrors from resolve_tool
+  kwargs, no more port-5554 probe collisions.
+- `test_ledger_phase_order` now reads deterministic `capture-record.json`
+  step phases instead of parsing `MOCK_COMMANDS_LOG` line order, which was
+  racy between `launch_emulator` (Popen background) and `attach` (synchronous
+  wait-for-device). Expected phases use the orchestrator's real vocabulary
+  (`journey`, `capture`) rather than retired mock-log labels.
+
+---
+
+## 2026-08-11 — The execution boundary becomes total
+
+- The M2 harness now structurally distinguishes wrapper failure, transport
+  failure, remote status, timeout, signal, and ambiguity through every
+  command path. Every `adb shell` operation — hierarchy dumps, taps,
+  screenshots, activity launches, screenrecord, getprops, settings,
+  dumpsys — routes through `_shell()` and produces `RemoteResult` with
+  ledger recording. `adb install`, `adb pull`, `adb emu`, and
+  `wait-for-device` route through `_host()` as host commands. No
+  production command bypasses the ledger or the timeout boundary.
+- `commands.run()` and `commands.finish()` post-kill `communicate()` are
+  now bounded (5 s ceiling). The previous unbounded calls could hang
+  indefinitely on a process that ignored SIGKILL (pipe full, kernel
+  stuck).
+- Ambiguous remote results (`remote_rc=None`) propagate as
+  `TOOL_FAILURE` through every path — prior-state, fixture, install,
+  journey, restoration — not collapsed into the phase-specific cause.
+  `RemoteAmbiguousError` propagates from `capture_prior_state`;
+  `validate_fixture` and `install_apk` return the ambiguous
+  `RemoteResult` directly.
+- The command ledger records full absolute adb/serial argv for every
+  production command, serialized to `artifacts/command_ledger.json` at
+  release. Content (stdout/stderr) is never stored.
+- `ProcessIdentity` reads start time AND full command line from the
+  actual process via `ps lstart=` + `ps command=`. `establish_ownership`
+  observes the real identity; `_revalidate_ownership` compares both
+  dimensions. The process-handle release path also revalidates before
+  termination.
+- The emulator launches in its own session (`start_new_session=True`).
+  `bounded_terminate(group=True)` signals the entire process group
+  (SIGTERM → bounded wait → SIGKILL → bounded reap), killing resistant
+  descendants. `release_emulator` reports truthfully: whether SIGKILL
+  was required, whether group signaling was used, and whether the
+  process is still alive after escalation.
+- 59 adversarial tests exercise real hazards: actual `os.kill` signal
+  delivery, `os.fork` descendants that ignore SIGTERM, PID identity with
+  observed argv (not expectations), `ProcessIdentity` comparison on
+  command substitution, bounded post-kill communicate, ledger
+  serialization to artifact, and ambiguity propagation from every path.
+  244 tests total.
+
+---
+
 ## 2026-08-10 — The inspector stops hallucinating and starts taking pictures
 
 - The M2 device-qualification harness gained a real evidence-capture
