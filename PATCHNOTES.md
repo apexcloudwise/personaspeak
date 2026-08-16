@@ -67,7 +67,14 @@ Newest first, like all respectable patch notes.
   failures surface their actual diagnostic instead of masquerading as
   "no artifacts"; `dump_ledger` consolidated onto the one atomic-write
   path; and the harness cannot express a non-canonical hierarchy
-  label.
+  label. Second review round: the ledger check now enforces the exact
+  LedgerEntry schema — field set, types, known kind, and at least one
+  entry; a ledger written in interpretive dance no longer mints a
+  receipt, and the canonical fixture binds to the real
+  `CommandLedger.serialize()` so a key rename in `commands.py` fails
+  every canonical test rather than none — and a receipt is refused
+  unless the journey recorded at least one step and every capture step
+  completed. A failed journey is no longer countable-and-mintable.
 
 ---
 

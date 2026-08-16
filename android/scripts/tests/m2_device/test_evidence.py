@@ -231,7 +231,21 @@ class TestFinalize(unittest.TestCase):
             approved_utc="2026-08-06T14:00:00Z",
         )
 
-    def _canonical(self, d, journey_xml=b"<hierarchy/>"):
+    def _ledger_bytes(self):
+        """A real CommandLedger serialization — binding the canonical
+        fixture to the production entry shape (rename a key in
+        commands.py and every canonical test fails, not just one)."""
+        from android.scripts.m2_device import commands as _C
+        ledger = _C.CommandLedger()
+        ledger.record(
+            ["adb", "-s", "emulator-5554", "shell", "getprop",
+             "sys.boot_completed"],
+            "2026-08-16T12:00:00Z", "2026-08-16T12:00:01Z",
+            0, 0, False, "shell")
+        return ledger.serialize().encode()
+
+    def _canonical(self, d, journey_xml=b"<hierarchy/>",
+                   ledger_bytes=None):
         """Materialize the exact canonical artifact set and its manifest."""
         files = {}
         for n in evidence.CANONICAL_PNG_NAMES:
@@ -240,7 +254,8 @@ class TestFinalize(unittest.TestCase):
         for label in evidence.CANONICAL_HIERARCHY_LABELS:
             files[f"{label}.xml"] = (
                 journey_xml if label == "journey" else b"<hierarchy/>")
-        files[evidence.CANONICAL_LEDGER_NAME] = b"[]"
+        files[evidence.CANONICAL_LEDGER_NAME] = (
+            ledger_bytes if ledger_bytes is not None else self._ledger_bytes())
         man = {}
         for name, data in files.items():
             with open(os.path.join(d, name), "wb") as f:
@@ -574,7 +589,116 @@ class TestFinalize(unittest.TestCase):
             appr = self._make_approval(cap, man)
             with self.assertRaises(ValueError) as cm:
                 evidence.finalize(cap, appr, man, d)
-            self.assertIn("required fields", str(cm.exception))
+            self.assertIn("field set mismatch", str(cm.exception))
+
+    def test_finalize_rejects_wrong_typed_ledger_entry(self):
+        # ghostinprod reproduction: keys present, types interpretive.
+        wrong = json.dumps([{
+            "argv": "adb shell getprop", "start_utc": 0, "end_utc": None,
+            "transport_rc": "success", "remote_rc": [],
+            "timed_out": "false", "kind": 7,
+        }]).encode()
+        with tempfile.TemporaryDirectory() as d:
+            man = self._canonical(d, ledger_bytes=wrong)
+            cap = self._capture(
+                manifest_digest=evidence.manifest_digest(man),
+                with_steps=True,
+            )
+            appr = self._make_approval(cap, man)
+            with self.assertRaises(ValueError) as cm:
+                evidence.finalize(cap, appr, man, d)
+            self.assertIn("ledger entry 0", str(cm.exception))
+
+    def test_finalize_rejects_extra_ledger_field(self):
+        import json as _json
+        base = _json.loads(self._ledger_bytes())
+        base[0]["note"] = "extra"
+        wrong = _json.dumps(base).encode()
+        with tempfile.TemporaryDirectory() as d:
+            man = self._canonical(d, ledger_bytes=wrong)
+            cap = self._capture(
+                manifest_digest=evidence.manifest_digest(man),
+                with_steps=True,
+            )
+            appr = self._make_approval(cap, man)
+            with self.assertRaises(ValueError) as cm:
+                evidence.finalize(cap, appr, man, d)
+            self.assertIn("field set mismatch", str(cm.exception))
+
+    def test_finalize_rejects_empty_ledger(self):
+        with tempfile.TemporaryDirectory() as d:
+            man = self._canonical(d, ledger_bytes=b"[]")
+            cap = self._capture(
+                manifest_digest=evidence.manifest_digest(man),
+                with_steps=True,
+            )
+            appr = self._make_approval(cap, man)
+            with self.assertRaises(ValueError) as cm:
+                evidence.finalize(cap, appr, man, d)
+            self.assertIn("non-empty list", str(cm.exception))
+
+    def test_real_ledger_serialization_round_trips(self):
+        # Cassie coupling close: the production serialize() output must
+        # always satisfy validate_structural.
+        evidence.validate_structural(
+            evidence.CANONICAL_LEDGER_NAME, self._ledger_bytes())
+
+    def test_finalize_rejects_failed_journey_step(self):
+        with tempfile.TemporaryDirectory() as d:
+            man = self._canonical(d)
+            steps = []
+            for phase in ("verify_restore", "release_emulator",
+                          "verify_release"):
+                steps.append(StepRecord(
+                    phase=phase, operation=phase, input_digest=None,
+                    output_digest=None,
+                    result=CommandResult(argv=[], start_utc="", end_utc="",
+                                         returncode=0, stdout=b"", stderr=b""),
+                    cause=TerminalCause.COMPLETED,
+                ))
+            steps.append(StepRecord(
+                phase="journey", operation="apply_rephrasing",
+                input_digest=None, output_digest=None,
+                result=CommandResult(argv=[], start_utc="", end_utc="",
+                                     returncode=1, stdout=b"", stderr=b"x"),
+                cause=TerminalCause.JOURNEY_FAILED,
+            ))
+            cap = CaptureRecord(
+                repo_head="a", apk_sha256="b", tools=[],
+                prior_state=None, steps=steps,
+                restoration=StepRecord(
+                    phase="restore", operation="restore device state",
+                    input_digest=None, output_digest=None,
+                    result=CommandResult(argv=[], start_utc="", end_utc="",
+                                         returncode=0, stdout=b"", stderr=b""),
+                    cause=TerminalCause.COMPLETED,
+                ),
+                manifest_digest=evidence.manifest_digest(man),
+            )
+            appr = self._make_approval(cap, man)
+            with self.assertRaises(ValueError) as cm:
+                evidence.finalize(cap, appr, man, d)
+            self.assertIn("journey/apply_rephrasing", str(cm.exception))
+
+    def test_finalize_rejects_missing_journey_steps(self):
+        with tempfile.TemporaryDirectory() as d:
+            man = self._canonical(d)
+            cap = self._capture(
+                manifest_digest=evidence.manifest_digest(man),
+                with_steps=True,
+            )
+            # with_steps includes one journey step; strip it.
+            cap = CaptureRecord(
+                repo_head=cap.repo_head, apk_sha256=cap.apk_sha256,
+                tools=cap.tools, prior_state=cap.prior_state,
+                steps=[s for s in cap.steps if s.phase != "journey"],
+                restoration=cap.restoration,
+                manifest_digest=cap.manifest_digest,
+            )
+            appr = self._make_approval(cap, man)
+            with self.assertRaises(ValueError) as cm:
+                evidence.finalize(cap, appr, man, d)
+            self.assertIn("no journey steps", str(cm.exception))
 
     def test_finalize_rejects_missing_restoration(self):
         with tempfile.TemporaryDirectory() as d:

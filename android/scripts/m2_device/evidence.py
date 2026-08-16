@@ -247,13 +247,44 @@ _LEDGER_ENTRY_FIELDS = frozenset({
     "argv", "start_utc", "end_utc", "transport_rc",
     "remote_rc", "timed_out", "kind",
 })
+_LEDGER_KINDS = frozenset({"shell", "host", "launch"})
+
+
+def _validate_ledger_entry(name: str, idx: int, entry: object) -> None:
+    """Exact LedgerEntry serialized shape: field set, types, and known
+    kind. Key presence alone is not a schema."""
+    def bad(what: str) -> ValueError:
+        return ValueError(f"ledger entry {idx} {what}: {name}")
+
+    if not isinstance(entry, dict):
+        raise bad("is not an object")
+    if set(entry) != _LEDGER_ENTRY_FIELDS:
+        raise bad("field set mismatch")
+    if (not isinstance(entry["argv"], list)
+            or not all(isinstance(a, str) for a in entry["argv"])):
+        raise bad("argv is not list[str]")
+    if (not isinstance(entry["start_utc"], str)
+            or not isinstance(entry["end_utc"], str)):
+        raise bad("timestamps are not strings")
+    trc = entry["transport_rc"]
+    if not isinstance(trc, int) or isinstance(trc, bool):
+        raise bad("transport_rc is not an integer")
+    rrc = entry["remote_rc"]
+    if rrc is not None and (not isinstance(rrc, int)
+                            or isinstance(rrc, bool)):
+        raise bad("remote_rc is not int|null")
+    if not isinstance(entry["timed_out"], bool):
+        raise bad("timed_out is not a boolean")
+    if entry["kind"] not in _LEDGER_KINDS:
+        raise bad("kind is not one of shell/host/launch")
 
 
 def validate_structural(name: str, data: bytes) -> None:
     """Structural validation for the canonical text artifacts: every
     hierarchy XML must parse with a <hierarchy> root; the command
-    ledger must decode as JSON in the serialized entry shape. Digest
-    agreement never excuses malformed content."""
+    ledger must decode as a non-empty JSON list in the exact
+    serialized LedgerEntry shape. Digest agreement never excuses
+    malformed content."""
     if name.endswith(".xml"):
         try:
             root = ET.fromstring(data)
@@ -266,13 +297,11 @@ def validate_structural(name: str, data: bytes) -> None:
             entries = json.loads(data.decode("utf-8"))
         except (ValueError, UnicodeDecodeError):
             raise ValueError(f"malformed ledger JSON: {name}")
-        if not isinstance(entries, list):
-            raise ValueError(f"ledger JSON is not a list: {name}")
-        for entry in entries:
-            if (not isinstance(entry, dict)
-                    or not _LEDGER_ENTRY_FIELDS <= set(entry)):
-                raise ValueError(
-                    f"ledger entry missing required fields: {name}")
+        if not isinstance(entries, list) or not entries:
+            raise ValueError(
+                f"ledger JSON must be a non-empty list: {name}")
+        for idx, entry in enumerate(entries):
+            _validate_ledger_entry(name, idx, entry)
 
 
 def finalize(
@@ -350,6 +379,16 @@ def finalize(
         if not _step_completed(phase):
             raise ValueError(
                 f"{phase} did not complete — receipt refused")
+    journey_steps = [s for s in capture.steps if s.phase == "journey"]
+    if not journey_steps:
+        raise ValueError("no journey steps — receipt refused")
+    failed_steps = [s for s in capture.steps
+                    if s.cause != TerminalCause.COMPLETED]
+    if failed_steps:
+        first = failed_steps[0]
+        raise ValueError(
+            f"capture step {first.phase}/{first.operation} was "
+            f"{first.cause}, not COMPLETED — receipt refused")
 
     derived_counts = {
         "png": sum(1 for n in manifest if n.endswith(".png")),
