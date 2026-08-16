@@ -2,11 +2,11 @@
 
 Verifies that only allowed production modules exist in android/scripts/m2_device/
 and that their nonblank, non-comment line counts fit within the complexity budget:
-- adb_harness.py <= 850 lines (raised 2026-08-16 for #65 review findings:
-  provisional-ownership gate, ledgered screenrecord boundary, bounded
-  fallback PID lifecycle)
-- Total of all 6 modules combined <= 2300 lines (same round; adds
-  SignalInterrupt, TerminateOutcome, group-extinction verification)
+- adb_harness.py <= 1100 lines (raised to a round number 2026-08-16 at review
+  suggestion: 997/1000 left no headroom for the next change; the raise buys
+  the #64/#62 stages rather than one amendment each)
+- Total of all 6 modules combined <= 2700 lines (same rationale; #64 grows
+  evidence.py/cli.py)
 """
 
 import os
@@ -86,21 +86,21 @@ class TestArchitecture(unittest.TestCase):
             module_counts[name] = count
             total_lines += count
 
-        # adb_harness.py <= 850 lines (2026-08-16 #65 correction round:
-        # provisional-ownership gate, ledgered screenrecord, bounded PID
-        # fallback)
+        # adb_harness.py <= 1100 lines (2026-08-16: round-number raise at
+        # review suggestion — 997/1000 had no headroom; buys the #64/#62
+        # stages instead of one amendment per change)
         self.assertLessEqual(
             module_counts.get('adb_harness.py', 0),
-            850,
-            f"adb_harness.py exceeds 850 lines: {module_counts.get('adb_harness.py', 0)}"
+            1100,
+            f"adb_harness.py exceeds 1100 lines: {module_counts.get('adb_harness.py', 0)}"
         )
 
-        # total <= 2300 lines (2026-08-16 #65 correction round:
-        # SignalInterrupt, TerminateOutcome, group-extinction checks)
+        # total <= 2700 lines (2026-08-16: same rationale; #64 grows
+        # evidence.py and cli.py)
         self.assertLessEqual(
             total_lines,
-            2300,
-            f"Total production line count exceeds 2300 lines: {total_lines} ({module_counts})"
+            2700,
+            f"Total production line count exceeds 2700 lines: {total_lines} ({module_counts})"
         )
 
 

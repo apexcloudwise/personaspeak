@@ -76,6 +76,104 @@ def _write_valid_mp4(path):
         f.write(ftyp + mdat)
 
 
+_KEY_GEOMETRY = [
+    ("T", 430, 1330, 520, 1420), ("E", 240, 1330, 330, 1420),
+    ("A", 55, 1430, 145, 1520), ("S", 150, 1430, 240, 1520),
+    ("I", 715, 1330, 805, 1420), ("X", 200, 1530, 290, 1620),
+    ("V", 390, 1530, 480, 1620), ("N", 580, 1530, 670, 1620),
+    ("Space", 345, 1630, 675, 1720), ("Period", 685, 1630, 775, 1720),
+]
+KEY_NODES_XML = "".join(
+    f'<node resource-id="biz.pixelperfectstudios.personaspeak:id/key"'
+    f' content-desc="{lbl}" class="android.widget.Key"'
+    f' bounds="[{x1},{y1}][{x2},{y2}]"/>'
+    for lbl, x1, y1, x2, y2 in _KEY_GEOMETRY)
+
+
+def _journey_xml(text="", kb="", focused=False, keys=True,
+                 editor_class="android.widget.EditText"):
+    """Hierarchy XML matching the fake-toolchain contract: editor with
+    focus attribute, keyboard view, per-key geometry nodes, and the
+    panel/candidate/button set implied by *kb*."""
+    ps = "biz.pixelperfectstudios.personaspeak:id"
+    ss = "com.android.settings:id"
+    nodes = (
+        f'<node resource-id="{ps}/keyboard_view" '
+        f'class="android.widget.FrameLayout" bounds="[0,1300][1080,2400]"/>'
+    )
+    if keys:
+        nodes += KEY_NODES_XML
+    if text:
+        nodes += (
+            f'<node resource-id="{ss}/search_close_btn" '
+            f'content-desc="Clear" class="android.widget.ImageView" '
+            f'bounds="[950,200][1020,270]"/>'
+        )
+    if kb == "LOADING":
+        nodes += (
+            f'<node text="LOADING" resource-id="{ps}/panel_state" '
+            f'class="android.widget.TextView" bounds="[10,1810][1070,1850]"/>'
+            f'<node resource-id="{ps}/cancel_button" content-desc="Cancel" '
+            f'class="android.widget.Button" bounds="[580,2300][980,2380]"/>'
+        )
+    elif kb == "REVIEW":
+        nodes += (
+            f'<node text="REVIEW" resource-id="{ps}/panel_state" '
+            f'class="android.widget.TextView" bounds="[10,1810][1070,1850]"/>'
+            f'<node text="{CANDIDATE_REPHRASING}" resource-id="{ps}/candidate_text" '
+            f'class="android.widget.TextView" bounds="[10,1850][1070,1900]"/>'
+            f'<node resource-id="{ps}/apply_button" content-desc="Apply" '
+            f'class="android.widget.Button" bounds="[100,2300][500,2380]"/>'
+            f'<node resource-id="{ps}/cancel_button" content-desc="Cancel" '
+            f'class="android.widget.Button" bounds="[580,2300][980,2380]"/>'
+        )
+    return (
+        '<hierarchy rotation="0">'
+        f'<node index="0" text="{text}" '
+        f'focused="{"true" if focused else "false"}" '
+        f'resource-id="{ss}/search_action_bar" class="{editor_class}" '
+        f'bounds="[100,200][900,300]"/>{nodes}</hierarchy>'
+    )
+
+
+def _journey_pull_writer():
+    """Returns a side_effect(argv, **kwargs) that answers every pull the
+    journey makes, mirroring the fake adb's state machine."""
+    def side_effect(argv, **kwargs):
+        if "pull" not in argv:
+            return _cr(rc=0, argv=argv)
+        dest = argv[-1]
+        label = os.path.basename(dest)
+        if dest.endswith(".png"):
+            _write_valid_png(dest)
+            return _cr(rc=0, argv=argv)
+        if dest.endswith(".mp4"):
+            _write_valid_mp4(dest)
+            return _cr(rc=0, argv=argv)
+        if label.startswith("loading"):
+            xml = _journey_xml("Tea at six.", "LOADING")
+        elif "after_stale_dismiss" in label:
+            xml = _journey_xml(STALE_TEXT)
+        elif "after_stale" in label:
+            xml = _journey_xml(STALE_TEXT, "REVIEW")
+        elif label.startswith("review"):
+            xml = _journey_xml("Tea at six.", "REVIEW")
+        elif "after_cancel" in label or "after_dismiss" in label:
+            xml = _journey_xml("Tea at six.")
+        elif "after_apply" in label:
+            xml = _journey_xml(CANDIDATE_REPHRASING)
+        elif "keyboard_check" in label:
+            xml = _journey_xml("", focused=True)
+        elif "verify_restore" in label:
+            xml = _journey_xml("")
+        else:
+            xml = _journey_xml("")
+        with open(dest, "w") as f:
+            f.write(xml)
+        return _cr(rc=0, argv=argv)
+    return side_effect
+
+
 class TestAdbHarness(unittest.TestCase):
 
     def setUp(self):
@@ -84,6 +182,21 @@ class TestAdbHarness(unittest.TestCase):
         self.apk_path = os.path.join(self.run_dir, "test.apk")
         with open(self.apk_path, "wb") as f:
             f.write(b"apk content")
+
+        # Fake fixture tree: real files, digests computed and injected so
+        # the fixture transaction runs against honest bytes.
+        import hashlib as _hl
+        self.fixture_root = os.path.join(self.run_dir, "avd")
+        self.fixture_digests = {}
+        for rel in ("M2_Qual_Fixture.avd/hardware.ini",
+                    "M2_Qual_Fixture.avd/snapshots/m2_pristine/ram.bin",
+                    "M2_Qual_Fixture.avd/snapshots/m2_pristine/textures.bin"):
+            path = os.path.join(self.fixture_root, *rel.split("/"))
+            os.makedirs(os.path.dirname(path), exist_ok=True)
+            content = f"fixture-bytes:{rel}".encode()
+            with open(path, "wb") as f:
+                f.write(content)
+            self.fixture_digests[rel] = _hl.sha256(content).hexdigest()
 
         self.mock_runner = MagicMock()
         self.mock_starter = MagicMock()
@@ -95,6 +208,8 @@ class TestAdbHarness(unittest.TestCase):
             runner=self.mock_runner,
             starter=self.mock_starter,
             finisher=self.mock_finisher,
+            fixture_root=self.fixture_root,
+            fixture_digests=self.fixture_digests,
         )
         self.harness.adb_tool = ToolIdentity(name="adb", path="adb", version="1.0")
         self.harness.emulator_tool = ToolIdentity(name="emulator", path="emulator", version="1.0")
@@ -147,6 +262,70 @@ class TestAdbHarness(unittest.TestCase):
         self.assertEqual(ctx.repo_head, "abc123git")
         self.assertTrue(ctx.apk_sha256)
         self.assertEqual(len(ctx.tools), 2)
+        # setUp injects fake-only digests → the run must be mechanically
+        # barred from claiming the accepted fixture receipt.
+        self.assertEqual(ctx.fixture_receipt_digest, "")
+
+    def test_capture_context_records_accepted_receipt_when_pinned(self):
+        h = AdbHarness(
+            run_dir=self.run_dir, apk_path=self.apk_path,
+            runner=self.mock_runner,
+            fixture_root=self.fixture_root,
+        )
+
+        def side_effect(argv, **kwargs):
+            if "status" in argv:
+                return _cr(stdout=b"")
+            return _cr(stdout=b"abc123git\n")
+
+        self.mock_runner.side_effect = side_effect
+        from android.scripts.m2_device.adb_harness import FIXTURE_RECEIPT_DIGEST
+        ctx = h.capture_context()
+        self.assertEqual(ctx.fixture_receipt_digest, FIXTURE_RECEIPT_DIGEST)
+
+    def test_run_journey_fails_closed_on_unparsable_keyboard_hierarchy(self):
+        # Reviewer reproduction: malformed keyboard_check XML must stop
+        # the journey before any tap — absent facts never authorize one.
+        writer = _journey_pull_writer()
+
+        def side_effect(argv, **kwargs):
+            if "pull" in argv and "keyboard_check" in argv[-1]:
+                with open(argv[-1], "w") as f:
+                    f.write("<not-xml")
+                return _cr(rc=0, argv=argv)
+            return writer(argv, **kwargs)
+
+        self.mock_runner.side_effect = side_effect
+        self.mock_starter.return_value = MagicMock()
+        steps = self.harness.run_journey()
+        failed = [s for s in steps if s.operation == "keyboard_hierarchy"]
+        self.assertTrue(failed)
+        self.assertNotEqual(failed[0].cause, TerminalCause.COMPLETED)
+        self.assertIn(b"unparsable", failed[0].result.stderr)
+        self.assertFalse(
+            [s for s in steps if s.operation.startswith("tap_key")],
+            "taps must not run on the strength of absent hierarchy facts")
+
+    def test_run_journey_fails_closed_on_failed_keyboard_dump(self):
+        writer = _journey_pull_writer()
+        dump_calls = {"n": 0}
+
+        def side_effect(argv, **kwargs):
+            cmd = " ".join(argv)
+            if "uiautomator" in cmd:
+                dump_calls["n"] += 1
+                if dump_calls["n"] == 2:  # keyboard_check is the 2nd dump
+                    return _cr(rc=1, stderr=b"dump failed")
+            return writer(argv, **kwargs)
+
+        self.mock_runner.side_effect = side_effect
+        self.mock_starter.return_value = MagicMock()
+        steps = self.harness.run_journey()
+        failed = [s for s in steps if s.operation == "keyboard_hierarchy"]
+        self.assertTrue(failed)
+        self.assertNotEqual(failed[0].cause, TerminalCause.COMPLETED)
+        self.assertFalse(
+            [s for s in steps if s.operation.startswith("tap_key")])
 
     def test_launch_emulator(self):
         self.mock_starter.return_value = MagicMock()
@@ -242,6 +421,8 @@ class TestAdbHarness(unittest.TestCase):
                 return _cr(stdout=b"1.0\n")
             if "transition_animation_scale" in cmd:
                 return _cr(stdout=b"1.0\n")
+            if "animator_duration_scale" in cmd:
+                return _cr(stdout=b"null\n")
             if "default_input_method" in cmd:
                 return _cr(stdout=EXPECTED_ENABLED_IMES[0].encode())
             return _cr()
@@ -249,6 +430,8 @@ class TestAdbHarness(unittest.TestCase):
         self.mock_runner.side_effect = side_effect
         res = self.harness.validate_fixture(prior)
         self.assertEqual(res.returncode, 0)
+        self.assertIn(b"fake-only", res.stdout)
+        self.assertIn(b"not an accepted-fixture qualification", res.stdout)
 
     def test_validate_fixture_failure(self):
         # Fingerprint mismatch
@@ -313,92 +496,31 @@ class TestAdbHarness(unittest.TestCase):
         self.assertEqual(res.returncode, 1)
 
     def test_run_journey_success(self):
-
-        kb = ('<node resource-id="biz.pixelperfectstudios.personaspeak:id/keyboard_view" '
-              'class="android.widget.FrameLayout" bounds="[0,1300][1080,2400]"/>')
-        close = ('<node resource-id="com.android.settings:id/search_close_btn" '
-                 'content-desc="Clear" class="android.widget.ImageView" bounds="[950,200][1020,270]"/>')
-        cancel_btn = ('<node resource-id="biz.pixelperfectstudios.personaspeak:id/cancel_button" '
-                      'content-desc="Cancel" class="android.widget.Button" bounds="[580,2300][980,2380]"/>')
-
-        def side_effect(argv, **kwargs):
-            if "pull" in argv:
-                dest = argv[-1]
-                label = os.path.basename(dest)
-                if dest.endswith(".png"):
-                    _write_valid_png(dest)
-                    return _cr(rc=0, argv=argv)
-                if dest.endswith(".mp4"):
-                    _write_valid_mp4(dest)
-                    return _cr(rc=0, argv=argv)
-                if label.startswith("loading"):
-                    xml = f'<hierarchy><node text="Tea at six." resource-id="com.android.settings:id/search_action_bar" class="android.widget.EditText" bounds="[100,200][900,300]"/>{kb}{close}<node text="LOADING" resource-id="biz.pixelperfectstudios.personaspeak:id/panel_state" class="android.widget.TextView" bounds="[10,1810][1070,1850]"/>{cancel_btn}</hierarchy>'
-                elif label.startswith("review"):
-                    xml = f'<hierarchy><node text="Tea at six." resource-id="com.android.settings:id/search_action_bar" class="android.widget.EditText" bounds="[100,200][900,300]"/>{kb}{close}<node text="REVIEW" resource-id="biz.pixelperfectstudios.personaspeak:id/panel_state" class="android.widget.TextView" bounds="[10,1810][1070,1850]"/><node text="{CANDIDATE_REPHRASING}" resource-id="biz.pixelperfectstudios.personaspeak:id/candidate_text" class="android.widget.TextView" bounds="[10,1850][1070,1900]"/><node resource-id="biz.pixelperfectstudios.personaspeak:id/apply_button" content-desc="Apply" class="android.widget.Button" bounds="[100,2300][500,2380]"/>{cancel_btn}</hierarchy>'
-                elif "after_cancel" in label or "after_dismiss" in label:
-                    xml = f'<hierarchy><node text="Tea at six." resource-id="com.android.settings:id/search_action_bar" class="android.widget.EditText" bounds="[100,200][900,300]"/>{kb}</hierarchy>'
-                elif "after_apply" in label:
-                    xml = f'<hierarchy><node text="{CANDIDATE_REPHRASING}" resource-id="com.android.settings:id/search_action_bar" class="android.widget.EditText" bounds="[100,200][900,300]"/>{kb}</hierarchy>'
-                elif "after_stale" in label:
-                    xml = f'<hierarchy><node text="{STALE_TEXT}" resource-id="com.android.settings:id/search_action_bar" class="android.widget.EditText" bounds="[100,200][900,300]"/>{kb}</hierarchy>'
-                elif "clear" in label:
-                    xml = f'<hierarchy><node text="" resource-id="com.android.settings:id/search_action_bar" class="android.widget.EditText" bounds="[100,200][900,300]"/>{kb}</hierarchy>'
-                else:
-                    xml = f'<hierarchy><node text="" resource-id="com.android.settings:id/search_action_bar" class="android.widget.EditText" bounds="[100,200][900,300]"/>{kb}</hierarchy>'
-                with open(dest, "w") as f:
-                    f.write(xml)
-                return _cr(rc=0, argv=argv)
-            return _cr(rc=0, argv=argv)
-
-        self.mock_runner.side_effect = side_effect
+        self.mock_runner.side_effect = _journey_pull_writer()
         self.mock_starter.return_value = MagicMock()
         steps = self.harness.run_journey()
         operations = [s.operation for s in steps]
-        self.assertIn("launch_editor", operations)
-        self.assertIn("verify_loading_1", operations)
-        self.assertIn("cancel_loading", operations)
-        self.assertIn("verify_review_2", operations)
-        self.assertIn("apply_rephrasing", operations)
-        self.assertIn("verify_apply", operations)
-        self.assertIn("dismiss_rephrasing", operations)
-        self.assertIn("apply_stale", operations)
-        self.assertIn("verify_stale", operations)
-        self.assertIn("relaunch_settings", operations)
+        for expected in ("launch_editor", "pin_pristine_state",
+                         "pin_editor_focused_empty", "validate_key_geometry",
+                         "verify_loading_1", "cancel_loading",
+                         "verify_review_2", "apply_rephrasing",
+                         "verify_apply", "dismiss_rephrasing",
+                         "apply_stale", "verify_stale_candidate_retained",
+                         "dismiss_stale_candidate", "verify_stale_dismissed",
+                         "relaunch_settings"):
+            self.assertIn(expected, operations)
         for step in steps:
             self.assertEqual(step.cause, TerminalCause.COMPLETED, f"{step.operation} failed")
 
     def test_run_journey_rephrasing_mismatch(self):
-
-        kb = ('<node resource-id="biz.pixelperfectstudios.personaspeak:id/keyboard_view" '
-              'class="android.widget.FrameLayout" bounds="[0,1300][1080,2400]"/>')
-        close = ('<node resource-id="com.android.settings:id/search_close_btn" '
-                 'content-desc="Clear" class="android.widget.ImageView" bounds="[950,200][1020,270]"/>')
-        cancel_btn = ('<node resource-id="biz.pixelperfectstudios.personaspeak:id/cancel_button" '
-                      'content-desc="Cancel" class="android.widget.Button" bounds="[580,2300][980,2380]"/>')
+        writer = _journey_pull_writer()
 
         def side_effect(argv, **kwargs):
-            if "pull" in argv:
-                dest = argv[-1]
-                label = os.path.basename(dest)
-                if dest.endswith(".png"):
-                    _write_valid_png(dest)
-                    return _cr(rc=0, argv=argv)
-                if label.startswith("loading"):
-                    xml = f'<hierarchy><node text="Tea at six." resource-id="com.android.settings:id/search_action_bar" class="android.widget.EditText" bounds="[100,200][900,300]"/>{kb}{close}<node text="LOADING" resource-id="biz.pixelperfectstudios.personaspeak:id/panel_state" class="android.widget.TextView" bounds="[10,1810][1070,1850]"/>{cancel_btn}</hierarchy>'
-                elif label.startswith("review"):
-                    xml = f'<hierarchy><node text="Tea at six." resource-id="com.android.settings:id/search_action_bar" class="android.widget.EditText" bounds="[100,200][900,300]"/>{kb}{close}<node text="REVIEW" resource-id="biz.pixelperfectstudios.personaspeak:id/panel_state" class="android.widget.TextView" bounds="[10,1810][1070,1850]"/><node resource-id="biz.pixelperfectstudios.personaspeak:id/apply_button" content-desc="Apply" class="android.widget.Button" bounds="[100,2300][500,2380]"/>{cancel_btn}</hierarchy>'
-                elif "after_apply" in label:
-                    xml = f'<hierarchy><node text="wrong text" resource-id="com.android.settings:id/search_action_bar" class="android.widget.EditText" bounds="[100,200][900,300]"/>{kb}</hierarchy>'
-                elif "clear" in label:
-                    xml = f'<hierarchy><node text="" resource-id="com.android.settings:id/search_action_bar" class="android.widget.EditText" bounds="[100,200][900,300]"/>{kb}</hierarchy>'
-                elif "after_cancel" in label or "after_dismiss" in label:
-                    xml = f'<hierarchy><node text="Tea at six." resource-id="com.android.settings:id/search_action_bar" class="android.widget.EditText" bounds="[100,200][900,300]"/>{kb}</hierarchy>'
-                else:
-                    xml = f'<hierarchy><node text="Tea at six." resource-id="com.android.settings:id/search_action_bar" class="android.widget.EditText" bounds="[100,200][900,300]"/>{kb}</hierarchy>'
-                with open(dest, "w") as f:
-                    f.write(xml)
+            if "pull" in argv and "after_apply" in argv[-1]:
+                with open(argv[-1], "w") as f:
+                    f.write(_journey_xml("wrong text"))
                 return _cr(rc=0, argv=argv)
-            return _cr(rc=0, argv=argv)
+            return writer(argv, **kwargs)
 
         self.mock_runner.side_effect = side_effect
         self.mock_starter.return_value = MagicMock()
@@ -418,9 +540,186 @@ class TestAdbHarness(unittest.TestCase):
 
         self.mock_runner.side_effect = side_effect
         steps = self.harness.run_journey()
-        locate = [s for s in steps if s.operation == "locate_editor"]
+        locate = [s for s in steps if s.operation == "pin_pristine_state"]
         self.assertTrue(locate)
         self.assertEqual(locate[0].cause, TerminalCause.JOURNEY_FAILED)
+
+    def test_validate_fixture_digest_drift(self):
+        ram = os.path.join(
+            self.fixture_root, "M2_Qual_Fixture.avd",
+            "snapshots", "m2_pristine", "ram.bin")
+        with open(ram, "ab") as f:
+            f.write(b"drift")
+        prior = PriorDeviceState(
+            serial="emulator-5554", emulator_state="booted",
+            fingerprint=FINGERPRINT, api_level=API_LEVEL,
+            screen_width=SCREEN_WIDTH, screen_height=SCREEN_HEIGHT,
+            package_present=False, package_hash=None,
+            enabled_imes=[], default_ime="",
+        )
+        res = self.harness.validate_fixture(prior)
+        self.assertEqual(res.returncode, 1)
+        self.assertIn(b"digest drift", res.stderr)
+        self.assertIn(b"ram.bin", res.stderr)
+
+    def test_validate_fixture_missing_file(self):
+        hw = os.path.join(self.fixture_root, "M2_Qual_Fixture.avd",
+                          "hardware.ini")
+        os.unlink(hw)
+        prior = PriorDeviceState(
+            serial="emulator-5554", emulator_state="booted",
+            fingerprint=FINGERPRINT, api_level=API_LEVEL,
+            screen_width=SCREEN_WIDTH, screen_height=SCREEN_HEIGHT,
+            package_present=False, package_hash=None,
+            enabled_imes=[], default_ime="",
+        )
+        res = self.harness.validate_fixture(prior)
+        self.assertEqual(res.returncode, 1)
+        self.assertIn(b"fixture file missing", res.stderr)
+
+    def test_validate_fixture_animator_must_be_unset(self):
+        from android.scripts.m2_device.adb_harness import EXPECTED_ENABLED_IMES
+        prior = PriorDeviceState(
+            serial="emulator-5554", emulator_state="booted",
+            fingerprint=FINGERPRINT, api_level=API_LEVEL,
+            screen_width=SCREEN_WIDTH, screen_height=SCREEN_HEIGHT,
+            package_present=False, package_hash=None,
+            enabled_imes=list(EXPECTED_ENABLED_IMES),
+            default_ime=EXPECTED_ENABLED_IMES[0],
+        )
+
+        def side_effect(argv, **kwargs):
+            cmd = " ".join(argv)
+            if "animator_duration_scale" in cmd:
+                return _cr(stdout=b"1.0\n")  # set — fixture requires unset
+            return _cr(stdout=b"null\n")
+
+        self.mock_runner.side_effect = side_effect
+        res = self.harness.validate_fixture(prior)
+        self.assertEqual(res.returncode, 1)
+        self.assertIn(b"animator_duration_scale mismatch", res.stderr)
+
+    def _run_journey_with_override(self, label, xml):
+        writer = _journey_pull_writer()
+
+        def side_effect(argv, **kwargs):
+            if "pull" in argv and label in os.path.basename(argv[-1]):
+                with open(argv[-1], "w") as f:
+                    f.write(xml)
+                return _cr(rc=0, argv=argv)
+            return writer(argv, **kwargs)
+
+        self.mock_runner.side_effect = side_effect
+        self.mock_starter.return_value = MagicMock()
+        return self.harness.run_journey()
+
+    def test_run_journey_rejects_dirty_editor_at_pristine_pin(self):
+        steps = self._run_journey_with_override(
+            "journey.xml", _journey_xml("leftover text"))
+        pin = [s for s in steps if s.operation == "pin_pristine_state"]
+        self.assertTrue(pin)
+        self.assertEqual(pin[0].cause, TerminalCause.JOURNEY_FAILED)
+
+    def test_rejected_pristine_observation_not_retained_as_baseline(self):
+        # Review finding: a rejected observation must not survive as the
+        # restoration baseline, or the receipt blames a correct restore
+        # for what was a precondition failure.
+        self._run_journey_with_override(
+            "journey.xml", _journey_xml("leftover text"))
+        self.assertIsNone(self.harness._pristine_private)
+        with patch.object(self.harness, "capture_prior_state",
+                          return_value=object()):
+            self.harness.verify_restore()  # must not raise
+
+    def test_run_journey_rejects_unfocused_editor(self):
+        steps = self._run_journey_with_override(
+            "keyboard_check", _journey_xml("", focused=False))
+        pin = [s for s in steps if s.operation == "pin_editor_focused_empty"]
+        self.assertTrue(pin)
+        self.assertEqual(pin[0].cause, TerminalCause.JOURNEY_FAILED)
+
+    def test_run_journey_rejects_nonempty_editor_at_focus(self):
+        steps = self._run_journey_with_override(
+            "keyboard_check", _journey_xml("Tea at six.", focused=True))
+        pin = [s for s in steps if s.operation == "pin_editor_focused_empty"]
+        self.assertTrue(pin)
+        self.assertEqual(pin[0].cause, TerminalCause.JOURNEY_FAILED)
+
+    def _keys_xml_without(self, label):
+        keys = "".join(
+            f'<node resource-id="biz.pixelperfectstudios.personaspeak:id/key"'
+            f' content-desc="{lbl}" class="android.widget.Key"'
+            f' bounds="[{x1},{y1}][{x2},{y2}]"/>'
+            for lbl, x1, y1, x2, y2 in _KEY_GEOMETRY if lbl != label)
+        return _journey_xml("", focused=True).replace(KEY_NODES_XML, keys)
+
+    def test_key_geometry_rejects_duplicate_key(self):
+        import xml.etree.ElementTree as ET
+        first_node = KEY_NODES_XML[:KEY_NODES_XML.index("/>") + 2]
+        dup = _journey_xml("", focused=True).replace(
+            KEY_NODES_XML, KEY_NODES_XML + first_node)
+        steps = []
+        ok = self.harness._validate_key_geometry(steps, ET.fromstring(dup))
+        self.assertFalse(ok)
+        self.assertIn(b"matching nodes", steps[0].result.stderr)
+
+    def test_key_geometry_rejects_missing_key(self):
+        import xml.etree.ElementTree as ET
+        steps = []
+        ok = self.harness._validate_key_geometry(
+            steps, ET.fromstring(self._keys_xml_without("X")))
+        self.assertFalse(ok)
+        self.assertIn(b"key X", steps[0].result.stderr)
+
+    def test_key_geometry_rejects_displaced_key(self):
+        import xml.etree.ElementTree as ET
+        displaced = KEY_NODES_XML.replace(
+            'content-desc="T" class="android.widget.Key" bounds="[430,1330][520,1420]"',
+            'content-desc="T" class="android.widget.Key" bounds="[0,0][10,10]"')
+        xml = _journey_xml("", focused=True).replace(KEY_NODES_XML, displaced)
+        steps = []
+        ok = self.harness._validate_key_geometry(steps, ET.fromstring(xml))
+        self.assertFalse(ok)
+        self.assertIn(b"outside", steps[0].result.stderr)
+
+    def test_run_journey_stale_candidate_must_be_retained(self):
+        writer = _journey_pull_writer()
+
+        def side_effect(argv, **kwargs):
+            dest = os.path.basename(argv[-1]) if "pull" in argv else ""
+            if "after_stale" in dest and "dismiss" not in dest:
+                with open(argv[-1], "w") as f:
+                    f.write(_journey_xml(STALE_TEXT))  # candidate dropped
+                return _cr(rc=0, argv=argv)
+            return writer(argv, **kwargs)
+
+        self.mock_runner.side_effect = side_effect
+        self.mock_starter.return_value = MagicMock()
+        steps = self.harness.run_journey()
+        retained = [s for s in steps
+                    if s.operation == "verify_stale_candidate_retained"]
+        self.assertTrue(retained)
+        self.assertEqual(retained[0].cause, TerminalCause.JOURNEY_FAILED)
+        self.assertIn(b"not retained", retained[0].result.stderr)
+
+    def test_verify_restore_private_fact_mismatch(self):
+        self.harness._pristine_private = {
+            "editor_text": "", "editor_focused": False,
+            "panel_present": False}
+
+        def side_effect(argv, **kwargs):
+            if "pull" in argv:
+                with open(argv[-1], "w") as f:
+                    f.write(_journey_xml("leftover text"))
+                return _cr(rc=0, argv=argv)
+            return _cr(rc=0, argv=argv)
+
+        self.mock_runner.side_effect = side_effect
+        with patch.object(self.harness, "capture_prior_state",
+                          return_value=object()):
+            with self.assertRaises(RuntimeError) as cm:
+                self.harness.verify_restore()
+        self.assertIn("private facts", str(cm.exception))
 
     def test_capture_evidence_screencap_failure(self):
         self.mock_runner.return_value = _cr(rc=1)

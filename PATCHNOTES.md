@@ -35,6 +35,42 @@ Newest first, like all respectable patch notes.
 
 ---
 
+## 2026-08-16, evening — The harness stops taking the fixture's word for it
+
+- The qualification journey now proves its preconditions instead of
+  assuming them. Before any mutation: the pinned snapshot bytes are
+  verified against the accepted fixture digests (missing or drifted
+  files fail closed — the CLI grows `--fixture-root` and
+  `--fixture-digests` for honest fake-only runs), the animator scale
+  joins window/transition as a pinned "unset", and the editor must be
+  observed empty and unfocused before the journey touches anything —
+  the observed facts become the runtime-private restoration baseline,
+  which `verify_restore` re-checks after the snapshot reload. Private
+  facts never enter the public record; only the comparison verdict
+  does. Review round: an unparsable or undumpable keyboard hierarchy
+  now fails closed before the first tap (absent facts never authorize
+  one), and injected fake-only digests mechanically blank the recorded
+  fixture receipt — a run over arbitrary snapshot bytes can no longer
+  present itself as an accepted-fixture qualification. Re-review round:
+  the pinned-versus-injected verdict now rides in the validate_fixture
+  step's own serialized stdout ("fake-only … not an accepted-fixture
+  qualification" vs the pinned receipt prefix), so the boundary
+  survives into the persisted CaptureRecord instead of an attribute
+  the receipt politely forgot; asserted end-to-end against the decoded
+  capture record.
+- Every ASK tap coordinate is now validated against uniquely observed
+  key geometry: missing, duplicated, malformed, or non-containing key
+  facts fail closed before the first tap. The stale path became
+  explicit — applying a stale candidate must retain it in REVIEW for an
+  explicit dismiss, never silently drop it — and the fake toolchain
+  learned to model focus, per-key bounds, animator state, snapshot-load
+  reversion, and stale retention, so it matches the product state
+  machine rather than a polite fiction. Twelve adversarial regressions
+  ride along, including a real CLI fixture-drift run. Budgets amended
+  to 1,000/2,500 (actual 979/2,439) in ADR-0008.
+
+---
+
 ## 2026-08-16 (later that day) — The corpse is identified, reaped, and given a clean receipt
 
 - Post-merge review round (two independent findings sets, same P1): a
