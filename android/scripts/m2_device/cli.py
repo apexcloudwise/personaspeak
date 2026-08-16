@@ -50,6 +50,7 @@ def cmd_capture(args: argparse.Namespace) -> int:
 
     evidence_dir = os.path.join(run_dir, "artifacts")
     manifest = None
+    manifest_error = None
     if os.path.isdir(evidence_dir):
         try:
             manifest = evidence.build_manifest(evidence_dir)
@@ -59,11 +60,13 @@ def cmd_capture(args: argparse.Namespace) -> int:
                 os.path.join(run_dir, "manifest.json"),
                 json.dumps(manifest, sort_keys=True, indent=2).encode(),
             )
-        except ValueError:
-            # A failed run may leave partial or unparsable artifacts;
-            # the record is still written — canonical binding gates the
-            # success return below, not the failure record.
-            pass
+        except ValueError as e:
+            # A failed run may leave partial artifacts; the record is
+            # still written — canonical binding gates the success
+            # return below, not the failure record. Adversarial
+            # manifest findings (links, escapes) surface in the failure
+            # text rather than masquerading as "no artifacts".
+            manifest_error = e
 
     evidence.write_private_atomic(
         os.path.join(run_dir, "capture-record.json"), encode(record))
@@ -75,7 +78,8 @@ def cmd_capture(args: argparse.Namespace) -> int:
     # Capture-manifest binding before success: the run's artifacts must
     # be exactly the canonical set, or the capture does not succeed.
     if manifest is None:
-        print("qualification failed: no artifacts produced", file=sys.stderr)
+        reason = manifest_error if manifest_error else "no artifacts produced"
+        print(f"qualification failed: {reason}", file=sys.stderr)
         return 1
     try:
         evidence.enforce_canonical_set(manifest)

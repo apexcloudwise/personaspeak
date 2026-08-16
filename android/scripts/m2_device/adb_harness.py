@@ -5,7 +5,6 @@ from __future__ import annotations
 import os
 import re
 import socket
-import tempfile
 import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 from typing import Any
@@ -494,6 +493,10 @@ class AdbHarness:
         return self._ok("install_apk", b"APK installed and identity verified.")
 
     def _dump_hierarchy(self, label: str) -> tuple[CommandResult, Any]:
+        if label not in evidence.CANONICAL_HIERARCHY_LABELS:
+            # The code cannot express a non-canonical hierarchy name.
+            raise RuntimeError(
+                f"hierarchy label {label!r} is not in the canonical set")
         evidence_dir = os.path.join(self.run_dir, "artifacts")
         os.makedirs(evidence_dir, exist_ok=True)
         remote = "/sdcard/window_dump.xml"
@@ -1033,27 +1036,12 @@ class AdbHarness:
         evidence_dir = os.path.join(self.run_dir, "artifacts")
         os.makedirs(evidence_dir, exist_ok=True)
         path = os.path.join(evidence_dir, "command_ledger.json")
-        tmp_path = None
         try:
-            # Private (0600) and atomic: an interrupted write can never
-            # leave a truncated artifact behind the 0-return-code path.
-            fd, tmp_path = tempfile.mkstemp(
-                prefix=".command_ledger.", dir=evidence_dir)
-            with os.fdopen(fd, "w") as fh:
-                fh.write(self.ledger.serialize())
-                fh.flush()
-                os.fsync(fh.fileno())
-            os.replace(tmp_path, path)
-            tmp_path = None
+            evidence.write_private_atomic(
+                path, self.ledger.serialize().encode())
             return self._ok("ledger", f"{len(self.ledger)} entries -> {path}".encode())
         except OSError as e:
             return self._fail("ledger", str(e).encode())
-        finally:
-            if tmp_path is not None:
-                try:
-                    os.unlink(tmp_path)
-                except OSError:
-                    pass
 
     def release_emulator(self) -> CommandResult:
         if self.emulator_process is not None:

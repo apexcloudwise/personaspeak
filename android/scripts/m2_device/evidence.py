@@ -8,6 +8,7 @@ import os
 import re
 import struct
 import tempfile
+import xml.etree.ElementTree as ET
 import zlib
 from pathlib import Path
 
@@ -67,8 +68,9 @@ def enforce_canonical_set(manifest: dict[str, str]) -> None:
 
 
 def write_private_atomic(path: str, data: bytes) -> None:
-    """Private (0600) atomic write: same-dir temp file, fsync, replace.
-    An interrupted write can never leave a truncated artifact behind."""
+    """Private (0600) atomic write: same-dir temp file, fsync, replace,
+    directory fsync. An interrupted write can never leave a truncated
+    artifact behind a success code."""
     directory = os.path.dirname(os.path.abspath(path))
     tmp_path = None
     try:
@@ -80,12 +82,34 @@ def write_private_atomic(path: str, data: bytes) -> None:
             os.fsync(fh.fileno())
         os.replace(tmp_path, path)
         tmp_path = None
+        try:
+            dir_fd = os.open(directory, os.O_RDONLY)
+            try:
+                os.fsync(dir_fd)
+            finally:
+                os.close(dir_fd)
+        except OSError:
+            pass  # best-effort: content durability holds via file fsync
     finally:
         if tmp_path is not None:
             try:
                 os.unlink(tmp_path)
             except OSError:
                 pass
+
+
+def reject_nonflat(dir_path: str) -> None:
+    """The canonical artifact set is flat: any subdirectory — real or
+    symlinked, populated or empty — is rejected. File symlinks keep
+    their own per-file rejection messages."""
+    with os.scandir(dir_path) as entries:
+        for entry in entries:
+            is_dir_link = (
+                entry.is_symlink() and entry.is_dir(follow_symlinks=True))
+            if entry.is_dir(follow_symlinks=False) or is_dir_link:
+                raise ValueError(
+                    "non-flat evidence directory rejected:"
+                    f" {entry.name} is a directory, not a flat artifact")
 
 
 def scan_text(data: bytes) -> list[str]:
@@ -169,6 +193,7 @@ def validate_mp4(data: bytes) -> bool:
 
 
 def build_manifest(dir_path: str) -> dict[str, str]:
+    reject_nonflat(dir_path)
     manifest: dict[str, str] = {}
     base = os.path.realpath(dir_path)
     for root, _, files in os.walk(dir_path):
@@ -218,6 +243,38 @@ def _validate_media(path: str, name: str) -> bool:
     return True
 
 
+_LEDGER_ENTRY_FIELDS = frozenset({
+    "argv", "start_utc", "end_utc", "transport_rc",
+    "remote_rc", "timed_out", "kind",
+})
+
+
+def validate_structural(name: str, data: bytes) -> None:
+    """Structural validation for the canonical text artifacts: every
+    hierarchy XML must parse with a <hierarchy> root; the command
+    ledger must decode as JSON in the serialized entry shape. Digest
+    agreement never excuses malformed content."""
+    if name.endswith(".xml"):
+        try:
+            root = ET.fromstring(data)
+        except ET.ParseError:
+            raise ValueError(f"malformed XML artifact: {name}")
+        if root.tag != "hierarchy":
+            raise ValueError(f"XML artifact root is not <hierarchy>: {name}")
+    elif name == CANONICAL_LEDGER_NAME:
+        try:
+            entries = json.loads(data.decode("utf-8"))
+        except (ValueError, UnicodeDecodeError):
+            raise ValueError(f"malformed ledger JSON: {name}")
+        if not isinstance(entries, list):
+            raise ValueError(f"ledger JSON is not a list: {name}")
+        for entry in entries:
+            if (not isinstance(entry, dict)
+                    or not _LEDGER_ENTRY_FIELDS <= set(entry)):
+                raise ValueError(
+                    f"ledger entry missing required fields: {name}")
+
+
 def finalize(
     capture: CaptureRecord,
     approval: ApprovalRecord,
@@ -243,6 +300,7 @@ def finalize(
     if capture.manifest_digest != man_d:
         raise ValueError("capture-record manifest_digest does not match supplied manifest")
     enforce_canonical_set(manifest)
+    reject_nonflat(evidence_dir)
     for name in manifest:
         if "/" in name or ".." in name or os.path.isabs(name):
             raise ValueError(f"manifest key traverses path: {name}")
@@ -273,10 +331,25 @@ def finalize(
         raise ValueError("capture record has no restoration step")
 
     # Derived dimensions: counts come from bytes; journey, release, and
-    # verification verdicts come from the named capture steps.
+    # verification verdicts come from the named capture steps. The
+    # verdicts are enforced, not just recorded — a receipt is refused
+    # when any of them did not complete.
+    def _steps(phase: str):
+        return [s for s in capture.steps if s.phase == phase]
+
     def _step_completed(phase: str) -> bool:
-        steps = [s for s in capture.steps if s.phase == phase]
+        steps = _steps(phase)
         return bool(steps) and steps[-1].cause == TerminalCause.COMPLETED
+
+    verify_steps = _steps("verify_restore")
+    if not verify_steps or verify_steps[-1].cause != TerminalCause.COMPLETED:
+        raise ValueError(
+            "verify_restore step missing or not COMPLETED — the snapshot "
+            "loading is not itself a restoration verdict")
+    for phase in ("release_emulator", "verify_release"):
+        if not _step_completed(phase):
+            raise ValueError(
+                f"{phase} did not complete — receipt refused")
 
     derived_counts = {
         "png": sum(1 for n in manifest if n.endswith(".png")),
@@ -300,6 +373,9 @@ def finalize(
     )
     if not media_ok:
         raise ValueError("media validation failed — one or more files are structurally invalid")
+    for name in sorted(manifest):
+        with open(os.path.join(evidence_dir, name), "rb") as fh:
+            validate_structural(name, fh.read())
     return FinalReceipt(
         capture_digest=cap_d,
         approval_digest=appr_d,

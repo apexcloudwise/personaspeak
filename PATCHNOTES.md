@@ -56,7 +56,18 @@ Newest first, like all respectable patch notes.
   screenshot names are now sourced from the one canonical definition,
   and the two deferred review notes from Stage 2 are documented
   (defense-in-depth receipt blanking; device-only pinned-branch
-  coverage).
+  coverage). Review round: the receipt now refuses to mint itself
+  unless the verify_restore step completed (loading the snapshot is
+  not the same as checking it came home) and unless release and
+  verify_release completed — recorded-but-failed is no longer
+  mintable; subdirectories, symlinked or empty, are rejected from the
+  flat set at both manifest and finalize; canonical XML must parse
+  with a `<hierarchy>` root and the command ledger must decode in its
+  serialized entry shape, digest agreement notwithstanding; manifest
+  failures surface their actual diagnostic instead of masquerading as
+  "no artifacts"; `dump_ledger` consolidated onto the one atomic-write
+  path; and the harness cannot express a non-canonical hierarchy
+  label.
 
 ---
 

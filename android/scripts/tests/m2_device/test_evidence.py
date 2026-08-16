@@ -202,7 +202,8 @@ class TestFinalize(unittest.TestCase):
     def _capture(self, manifest_digest=None, with_steps=False):
         steps = []
         if with_steps:
-            for phase in ("journey", "release_emulator", "verify_release"):
+            for phase in ("journey", "release_emulator", "verify_release",
+                          "verify_restore"):
                 steps.append(StepRecord(
                     phase=phase, operation=phase, input_digest=None,
                     output_digest=None,
@@ -346,7 +347,10 @@ class TestFinalize(unittest.TestCase):
         dirty = b"api_key=sk-1234567890abcdef\n"
         with tempfile.TemporaryDirectory() as d:
             man = self._canonical(d, journey_xml=dirty)
-            cap = self._capture(manifest_digest=evidence.manifest_digest(man))
+            cap = self._capture(
+                manifest_digest=evidence.manifest_digest(man),
+                with_steps=True,
+            )
             appr = self._make_approval(cap, man)
             with self.assertRaises(ValueError) as cm:
                 evidence.finalize(cap, appr, man, d)
@@ -362,11 +366,215 @@ class TestFinalize(unittest.TestCase):
             with open(os.path.join(d, "04-applied.png"), "wb") as f:
                 f.write(corrupt)
             man["04-applied.png"] = hashlib.sha256(corrupt).hexdigest()
-            cap = self._capture(manifest_digest=evidence.manifest_digest(man))
+            cap = self._capture(
+                manifest_digest=evidence.manifest_digest(man),
+                with_steps=True,
+            )
             appr = self._make_approval(cap, man)
             with self.assertRaises(ValueError) as cm:
                 evidence.finalize(cap, appr, man, d)
             self.assertIn("media validation", str(cm.exception))
+
+    def test_finalize_requires_verify_restore_step(self):
+        # A COMPLETED snapshot-load is not itself a restoration verdict;
+        # the verify_restore step must exist and be COMPLETED.
+        with tempfile.TemporaryDirectory() as d:
+            man = self._canonical(d)
+            cap = CaptureRecord(
+                repo_head="a", apk_sha256="b", tools=[],
+                prior_state=None, steps=[], restoration=StepRecord(
+                    phase="restore", operation="restore device state",
+                    input_digest=None, output_digest=None,
+                    result=CommandResult(argv=[], start_utc="", end_utc="",
+                                         returncode=0, stdout=b"", stderr=b""),
+                    cause=TerminalCause.COMPLETED,
+                ),
+                manifest_digest=evidence.manifest_digest(man),
+            )
+            appr = self._make_approval(cap, man)
+            with self.assertRaises(ValueError) as cm:
+                evidence.finalize(cap, appr, man, d)
+            self.assertIn("verify_restore", str(cm.exception))
+
+    def test_finalize_refuses_failed_release(self):
+        with tempfile.TemporaryDirectory() as d:
+            man = self._canonical(d)
+            steps = []
+            for phase in ("journey", "verify_restore"):
+                steps.append(StepRecord(
+                    phase=phase, operation=phase, input_digest=None,
+                    output_digest=None,
+                    result=CommandResult(argv=[], start_utc="", end_utc="",
+                                         returncode=0, stdout=b"", stderr=b""),
+                    cause=TerminalCause.COMPLETED,
+                ))
+            steps.append(StepRecord(
+                phase="release_emulator", operation="release",
+                input_digest=None, output_digest=None,
+                result=CommandResult(argv=[], start_utc="", end_utc="",
+                                     returncode=1, stdout=b"", stderr=b"x"),
+                cause=TerminalCause.CLEANUP_PARTIAL,
+            ))
+            steps.append(StepRecord(
+                phase="verify_release", operation="verify release",
+                input_digest=None, output_digest=None,
+                result=CommandResult(argv=[], start_utc="", end_utc="",
+                                     returncode=0, stdout=b"", stderr=b""),
+                cause=TerminalCause.COMPLETED,
+            ))
+            cap = CaptureRecord(
+                repo_head="a", apk_sha256="b", tools=[],
+                prior_state=None, steps=steps,
+                restoration=StepRecord(
+                    phase="restore", operation="restore device state",
+                    input_digest=None, output_digest=None,
+                    result=CommandResult(argv=[], start_utc="", end_utc="",
+                                         returncode=0, stdout=b"", stderr=b""),
+                    cause=TerminalCause.COMPLETED,
+                ),
+                manifest_digest=evidence.manifest_digest(man),
+            )
+            appr = self._make_approval(cap, man)
+            with self.assertRaises(ValueError) as cm:
+                evidence.finalize(cap, appr, man, d)
+            self.assertIn("release_emulator did not complete", str(cm.exception))
+
+    def test_finalize_refuses_failed_verify_release(self):
+        with tempfile.TemporaryDirectory() as d:
+            man = self._canonical(d)
+            steps = []
+            for phase in ("journey", "verify_restore", "release_emulator"):
+                steps.append(StepRecord(
+                    phase=phase, operation=phase, input_digest=None,
+                    output_digest=None,
+                    result=CommandResult(argv=[], start_utc="", end_utc="",
+                                         returncode=0, stdout=b"", stderr=b""),
+                    cause=TerminalCause.COMPLETED,
+                ))
+            steps.append(StepRecord(
+                phase="verify_release", operation="verify release",
+                input_digest=None, output_digest=None,
+                result=CommandResult(argv=[], start_utc="", end_utc="",
+                                     returncode=1, stdout=b"", stderr=b"x"),
+                cause=TerminalCause.CLEANUP_PARTIAL,
+            ))
+            cap = CaptureRecord(
+                repo_head="a", apk_sha256="b", tools=[],
+                prior_state=None, steps=steps,
+                restoration=StepRecord(
+                    phase="restore", operation="restore device state",
+                    input_digest=None, output_digest=None,
+                    result=CommandResult(argv=[], start_utc="", end_utc="",
+                                         returncode=0, stdout=b"", stderr=b""),
+                    cause=TerminalCause.COMPLETED,
+                ),
+                manifest_digest=evidence.manifest_digest(man),
+            )
+            appr = self._make_approval(cap, man)
+            with self.assertRaises(ValueError) as cm:
+                evidence.finalize(cap, appr, man, d)
+            self.assertIn("verify_release did not complete", str(cm.exception))
+
+    def test_finalize_rejects_symlinked_directory(self):
+        with tempfile.TemporaryDirectory() as d:
+            man = self._canonical(d)
+            elsewhere = tempfile.mkdtemp()
+            os.symlink(elsewhere, os.path.join(d, "extra_dir"))
+            cap = self._capture(
+                manifest_digest=evidence.manifest_digest(man),
+                with_steps=True,
+            )
+            appr = self._make_approval(cap, man)
+            with self.assertRaises(ValueError) as cm:
+                evidence.finalize(cap, appr, man, d)
+            self.assertIn("non-flat", str(cm.exception))
+
+    def test_finalize_rejects_nested_empty_directory(self):
+        with tempfile.TemporaryDirectory() as d:
+            man = self._canonical(d)
+            os.makedirs(os.path.join(d, "nested"))
+            cap = self._capture(
+                manifest_digest=evidence.manifest_digest(man),
+                with_steps=True,
+            )
+            appr = self._make_approval(cap, man)
+            with self.assertRaises(ValueError) as cm:
+                evidence.finalize(cap, appr, man, d)
+            self.assertIn("non-flat", str(cm.exception))
+
+    def test_build_manifest_rejects_nested_directory(self):
+        with tempfile.TemporaryDirectory() as d:
+            self._canonical(d)
+            os.makedirs(os.path.join(d, "nested"))
+            with self.assertRaises(ValueError) as cm:
+                evidence.build_manifest(d)
+            self.assertIn("non-flat", str(cm.exception))
+
+    def test_finalize_rejects_malformed_xml_with_matching_digest(self):
+        with tempfile.TemporaryDirectory() as d:
+            man = self._canonical(d)
+            malformed = b"<hierarchy"
+            with open(os.path.join(d, "journey.xml"), "wb") as f:
+                f.write(malformed)
+            man["journey.xml"] = hashlib.sha256(malformed).hexdigest()
+            cap = self._capture(
+                manifest_digest=evidence.manifest_digest(man),
+                with_steps=True,
+            )
+            appr = self._make_approval(cap, man)
+            with self.assertRaises(ValueError) as cm:
+                evidence.finalize(cap, appr, man, d)
+            self.assertIn("malformed XML", str(cm.exception))
+
+    def test_finalize_rejects_wrong_rooted_xml(self):
+        with tempfile.TemporaryDirectory() as d:
+            man = self._canonical(d)
+            wrong = b"<notahierarchy/>"
+            with open(os.path.join(d, "clear.xml"), "wb") as f:
+                f.write(wrong)
+            man["clear.xml"] = hashlib.sha256(wrong).hexdigest()
+            cap = self._capture(
+                manifest_digest=evidence.manifest_digest(man),
+                with_steps=True,
+            )
+            appr = self._make_approval(cap, man)
+            with self.assertRaises(ValueError) as cm:
+                evidence.finalize(cap, appr, man, d)
+            self.assertIn("not <hierarchy>", str(cm.exception))
+
+    def test_finalize_rejects_malformed_ledger_json(self):
+        with tempfile.TemporaryDirectory() as d:
+            man = self._canonical(d)
+            malformed = b"{not json"
+            with open(os.path.join(d, evidence.CANONICAL_LEDGER_NAME), "wb") as f:
+                f.write(malformed)
+            man[evidence.CANONICAL_LEDGER_NAME] = (
+                hashlib.sha256(malformed).hexdigest())
+            cap = self._capture(
+                manifest_digest=evidence.manifest_digest(man),
+                with_steps=True,
+            )
+            appr = self._make_approval(cap, man)
+            with self.assertRaises(ValueError) as cm:
+                evidence.finalize(cap, appr, man, d)
+            self.assertIn("malformed ledger", str(cm.exception))
+
+    def test_finalize_rejects_wrong_shape_ledger_entries(self):
+        with tempfile.TemporaryDirectory() as d:
+            man = self._canonical(d)
+            malformed = b'[{"argv": ["adb"], "start_utc": "t"}]'
+            with open(os.path.join(d, evidence.CANONICAL_LEDGER_NAME), "wb") as f:
+                f.write(malformed)
+            man[evidence.CANONICAL_LEDGER_NAME] = (
+                hashlib.sha256(malformed).hexdigest())
+            cap = self._capture(
+                manifest_digest=evidence.manifest_digest(man),
+                with_steps=True,
+            )
+            appr = self._make_approval(cap, man)
+            with self.assertRaises(ValueError) as cm:
+                evidence.finalize(cap, appr, man, d)
+            self.assertIn("required fields", str(cm.exception))
 
     def test_finalize_rejects_missing_restoration(self):
         with tempfile.TemporaryDirectory() as d:
@@ -385,10 +593,13 @@ class TestFinalize(unittest.TestCase):
 class TestCanonicalSetAndAtomicWrites(unittest.TestCase):
 
     def test_canonical_set_rejects_nested_entry(self):
+        # Full canonical set plus a nested key: the nested entry itself
+        # must be what triggers rejection, not absent canonical names.
+        man = {name: "h" for name in evidence.CANONICAL_ARTIFACTS}
+        man["sub/dir/x.png"] = "h"
         with self.assertRaises(ValueError) as cm:
-            evidence.enforce_canonical_set(
-                {"sub/dir/01-idle-typed.png": "h"})
-        self.assertIn("missing", str(cm.exception))
+            evidence.enforce_canonical_set(man)
+        self.assertIn("non-canonical", str(cm.exception))
 
     def test_canonical_set_rejects_extra_entry(self):
         man = {name: "h" for name in evidence.CANONICAL_ARTIFACTS}
