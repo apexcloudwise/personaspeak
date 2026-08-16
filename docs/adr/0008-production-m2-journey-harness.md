@@ -38,6 +38,7 @@ No new runtime or external testing dependencies are permitted. We use only insta
 ### 4. Tool and Status Separation
 We execute all commands via subprocess argv lists. Argv, stdout, stderr, timeout, local status, and remote status are treated as separate structured facts.
 We do not text-match localized adb errors or append a status sentinel to stdout. Redacted or sensitive command outputs are stored in private digests/run-bound artifacts, keeping only synthetic content and metadata in the ledger.
+The ledger artifact (`artifacts/command_ledger.json`) is persisted at the end of cleanup as a private (0600), atomically replaced file. Runs that fail before the emulator launches (preflight, capture-context) produce no ledger artifact by design — nothing device-facing has run yet; the absence is expected, not a lost file.
 
 ### 5. Pinned Fixture Invariants
 We pin the accepted #56 pristine fixture receipt `dad6f7ac3b3c10ac7b88dfe2397746acb11ee6a42957cf2d1fee7afe1325bdb0`:

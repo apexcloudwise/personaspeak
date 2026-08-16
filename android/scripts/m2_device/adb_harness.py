@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 import re
 import socket
+import tempfile
 import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 from typing import Any
@@ -120,6 +121,7 @@ class AdbHarness:
         self.screenrecord_process: commands.ManagedProcess | None = None
         self._owned_pid: int | None = None
         self._owned_identity: commands.ProcessIdentity | None = None
+        self._launch_identity: commands.ProcessIdentity | None = None
         self._session_launched = False
         self.ledger = commands.CommandLedger()
 
@@ -213,6 +215,14 @@ class AdbHarness:
         self.emulator_process = self.starter(argv, new_session=True)
         self._session_launched = True
         pid = self.emulator_process.proc.pid
+        # Observed from the process itself immediately after launch —
+        # never copied from expectations. The start time survives a
+        # launcher exec/title rewrite; the command line may not.
+        self._launch_identity = commands.pid_identity(pid)
+        self.ledger.record(
+            argv, self.emulator_process.start_utc, _UTC(),
+            0, None, False, "launch",
+        )
         msg = (
             f"launched pid={pid} start={self.emulator_process.start_utc}"
             f" exe={self.emulator_tool.path} avd={AVD_NAME}"
@@ -227,6 +237,20 @@ class AdbHarness:
         identity = commands.pid_identity(pid)
         if identity is None:
             return self._fail("ownership", f"pid {pid} not running".encode())
+        if (self._launch_identity is not None
+                and identity.start != self._launch_identity.start):
+            return self._fail(
+                "ownership",
+                b"start-time discontinuity - pid reuse suspected")
+        exe = self.emulator_process.argv[0]
+        if not (self._token_in(exe, identity.command)
+                or AVD_NAME in identity.command):
+            # Neither the launched executable nor the pinned AVD appears
+            # in the observed command (a zombie reports "<defunct>"):
+            # refuse to own what we cannot recognize.
+            return self._fail(
+                "ownership",
+                b"observed command matches neither executable nor AVD")
         self._owned_pid = pid
         self._owned_identity = identity
         return self._ok(
@@ -696,10 +720,17 @@ class AdbHarness:
         local_vid = os.path.join(evidence_dir, "journey.mp4")
         if self.screenrecord_process is not None:
             try:
+                # We stop the recorder ourselves: a journey shorter than
+                # --time-limit would otherwise outlive the finish window
+                # and be classified as a timeout. A wrapper rc of -15/143
+                # is our SIGTERM, not a failure — the file finalizes on
+                # the device when the shell connection drops.
                 rec = self._shell_finish(
-                    self.screenrecord_process, timeout=15.0)
+                    self.screenrecord_process, timeout=15.0, terminate=True)
                 if rec.transport.timed_out:
                     errors.append("screenrecord timed out")
+                elif rec.transport.returncode in (-15, 143):
+                    pass
                 elif rec.remote_rc is None:
                     errors.append("screenrecord status ambiguous")
                 elif rec.transport.returncode != 0 or rec.remote_rc != 0:
@@ -765,24 +796,27 @@ class AdbHarness:
             return False
         return current == self._owned_identity
 
+    @staticmethod
+    def _token_in(token: str, command: str) -> bool:
+        """Whitespace-token containment that tolerates spaces inside
+        *token* (SDK paths often contain them)."""
+        return f" {token} " in f" {command} "
+
     def _identity_matches_launch(
         self, identity: commands.ProcessIdentity,
     ) -> bool:
-        """Provisional ownership: the observed command must be the
-        process we launched — same executable, same AVD token — read
-        from the live process, never from our expectations.
-
-        The executable is matched as a whitespace token, not a prefix:
-        shebang-launched scripts appear in ``ps`` behind their
-        interpreter (``python3 /path/to/emulator -avd ...``)."""
+        """Fallback provisional-ownership check for the case where no
+        identity was observed at launch: the observed command must carry
+        the launched executable and AVD tokens — read from the live
+        process. Shebang-launched scripts appear in ``ps`` behind their
+        interpreter, hence token matching rather than a prefix."""
         launched = (
             self.emulator_process.argv if self.emulator_process is not None
             else None
         )
         if not launched:
             return False
-        exe = launched[0]
-        if exe not in identity.command.split():
+        if not self._token_in(launched[0], identity.command):
             return False
         if AVD_NAME in launched and AVD_NAME not in identity.command:
             return False
@@ -792,33 +826,70 @@ class AdbHarness:
         evidence_dir = os.path.join(self.run_dir, "artifacts")
         os.makedirs(evidence_dir, exist_ok=True)
         path = os.path.join(evidence_dir, "command_ledger.json")
+        tmp_path = None
         try:
-            with open(path, "w") as fh:
+            # Private (0600) and atomic: an interrupted write can never
+            # leave a truncated artifact behind the 0-return-code path.
+            fd, tmp_path = tempfile.mkstemp(
+                prefix=".command_ledger.", dir=evidence_dir)
+            with os.fdopen(fd, "w") as fh:
                 fh.write(self.ledger.serialize())
+                fh.flush()
+                os.fsync(fh.fileno())
+            os.replace(tmp_path, path)
+            tmp_path = None
             return self._ok("ledger", f"{len(self.ledger)} entries -> {path}".encode())
         except OSError as e:
             return self._fail("ledger", str(e).encode())
+        finally:
+            if tmp_path is not None:
+                try:
+                    os.unlink(tmp_path)
+                except OSError:
+                    pass
 
     def release_emulator(self) -> CommandResult:
         if self.emulator_process is not None:
             proc = self.emulator_process.proc
+            if proc.poll() is not None:
+                # The leader already exited — crashed emulator, failed
+                # boot, the most common non-nominal path. Reap it and
+                # report a clean release. Never group-terminate after
+                # the reap: the pid is free and a pgid fallback could
+                # target an unrelated recycled group.
+                try:
+                    proc.communicate(timeout=5.0)
+                except Exception:
+                    pass
+                self.emulator_process = None
+                return self._ok(
+                    "release", b"released (process already exited)")
             identity = commands.pid_identity(proc.pid)
-            if identity is None and proc.poll() is None:
+            if identity is None:
                 # Running but unobservable: we cannot prove ownership,
                 # so we refuse to signal it.
                 self.emulator_process = None
                 return self._fail(
                     "release", b"identity unobservable - refuse kill")
-            if identity is not None and not self._identity_matches_launch(identity):
+            retained = self._owned_identity or self._launch_identity
+            if retained is not None:
+                # Start-time continuity against an identity observed
+                # from the process itself. The command line may change
+                # legitimately (launcher exec of the engine, process
+                # title rewrites); a different start time means the
+                # original is gone and this pid may be reused — refuse.
+                if identity.start != retained.start:
+                    self.emulator_process = None
+                    return self._fail(
+                        "release",
+                        b"identity changed (pid reuse) - refuse kill")
+            elif not self._identity_matches_launch(identity):
+                # No launch observation was retained: fall back to
+                # launch-argv tokens as the only available evidence.
                 self.emulator_process = None
                 return self._fail(
-                    "release", b"identity does not match launch - refuse kill")
-            if (identity is not None and self._owned_pid == proc.pid
-                    and self._owned_identity is not None
-                    and identity != self._owned_identity):
-                self.emulator_process = None
-                return self._fail(
-                    "release", b"PID reuse detected - refuse kill")
+                    "release",
+                    b"identity does not match launch - refuse kill")
             try:
                 outcome = commands.bounded_terminate(
                     proc, group=self._session_launched)

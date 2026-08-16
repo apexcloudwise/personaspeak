@@ -594,7 +594,7 @@ class TestBoundedTerminate(unittest.TestCase):
 
     def test_release_fails_when_group_survives_escalation(self):
         # Simulated survivor: real signals are delivered (the leader
-        # dies), but the liveness probe keeps reporting the group
+        # dies), but both liveness probes keep reporting the group
         # alive → release must fail closed instead of reporting success.
         proc = subprocess.Popen(
             ["sleep", "30"], start_new_session=True)
@@ -613,7 +613,9 @@ class TestBoundedTerminate(unittest.TestCase):
                 return None  # probe: group still "alive"
             real_killpg(target, sig)
 
-        with patch("os.killpg", side_effect=fake_killpg):
+        with patch("os.killpg", side_effect=fake_killpg), \
+                patch("android.scripts.m2_device.commands._group_has_live_member",
+                      return_value=True):
             res = h.release_emulator()
         self.assertEqual(res.returncode, 1)
         self.assertIn(b"still alive", res.stderr)
@@ -956,6 +958,24 @@ class TestSignalBlockedChild(unittest.TestCase):
         restore_steps = [s for s in rec.steps if s.phase == "restore"]
         self.assertEqual(restore_steps[0].cause, TerminalCause.COMPLETED)
 
+    def test_cleanup_signal_visible_when_primary_cause_exists(self):
+        # PATCHNOTES claims signals during cleanup are recorded; that
+        # must hold when the terminal slot is already taken.
+        class H(FakeHarness):
+            def restore(self):
+                os.kill(os.getpid(), signal.SIGTERM)
+                return _cr(rc=0)
+
+        h = H(fail_at="install")
+        orch = Orchestrator(h, repo_head="a", apk_sha256="", tools=_tools())
+        rec = orch.execute()
+        self.assertEqual(orch.terminal, TerminalCause.INSTALL_FAILED)
+        signal_steps = [s for s in rec.steps if s.phase == "signal"]
+        self.assertEqual(len(signal_steps), 1)
+        self.assertEqual(signal_steps[0].cause, TerminalCause.SIGNAL_INTERRUPT)
+        self.assertIn(b"signum=15", signal_steps[0].result.stdout)
+        self.assertEqual(h.release_count, 1)
+
 
 # --- Ledger persistence as a recorded step (P1) ---
 
@@ -1021,6 +1041,33 @@ class TestFallbackPidRelease(unittest.TestCase):
         self.assertIn(b"SIGKILL", res.stdout)
         self.assertIsNotNone(proc.poll())
         self.assertNotEqual(C.pid_identity(proc.pid), h._owned_identity)
+
+    def test_fallback_validates_identity_before_first_signal(self):
+        # P3: the pre-SIGTERM identity check is inside the lifecycle,
+        # not only at escalation — a mismatched pid is never signaled.
+        proc = subprocess.Popen(["sleep", "30"])
+        time.sleep(0.2)
+        try:
+            wrong = C.ProcessIdentity(
+                start="Mon Jan  1 00:00:00 2001", command="/some/other/proc")
+            killed = C.bounded_terminate_pid(proc.pid, wrong)
+            self.assertFalse(killed)
+            self.assertIsNone(proc.poll(),
+                              "mismatched identity must not be signaled")
+        finally:
+            proc.terminate()
+            proc.wait()
+
+    def test_group_alive_ignores_zombie_members(self):
+        # killpg(0) counts unreaped zombies; a group holding only
+        # zombies is extinct for release purposes.
+        proc = subprocess.Popen(
+            ["sleep", "0.3"], start_new_session=True)
+        time.sleep(0.8)  # exited, unreaped: zombie holds the group open
+        try:
+            self.assertFalse(C._group_alive(proc.pid))  # leader pid == pgid
+        finally:
+            proc.poll()  # reap
 
 
 if __name__ == "__main__":

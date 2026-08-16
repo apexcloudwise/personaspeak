@@ -114,14 +114,25 @@ class Orchestrator:
         self.fixture_receipt_digest = ""
 
     def _on_signal(self, signum, frame):
+        if self._in_cleanup:
+            # Recorded, never raised: cleanup must complete. The step
+            # guarantees the interruption stays visible even when a
+            # primary cause already holds the terminal slot.
+            if self.terminal is None:
+                self.terminal = TerminalCause.SIGNAL_INTERRUPT
+            self.steps.append(_make_step(
+                "signal", f"signal {signum} during cleanup",
+                CommandResult(
+                    argv=[], start_utc="", end_utc="", returncode=0,
+                    stdout=f"signum={signum}".encode(), stderr=b""),
+                TerminalCause.SIGNAL_INTERRUPT))
+            return
         if self.terminal is None:
             self.terminal = TerminalCause.SIGNAL_INTERRUPT
-        if not self._in_cleanup:
-            # Interrupt the active phase (blocked subprocesses included)
-            # so the run converges into bounded cleanup instead of
-            # sleeping out its command timeout. During cleanup the
-            # signal is only recorded — cleanup must complete.
-            raise commands.SignalInterrupt(signum)
+        # Interrupt the active phase (blocked subprocesses included)
+        # so the run converges into bounded cleanup instead of
+        # sleeping out its command timeout.
+        raise commands.SignalInterrupt(signum)
 
     def execute(self) -> CaptureRecord:
         prev_int = signal.signal(signal.SIGINT, self._on_signal)
@@ -163,12 +174,14 @@ class Orchestrator:
             self.terminal = TerminalCause.FIXTURE_MISMATCH
             return self._record()
 
-        self._emulator_launched = True
-        self._run_phase("emulator_launch", "boot pinned snapshot",
-                        lambda: self.harness.launch_emulator())
-
         try:
             try:
+                # Launched inside the try: a signal arriving during the
+                # launch window must converge into release, not escape
+                # past the cleanup guard.
+                self._emulator_launched = True
+                self._run_phase("emulator_launch", "boot pinned snapshot",
+                                lambda: self.harness.launch_emulator())
                 if not self.terminal:
                     self._run_phase("attach", "adb attach serial",
                                     lambda: self.harness.attach())

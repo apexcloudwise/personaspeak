@@ -247,10 +247,36 @@ def _group_alive(pgid: int) -> bool:
         os.killpg(pgid, 0)
     except ProcessLookupError:
         return False
-    except PermissionError:
-        return True
     except OSError:
-        return False
+        # EPERM on a zombie-held group (macOS) — fall through.
+        pass
+    # killpg(0) succeeds for unreaped zombies (Linux) and is
+    # inconclusive on macOS zombie groups; only a live member keeps
+    # the group meaningfully alive. ps decides; on ps failure fail
+    # conservative (alive).
+    return _group_has_live_member(pgid)
+
+
+def _group_has_live_member(pgid: int) -> bool:
+    for ps_path in ("/bin/ps", "/usr/bin/ps"):
+        if not (os.path.isfile(ps_path) and os.access(ps_path, os.X_OK)):
+            continue
+        try:
+            listing = subprocess.run(
+                [ps_path, "-eo", "pgid=,stat="],
+                capture_output=True, timeout=5,
+            )
+            if listing.returncode != 0:
+                return True
+            for line in listing.stdout.decode(
+                    "utf-8", errors="replace").splitlines():
+                fields = line.split(None, 1)
+                if len(fields) == 2 and int(fields[0]) == pgid:
+                    if not fields[1].strip().startswith("Z"):
+                        return True
+            return False
+        except (OSError, ValueError, subprocess.TimeoutExpired):
+            return True
     return True
 
 
@@ -372,10 +398,13 @@ def bounded_terminate_pid(
 ) -> bool:
     """Bounded validated lifecycle for a process whose handle was dropped.
 
-    SIGTERM → bounded identity wait → SIGKILL → bounded wait. Signals
-    only while *pid* still carries *identity*; pid reuse is never
-    signaled. Returns True when SIGKILL was required.
+    SIGTERM → bounded identity wait → SIGKILL → bounded wait. The
+    identity is validated before every signal, including the first; a
+    pid reuse is never signaled. Returns True when SIGKILL was required.
     """
+    current = pid_identity(pid)
+    if current is None or current != identity:
+        return False
     try:
         os.kill(pid, signal.SIGTERM)
     except (OSError, ProcessLookupError):
