@@ -188,7 +188,7 @@ class TestAdbHarness(unittest.TestCase):
         import hashlib as _hl
         self.fixture_root = os.path.join(self.run_dir, "avd")
         self.fixture_digests = {}
-        for rel in ("M2_Qual_Fixture.avd/hardware.ini",
+        for rel in ("M2_Qual_Fixture.avd/snapshots/m2_pristine/hardware.ini",
                     "M2_Qual_Fixture.avd/snapshots/m2_pristine/ram.bin",
                     "M2_Qual_Fixture.avd/snapshots/m2_pristine/textures.bin"):
             path = os.path.join(self.fixture_root, *rel.split("/"))
@@ -225,7 +225,7 @@ class TestAdbHarness(unittest.TestCase):
             return ToolIdentity(
                 name=name, path=f"/bin/{name}",
                 version=f"Android {'Debug Bridge' if name == 'adb' else 'emulator'} version "
-                        f"{'1.0.41' if name == 'adb' else '33.1.24.0'}",
+                        f"{'1.0.41' if name == 'adb' else '36.6.11.0'}",
                 digest="abc123",
             )
         mock_resolve.side_effect = fake_resolve
@@ -392,7 +392,7 @@ class TestAdbHarness(unittest.TestCase):
         gboard = (
             "com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME"
         )
-        enabled_imes = f"{gboard}:com.android.inputmethod.latin/com.google.android.apps.inputmethod.latin.MockVoiceIME"
+        enabled_imes = f"{gboard}:com.google.android.tts/com.google.android.apps.speech.tts.googletts.settings.asr.voiceime.VoiceInputMethodService"
 
         def side_effect(argv, **kwargs):
             cmd = " ".join(argv)
@@ -460,7 +460,7 @@ class TestAdbHarness(unittest.TestCase):
                 return _cr(stdout=LOCALE.encode())
             if "ro.product.cpu.abi" in cmd:
                 return _cr(stdout=ABI.encode())
-            if "ro.sf.lcd_density" in cmd:
+            if "qemu.sf.lcd_density" in cmd:
                 return _cr(stdout=b"420\n")
             if "window_animation_scale" in cmd:
                 return _cr(stdout=b"1.0\n")
@@ -503,7 +503,7 @@ class TestAdbHarness(unittest.TestCase):
                 return _cr(rc=0, stdout=(
                     f"versionName={EXPECTED_VERSION_NAME}\n"
                     f"versionCode={EXPECTED_VERSION_CODE}\n"
-                    f"signatures=[Signature [{EXPECTED_SIGNER}]]\n"
+                    f"signatures=PackageSignatures{{c441f2a version:2, signatures:[{EXPECTED_SIGNER}], past signatures:[]}}\n"
                 ).encode())
             return _cr(rc=0)
 
@@ -520,7 +520,7 @@ class TestAdbHarness(unittest.TestCase):
                 return _cr(rc=0, stdout=(
                     f"versionName={EXPECTED_VERSION_NAME}\n"
                     f"versionCode={EXPECTED_VERSION_CODE}\n"
-                    f"signatures=[Signature [{EXPECTED_SIGNER}]]\n"
+                    f"signatures=PackageSignatures{{c441f2a version:2, signatures:[{EXPECTED_SIGNER}], past signatures:[]}}\n"
                 ).encode())
             return _cr(rc=0)
 
@@ -609,7 +609,7 @@ class TestAdbHarness(unittest.TestCase):
 
     def test_validate_fixture_missing_file(self):
         hw = os.path.join(self.fixture_root, "M2_Qual_Fixture.avd",
-                          "hardware.ini")
+                          "snapshots", "m2_pristine", "hardware.ini")
         os.unlink(hw)
         prior = PriorDeviceState(
             serial="emulator-5554", emulator_state="booted",
@@ -986,7 +986,7 @@ class TestScreenrecordBoundary(unittest.TestCase):
             proc=real_proc,
             argv=["/usr/bin/emulator", "-avd", "M2_Qual_Fixture",
                   "-snapshot", "m2_pristine", "-no-snapshot-save",
-                  "-port", "5554"],
+                  "-port", "5554", "-gpu", "swiftshader_indirect"],
             start_utc="2026-08-16T12:00:00Z", new_session=True)
         try:
             res = self.harness.launch_emulator()

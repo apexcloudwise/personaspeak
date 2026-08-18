@@ -30,7 +30,7 @@ class TestCliCapture(unittest.TestCase):
         self.fixture_root = os.path.join(self.test_dir, "avd")
         self.fixture_digests_path = os.path.join(self.test_dir, "fixture_digests.json")
         digests = {}
-        for rel in ("M2_Qual_Fixture.avd/hardware.ini",
+        for rel in ("M2_Qual_Fixture.avd/snapshots/m2_pristine/hardware.ini",
                     "M2_Qual_Fixture.avd/snapshots/m2_pristine/ram.bin",
                     "M2_Qual_Fixture.avd/snapshots/m2_pristine/textures.bin"):
             path = os.path.join(self.fixture_root, *rel.split("/"))

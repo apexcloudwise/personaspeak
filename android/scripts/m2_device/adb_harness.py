@@ -75,28 +75,39 @@ ASK_KEY_COORDS: dict[str, tuple[int, int]] = {
 }
 KEYBOARD_EXPECTED_BOUNDS = "[0,1300][1080,2400]"
 
-EXPECTED_VERSION_NAME = "0.1.0"
+# Package identity as the device reports it (2026-08-19 capability probe on
+# the pinned fixture; versionName is the vendored keyboard's own numbering).
+EXPECTED_VERSION_NAME = "1.13.1"
 EXPECTED_VERSION_CODE = "1"
-EXPECTED_SIGNER = "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2"
+# On-device PackageSignatures digest of the canonical APK's signing cert,
+# as dumpsys prints it (probe-derived; stable for a given certificate).
+EXPECTED_SIGNER = "847f3baa"
 EXPECTED_ADB_VERSION = "1.0.41"
-EXPECTED_EMULATOR_VERSION = "33.1.24.0"
+# Local instrument, probe-proven to load the pinned m2_pristine snapshot
+# under the software renderer (prep ran 34.2.16; that version is no longer
+# installable, and the pin must name the tool that actually runs).
+EXPECTED_EMULATOR_VERSION = "36.6.11"
 SYSTEM_IMAGE_ID = "google/sdk_gphone64_arm64/emu64a:14"
 FIXTURE_RECEIPT_DIGEST = (
     "dad6f7ac3b3c10ac7b88dfe2397746acb11ee6a42957cf2d1fee7afe1325bdb0"
 )
 EXPECTED_BUILD_TOOLS_VERSION = "34.0.0"
+# IME baseline exactly as the accepted #56 receipt and the live fixture
+# both record it: Gboard LatinIME plus the Google TTS voice service.
 EXPECTED_ENABLED_IMES = [
     "com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME",
-    "com.google.android.inputmethod.latin/com.google.android.apps.inputmethod.latin.MockVoiceIME",
+    "com.google.android.tts/com.google.android.apps.speech.tts.googletts.settings.asr.voiceime.VoiceInputMethodService",
 ]
 EXPECTED_EDITOR_CLASS = "android.widget.EditText"
 ANIMATOR_SCALE = "null"  # fixture pins animator unset
 
 # Fixture transaction: the snapshot files whose exact bytes the
 # accepted #56 receipt pins. Defaults are the pinned digests; fake-only
-# runs inject digests computed from their own fixture files.
+# runs inject digests computed from their own fixture files. hardware.ini
+# is a snapshot content file (receipt: snapshot/files/hardware.ini), not
+# an AVD-top-level file — the real fixture has it only under the snapshot.
 FIXTURE_FILES = {
-    "M2_Qual_Fixture.avd/hardware.ini": HARDWARE_INI_HASH,
+    "M2_Qual_Fixture.avd/snapshots/m2_pristine/hardware.ini": HARDWARE_INI_HASH,
     "M2_Qual_Fixture.avd/snapshots/m2_pristine/ram.bin": RAM_BIN_HASH,
     "M2_Qual_Fixture.avd/snapshots/m2_pristine/textures.bin": TEXTURES_BIN_HASH,
 }
@@ -164,6 +175,11 @@ class AdbHarness:
         return [
             self.emulator_tool.path, "-avd", AVD_NAME,
             "-snapshot", SNAPSHOT_NAME, "-no-snapshot-save", "-port", "5554",
+            # The pinned snapshot was saved under the software renderer;
+            # under the 36.x default (gfxstream) the load is refused and
+            # the emulator cold-boots instead, failing the run's
+            # preconditions. The renderer must match the saved one.
+            "-gpu", "swiftshader_indirect",
         ]
 
     @staticmethod
@@ -418,7 +434,7 @@ class AdbHarness:
             (("getprop", "persist.sys.timezone"), TIMEZONE),
             (("getprop", "ro.product.locale"), LOCALE),
             (("getprop", "ro.product.cpu.abi"), ABI),
-            (("getprop", "ro.sf.lcd_density"), str(SCREEN_DPI)),
+            (("getprop", "qemu.sf.lcd_density"), str(SCREEN_DPI)),
             (("settings", "get", "global", "window_animation_scale"), ANIMATION_SCALE),
             (("settings", "get", "global", "transition_animation_scale"), ANIMATION_SCALE),
             (("settings", "get", "global", "animator_duration_scale"), ANIMATOR_SCALE),
