@@ -10,6 +10,279 @@ Newest first, like all respectable patch notes.
 
 ---
 
+## 2026-08-19 — The acceptance matrix arrives, and the fake toolkit learns to misbehave on cue
+
+- The fake-only acceptance matrix (issue #62) now drives the real
+  qualification CLI end to end through an absolute interpreter and a
+  PATH containing nothing but fakes. Twenty-six variants cover the
+  happy path, every nonzero terminal class, wrapper/remote status
+  collisions (rc=7 intact, rc=1+stderr ambiguous and fail-closed),
+  timeouts, SIGINT/SIGTERM convergence into cleanup, malformed
+  output/XML/media, fixture drift and prop drift, selector
+  duplication, hostile artifacts (extras, symlinks, writes outside
+  allowed roots — with a canary positive control proving the
+  containment check can actually fire), a mid-journey emulator death,
+  and combined cleanup failures. Every variant preserves exactly one
+  decodable capture record with exact primary/cleanup outcomes and
+  zero real-tool contact, on the honor system of an isolated PATH and
+  the evidence of recorded tool identities.
+- The happy path is pinned to the exact complete contact ledger and
+  the exact ledgered argv sequence (155 contacts, 150 entries), with
+  one honest exception documented in the test: the screenrecord start
+  is a concurrent sibling, so the moment its log line lands is the
+  OS's business, not the harness's.
+- The fake toolchain grew failure knobs (rc scripting, sleeps,
+  garbage output, prop overrides, silent pulls, malformed media,
+  duplicate nodes, hostile writes) — unset knobs leave the honest
+  fake untouched. run_fake_capture_cli.py now runs the full fake
+  journey to a green receipt, decodes the record on the way out, and
+  passes caller knobs through for by-hand failure demos.
+
+---
+
+## 2026-08-19 — The journey stops believing in hierarchies it never read
+
+- A pull that returned rc=0 with unparsable — or entirely absent — XML
+  used to record a COMPLETED hierarchy step, quietly truncate the
+  journey, and let the failure resurface later dressed as a missing
+  screenshot. Every hierarchy read now fails closed as a
+  `journey_failed` step ("hierarchy missing or unparsable") instead of
+  vouching for facts it could not parse. The absent-file variant is
+  worse than it sounds: its exception escaped `run_journey` unwrapped,
+  and the run ended with cleanup performed but no capture record at
+  all — receipts now survive hostile tools that lie about rc. Found by
+  the #62 acceptance matrix doing exactly its job; regression tests
+  ride along for both vectors.
+
+---
+
+## 2026-08-16 — Cleanup learns to check the name badge before it swings
+
+- The six remaining execution-boundary findings from the 2026-08-13 review
+  are closed. `screenrecord` start/finish now crosses the same boundary as
+  every other shell-v2 operation (bounded finish, `RemoteResult` conversion,
+  ledger entry — including on the failure path through `restore`).
+  Cleanup refuses to signal an emulator whose observed command or AVD does
+  not match the launch argv, requires validated provisional ownership before
+  any signal, and refuses when a live process is unobservable.
+- `bounded_terminate` captures the process-group id once, before signaling;
+  escalation and a bounded extinction check target the stored group, so a
+  leader that exits mid-terminate can no longer shield its resistant
+  descendants (and a release with group members alive now fails closed
+  instead of reporting success). SIGINT/SIGTERM during an active phase
+  raise `SignalInterrupt` through the blocked command (the child is killed
+  and reaped on the way out) and converge into bounded cleanup; signals
+  during cleanup are recorded without aborting it. Ledger persistence is
+  now a recorded step — a failed ledger write marks cleanup partial while
+  preserving the primary failure. The fallback PID path gets the same
+  bounded, identity-validated lifecycle (SIGTERM → wait → SIGKILL → reap,
+  never signaling a reused pid). Twenty adversarial regressions ride
+  along, including a real blocked-child signal test.
+
+---
+
+## 2026-08-16, night — The receipt learns to count for itself
+
+- One exact flat artifact set is now enforced, not assumed: seven named
+  screenshots, one named video, the sixteen journey hierarchies, and the
+  private redacted command ledger (which is also the run's status log —
+  every production command's argv and status dimensions). A manifest
+  that is not exactly this set is rejected — missing, extra, renamed,
+  or nested entries alike — and the CLI now requires that
+  capture-manifest binding before it will report success; failed runs
+  still write their record, but partial artifacts can never pass.
+- The final receipt derives every dimension itself: media counts from
+  the exact bytes, journey/release/verification verdicts from the named
+  capture steps, privacy and structural media validation fail-closed.
+  The caller-controlled verdict, count, and artifact inputs are gone
+  from `finalize` and from the CLI — there is nothing left to vouch
+  for. Every run artifact (manifest, capture record, approval, receipt)
+  is written privately (0600) and atomically, so an interrupted write
+  can no longer leave a truncated file behind a success code. The
+  screenshot names are now sourced from the one canonical definition,
+  and the two deferred review notes from Stage 2 are documented
+  (defense-in-depth receipt blanking; device-only pinned-branch
+  coverage). Review round: the receipt now refuses to mint itself
+  unless the verify_restore step completed (loading the snapshot is
+  not the same as checking it came home) and unless release and
+  verify_release completed — recorded-but-failed is no longer
+  mintable; subdirectories, symlinked or empty, are rejected from the
+  flat set at both manifest and finalize; canonical XML must parse
+  with a `<hierarchy>` root and the command ledger must decode in its
+  serialized entry shape, digest agreement notwithstanding; manifest
+  failures surface their actual diagnostic instead of masquerading as
+  "no artifacts"; `dump_ledger` consolidated onto the one atomic-write
+  path; and the harness cannot express a non-canonical hierarchy
+  label. Second review round: the ledger check now enforces the exact
+  LedgerEntry schema — field set, types, known kind, and at least one
+  entry; a ledger written in interpretive dance no longer mints a
+  receipt, and the canonical fixture binds to the real
+  `CommandLedger.serialize()` so a key rename in `commands.py` fails
+  every canonical test rather than none — and a receipt is refused
+  unless the journey recorded at least one step and every capture step
+  completed. A failed journey is no longer countable-and-mintable.
+
+---
+
+## 2026-08-16, evening — The harness stops taking the fixture's word for it
+
+- The qualification journey now proves its preconditions instead of
+  assuming them. Before any mutation: the pinned snapshot bytes are
+  verified against the accepted fixture digests (missing or drifted
+  files fail closed — the CLI grows `--fixture-root` and
+  `--fixture-digests` for honest fake-only runs), the animator scale
+  joins window/transition as a pinned "unset", and the editor must be
+  observed empty and unfocused before the journey touches anything —
+  the observed facts become the runtime-private restoration baseline,
+  which `verify_restore` re-checks after the snapshot reload. Private
+  facts never enter the public record; only the comparison verdict
+  does. Review round: an unparsable or undumpable keyboard hierarchy
+  now fails closed before the first tap (absent facts never authorize
+  one), and injected fake-only digests mechanically blank the recorded
+  fixture receipt — a run over arbitrary snapshot bytes can no longer
+  present itself as an accepted-fixture qualification. Re-review round:
+  the pinned-versus-injected verdict now rides in the validate_fixture
+  step's own serialized stdout ("fake-only … not an accepted-fixture
+  qualification" vs the pinned receipt prefix), so the boundary
+  survives into the persisted CaptureRecord instead of an attribute
+  the receipt politely forgot; asserted end-to-end against the decoded
+  capture record.
+- Every ASK tap coordinate is now validated against uniquely observed
+  key geometry: missing, duplicated, malformed, or non-containing key
+  facts fail closed before the first tap. The stale path became
+  explicit — applying a stale candidate must retain it in REVIEW for an
+  explicit dismiss, never silently drop it — and the fake toolchain
+  learned to model focus, per-key bounds, animator state, snapshot-load
+  reversion, and stale retention, so it matches the product state
+  machine rather than a polite fiction. Twelve adversarial regressions
+  ride along, including a real CLI fixture-drift run. Budgets amended
+  to 1,000/2,500 (actual 979/2,439) in ADR-0008.
+
+---
+
+## 2026-08-16 (later that day) — The corpse is identified, reaped, and given a clean receipt
+
+- Post-merge review round (two independent findings sets, same P1): a
+  crashed or failed-boot emulator — the most common non-nominal path —
+  was refused by cleanup instead of reaped. `ps` reports an unreaped
+  leader as `<defunct>`, which failed the argv match, stamped the run
+  `CLEANUP_PARTIAL`, and dropped the only handle. `release_emulator` now
+  polls and reaps an already-exited leader first and returns a clean
+  release, never group-terminating after the reap (a freed pid's group
+  could belong to someone else by then).
+- Live-process validation now compares start-time continuity against an
+  identity *observed from the process* and retained at launch/ownership —
+  launch argv is not a stable runtime identity, because the SDK emulator
+  launcher execs its engine and engines rewrite their titles.
+  `establish_ownership` rejects unrecognizable commands (a bare
+  `<defunct>` among them) via start-continuity plus executable-or-AVD
+  tokens, space-tolerant for SDK paths.
+- The command ledger gains the one entry it was missing — the emulator
+  launch itself (`kind="launch"`). `dump_ledger` now writes privately
+  (0600) and atomically (same-dir temp file, fsync, `os.replace`), so an
+  interrupted write can no longer report `COMPLETED` over a truncated
+  file. A signal arriving during cleanup always leaves a recorded step,
+  even when a primary cause already holds the terminal. The fallback PID
+  lifecycle validates identity before its *first* signal, group-liveness
+  checks no longer count unreaped zombies as survivors (macOS `killpg(0)`
+  EPERM quirk included), the launch phase moved inside the cleanup guard
+  so a signal in the launch window converges to release, and
+  screenrecord is now stopped explicitly (SIGTERM accepted as a normal
+  stop, closing the 30-second-limit vs 15-second-finish disagreement).
+  Ten new regressions, including a real exec-transformed process and a
+  real zombie-held group.
+
+---
+
+## 2026-08-13 — The test suite learns to mind its own environment
+
+- `test_preflight_success` now mocks `socket.socket` (ConnectionRefused) and
+  clears `ANDROID_HOME`/`ANDROID_SDK_ROOT` so preflight skips the
+  build-tools aapt2 probe — no more env-coupled TypeErrors from resolve_tool
+  kwargs, no more port-5554 probe collisions.
+- `test_ledger_phase_order` now reads deterministic `capture-record.json`
+  step phases instead of parsing `MOCK_COMMANDS_LOG` line order, which was
+  racy between `launch_emulator` (Popen background) and `attach` (synchronous
+  wait-for-device). Expected phases use the orchestrator's real vocabulary
+  (`journey`, `capture`) rather than retired mock-log labels.
+
+---
+
+## 2026-08-11 — The execution boundary becomes total
+
+- The M2 harness now structurally distinguishes wrapper failure, transport
+  failure, remote status, timeout, signal, and ambiguity through every
+  command path. Every `adb shell` operation — hierarchy dumps, taps,
+  screenshots, activity launches, screenrecord, getprops, settings,
+  dumpsys — routes through `_shell()` and produces `RemoteResult` with
+  ledger recording. `adb install`, `adb pull`, `adb emu`, and
+  `wait-for-device` route through `_host()` as host commands. No
+  production command bypasses the ledger or the timeout boundary.
+- `commands.run()` and `commands.finish()` post-kill `communicate()` are
+  now bounded (5 s ceiling). The previous unbounded calls could hang
+  indefinitely on a process that ignored SIGKILL (pipe full, kernel
+  stuck).
+- Ambiguous remote results (`remote_rc=None`) propagate as
+  `TOOL_FAILURE` through every path — prior-state, fixture, install,
+  journey, restoration — not collapsed into the phase-specific cause.
+  `RemoteAmbiguousError` propagates from `capture_prior_state`;
+  `validate_fixture` and `install_apk` return the ambiguous
+  `RemoteResult` directly.
+- The command ledger records full absolute adb/serial argv for every
+  production command, serialized to `artifacts/command_ledger.json` at
+  release. Content (stdout/stderr) is never stored.
+- `ProcessIdentity` reads start time AND full command line from the
+  actual process via `ps lstart=` + `ps command=`. `establish_ownership`
+  observes the real identity; `_revalidate_ownership` compares both
+  dimensions. The process-handle release path also revalidates before
+  termination.
+- The emulator launches in its own session (`start_new_session=True`).
+  `bounded_terminate(group=True)` signals the entire process group
+  (SIGTERM → bounded wait → SIGKILL → bounded reap), killing resistant
+  descendants. `release_emulator` reports truthfully: whether SIGKILL
+  was required, whether group signaling was used, and whether the
+  process is still alive after escalation.
+- 59 adversarial tests exercise real hazards: actual `os.kill` signal
+  delivery, `os.fork` descendants that ignore SIGTERM, PID identity with
+  observed argv (not expectations), `ProcessIdentity` comparison on
+  command substitution, bounded post-kill communicate, ledger
+  serialization to artifact, and ambiguity propagation from every path.
+  244 tests total.
+
+---
+
+## 2026-08-10 — The inspector stops hallucinating and starts taking pictures
+
+- The M2 device-qualification harness gained a real evidence-capture
+  path: seven screenshots and one video via `screencap`/`screenrecord`,
+  validated structurally (PNG CRC + IHDR/IEND; MP4 requires `ftyp`
+  plus `moov` or non-empty `mdat`) with exact count enforcement (7+1)
+  before the journey record is sealed. The journey verifies PersonaSpeak
+  keyboard panel states through a complete ASK cycle: Loading, Review,
+  Cancel (text unchanged), Again, Review, Apply (text becomes
+  candidate), Review, Dismiss (text unchanged) — with stale-input
+  clearing and mutation-proof text verification at each transition.
+  Preflight verifies the AVD exists before launch; post-attach
+  fixture checks pin ABI, density, and animation scale. XML parse
+  errors stop the journey; the search-field selector matches the exact
+  pinned resource-id. Every `keyevent` return code is checked.
+  `verify_release` discriminates `ConnectionRefused` from timeout and
+  other socket errors. `capture_prior_state` checks every command rc
+  and returns `None` on any failure. All tool invocations use resolved
+  preflight paths. `SIGINT`/`SIGTERM` converge on restoration and a
+  decodable failure receipt; `capture_context` exceptions produce a
+  `PREFLIGHT_FAILED` record. The CLI verifies `--apk-sha256` against
+  the on-disk APK, binds `--repo-root` with clean-head check, builds
+  and writes the evidence manifest, and rejects dirty trees.
+  `install_apk` verifies version/signer via `dumpsys package`.
+  `finalize` raises on privacy/media/restoration failure — no
+  approvable false receipt. `build_manifest` rejects symlinks and path
+  escapes. `CaptureContext` lives at the orchestration boundary;
+  monkey-patching is gone. The fake adb simulates keyboard state
+  transitions with Apply/Cancel tap detection; forbidden
+  `apksigner`/`keytool` canaries guard the ledger. The direct root
+  runner works without `PYTHONPATH`. 169 tests, no device contacted (#59).
+
 ## 2026-08-10 — The Loading row learns the word "Cancel"
 
 - While PersonaSpeak is thinking, the row now shows a Cancel button next
