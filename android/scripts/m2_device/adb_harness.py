@@ -509,8 +509,14 @@ class AdbHarness:
             return pull, None
         try:
             return pull, ET.parse(local).getroot()
-        except ET.ParseError:
-            return pull, None
+        except (ET.ParseError, OSError):
+            if pull.timed_out:
+                return pull, None
+            # The transport claims success but the artifact is missing
+            # or unparsable: fail closed as a journey failure. A clean
+            # wrapper rc never certifies facts that could not be read.
+            return self._fail(
+                label, b"hierarchy missing or unparsable"), None
 
     def _step(
         self, steps: list[StepRecord], op: str, result: CommandResult,

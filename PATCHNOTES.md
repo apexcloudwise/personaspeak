@@ -10,6 +10,22 @@ Newest first, like all respectable patch notes.
 
 ---
 
+## 2026-08-19 — The journey stops believing in hierarchies it never read
+
+- A pull that returned rc=0 with unparsable — or entirely absent — XML
+  used to record a COMPLETED hierarchy step, quietly truncate the
+  journey, and let the failure resurface later dressed as a missing
+  screenshot. Every hierarchy read now fails closed as a
+  `journey_failed` step ("hierarchy missing or unparsable") instead of
+  vouching for facts it could not parse. The absent-file variant is
+  worse than it sounds: its exception escaped `run_journey` unwrapped,
+  and the run ended with cleanup performed but no capture record at
+  all — receipts now survive hostile tools that lie about rc. Found by
+  the #62 acceptance matrix doing exactly its job; regression tests
+  ride along for both vectors.
+
+---
+
 ## 2026-08-16 — Cleanup learns to check the name badge before it swings
 
 - The six remaining execution-boundary findings from the 2026-08-13 review

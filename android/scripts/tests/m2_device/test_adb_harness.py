@@ -327,6 +327,51 @@ class TestAdbHarness(unittest.TestCase):
         self.assertFalse(
             [s for s in steps if s.operation.startswith("tap_key")])
 
+    def test_run_journey_fails_closed_on_unparsable_first_hierarchy(self):
+        # Same contract for the first journey dump: a clean wrapper rc
+        # never certifies unreadable facts — the journey must fail, not
+        # record COMPLETED and truncate silently.
+        writer = _journey_pull_writer()
+
+        def side_effect(argv, **kwargs):
+            if "pull" in argv and "journey.xml" in argv[-1]:
+                with open(argv[-1], "w") as f:
+                    f.write("<not-xml")
+                return _cr(rc=0, argv=argv)
+            return writer(argv, **kwargs)
+
+        self.mock_runner.side_effect = side_effect
+        self.mock_starter.return_value = MagicMock()
+        steps = self.harness.run_journey()
+        failed = [s for s in steps if s.operation == "dump_hierarchy"]
+        self.assertTrue(failed)
+        self.assertEqual(failed[0].cause, TerminalCause.JOURNEY_FAILED)
+        self.assertIn(b"hierarchy missing or unparsable",
+                      failed[0].result.stderr)
+        self.assertFalse(
+            [s for s in steps if s.operation.startswith("tap_key")],
+            "taps must not run on unparsable journey facts")
+
+    def test_run_journey_fails_closed_on_silent_hierarchy_pull(self):
+        # Hostile pull: rc=0 with no file written. The journey fails
+        # closed with a recorded step — no exception may escape
+        # run_journey and cost the run its capture record.
+        writer = _journey_pull_writer()
+
+        def side_effect(argv, **kwargs):
+            if "pull" in argv and "window_dump.xml" in argv[-2]:
+                return _cr(rc=0, argv=argv)
+            return writer(argv, **kwargs)
+
+        self.mock_runner.side_effect = side_effect
+        self.mock_starter.return_value = MagicMock()
+        steps = self.harness.run_journey()
+        failed = [s for s in steps if s.operation == "dump_hierarchy"]
+        self.assertTrue(failed)
+        self.assertEqual(failed[0].cause, TerminalCause.JOURNEY_FAILED)
+        self.assertIn(b"hierarchy missing or unparsable",
+                      failed[0].result.stderr)
+
     def test_launch_emulator(self):
         self.mock_starter.return_value = MagicMock()
         res = self.harness.launch_emulator()
