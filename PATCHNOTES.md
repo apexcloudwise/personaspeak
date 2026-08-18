@@ -10,6 +10,36 @@ Newest first, like all respectable patch notes.
 
 ---
 
+## 2026-08-19 — The acceptance matrix arrives, and the fake toolkit learns to misbehave on cue
+
+- The fake-only acceptance matrix (issue #62) now drives the real
+  qualification CLI end to end through an absolute interpreter and a
+  PATH containing nothing but fakes. Twenty-six variants cover the
+  happy path, every nonzero terminal class, wrapper/remote status
+  collisions (rc=7 intact, rc=1+stderr ambiguous and fail-closed),
+  timeouts, SIGINT/SIGTERM convergence into cleanup, malformed
+  output/XML/media, fixture drift and prop drift, selector
+  duplication, hostile artifacts (extras, symlinks, writes outside
+  allowed roots — with a canary positive control proving the
+  containment check can actually fire), a mid-journey emulator death,
+  and combined cleanup failures. Every variant preserves exactly one
+  decodable capture record with exact primary/cleanup outcomes and
+  zero real-tool contact, on the honor system of an isolated PATH and
+  the evidence of recorded tool identities.
+- The happy path is pinned to the exact complete contact ledger and
+  the exact ledgered argv sequence (155 contacts, 150 entries), with
+  one honest exception documented in the test: the screenrecord start
+  is a concurrent sibling, so the moment its log line lands is the
+  OS's business, not the harness's.
+- The fake toolchain grew failure knobs (rc scripting, sleeps,
+  garbage output, prop overrides, silent pulls, malformed media,
+  duplicate nodes, hostile writes) — unset knobs leave the honest
+  fake untouched. run_fake_capture_cli.py now runs the full fake
+  journey to a green receipt, decodes the record on the way out, and
+  passes caller knobs through for by-hand failure demos.
+
+---
+
 ## 2026-08-19 — The journey stops believing in hierarchies it never read
 
 - A pull that returned rc=0 with unparsable — or entirely absent — XML

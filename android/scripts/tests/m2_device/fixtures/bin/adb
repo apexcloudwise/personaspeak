@@ -3,6 +3,7 @@
 import os
 import struct
 import sys
+import time
 import zlib
 
 log_path = os.environ.get("MOCK_COMMANDS_LOG")
@@ -96,11 +97,40 @@ def _write_mp4(path):
         f.write(ftyp + mdat)
 
 
-def _write_hierarchy(path):
+def _write_hierarchy(path, duplicate_res_id="", malformed=False, symlinked=False):
+    if malformed:
+        with open(path, "wb") as f:
+            f.write(b"<hierarchy truncated-not-xml")
+        return
+    if symlinked:
+        # Hostile tool: valid hierarchy bytes outside the artifacts dir,
+        # with the artifact itself a symlink pointing at them.
+        target = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.abspath(path))),
+            "hierarchy_source.xml")
+        with open(target, "w") as f:
+            f.write(_render_hierarchy(duplicate_res_id))
+        if os.path.lexists(path):
+            os.remove(path)
+        os.symlink(target, path)
+        return
+    with open(path, "w") as f:
+        f.write(_render_hierarchy(duplicate_res_id))
+
+
+def _render_hierarchy(duplicate_res_id=""):
     text = _read(STATE_FILE)
     kb = _read(KB_FILE)
     focused = "true" if _read(FOCUS_FILE) == "1" else "false"
     nodes = KB_VIEW + _key_nodes()
+    editor = (
+        f'<node index="0" text="{text}" focused="{focused}" '
+        'resource-id="com.android.settings:id/search_action_bar" '
+        'class="android.widget.EditText" bounds="[100,200][900,300]"/>'
+    )
+    if duplicate_res_id and duplicate_res_id in "com.android.settings:id/search_action_bar":
+        # Selector duplication: two nodes answer the same resource-id.
+        editor = editor + editor
     if text:
         nodes += (
             '<node resource-id="com.android.settings:id/search_close_btn" '
@@ -125,18 +155,52 @@ def _write_hierarchy(path):
             f'<node resource-id="biz.pixelperfectstudios.personaspeak:id/cancel_button" '
             f'content-desc="Cancel" class="android.widget.Button" bounds="[580,2300][980,2380]"/>'
         )
-    with open(path, "w") as f:
-        f.write(
-            '<hierarchy rotation="0">'
-            f'<node index="0" text="{text}" focused="{focused}" '
-            'resource-id="com.android.settings:id/search_action_bar" '
-            'class="android.widget.EditText" bounds="[100,200][900,300]"/>'
-            f'{nodes}'
-            '</hierarchy>'
-        )
+    return (
+        '<hierarchy rotation="0">'
+        f'{editor}'
+        f'{nodes}'
+        '</hierarchy>'
+    )
 
 
 cmd = " ".join(sys.argv[1:])
+
+# --- Acceptance-matrix knobs (issue #62): scripted failure injection. ---
+# Every knob is opt-in per run; unset knobs leave the honest fake intact.
+
+_fail_knob = os.environ.get("FAKE_ADB_FAIL", "")
+if "=" in _fail_knob:
+    _pat, _, _spec = _fail_knob.partition("=")
+    if _pat and _pat in cmd:
+        _rc_s, _, _msg = _spec.partition(":")
+        if _msg:
+            sys.stderr.write(_msg + "\n")
+        sys.exit(int(_rc_s))
+
+_sleep_knob = os.environ.get("FAKE_ADB_SLEEP_ON", "")
+if _sleep_knob and _sleep_knob in cmd:
+    time.sleep(float(os.environ.get("FAKE_ADB_SLEEP_SECS", "45")))
+
+_garbage_knob = os.environ.get("FAKE_ADB_GARBAGE", "")
+if _garbage_knob and _garbage_knob in cmd:
+    print("<unparseable-garbage-output>")
+    sys.exit(0)
+
+_prop_knob = os.environ.get("FAKE_ADB_PROP", "")
+if _prop_knob and "=" in _prop_knob and "getprop" in cmd:
+    _prop, _, _val = _prop_knob.partition("=")
+    if _prop and _prop in cmd:
+        print(_val)
+        sys.exit(0)
+
+_wm_flag = os.environ.get("FAKE_ADB_WM_FLAG", "")
+_wm_drift = os.environ.get("FAKE_ADB_POST_RESTORE_WM", "")
+if (_wm_flag and _wm_drift and "wm size" in cmd
+        and os.path.isfile(_wm_flag)):
+    # Post-restore drift: the snapshot "load" reports success, then the
+    # device answers every later identity query with the wrong size.
+    print(f"Physical size: {_wm_drift}")
+    sys.exit(0)
 
 if "getprop sys.boot_completed" in cmd:
     print("1")
@@ -226,25 +290,56 @@ elif "input keyevent" in cmd:
     cur = _read(STATE_FILE)
     _write(STATE_FILE, cur[:-1])
 elif "emu snapshot load" in cmd:
-    _reset_to_pristine()
+    if os.environ.get("FAKE_ADB_RESTORE_FAIL"):
+        sys.exit(2)
+    if not os.environ.get("FAKE_ADB_RESTORE_NORESET"):
+        _reset_to_pristine()
+    if _wm_flag:
+        _write(_wm_flag, "1")
 elif "emu kill" in cmd:
     pass
 elif "pull" in sys.argv:
     idx = sys.argv.index("pull")
     src = sys.argv[idx + 1]
     dest = sys.argv[idx + 2]
+    if os.environ.get("FAKE_ADB_EXTRA_ARTIFACT"):
+        # Hostile tool: drops an unlisted file into the artifacts dir.
+        _artifacts = os.path.dirname(os.path.abspath(dest))
+        with open(os.path.join(_artifacts, "hostile-extra.bin"), "wb") as f:
+            f.write(b"unexpected")
+    if os.environ.get("FAKE_ADB_ESCAPE"):
+        # Hostile tool: writes outside the artifacts dir entirely.
+        _run_dir = os.path.dirname(os.path.dirname(os.path.abspath(dest)))
+        with open(os.path.join(_run_dir, "hostile-write.bin"), "wb") as f:
+            f.write(b"escaped")
     if dest.endswith(".png"):
-        if os.path.isfile(src):
+        if os.environ.get("FAKE_ADB_BAD_PNG"):
+            with open(dest, "wb") as f:
+                f.write(b"\x89PNG\r\n\x1a\nNOT-A-REAL-CHUNK")
+        elif os.path.isfile(src):
             import shutil
             shutil.copy2(src, dest)
         else:
             _write_png(dest)
     elif dest.endswith(".mp4"):
-        _write_mp4(dest)
+        if os.environ.get("FAKE_ADB_BAD_MP4"):
+            with open(dest, "wb") as f:
+                f.write(b"not-an-mp4-at-all")
+        else:
+            _write_mp4(dest)
     elif "window_dump.xml" in src:
-        _write_hierarchy(dest)
-        if _read(KB_FILE) == "LOADING":
-            _write(KB_FILE, "REVIEW")
+        if os.environ.get("FAKE_ADB_PULL_SILENT"):
+            # Hostile tool: pull reports success and writes nothing.
+            pass
+        else:
+            _write_hierarchy(
+                dest,
+                duplicate_res_id=os.environ.get("FAKE_ADB_DUPLICATE", ""),
+                malformed=bool(os.environ.get("FAKE_ADB_BAD_XML")),
+                symlinked=bool(os.environ.get("FAKE_ADB_SYMLINK_XML")),
+            )
+            if _read(KB_FILE) == "LOADING":
+                _write(KB_FILE, "REVIEW")
 elif "version" in cmd or "-version" in cmd or "--version" in cmd:
     print("Android Debug Bridge version 1.0.41")
 
