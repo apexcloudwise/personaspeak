@@ -10,6 +10,18 @@ Newest first, like all respectable patch notes.
 
 ---
 
+## 2026-08-19 — The except clause signs an affidavit about its own breadth
+
+- The hierarchy reader's `OSError` catch is deliberately wider than
+  `FileNotFoundError`, and now says so in a comment: permission errors,
+  disk full, any I/O failure on the artifact counts as an unreadable
+  artifact, which is the fail-closed verdict the harness is contractually
+  obliged to reach. Zero behavior change — the comment is the entire
+  diff, landed as the review nit carried from #73 so #55's qualification
+  PR stays pure evidence.
+
+---
+
 ## 2026-08-19 — The acceptance matrix arrives, and the fake toolkit learns to misbehave on cue
 
 - The fake-only acceptance matrix (issue #62) now drives the real
