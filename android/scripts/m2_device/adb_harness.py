@@ -515,6 +515,9 @@ class AdbHarness:
             # The transport claims success but the artifact is missing
             # or unparsable: fail closed as a journey failure. A clean
             # wrapper rc never certifies facts that could not be read.
+            # OSError is deliberately wide, not just FileNotFoundError:
+            # permission, disk-full, any artifact I/O failure is an
+            # unreadable artifact, which is exactly the fail-closed verdict.
             return self._fail(
                 label, b"hierarchy missing or unparsable"), None
 
