@@ -11,6 +11,7 @@ cmd = " ".join(sys.argv[1:])
 if "rev-parse" in cmd and "HEAD" in cmd:
     print(os.environ.get("FAKE_GIT_HEAD", "deadbeef"))
 elif "status" in cmd:
-    pass
+    if os.environ.get("FAKE_GIT_DIRTY"):
+        print(" M tracked.txt")
 elif "init" in cmd:
     pass

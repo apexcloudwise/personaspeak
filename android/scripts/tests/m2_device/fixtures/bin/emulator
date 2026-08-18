@@ -10,14 +10,32 @@ if log_path:
         f.write(f"emulator: {' '.join(sys.argv[1:])}\n")
 
 if "-version" in sys.argv or "--version" in sys.argv:
-    print("Android emulator version 33.1.24.0")
+    if os.environ.get("FAKE_EMU_VERSION_BOGUS"):
+        print("Android emulator version 0.0.0")
+    else:
+        print("Android emulator version 33.1.24.0")
     sys.exit(0)
 
 if "-list-avds" in sys.argv:
-    print("M2_Qual_Fixture")
+    if not os.environ.get("FAKE_EMU_EMPTY_LIST"):
+        print("M2_Qual_Fixture")
     sys.exit(0)
 
 signal.signal(signal.SIGTERM, lambda *_: sys.exit(0))
+
+if os.environ.get("FAKE_EMU_EXIT_ON_TEXT"):
+    # Mid-journey death: the emulator exits once the editor holds text,
+    # so ownership was established on a live process and only release
+    # observes the exit.
+    _state_file = os.environ.get("FAKE_ADB_STATE", "")
+    while True:
+        try:
+            with open(_state_file) as f:
+                if f.read().strip():
+                    sys.exit(0)
+        except OSError:
+            pass
+        time.sleep(0.05)
 
 try:
     while True:
