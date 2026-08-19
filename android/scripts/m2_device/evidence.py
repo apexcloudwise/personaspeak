@@ -39,12 +39,14 @@ CANONICAL_PNG_NAMES = (
     "04-applied", "05-dismissed", "06-stale", "07-settings",
 )
 CANONICAL_MP4_NAME = "journey"
+# Four editor sessions (open/verify/cancel, apply, dismiss, stale),
+# each with its own home-entry and focus dumps, plus the post-restore
+# pristine dump. Labels are inexpressible in the harness if wrong.
 CANONICAL_HIERARCHY_LABELS = (
-    "journey", "keyboard_check", "clear",
-    "loading_1", "after_cancel_loading",
-    "loading_2", "review_2", "after_apply",
-    "loading_3", "review_3", "after_dismiss",
-    "loading_4", "review_4", "after_stale", "after_stale_dismiss",
+    "home_1", "focus_1", "typed_1", "after_cancel",
+    "home_2", "focus_2", "typed_2", "after_apply",
+    "home_3", "focus_3", "typed_3", "after_dismiss",
+    "home_4", "focus_4", "typed_4", "typed_stale", "after_stale",
     "verify_restore",
 )
 CANONICAL_LEDGER_NAME = "command_ledger.json"

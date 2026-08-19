@@ -77,101 +77,209 @@ def _write_valid_mp4(path):
         f.write(ftyp + mdat)
 
 
-_KEY_GEOMETRY = [
-    ("T", 430, 1330, 520, 1420), ("E", 240, 1330, 330, 1420),
-    ("A", 55, 1430, 145, 1520), ("S", 150, 1430, 240, 1520),
-    ("I", 715, 1330, 805, 1420), ("X", 200, 1530, 290, 1620),
-    ("V", 390, 1530, 480, 1620), ("N", 580, 1530, 670, 1620),
-    ("Space", 345, 1630, 675, 1720), ("Period", 685, 1630, 775, 1720),
-]
-KEY_NODES_XML = "".join(
-    f'<node resource-id="biz.pixelperfectstudios.personaspeak:id/key"'
-    f' content-desc="{lbl}" class="android.widget.Key"'
-    f' bounds="[{x1},{y1}][{x2},{y2}]"/>'
-    for lbl, x1, y1, x2, y2 in _KEY_GEOMETRY)
+EDITOR_RES_ID = "com.google.android.settings.intelligence:id/open_search_view_edit_text"
+SEARCH_BAR_RES_ID = "com.android.settings:id/search_action_bar"
+EDITOR_HINT = "Search settings"
+IME_COMPONENT = (
+    "biz.pixelperfectstudios.personaspeak/com.menny.android.anysoftkeyboard.SoftKeyboard")
 
 
-def _journey_xml(text="", kb="", focused=False, keys=True,
-                 editor_class="android.widget.EditText"):
-    """Hierarchy XML matching the fake-toolchain contract: editor with
-    focus attribute, keyboard view, per-key geometry nodes, and the
-    panel/candidate/button set implied by *kb*."""
-    ps = "biz.pixelperfectstudios.personaspeak:id"
-    ss = "com.android.settings:id"
-    nodes = (
-        f'<node resource-id="{ps}/keyboard_view" '
-        f'class="android.widget.FrameLayout" bounds="[0,1300][1080,2400]"/>'
-    )
-    if keys:
-        nodes += KEY_NODES_XML
-    if text:
-        nodes += (
-            f'<node resource-id="{ss}/search_close_btn" '
-            f'content-desc="Clear" class="android.widget.ImageView" '
-            f'bounds="[950,200][1020,270]"/>'
+class _DeviceModel:
+    """Unit-level emulation of what the real device offers the journey:
+    host-app hierarchies (editor text included), ime enable/set, the
+    dumpsys channels, and taps that only land on real geometry. No
+    keyboard nodes are ever rendered — the IME is dump-invisible."""
+
+    def __init__(self, key_shift=0, ime_unbound=False, window_missing=False,
+                 never_expands=False, apply_mutates_stale=False):
+        self.screen = "home"
+        self.editor = ""
+        self.focused = False
+        self.panel = ""
+        self.ime = ""
+        self.candidate_source = ""
+        self.key_shift = key_shift
+        self.ime_unbound = ime_unbound
+        self.window_missing = window_missing
+        self.never_expands = never_expands
+        self.apply_mutates_stale = apply_mutates_stale
+        self.key_coords = {
+            "t": (486, 1794), "e": (270, 1794), "a": (108, 1932),
+            "s": (216, 1932), "i": (810, 1794), "x": (215, 2072),
+            "v": (431, 2072), "n": (647, 2072),
+            " ": (566, 2210), ".": (755, 2210),
+        }
+
+    # -- hierarchy rendering -------------------------------------------
+
+    def hierarchy(self):
+        if self.screen == "search":
+            shown = self.editor if self.editor else EDITOR_HINT
+            editor = (
+                f'<node index="0" text="{shown}" '
+                f'focused="{"true" if self.focused else "false"}" '
+                f'resource-id="{EDITOR_RES_ID}" class="android.widget.EditText" '
+                'package="com.google.android.settings.intelligence" '
+                'bounds="[126,149][1080,275]"/>'
+            )
+            return (
+                '<hierarchy rotation="0">'
+                '<node index="0" text="" resource-id="com.google.android.settings.intelligence:id/open_search_view_status_bar_spacer" '
+                'class="android.view.View" package="com.google.android.settings.intelligence" bounds="[0,0][1080,128]"/>'
+                f'{editor}</hierarchy>'
+            )
+        return (
+            '<hierarchy rotation="0">'
+            f'<node index="0" text="" resource-id="{SEARCH_BAR_RES_ID}" '
+            'class="android.view.ViewGroup" package="com.android.settings" '
+            'clickable="true" focusable="true" focused="false" '
+            'bounds="[42,591][1038,728]"/></hierarchy>'
         )
-    if kb == "LOADING":
-        nodes += (
-            f'<node text="LOADING" resource-id="{ps}/panel_state" '
-            f'class="android.widget.TextView" bounds="[10,1810][1070,1850]"/>'
-            f'<node resource-id="{ps}/cancel_button" content-desc="Cancel" '
-            f'class="android.widget.Button" bounds="[580,2300][980,2380]"/>'
-        )
-    elif kb == "REVIEW":
-        nodes += (
-            f'<node text="REVIEW" resource-id="{ps}/panel_state" '
-            f'class="android.widget.TextView" bounds="[10,1810][1070,1850]"/>'
-            f'<node text="{CANDIDATE_REPHRASING}" resource-id="{ps}/candidate_text" '
-            f'class="android.widget.TextView" bounds="[10,1850][1070,1900]"/>'
-            f'<node resource-id="{ps}/apply_button" content-desc="Apply" '
-            f'class="android.widget.Button" bounds="[100,2300][500,2380]"/>'
-            f'<node resource-id="{ps}/cancel_button" content-desc="Cancel" '
-            f'class="android.widget.Button" bounds="[580,2300][980,2380]"/>'
-        )
-    return (
-        '<hierarchy rotation="0">'
-        f'<node index="0" text="{text}" '
-        f'focused="{"true" if focused else "false"}" '
-        f'resource-id="{ss}/search_action_bar" class="{editor_class}" '
-        f'bounds="[100,200][900,300]"/>{nodes}</hierarchy>'
-    )
 
+    # -- dumpsys channels ----------------------------------------------
 
-def _journey_pull_writer():
-    """Returns a side_effect(argv, **kwargs) that answers every pull the
-    journey makes, mirroring the fake adb's state machine."""
-    def side_effect(argv, **kwargs):
-        if "pull" not in argv:
-            return _cr(rc=0, argv=argv)
-        dest = argv[-1]
-        label = os.path.basename(dest)
-        if dest.endswith(".png"):
-            _write_valid_png(dest)
-            return _cr(rc=0, argv=argv)
-        if dest.endswith(".mp4"):
-            _write_valid_mp4(dest)
-            return _cr(rc=0, argv=argv)
-        if label.startswith("loading"):
-            xml = _journey_xml("Tea at six.", "LOADING")
-        elif "after_stale_dismiss" in label:
-            xml = _journey_xml(STALE_TEXT)
-        elif "after_stale" in label:
-            xml = _journey_xml(STALE_TEXT, "REVIEW")
-        elif label.startswith("review"):
-            xml = _journey_xml("Tea at six.", "REVIEW")
-        elif "after_cancel" in label or "after_dismiss" in label:
-            xml = _journey_xml("Tea at six.")
-        elif "after_apply" in label:
-            xml = _journey_xml(CANDIDATE_REPHRASING)
-        elif "keyboard_check" in label:
-            xml = _journey_xml("", focused=True)
-        elif "verify_restore" in label:
-            xml = _journey_xml("")
+    def bound(self):
+        return (self.ime == "set" and self.screen == "search"
+                and self.focused)
+
+    def dumpsys_input_method(self):
+        if self.ime_unbound or not self.bound():
+            return ("  mCurMethodId=com.google.android.inputmethod.latin/"
+                    "com.android.inputmethod.latin.LatinIME\n"
+                    "  mHaveConnection=false\n  mBoundToMethod=false\n"
+                    "  mVisibleBound=false\n")
+        if self.panel == "LOADING":
+            self.panel = "REVIEW"
+        return (f"  mCurMethodId={IME_COMPONENT}\n"
+                "  mHaveConnection=true\n  mBoundToMethod=true\n"
+                "  mVisibleBound=true\n")
+
+    def dumpsys_window(self):
+        if self.window_missing or not self.bound():
+            return ("  Window #1 Window{abc u0 Notification Shade}:\n"
+                    "    package=com.android.systemui\n    HAS_DRAWN\n")
+        if self.panel == "LOADING":
+            self.panel = "REVIEW"
+        expanded = self.panel in ("REVIEW", "APPLIED", "STALE")
+        top = 1260 if (expanded and not self.never_expands) else 1378
+        return (
+            "  Window #1 Window{abc u0 com.android.settings/com.android.settings.Settings}:\n"
+            "    mOwnerUid=1000 package=com.android.settings\n"
+            f"    mFrame=[0,0][1080,2400]\n    HAS_DRAWN\n"
+            "  Window #4 Window{d4e5f6 u0 InputMethod}:\n"
+            "    mOwnerUid=10198 package=biz.pixelperfectstudios.personaspeak userId=0\n"
+            "    mViewVisibility=0x0\n    isReadyForDisplay()=true\n"
+            f"    mFrame=[0,{top}][1080,2400]\n    HAS_DRAWN\n"
+        )
+
+    # -- interactions ---------------------------------------------------
+
+    def _tap(self, x, y):
+        if self.screen == "home":
+            if 42 <= x <= 1038 and 591 <= y <= 728:
+                self.screen = "search"
+                self.editor = ""
+                self.panel = ""
+                self.focused = True
+            return
+        if 126 <= x <= 1080 and 149 <= y <= 275:
+            self.focused = True
+            return
+
+        def near(cx, cy):
+            return abs(x - cx) <= 54 and abs(y - cy) <= 54
+
+        if near(116, 1452) or near(105, 1452):
+            if self.panel == "":
+                if self.editor:
+                    self.panel = "LOADING"
+                    self.candidate_source = self.editor
+            elif self.panel == "REVIEW":
+                if (self.editor == self.candidate_source
+                        or self.apply_mutates_stale):
+                    self.editor = CANDIDATE_REPHRASING
+                    self.panel = "APPLIED"
+                else:
+                    self.panel = "STALE"
+            return
+        if near(180, 1452):
+            if self.panel == "LOADING":
+                self.panel = ""
+            return
+        if near(328, 1452):
+            if self.panel == "REVIEW":
+                self.panel = ""
+            return
+        for ch, (kx, ky) in self.key_coords.items():
+            kx, ky = kx + self.key_shift, ky + self.key_shift
+            if abs(x - kx) <= 54 and abs(y - ky) <= 54 and self.focused:
+                cur = self.editor
+                self.editor = (
+                    ch.upper() if (not cur and ch.isalpha()) else cur + ch)
+                return
+
+    def keyevent(self, code):
+        if code == "4" and self.screen == "search":
+            self.screen = "home"
+            self.editor = ""
+            self.panel = ""
+            self.focused = False
+        elif code == "67" and self.screen == "search" and self.focused:
+            self.editor = self.editor[:-1]
+
+    def shell(self, cmd):
+        if "ime enable" in cmd:
+            self.ime = "enabled"
+        elif "ime set" in cmd:
+            self.ime = "set"
+        elif "dumpsys input_method" in cmd:
+            return self.dumpsys_input_method()
+        elif "dumpsys window" in cmd:
+            return self.dumpsys_window()
+        elif "am start" in cmd:
+            self.screen = "home"
         else:
-            xml = _journey_xml("")
-        with open(dest, "w") as f:
-            f.write(xml)
+            for segment in cmd.replace("&&", ";").split(";"):
+                seg = segment.split()
+                if len(seg) >= 4 and seg[:2] == ["input", "tap"]:
+                    self._tap(int(seg[2]), int(seg[3]))
+                elif len(seg) >= 3 and seg[:2] == ["input", "keyevent"]:
+                    self.keyevent(seg[2])
+        return ""
+
+    # -- runner side_effect ---------------------------------------------
+
+    def side_effect(self, argv, **kwargs):
+        if argv[0:1] == ["adb"]:
+            rest = argv[3:]
+        else:
+            rest = argv[1:]
+        if rest[:1] == ["shell"]:
+            payload = " ".join(rest[1:])
+            return _cr(stdout=self.shell(payload).encode(), argv=argv)
         return _cr(rc=0, argv=argv)
+
+
+def _journey_runner(model=None, **model_kwargs):
+    """Pull-writing side_effect backed by the device model: every dump
+    renders the model's current host-app hierarchy."""
+    if model is None:
+        model = _DeviceModel(**model_kwargs)
+
+    def side_effect(argv, **kwargs):
+        if "pull" in argv:
+            dest = argv[-1]
+            if dest.endswith(".png"):
+                _write_valid_png(dest)
+            elif dest.endswith(".mp4"):
+                _write_valid_mp4(dest)
+            else:
+                with open(dest, "w") as f:
+                    f.write(model.hierarchy())
+            return _cr(rc=0, argv=argv)
+        return model.side_effect(argv, **kwargs)
+
+    side_effect.model = model
     return side_effect
 
 
@@ -290,13 +398,13 @@ class TestAdbHarness(unittest.TestCase):
         ctx = h.capture_context()
         self.assertEqual(ctx.fixture_receipt_digest, FIXTURE_RECEIPT_DIGEST)
 
-    def test_run_journey_fails_closed_on_unparsable_keyboard_hierarchy(self):
-        # Reviewer reproduction: malformed keyboard_check XML must stop
-        # the journey before any tap — absent facts never authorize one.
-        writer = _journey_pull_writer()
+    def test_run_journey_fails_closed_on_unparsable_focus_hierarchy(self):
+        # Malformed focus_1 XML must stop the journey before any key
+        # tap — absent facts never authorize one.
+        writer = _journey_runner()
 
         def side_effect(argv, **kwargs):
-            if "pull" in argv and "keyboard_check" in argv[-1]:
+            if "pull" in argv and "focus_1" in argv[-1]:
                 with open(argv[-1], "w") as f:
                     f.write("<not-xml")
                 return _cr(rc=0, argv=argv)
@@ -305,7 +413,7 @@ class TestAdbHarness(unittest.TestCase):
         self.mock_runner.side_effect = side_effect
         self.mock_starter.return_value = MagicMock()
         steps = self.harness.run_journey()
-        failed = [s for s in steps if s.operation == "keyboard_hierarchy"]
+        failed = [s for s in steps if s.operation == "verify_editor_pristine_1"]
         self.assertTrue(failed)
         self.assertNotEqual(failed[0].cause, TerminalCause.COMPLETED)
         self.assertIn(b"unparsable", failed[0].result.stderr)
@@ -313,35 +421,32 @@ class TestAdbHarness(unittest.TestCase):
             [s for s in steps if s.operation.startswith("tap_key")],
             "taps must not run on the strength of absent hierarchy facts")
 
-    def test_run_journey_fails_closed_on_failed_keyboard_dump(self):
-        writer = _journey_pull_writer()
+    def test_run_journey_fails_closed_on_failed_home_dump(self):
+        writer = _journey_runner()
         dump_calls = {"n": 0}
 
         def side_effect(argv, **kwargs):
             cmd = " ".join(argv)
             if "uiautomator" in cmd:
                 dump_calls["n"] += 1
-                if dump_calls["n"] == 2:  # keyboard_check is the 2nd dump
+                if dump_calls["n"] == 1:  # home_1 is the first dump
                     return _cr(rc=1, stderr=b"dump failed")
             return writer(argv, **kwargs)
 
         self.mock_runner.side_effect = side_effect
         self.mock_starter.return_value = MagicMock()
         steps = self.harness.run_journey()
-        failed = [s for s in steps if s.operation == "keyboard_hierarchy"]
+        failed = [s for s in steps if s.operation == "dump_home_1"]
         self.assertTrue(failed)
         self.assertNotEqual(failed[0].cause, TerminalCause.COMPLETED)
         self.assertFalse(
             [s for s in steps if s.operation.startswith("tap_key")])
 
-    def test_run_journey_fails_closed_on_unparsable_first_hierarchy(self):
-        # Same contract for the first journey dump: a clean wrapper rc
-        # never certifies unreadable facts — the journey must fail, not
-        # record COMPLETED and truncate silently.
-        writer = _journey_pull_writer()
+    def test_run_journey_fails_closed_on_unparsable_home_hierarchy(self):
+        writer = _journey_runner()
 
         def side_effect(argv, **kwargs):
-            if "pull" in argv and "journey.xml" in argv[-1]:
+            if "pull" in argv and "home_1.xml" in argv[-1]:
                 with open(argv[-1], "w") as f:
                     f.write("<not-xml")
                 return _cr(rc=0, argv=argv)
@@ -350,7 +455,7 @@ class TestAdbHarness(unittest.TestCase):
         self.mock_runner.side_effect = side_effect
         self.mock_starter.return_value = MagicMock()
         steps = self.harness.run_journey()
-        failed = [s for s in steps if s.operation == "dump_hierarchy"]
+        failed = [s for s in steps if s.operation == "dump_home_1"]
         self.assertTrue(failed)
         self.assertEqual(failed[0].cause, TerminalCause.JOURNEY_FAILED)
         self.assertIn(b"hierarchy missing or unparsable",
@@ -363,7 +468,7 @@ class TestAdbHarness(unittest.TestCase):
         # Hostile pull: rc=0 with no file written. The journey fails
         # closed with a recorded step — no exception may escape
         # run_journey and cost the run its capture record.
-        writer = _journey_pull_writer()
+        writer = _journey_runner()
 
         def side_effect(argv, **kwargs):
             if "pull" in argv and "window_dump.xml" in argv[-2]:
@@ -373,7 +478,7 @@ class TestAdbHarness(unittest.TestCase):
         self.mock_runner.side_effect = side_effect
         self.mock_starter.return_value = MagicMock()
         steps = self.harness.run_journey()
-        failed = [s for s in steps if s.operation == "dump_hierarchy"]
+        failed = [s for s in steps if s.operation == "dump_home_1"]
         self.assertTrue(failed)
         self.assertEqual(failed[0].cause, TerminalCause.JOURNEY_FAILED)
         self.assertIn(b"hierarchy missing or unparsable",
@@ -681,53 +786,58 @@ class TestAdbHarness(unittest.TestCase):
         self.assertIn(b"signer certificate mismatch", res.stderr)
 
     def test_run_journey_success(self):
-        self.mock_runner.side_effect = _journey_pull_writer()
+        self.mock_runner.side_effect = _journey_runner()
         self.mock_starter.return_value = MagicMock()
         steps = self.harness.run_journey()
         operations = [s.operation for s in steps]
-        for expected in ("launch_editor", "pin_pristine_state",
-                         "pin_editor_focused_empty", "validate_key_geometry",
-                         "verify_loading_1", "cancel_loading",
-                         "verify_review_2", "apply_rephrasing",
-                         "verify_apply", "dismiss_rephrasing",
-                         "apply_stale", "verify_stale_candidate_retained",
-                         "dismiss_stale_candidate", "verify_stale_dismissed",
-                         "relaunch_settings"):
+        for expected in ("enable_ime", "set_ime",
+                         "verify_editor_pristine_1", "rewrite_and_cancel",
+                         "verify_after_cancel", "request_rewrite_2",
+                         "apply_rephrasing", "verify_after_apply",
+                         "dismiss_rephrasing", "verify_after_dismiss",
+                         "verify_typed_stale", "apply_stale",
+                         "verify_after_stale",
+                         "exit_session_4", "relaunch_settings"):
             self.assertIn(expected, operations)
         for step in steps:
             self.assertEqual(step.cause, TerminalCause.COMPLETED, f"{step.operation} failed")
 
     def test_run_journey_rephrasing_mismatch(self):
-        writer = _journey_pull_writer()
+        model = _DeviceModel()
+        original_tap = model._tap
 
-        def side_effect(argv, **kwargs):
-            if "pull" in argv and "after_apply" in argv[-1]:
-                with open(argv[-1], "w") as f:
-                    f.write(_journey_xml("wrong text"))
-                return _cr(rc=0, argv=argv)
-            return writer(argv, **kwargs)
+        def tap(x, y):
+            original_tap(x, y)
+            if model.panel == "APPLIED":
+                # Apply lands but the editor never changes: the bridge
+                # must fail the journey on the mismatch.
+                model.editor = "wrong text"
 
-        self.mock_runner.side_effect = side_effect
+        model._tap = tap
+        self.mock_runner.side_effect = _journey_runner(model)
         self.mock_starter.return_value = MagicMock()
         steps = self.harness.run_journey()
-        apply_verify = [s for s in steps if s.operation == "verify_apply"]
+        apply_verify = [s for s in steps if s.operation == "verify_after_apply"]
         self.assertTrue(apply_verify)
         self.assertEqual(apply_verify[0].cause, TerminalCause.JOURNEY_FAILED)
 
     def test_run_journey_field_not_found(self):
+        writer = _journey_runner()
 
         def side_effect(argv, **kwargs):
             if "pull" in argv:
                 with open(argv[-1], "w") as f:
                     f.write('<hierarchy rotation="0"></hierarchy>')
                 return _cr(rc=0, argv=argv)
-            return _cr(rc=0, argv=argv)
+            return writer(argv, **kwargs)
 
         self.mock_runner.side_effect = side_effect
+        self.mock_starter.return_value = MagicMock()
         steps = self.harness.run_journey()
-        locate = [s for s in steps if s.operation == "pin_pristine_state"]
+        locate = [s for s in steps if s.operation == "focus_editor_1"]
         self.assertTrue(locate)
         self.assertEqual(locate[0].cause, TerminalCause.JOURNEY_FAILED)
+        self.assertIn(b"search bar not found", locate[0].result.stderr)
 
     def test_validate_fixture_digest_drift(self):
         ram = os.path.join(
@@ -784,127 +894,165 @@ class TestAdbHarness(unittest.TestCase):
         self.assertEqual(res.returncode, 1)
         self.assertIn(b"animator_duration_scale mismatch", res.stderr)
 
-    def _run_journey_with_override(self, label, xml):
-        writer = _journey_pull_writer()
-
-        def side_effect(argv, **kwargs):
-            if "pull" in argv and label in os.path.basename(argv[-1]):
-                with open(argv[-1], "w") as f:
-                    f.write(xml)
-                return _cr(rc=0, argv=argv)
-            return writer(argv, **kwargs)
-
-        self.mock_runner.side_effect = side_effect
-        self.mock_starter.return_value = MagicMock()
-        return self.harness.run_journey()
-
     def test_run_journey_rejects_dirty_editor_at_pristine_pin(self):
-        steps = self._run_journey_with_override(
-            "journey.xml", _journey_xml("leftover text"))
-        pin = [s for s in steps if s.operation == "pin_pristine_state"]
+        writer = _journey_runner()
+        model = writer.model
+
+        original_tap = model._tap
+
+        def tap(x, y):
+            original_tap(x, y)
+            if model.screen == "search":
+                # The fixture should guarantee a fresh editor; a dirty
+                # one must fail the pristine pin before any typing.
+                model.editor = "leftover text"
+
+        model._tap = tap
+        self.mock_runner.side_effect = writer
+        self.mock_starter.return_value = MagicMock()
+        steps = self.harness.run_journey()
+        pin = [s for s in steps if s.operation == "verify_editor_pristine_1"]
         self.assertTrue(pin)
         self.assertEqual(pin[0].cause, TerminalCause.JOURNEY_FAILED)
-
-    def test_rejected_pristine_observation_not_retained_as_baseline(self):
-        # Review finding: a rejected observation must not survive as the
-        # restoration baseline, or the receipt blames a correct restore
-        # for what was a precondition failure.
-        self._run_journey_with_override(
-            "journey.xml", _journey_xml("leftover text"))
-        self.assertIsNone(self.harness._pristine_private)
-        with patch.object(self.harness, "capture_prior_state",
-                          return_value=object()):
-            self.harness.verify_restore()  # must not raise
+        self.assertIn(b"not empty", pin[0].result.stderr)
 
     def test_run_journey_rejects_unfocused_editor(self):
-        steps = self._run_journey_with_override(
-            "keyboard_check", _journey_xml("", focused=False))
-        pin = [s for s in steps if s.operation == "pin_editor_focused_empty"]
+        writer = _journey_runner()
+        model = writer.model
+
+        original_tap = model._tap
+
+        def tap(x, y):
+            original_tap(x, y)
+            model.focused = False
+
+        model._tap = tap
+        self.mock_runner.side_effect = writer
+        self.mock_starter.return_value = MagicMock()
+        steps = self.harness.run_journey()
+        pin = [s for s in steps if s.operation == "verify_editor_pristine_1"]
         self.assertTrue(pin)
         self.assertEqual(pin[0].cause, TerminalCause.JOURNEY_FAILED)
+        self.assertIn(b"not focused", pin[0].result.stderr)
 
-    def test_run_journey_rejects_nonempty_editor_at_focus(self):
-        steps = self._run_journey_with_override(
-            "keyboard_check", _journey_xml("Tea at six.", focused=True))
-        pin = [s for s in steps if s.operation == "pin_editor_focused_empty"]
-        self.assertTrue(pin)
-        self.assertEqual(pin[0].cause, TerminalCause.JOURNEY_FAILED)
+    def test_run_journey_stale_mutation_rejected(self):
+        # The stale contract: applying over a changed source must make
+        # ZERO mutations. If the product mutates anyway, the bridge must
+        # fail the journey instead of certifying the rewrite.
+        self.mock_runner.side_effect = _journey_runner(apply_mutates_stale=True)
+        self.mock_starter.return_value = MagicMock()
+        steps = self.harness.run_journey()
+        stale_verify = [s for s in steps if s.operation == "verify_after_stale"]
+        self.assertTrue(stale_verify)
+        self.assertEqual(stale_verify[0].cause, TerminalCause.JOURNEY_FAILED)
 
-    def _keys_xml_without(self, label):
-        keys = "".join(
-            f'<node resource-id="biz.pixelperfectstudios.personaspeak:id/key"'
-            f' content-desc="{lbl}" class="android.widget.Key"'
-            f' bounds="[{x1},{y1}][{x2},{y2}]"/>'
-            for lbl, x1, y1, x2, y2 in _KEY_GEOMETRY if lbl != label)
-        return _journey_xml("", focused=True).replace(KEY_NODES_XML, keys)
-
-    def test_key_geometry_rejects_duplicate_key(self):
-        import xml.etree.ElementTree as ET
-        first_node = KEY_NODES_XML[:KEY_NODES_XML.index("/>") + 2]
-        dup = _journey_xml("", focused=True).replace(
-            KEY_NODES_XML, KEY_NODES_XML + first_node)
-        steps = []
-        ok = self.harness._validate_key_geometry(steps, ET.fromstring(dup))
-        self.assertFalse(ok)
-        self.assertIn(b"matching nodes", steps[0].result.stderr)
-
-    def test_key_geometry_rejects_missing_key(self):
-        import xml.etree.ElementTree as ET
-        steps = []
-        ok = self.harness._validate_key_geometry(
-            steps, ET.fromstring(self._keys_xml_without("X")))
-        self.assertFalse(ok)
-        self.assertIn(b"key X", steps[0].result.stderr)
-
-    def test_key_geometry_rejects_displaced_key(self):
-        import xml.etree.ElementTree as ET
-        displaced = KEY_NODES_XML.replace(
-            'content-desc="T" class="android.widget.Key" bounds="[430,1330][520,1420]"',
-            'content-desc="T" class="android.widget.Key" bounds="[0,0][10,10]"')
-        xml = _journey_xml("", focused=True).replace(KEY_NODES_XML, displaced)
-        steps = []
-        ok = self.harness._validate_key_geometry(steps, ET.fromstring(xml))
-        self.assertFalse(ok)
-        self.assertIn(b"outside", steps[0].result.stderr)
-
-    def test_run_journey_stale_candidate_must_be_retained(self):
-        writer = _journey_pull_writer()
+    def test_run_journey_ime_enable_fails_closed(self):
+        writer = _journey_runner()
 
         def side_effect(argv, **kwargs):
-            dest = os.path.basename(argv[-1]) if "pull" in argv else ""
-            if "after_stale" in dest and "dismiss" not in dest:
-                with open(argv[-1], "w") as f:
-                    f.write(_journey_xml(STALE_TEXT))  # candidate dropped
-                return _cr(rc=0, argv=argv)
+            if "ime" in argv and "enable" in argv:
+                return _cr(rc=1, stderr=b"ime enable refused")
             return writer(argv, **kwargs)
 
         self.mock_runner.side_effect = side_effect
         self.mock_starter.return_value = MagicMock()
         steps = self.harness.run_journey()
-        retained = [s for s in steps
-                    if s.operation == "verify_stale_candidate_retained"]
-        self.assertTrue(retained)
-        self.assertEqual(retained[0].cause, TerminalCause.JOURNEY_FAILED)
-        self.assertIn(b"not retained", retained[0].result.stderr)
+        enable = [s for s in steps if s.operation == "enable_ime"]
+        self.assertTrue(enable)
+        self.assertNotEqual(enable[0].cause, TerminalCause.COMPLETED)
+        self.assertFalse([s for s in steps if s.operation == "set_ime"],
+                         "a failed enablement must stop before selection")
 
-    def test_verify_restore_private_fact_mismatch(self):
-        self.harness._pristine_private = {
-            "editor_text": "", "editor_focused": False,
-            "panel_present": False}
+    def test_run_journey_ime_set_fails_closed(self):
+        writer = _journey_runner()
 
         def side_effect(argv, **kwargs):
-            if "pull" in argv:
-                with open(argv[-1], "w") as f:
-                    f.write(_journey_xml("leftover text"))
-                return _cr(rc=0, argv=argv)
-            return _cr(rc=0, argv=argv)
+            if "ime" in argv and "set" in argv:
+                return _cr(rc=1, stderr=b"ime set refused")
+            return writer(argv, **kwargs)
 
         self.mock_runner.side_effect = side_effect
+        self.mock_starter.return_value = MagicMock()
+        steps = self.harness.run_journey()
+        set_step = [s for s in steps if s.operation == "set_ime"]
+        self.assertTrue(set_step)
+        self.assertNotEqual(set_step[0].cause, TerminalCause.COMPLETED)
+        self.assertFalse([s for s in steps if s.operation == "open_settings_1"],
+                         "a failed selection must stop before any session")
+
+    def test_run_journey_detects_unbound_ime(self):
+        # The keyboard never binds (wrong mCurMethodId, flags false): the
+        # binding check must fail closed before any key tap.
+        self.mock_runner.side_effect = _journey_runner(ime_unbound=True)
+        self.mock_starter.return_value = MagicMock()
+        steps = self.harness.run_journey()
+        binding = [s for s in steps if s.operation == "verify_ime_binding_s1"]
+        self.assertTrue(binding)
+        self.assertEqual(binding[0].cause, TerminalCause.JOURNEY_FAILED)
+        self.assertIn(b"mCurMethodId", binding[0].result.stderr)
+        self.assertFalse([s for s in steps if s.operation.startswith("tap_key")])
+
+    def test_run_journey_detects_missing_ime_window(self):
+        # dumpsys window shows no InputMethod window at all: the window
+        # check must fail closed before any key tap.
+        self.mock_runner.side_effect = _journey_runner(window_missing=True)
+        self.mock_starter.return_value = MagicMock()
+        steps = self.harness.run_journey()
+        window = [s for s in steps if s.operation == "verify_ime_window_s1"]
+        self.assertTrue(window)
+        self.assertEqual(window[0].cause, TerminalCause.JOURNEY_FAILED)
+        self.assertFalse([s for s in steps if s.operation.startswith("tap_key")])
+
+    def test_run_journey_detects_review_that_never_expands(self):
+        # A rewrite that stays compact is a review that never happened;
+        # the window-geometry check must fail closed before any apply.
+        self.mock_runner.side_effect = _journey_runner(never_expands=True)
+        self.mock_starter.return_value = MagicMock()
+        steps = self.harness.run_journey()
+        review = [s for s in steps if s.operation == "verify_ime_window_review_2"]
+        self.assertTrue(review)
+        self.assertEqual(review[0].cause, TerminalCause.JOURNEY_FAILED)
+        self.assertIn(b"never rose", review[0].result.stderr)
+        self.assertFalse([s for s in steps if s.operation == "apply_rephrasing"])
+
+    def test_run_journey_detects_wrong_key_geometry(self):
+        # Taps that do not land are text that does not change: the
+        # editor bridge is the wrong-geometry detector. The layout here
+        # is shifted off the pins, exactly like the 2026-08-19 drift.
+        self.mock_runner.side_effect = _journey_runner(key_shift=200)
+        self.mock_starter.return_value = MagicMock()
+        steps = self.harness.run_journey()
+        typed = [s for s in steps if s.operation == "verify_typed_1"]
+        self.assertTrue(typed)
+        self.assertEqual(typed[0].cause, TerminalCause.JOURNEY_FAILED)
+
+    def test_verify_restore_editor_still_present_raises(self):
+        writer = _journey_runner()
+        model = writer.model
+        # Restore failed to close the search screen: the journey-time
+        # editor is still present in the post-restore dump.
+        model.screen = "search"
+        model.focused = True
+
+        self.mock_runner.side_effect = writer
         with patch.object(self.harness, "capture_prior_state",
                           return_value=object()):
             with self.assertRaises(RuntimeError) as cm:
                 self.harness.verify_restore()
-        self.assertIn("private facts", str(cm.exception))
+        self.assertIn("search editor still present", str(cm.exception))
+
+    def test_verify_restore_pristine_state_accepted(self):
+        writer = _journey_runner()
+
+        self.mock_runner.side_effect = writer
+        with patch.object(self.harness, "capture_prior_state",
+                          return_value=object()) as prior:
+            state = self.harness.verify_restore()
+        self.assertIs(state, prior.return_value)
+        # Pristine means the home screen: no journey-time editor node.
+        with open(os.path.join(self.run_dir, "artifacts",
+                               "verify_restore.xml")) as f:
+            self.assertNotIn(EDITOR_RES_ID, f.read())
 
     def test_capture_evidence_screencap_failure(self):
         self.mock_runner.return_value = _cr(rc=1)

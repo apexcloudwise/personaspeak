@@ -79,16 +79,19 @@ class TestCliCapture(unittest.TestCase):
             "FAKE_ADB_STATE": os.path.join(self.test_dir, "edittext.state"),
             "FAKE_ADB_KEYBOARD": os.path.join(self.test_dir, "keyboard.state"),
             "FAKE_ADB_FOCUS": os.path.join(self.test_dir, "focus.state"),
+            "FAKE_ADB_SCREEN": os.path.join(self.test_dir, "screen.state"),
+            "FAKE_ADB_IME": os.path.join(self.test_dir, "ime.state"),
+            "FAKE_ADB_CANDIDATE_SOURCE": os.path.join(
+                self.test_dir, "candidate_source.state"),
             "FAKE_ADB_REPHRASING": CANDIDATE_REPHRASING,
             "FAKE_GIT_HEAD": head,
             "PYTHONPATH": self.repo_root_abs,
         }
-        with open(env["FAKE_ADB_STATE"], "w") as f:
-            f.write("")
-        with open(env["FAKE_ADB_KEYBOARD"], "w") as f:
-            f.write("")
-        with open(env["FAKE_ADB_FOCUS"], "w") as f:
-            f.write("")
+        for k in ("FAKE_ADB_STATE", "FAKE_ADB_KEYBOARD", "FAKE_ADB_FOCUS",
+                  "FAKE_ADB_SCREEN", "FAKE_ADB_IME",
+                  "FAKE_ADB_CANDIDATE_SOURCE"):
+            with open(env[k], "w") as f:
+                f.write("")
         result = subprocess.run(
             [sys.executable, "-m", "android.scripts.m2_device.cli",
              "capture",
@@ -200,12 +203,18 @@ class TestCliCapture(unittest.TestCase):
             "FAKE_ADB_STATE": os.path.join(self.test_dir, "edittext.state"),
             "FAKE_ADB_KEYBOARD": os.path.join(self.test_dir, "keyboard.state"),
             "FAKE_ADB_FOCUS": os.path.join(self.test_dir, "focus.state"),
+            "FAKE_ADB_SCREEN": os.path.join(self.test_dir, "screen.state"),
+            "FAKE_ADB_IME": os.path.join(self.test_dir, "ime.state"),
+            "FAKE_ADB_CANDIDATE_SOURCE": os.path.join(
+                self.test_dir, "candidate_source.state"),
             "FAKE_ADB_REPHRASING": CANDIDATE_REPHRASING,
             "FAKE_GIT_HEAD": head,
             "PYTHONPATH": self.repo_root_abs,
         }
         env.update(extra_env)
-        for k in ("FAKE_ADB_STATE", "FAKE_ADB_KEYBOARD", "FAKE_ADB_FOCUS"):
+        for k in ("FAKE_ADB_STATE", "FAKE_ADB_KEYBOARD", "FAKE_ADB_FOCUS",
+                  "FAKE_ADB_SCREEN", "FAKE_ADB_IME",
+                  "FAKE_ADB_CANDIDATE_SOURCE"):
             with open(env[k], "w") as f:
                 f.write("")
         return subprocess.run(

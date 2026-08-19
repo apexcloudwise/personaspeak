@@ -1,5 +1,13 @@
 #!/usr/bin/env python3
-"""Fake adb for device-free M2 harness qualification tests."""
+"""Fake adb for device-free M2 harness qualification tests.
+
+Honest about the 2026-08-19 ruling (#79): uiautomator cannot observe an
+IME window on API 34, so hierarchies here contain ZERO keyboard-package
+nodes — host-app nodes only. Keyboard facts flow exclusively through the
+channels a real device actually offers: `ime enable`/`ime set` state,
+`dumpsys input_method`, `dumpsys window windows`, and the host editor
+node's text attribute. Every knob is opt-in per run.
+"""
 import os
 import struct
 import sys
@@ -11,32 +19,40 @@ if log_path:
     with open(log_path, "a") as f:
         f.write(f"adb: {' '.join(sys.argv[1:])}\n")
 
-STATE_FILE = os.environ.get("FAKE_ADB_STATE", "/tmp/fake_adb_edittext.state")
-KB_FILE = os.environ.get("FAKE_ADB_KEYBOARD", "/tmp/fake_adb_keyboard.state")
-FOCUS_FILE = os.environ.get("FAKE_ADB_FOCUS", "/tmp/fake_adb_focus.state")
+_uid = os.getuid()
+STATE_FILE = os.environ.get("FAKE_ADB_STATE", f"/tmp/fake_adb_edittext.{_uid}.state")
+KB_FILE = os.environ.get("FAKE_ADB_KEYBOARD", f"/tmp/fake_adb_keyboard.{_uid}.state")
+FOCUS_FILE = os.environ.get("FAKE_ADB_FOCUS", f"/tmp/fake_adb_focus.{_uid}.state")
+SCREEN_FILE = os.environ.get("FAKE_ADB_SCREEN", f"/tmp/fake_adb_screen.{_uid}.state")
+IME_FILE = os.environ.get("FAKE_ADB_IME", f"/tmp/fake_adb_ime.{_uid}.state")
+CAND_SRC_FILE = os.environ.get("FAKE_ADB_CANDIDATE_SOURCE", f"/tmp/fake_adb_cand_src.{_uid}.state")
 CANDIDATE = os.environ.get("FAKE_ADB_REPHRASING", "")
 SOURCE = "Tea at six."
 STALE = "Tea at seven."
 
-APPLY_BOUNDS = (100, 2300, 500, 2380)
-CANCEL_BOUNDS = (580, 2300, 980, 2380)
-CLEAR_BOUNDS = (950, 200, 1020, 270)
-EDITOR_BOUNDS = (100, 200, 900, 300)
-KEY_TAP_BOUNDS = [
-    ("t", 430, 1330, 520, 1420), ("e", 240, 1330, 330, 1420),
-    ("a", 55, 1430, 145, 1520), ("s", 150, 1430, 240, 1520),
-    ("i", 715, 1330, 805, 1420), ("x", 200, 1530, 290, 1620),
-    ("v", 390, 1530, 480, 1620), ("n", 580, 1530, 670, 1620),
-    (" ", 345, 1630, 675, 1720), (".", 685, 1630, 775, 1720),
-]
-KEY_LABELS = {
-    "t": "T", "e": "E", "a": "A", "s": "S", "i": "I", "x": "X",
-    "v": "V", "n": "N", " ": "Space", ".": "Period",
+COMPONENT = "biz.pixelperfectstudios.personaspeak/com.menny.android.anysoftkeyboard.SoftKeyboard"
+KEYBOARD_PACKAGE = "biz.pixelperfectstudios.personaspeak"
+EDITOR_RES_ID = "com.google.android.settings.intelligence:id/open_search_view_edit_text"
+EDITOR_HINT = "Search settings"
+SEARCH_BAR_RES_ID = "com.android.settings:id/search_action_bar"
+
+# Real-layout geometry (2026-08-19 debug session), mirrored from the
+# harness pins so the fake only answers taps the real keyboard has.
+SEARCH_BAR_BOUNDS = (42, 591, 1038, 728)
+EDITOR_BOUNDS = (126, 149, 1080, 275)
+KEY_COORDS = {
+    "t": (486, 1794), "e": (270, 1794), "a": (108, 1932),
+    "s": (216, 1932), "i": (810, 1794), "x": (215, 2072),
+    "v": (431, 2072), "n": (647, 2072),
+    " ": (566, 2210), ".": (755, 2210),
 }
-KB_VIEW = (
-    '<node resource-id="biz.pixelperfectstudios.personaspeak:id/keyboard_view" '
-    'class="android.widget.FrameLayout" bounds="[0,1300][1080,2400]"/>'
-)
+REWRITE_TAP = (116, 1452)
+CANCEL_TAP = (180, 1452)
+APPLY_TAP = (105, 1452)
+DISMISS_TAP = (328, 1452)
+TAP_SLOP = 54  # half a 108px key cell
+COMPACT_TOP = 1378
+EXPANDED_TOP = 1260
 
 
 def _read(path):
@@ -53,20 +69,14 @@ def _write(path, s):
 
 
 def _reset_to_pristine():
-    """`emu snapshot load` reverts the whole device: editor contents,
-    keyboard panel, and focus return to the pristine fixture state."""
+    """`emu snapshot load` reverts the whole device: screen, editor,
+    keyboard panel, focus, and the IME enablement/selection mutation."""
     _write(STATE_FILE, "")
     _write(KB_FILE, "")
     _write(FOCUS_FILE, "")
-
-
-def _key_nodes():
-    return "".join(
-        f'<node resource-id="biz.pixelperfectstudios.personaspeak:id/key"'
-        f' content-desc="{KEY_LABELS[ch]}" class="android.widget.Key"'
-        f' bounds="[{x1},{y1}][{x2},{y2}]"/>'
-        for ch, x1, y1, x2, y2 in KEY_TAP_BOUNDS
-    )
+    _write(SCREEN_FILE, "")
+    _write(IME_FILE, "")
+    _write(CAND_SRC_FILE, "")
 
 
 def _write_png(path):
@@ -97,6 +107,44 @@ def _write_mp4(path):
         f.write(ftyp + mdat)
 
 
+def _render_hierarchy(duplicate_editor=False):
+    """Host-app nodes only. The IME window — keys, panel, candidate —
+    is structurally invisible to uiautomator on API 34 and must never
+    appear here (issue #79)."""
+    if _read(SCREEN_FILE) == "search":
+        text = _read(STATE_FILE)
+        shown = text if text else EDITOR_HINT
+        focused = "true" if _read(FOCUS_FILE) == "1" else "false"
+        ex1, ey1, ex2, ey2 = EDITOR_BOUNDS
+        editor = (
+            f'<node index="0" text="{shown}" focused="{focused}" '
+            f'resource-id="{EDITOR_RES_ID}" '
+            f'class="android.widget.EditText" package="com.google.android.settings.intelligence" '
+            f'bounds="[{ex1},{ey1}][{ex2},{ey2}]"/>'
+        )
+        if duplicate_editor:
+            editor = editor + editor
+        return (
+            '<hierarchy rotation="0">'
+            '<node index="0" text="" resource-id="com.google.android.settings.intelligence:id/open_search_view_status_bar_spacer" '
+            'class="android.view.View" package="com.google.android.settings.intelligence" bounds="[0,0][1080,128]"/>'
+            f'{editor}'
+            '<node index="2" text="" resource-id="com.google.android.settings.intelligence:id/open_search_view_divider" '
+            'class="android.view.View" package="com.google.android.settings.intelligence" bounds="[0,275][1080,301]"/>'
+            '</hierarchy>'
+        )
+    bx1, by1, bx2, by2 = SEARCH_BAR_BOUNDS
+    return (
+        '<hierarchy rotation="0">'
+        f'<node index="0" text="" resource-id="{SEARCH_BAR_RES_ID}" '
+        f'class="android.view.ViewGroup" package="com.android.settings" '
+        f'clickable="true" focusable="true" focused="false" bounds="[{bx1},{by1}][{bx2},{by2}]"/>'
+        '<node index="1" text="Search settings" resource-id="com.android.settings:id/search_action_bar_title" '
+        'class="android.widget.TextView" package="com.android.settings" bounds="[200,624][553,695]"/>'
+        '</hierarchy>'
+    )
+
+
 def _write_hierarchy(path, duplicate_res_id="", malformed=False, symlinked=False):
     if malformed:
         with open(path, "wb") as f:
@@ -109,64 +157,197 @@ def _write_hierarchy(path, duplicate_res_id="", malformed=False, symlinked=False
             os.path.dirname(os.path.dirname(os.path.abspath(path))),
             "hierarchy_source.xml")
         with open(target, "w") as f:
-            f.write(_render_hierarchy(duplicate_res_id))
+            f.write(_render_hierarchy())
         if os.path.lexists(path):
             os.remove(path)
         os.symlink(target, path)
         return
+    duplicate = bool(duplicate_res_id) and duplicate_res_id in EDITOR_RES_ID
     with open(path, "w") as f:
-        f.write(_render_hierarchy(duplicate_res_id))
+        f.write(_render_hierarchy(duplicate_editor=duplicate))
 
 
-def _render_hierarchy(duplicate_res_id=""):
-    text = _read(STATE_FILE)
-    kb = _read(KB_FILE)
-    focused = "true" if _read(FOCUS_FILE) == "1" else "false"
-    nodes = KB_VIEW + _key_nodes()
-    editor = (
-        f'<node index="0" text="{text}" focused="{focused}" '
-        'resource-id="com.android.settings:id/search_action_bar" '
-        'class="android.widget.EditText" bounds="[100,200][900,300]"/>'
-    )
-    if duplicate_res_id and duplicate_res_id in "com.android.settings:id/search_action_bar":
-        # Selector duplication: two nodes answer the same resource-id.
-        editor = editor + editor
-    if text:
-        nodes += (
-            '<node resource-id="com.android.settings:id/search_close_btn" '
-            'content-desc="Clear" class="android.widget.ImageView" '
-            'bounds="[950,200][1020,270]"/>'
+def _ime_bound():
+    """The IME binds only when enabled, selected, and an editor holds
+    focus — the state machine Android actually enforces."""
+    return (_read(IME_FILE) == "set"
+            and _read(SCREEN_FILE) == "search"
+            and _read(FOCUS_FILE) == "1")
+
+
+def _panel_expanded():
+    # Loading keeps the compact row; Review (any outcome) grows upward.
+    return _read(KB_FILE) in ("REVIEW", "APPLIED", "STALE")
+
+
+def _advance_loading():
+    # The fixture provider's 400ms latency: any dumpsys query arrives
+    # after the host's settle sleep, so loading has completed.
+    if _read(KB_FILE) == "LOADING":
+        _write(KB_FILE, "REVIEW")
+
+
+def _dumpsys_input_method():
+    if os.environ.get("FAKE_ADB_IME_UNBOUND") or not _ime_bound():
+        return (
+            "  mCurMethodId=com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME\n"
+            "  mHaveConnection=false\n"
+            "  mBoundToMethod=false\n"
+            "  mVisibleBound=false\n"
         )
-    if kb == "LOADING":
-        nodes += (
-            '<node text="LOADING" resource-id="biz.pixelperfectstudios.personaspeak:id/panel_state" '
-            'class="android.widget.TextView" bounds="[10,1810][1070,1850]"/>'
-            '<node resource-id="biz.pixelperfectstudios.personaspeak:id/cancel_button" '
-            'content-desc="Cancel" class="android.widget.Button" bounds="[580,2300][980,2380]"/>'
-        )
-    elif kb == "REVIEW":
-        nodes += (
-            f'<node text="REVIEW" resource-id="biz.pixelperfectstudios.personaspeak:id/panel_state" '
-            f'class="android.widget.TextView" bounds="[10,1810][1070,1850]"/>'
-            f'<node text="{CANDIDATE}" resource-id="biz.pixelperfectstudios.personaspeak:id/candidate_text" '
-            f'class="android.widget.TextView" bounds="[10,1850][1070,1900]"/>'
-            f'<node resource-id="biz.pixelperfectstudios.personaspeak:id/apply_button" '
-            f'content-desc="Apply" class="android.widget.Button" bounds="[100,2300][500,2380]"/>'
-            f'<node resource-id="biz.pixelperfectstudios.personaspeak:id/cancel_button" '
-            f'content-desc="Cancel" class="android.widget.Button" bounds="[580,2300][980,2380]"/>'
-        )
+    _advance_loading()
     return (
-        '<hierarchy rotation="0">'
-        f'{editor}'
-        f'{nodes}'
-        '</hierarchy>'
+        f"  mCurMethodId={COMPONENT}\n"
+        "  mCurClient=ClientState{mUid=1000}\n"
+        "  mHaveConnection=true\n"
+        "  mBoundToMethod=true\n"
+        "  mCurMethod=MethodState{mToken=...}\n"
+        "  mSystemReady=true\n"
+        "  mVisibleBound=true\n"
     )
+
+
+def _dumpsys_window():
+    if os.environ.get("FAKE_ADB_IME_WINDOW_MISSING") or not _ime_bound():
+        return (
+            "  Window #1 Window{abc123 u0 com.android.settings/com.android.settings.Settings}:\n"
+            "    mOwnerUid=1000 package=com.android.settings\n"
+            "    mViewVisibility=0x0\n"
+            "    isReadyForDisplay()=true\n"
+            "    mFrame=[0,0][1080,2400]\n"
+            "    HAS_DRAWN\n"
+        )
+    _advance_loading()
+    if _panel_expanded() and not os.environ.get("FAKE_ADB_WINDOW_NEVER_EXPANDS"):
+        top = EXPANDED_TOP
+    else:
+        top = COMPACT_TOP
+    return (
+        "  Window #1 Window{abc123 u0 com.android.settings/com.android.settings.Settings}:\n"
+        "    mOwnerUid=1000 package=com.android.settings\n"
+        "    mViewVisibility=0x0\n"
+        "    isReadyForDisplay()=true\n"
+        "    mFrame=[0,0][1080,2400]\n"
+        "    HAS_DRAWN\n"
+        "  Window #4 Window{d4e5f6 u0 InputMethod}:\n"
+        f"    mOwnerUid=10198 mShowToOwnerOnly=true package={KEYBOARD_PACKAGE} userId=0\n"
+        "    mAttrs=WM.LayoutParams{(0,0)(fillxfh) gr=#11 sim=#32 ty=INPUT_METHOD fmt=-3}\n"
+        "    mViewVisibility=0x0 mHaveFrame=true\n"
+        "    isReadyForDisplay()=true\n"
+        f"    mFrame=[0,{top}][1080,2400]\n"
+        "    HAS_DRAWN\n"
+    )
+
+
+def _run_tap(x, y):
+    if _read(SCREEN_FILE) != "search":
+        bx1, by1, bx2, by2 = SEARCH_BAR_BOUNDS
+        if bx1 <= x <= bx2 and by1 <= y <= by2:
+            # Enter the search screen: fresh, empty, focused editor.
+            _write(SCREEN_FILE, "search")
+            _write(STATE_FILE, "")
+            _write(KB_FILE, "")
+            _write(FOCUS_FILE, "1")
+        return
+    ex1, ey1, ex2, ey2 = EDITOR_BOUNDS
+    if ex1 <= x <= ex2 and ey1 <= y <= ey2:
+        _write(FOCUS_FILE, "1")
+        return
+    # Panel row controls (IME-owned; verified only through behavior).
+    # Rewrite and Use this share the row's left slot — which one answers
+    # depends on the panel state, exactly like the real row.
+    def _near(cx, cy):
+        return abs(x - cx) <= TAP_SLOP and abs(y - cy) <= TAP_SLOP
+    panel = _read(KB_FILE)
+    if _near(*REWRITE_TAP) or _near(*APPLY_TAP):
+        if panel == "":
+            if _read(STATE_FILE):
+                _write(KB_FILE, "LOADING")
+                _write(CAND_SRC_FILE, _read(STATE_FILE))
+        elif panel == "REVIEW":
+            if _read(STATE_FILE) == _read(CAND_SRC_FILE):
+                # Fresh candidate: exactly one mutation.
+                _write(STATE_FILE, CANDIDATE)
+                _write(KB_FILE, "APPLIED")
+            else:
+                # Stale: zero mutations, candidate retained in Review.
+                _write(KB_FILE, "STALE")
+        return
+    if _near(*CANCEL_TAP):
+        if panel == "LOADING":
+            _write(KB_FILE, "")
+        return
+    if _near(*DISMISS_TAP):
+        if panel == "REVIEW":
+            _write(KB_FILE, "")
+        return
+    # Key taps: the only insertion path, exactly the pinned geometry.
+    shift = 60 if os.environ.get("FAKE_ADB_KEY_LAYOUT_SHIFTED") else 0
+    for ch, (kx, ky) in KEY_COORDS.items():
+        kx, ky = kx + shift, ky + shift
+        if abs(x - kx) <= TAP_SLOP and abs(y - ky) <= TAP_SLOP:
+            if _read(FOCUS_FILE) == "1":
+                cur = _read(STATE_FILE)
+                if not cur and ch.isalpha():
+                    cur = ch.upper()
+                else:
+                    cur += ch
+                _write(STATE_FILE, cur)
+            return
+
+
+def _run_keyevent(code):
+    if code == "4":  # BACK: the search screen closes, session ends.
+        if _read(SCREEN_FILE) == "search":
+            _write(SCREEN_FILE, "")
+            _write(STATE_FILE, "")
+            _write(KB_FILE, "")
+            _write(FOCUS_FILE, "")
+            _write(CAND_SRC_FILE, "")
+        return
+    if code == "67" and _read(SCREEN_FILE) == "search":  # DEL
+        if _read(FOCUS_FILE) == "1":
+            cur = _read(STATE_FILE)
+            _write(STATE_FILE, cur[:-1])
+
+
+def _run_shell_segment(cmd):
+    if "ime enable" in cmd:
+        if os.environ.get("FAKE_ADB_IME_ENABLE_FAIL"):
+            sys.stderr.write("Error: ime enable failed\n")
+            sys.exit(1)
+        _write(IME_FILE, "enabled")
+        return
+    if "ime set" in cmd:
+        if os.environ.get("FAKE_ADB_IME_SET_FAIL"):
+            sys.stderr.write("Error: ime set failed\n")
+            sys.exit(1)
+        _write(IME_FILE, "set")
+        return
+    if "dumpsys input_method" in cmd:
+        print(_dumpsys_input_method(), end="")
+        return
+    if "dumpsys window" in cmd:
+        print(_dumpsys_window(), end="")
+        return
+    if "input tap" in cmd:
+        parts = cmd.split()
+        idx = parts.index("tap")
+        _run_tap(int(parts[idx + 1]), int(parts[idx + 2]))
+        return
+    if "input keyevent" in cmd:
+        parts = cmd.split()
+        idx = parts.index("keyevent")
+        _run_keyevent(parts[idx + 1])
+        return
+    if "am start" in cmd:
+        _write(SCREEN_FILE, "")
+        return
 
 
 cmd = " ".join(sys.argv[1:])
 
 # --- Acceptance-matrix knobs (issue #62): scripted failure injection. ---
-# Every knob is opt-in per run; unset knobs leave the honest fake intact.
 
 _fail_knob = os.environ.get("FAKE_ADB_FAIL", "")
 if "=" in _fail_knob:
@@ -218,23 +399,30 @@ elif "settings get global transition_animation_scale" in cmd:
     print("1.0")
 elif "settings get global animator_duration_scale" in cmd:
     print("null")
+elif "settings get secure enabled_input_methods" in cmd:
+    if _read(IME_FILE):
+        print("com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME:"
+              "com.google.android.tts/com.google.android.apps.speech.tts.googletts.settings.asr.voiceime.VoiceInputMethodService:"
+              + COMPONENT)
+    else:
+        print("com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME:"
+              "com.google.android.tts/com.google.android.apps.speech.tts.googletts.settings.asr.voiceime.VoiceInputMethodService")
 elif "settings get secure default_input_method" in cmd:
-    print("com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME")
+    if _read(IME_FILE) == "set":
+        print(COMPONENT)
+    else:
+        print("com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME")
 elif "wm size" in cmd:
     print("Physical size: 1080x2400")
 elif "pm path" in cmd:
     # Absent package on a real device: exit 1, no output.
     sys.exit(1)
-elif "settings get secure enabled_input_methods" in cmd:
-    print("com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME:com.google.android.tts/com.google.android.apps.speech.tts.googletts.settings.asr.voiceime.VoiceInputMethodService")
-elif "settings get secure default_input_method" in cmd:
-    print("com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME")
 elif "getprop persist.sys.timezone" in cmd:
     print("Asia/Kolkata")
 elif "getprop ro.product.locale" in cmd:
     print("en-US")
 elif "am start" in cmd:
-    pass
+    _run_shell_segment(cmd)
 elif "install" in cmd and "pull" not in cmd:
     if os.environ.get("FAKE_ADB_INSTALL_FAIL"):
         sys.exit(1)
@@ -250,46 +438,18 @@ elif "screencap" in cmd:
     pass
 elif "screenrecord" in cmd:
     pass
-elif "input tap" in cmd:
-    parts = sys.argv
-    x_idx = parts.index("tap") + 1
-    x, y = int(parts[x_idx]), int(parts[x_idx + 1])
-    ex1, ey1, ex2, ey2 = EDITOR_BOUNDS
-    if ex1 <= x <= ex2 and ey1 <= y <= ey2:
-        _write(FOCUS_FILE, "1")
-    for char, bx1, by1, bx2, by2 in KEY_TAP_BOUNDS:
-        if bx1 <= x <= bx2 and by1 <= y <= by2:
-            cur = _read(STATE_FILE)
-            if not cur and char.isalpha():
-                cur = char.upper()
-            else:
-                cur += char
-            _write(STATE_FILE, cur)
-            if cur == SOURCE and not _read(KB_FILE):
-                _write(KB_FILE, "LOADING")
-            break
-    else:
-        cx1, cy1, cx2, cy2 = CLEAR_BOUNDS
-        if cx1 <= x <= cx2 and cy1 <= y <= cy2:
-            _write(STATE_FILE, "")
-        else:
-            kb = _read(KB_FILE)
-            if kb == "REVIEW":
-                ax1, ay1, ax2, ay2 = APPLY_BOUNDS
-                cx1b, cy1b, cx2b, cy2b = CANCEL_BOUNDS
-                if ax1 <= x <= ax2 and ay1 <= y <= ay2:
-                    cur = _read(STATE_FILE)
-                    if cur == SOURCE:
-                        # Fresh candidate: exactly one mutation, panel idle.
-                        _write(STATE_FILE, CANDIDATE)
-                        _write(KB_FILE, "")
-                    # else: stale candidate RETAINED — panel stays REVIEW,
-                    # editor unchanged, zero mutations.
-                elif cx1b <= x <= cx2b and cy1b <= y <= cy2b:
-                    _write(KB_FILE, "")
-elif "input keyevent" in cmd:
-    cur = _read(STATE_FILE)
-    _write(STATE_FILE, cur[:-1])
+elif cmd.startswith("shell ") or (
+        "shell" in sys.argv
+        and any(t in cmd for t in ("ime enable", "ime set", "dumpsys ",
+                                   "input tap", "input keyevent"))):
+    # Compound shell payloads (e.g. rewrite + cancel on one transport)
+    # execute segment by segment, left to right. Single-purpose shells
+    # reach the same segment runner.
+    argv = sys.argv[sys.argv.index("shell") + 1:]
+    payload = " ".join(argv)
+    for segment in payload.replace("&&", ";").split(";"):
+        if segment.strip():
+            _run_shell_segment(segment.strip())
 elif "emu snapshot load" in cmd:
     if os.environ.get("FAKE_ADB_RESTORE_FAIL"):
         sys.exit(2)
@@ -339,8 +499,6 @@ elif "pull" in sys.argv:
                 malformed=bool(os.environ.get("FAKE_ADB_BAD_XML")),
                 symlinked=bool(os.environ.get("FAKE_ADB_SYMLINK_XML")),
             )
-            if _read(KB_FILE) == "LOADING":
-                _write(KB_FILE, "REVIEW")
 elif "version" in cmd or "-version" in cmd or "--version" in cmd:
     print("Android Debug Bridge version 1.0.41")
 

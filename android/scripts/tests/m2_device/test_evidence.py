@@ -251,9 +251,10 @@ class TestFinalize(unittest.TestCase):
         for n in evidence.CANONICAL_PNG_NAMES:
             files[f"{n}.png"] = _valid_png_bytes()
         files[f"{evidence.CANONICAL_MP4_NAME}.mp4"] = _valid_mp4_bytes()
+        probe_label = evidence.CANONICAL_HIERARCHY_LABELS[0]
         for label in evidence.CANONICAL_HIERARCHY_LABELS:
             files[f"{label}.xml"] = (
-                journey_xml if label == "journey" else b"<hierarchy/>")
+                journey_xml if label == probe_label else b"<hierarchy/>")
         files[evidence.CANONICAL_LEDGER_NAME] = (
             ledger_bytes if ledger_bytes is not None else self._ledger_bytes())
         man = {}
@@ -529,9 +530,10 @@ class TestFinalize(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             man = self._canonical(d)
             malformed = b"<hierarchy"
-            with open(os.path.join(d, "journey.xml"), "wb") as f:
+            target = f"{evidence.CANONICAL_HIERARCHY_LABELS[0]}.xml"
+            with open(os.path.join(d, target), "wb") as f:
                 f.write(malformed)
-            man["journey.xml"] = hashlib.sha256(malformed).hexdigest()
+            man[target] = hashlib.sha256(malformed).hexdigest()
             cap = self._capture(
                 manifest_digest=evidence.manifest_digest(man),
                 with_steps=True,
@@ -545,9 +547,10 @@ class TestFinalize(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             man = self._canonical(d)
             wrong = b"<notahierarchy/>"
-            with open(os.path.join(d, "clear.xml"), "wb") as f:
+            target = f"{evidence.CANONICAL_HIERARCHY_LABELS[1]}.xml"
+            with open(os.path.join(d, target), "wb") as f:
                 f.write(wrong)
-            man["clear.xml"] = hashlib.sha256(wrong).hexdigest()
+            man[target] = hashlib.sha256(wrong).hexdigest()
             cap = self._capture(
                 manifest_digest=evidence.manifest_digest(man),
                 with_steps=True,
