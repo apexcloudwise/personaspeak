@@ -255,7 +255,9 @@ class AdbHarness:
         if status_res.stdout.decode("utf-8").strip():
             raise RuntimeError("repository not clean — uncommitted changes")
         apk_sha = commands.digest_file(self.apk_path)
-        tools = [self.adb_tool, self.emulator_tool]
+        # apksigner is mandatory after preflight; its identity rides in
+        # the recorded tool set because it carries the signer gate.
+        tools = [self.adb_tool, self.emulator_tool, self.apksigner_tool]
         if self.build_tools_tool is not None:
             tools.append(self.build_tools_tool)
         # A run over injected (fake-only) digests is mechanically barred

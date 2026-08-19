@@ -266,7 +266,9 @@ class TestAdbHarness(unittest.TestCase):
         ctx = self.harness.capture_context()
         self.assertEqual(ctx.repo_head, "abc123git")
         self.assertTrue(ctx.apk_sha256)
-        self.assertEqual(len(ctx.tools), 2)
+        self.assertEqual(len(ctx.tools), 3)
+        self.assertEqual(
+            [t.name for t in ctx.tools], ["adb", "emulator", "apksigner"])
         # setUp injects fake-only digests → the run must be mechanically
         # barred from claiming the accepted fixture receipt.
         self.assertEqual(ctx.fixture_receipt_digest, "")
