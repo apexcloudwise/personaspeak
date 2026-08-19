@@ -155,21 +155,40 @@ class _DeviceModel:
                 "  mVisibleBound=true\n")
 
     def dumpsys_window(self):
+        # Real API-34 shape (probe 2026-08-20): no mFrame lines; the
+        # InputMethod block's touchable region carries the panel state.
         if self.window_missing or not self.bound():
             return ("  Window #1 Window{abc u0 Notification Shade}:\n"
                     "    package=com.android.systemui\n    HAS_DRAWN\n")
         if self.panel == "LOADING":
             self.panel = "REVIEW"
         expanded = self.panel in ("REVIEW", "APPLIED", "STALE")
-        top = 1260 if (expanded and not self.never_expands) else 1378
+        top = 1283 if (expanded and not self.never_expands) else 1378
         return (
-            "  Window #1 Window{abc u0 com.android.settings/com.android.settings.Settings}:\n"
-            "    mOwnerUid=1000 package=com.android.settings\n"
-            f"    mFrame=[0,0][1080,2400]\n    HAS_DRAWN\n"
-            "  Window #4 Window{d4e5f6 u0 InputMethod}:\n"
-            "    mOwnerUid=10198 package=biz.pixelperfectstudios.personaspeak userId=0\n"
-            "    mViewVisibility=0x0\n    isReadyForDisplay()=true\n"
-            f"    mFrame=[0,{top}][1080,2400]\n    HAS_DRAWN\n"
+            "  Window #7 Window{213d245 u0 com.android.settings/com.android.settings.Settings}:\n"
+            "    mOwnerUid=1000 showForAllUsers=false package=com.android.settings appop=NONE\n"
+            "    mViewVisibility=0x0 mHaveFrame=true mObscured=false\n"
+            "    mHasSurface=true isReadyForDisplay()=true mWindowRemovalAllowed=false\n"
+            "    Frames: parent=[0,128][1080,2400] display=[0,128][1080,2400] frame=[0,128][1080,2400] last=[0,128][1080,2400] insetsChanged=false\n"
+            "    touchable region=SkRegion((0,0,1080,2400))\n"
+            "    WindowStateAnimator{b1c2d3 Settings}:\n"
+            "      Surface: shown=true layer=0 alpha=1.0 rect=(0.0,0.0)  transform=(1.0, 0.0, 0.0, 0.0)\n"
+            "      mDrawState=HAS_DRAWN       mLastHidden=false\n"
+            "  Window #8 Window{d035f22 u0 InputMethod}:\n"
+            "    mDisplayId=0 rootTaskId=1 mSession=Session{38d43d5 4903:u0a10192} mClient=android.os.BinderProxy@2b264ed\n"
+            "    mOwnerUid=10192 showForAllUsers=false package=biz.pixelperfectstudios.personaspeak appop=NONE\n"
+            "    mAttrs={(0,0)(fillxfill) gr=BOTTOM CENTER_VERTICAL sim={adjust=pan} ty=INPUT_METHOD fmt=TRANSPARENT wanim=0x1030056 receive insets ignoring z-order\n"
+            "    Requested w=1080 h=2272 mLayoutSeq=176\n"
+            "    mIsImWindow=true mIsWallpaper=false mIsFloatingLayer=true\n"
+            "    mViewVisibility=0x0 mHaveFrame=true mObscured=false\n"
+            "    mGivenContentInsets=[0,1250][0,0] mGivenVisibleInsets=[0,1250][0,0]\n"
+            f"    touchable region=SkRegion((0,{top},1080,2400))\n"
+            "    mHasSurface=true isReadyForDisplay()=true mWindowRemovalAllowed=false\n"
+            "    Frames: parent=[0,128][1080,2400] display=[0,128][1080,2400] frame=[0,128][1080,2400] last=[0,128][1080,2400] insetsChanged=false\n"
+            "    WindowStateAnimator{a8b0090 InputMethod}:\n"
+            "      mSurface=Surface(name=InputMethod)/@0x6bb4d89\n"
+            "      Surface: shown=true layer=0 alpha=1.0 rect=(0.0,0.0)  transform=(1.0, 0.0, 0.0, 0.0)\n"
+            "      mDrawState=HAS_DRAWN       mLastHidden=false\n"
         )
 
     # -- interactions ---------------------------------------------------
@@ -1003,6 +1022,73 @@ class TestAdbHarness(unittest.TestCase):
         self.assertEqual(window[0].cause, TerminalCause.JOURNEY_FAILED)
         self.assertFalse([s for s in steps if s.operation.startswith("tap_key")])
 
+    # Real InputMethod window blocks as the pinned fixture prints them
+    # (API 34, emulator 36.6.11 — capability probe 2026-08-20; trimmed
+    # of animation noise, every surviving line verbatim). The real dump
+    # carries no mFrame line: the window frame is fill-parent in both
+    # panel states and the touchable region carries the panel geometry.
+    _PROBE_IM_BLOCK_COMPACT = (
+        "  Window #8 Window{d035f22 u0 InputMethod}:\n"
+        "    mDisplayId=0 rootTaskId=1 mSession=Session{38d43d5 4903:u0a10192} mClient=android.os.BinderProxy@2b264ed\n"
+        "    mOwnerUid=10192 showForAllUsers=false package=biz.pixelperfectstudios.personaspeak appop=NONE\n"
+        "    mViewVisibility=0x0 mHaveFrame=true mObscured=false\n"
+        "    mGivenContentInsets=[0,1250][0,0] mGivenVisibleInsets=[0,1250][0,0]\n"
+        "    touchable region=SkRegion((0,1378,1080,2400))\n"
+        "    mHasSurface=true isReadyForDisplay()=true mWindowRemovalAllowed=false\n"
+        "    Frames: parent=[0,128][1080,2400] display=[0,128][1080,2400] frame=[0,128][1080,2400] last=[0,128][1080,2400] insetsChanged=false\n"
+        "    WindowStateAnimator{a8b0090 InputMethod}:\n"
+        "      Surface: shown=true layer=0 alpha=1.0 rect=(0.0,0.0)  transform=(1.0, 0.0, 0.0, 0.0)\n"
+        "      mDrawState=HAS_DRAWN       mLastHidden=false\n"
+    )
+    _PROBE_IM_BLOCK_EXPANDED = (
+        "  Window #8 Window{d035f22 u0 InputMethod}:\n"
+        "    mDisplayId=0 rootTaskId=1 mSession=Session{38d43d5 4903:u0a10192} mClient=android.os.BinderProxy@2b264ed\n"
+        "    mOwnerUid=10192 showForAllUsers=false package=biz.pixelperfectstudios.personaspeak appop=NONE\n"
+        "    mViewVisibility=0x0 mHaveFrame=true mObscured=false\n"
+        "    mGivenContentInsets=[0,1155][0,0] mGivenVisibleInsets=[0,1155][0,0]\n"
+        "    touchable region=SkRegion((0,1283,1080,2400))\n"
+        "    mHasSurface=true isReadyForDisplay()=true mWindowRemovalAllowed=false\n"
+        "    Frames: parent=[0,128][1080,2400] display=[0,128][1080,2400] frame=[0,128][1080,2400] last=[0,128][1080,2400] insetsChanged=false\n"
+        "    WindowStateAnimator{a8b0090 InputMethod}:\n"
+        "      Surface: shown=true layer=0 alpha=1.0 rect=(0.0,0.0)  transform=(1.0, 0.0, 0.0, 0.0)\n"
+        "      mDrawState=HAS_DRAWN       mLastHidden=false\n"
+    )
+
+    def _window_res(self, block):
+        return RemoteResult(
+            remote_rc=0,
+            transport=CommandResult(
+                argv=["dumpsys", "window", "windows"],
+                start_utc="", end_utc="", returncode=0,
+                stdout=block.encode(), stderr=b"",
+            ),
+        )
+
+    def test_window_frame_reads_real_probe_bytes(self):
+        # The parser is pinned to the device's own bytes, not to the
+        # fake's rendering of them: compact 1378, expanded 1283 — the
+        # 95px upward growth that is the review signal.
+        for block, want in ((self._PROBE_IM_BLOCK_COMPACT, (1378, 2400)),
+                            (self._PROBE_IM_BLOCK_EXPANDED, (1283, 2400))):
+            with patch.object(self.harness, "_shell",
+                              return_value=self._window_res(block)):
+                self.assertEqual(
+                    self.harness._ime_window_frame([], "probe"), want)
+
+    def test_window_failure_preserves_raw_block(self):
+        # Attempt 1 (run 20260819T203941Z) failed with "frame absent"
+        # and discarded the bytes, leaving the real format unpinnable
+        # from the record. A failed check now carries the raw block.
+        block = self._PROBE_IM_BLOCK_COMPACT.replace(
+            "touchable region=SkRegion((0,1378,1080,2400))\n", "")
+        steps = []
+        with patch.object(self.harness, "_shell",
+                          return_value=self._window_res(block)):
+            self.assertIsNone(self.harness._ime_window_frame(steps, "s1"))
+        stderr = steps[0].result.stderr.decode("utf-8", "replace")
+        self.assertIn("touchable region absent", stderr)
+        self.assertIn("WindowStateAnimator", stderr)
+
     def test_run_journey_detects_review_that_never_expands(self):
         # A rewrite that stays compact is a review that never happened;
         # the window-geometry check must fail closed before any apply.
@@ -1098,9 +1184,34 @@ class TestAdbHarness(unittest.TestCase):
         res = self.harness.restore()
         self.assertEqual(res.returncode, 0)
         self.mock_runner.assert_called_once_with(
-            ["adb", "-s", "emulator-5554", "emu", "snapshot", "load", SNAPSHOT_NAME],
+            ["adb", "-s", "emulator-5554", "emu", "avd", "snapshot",
+             "load", SNAPSHOT_NAME],
             timeout=30.0,
         )
+
+    def test_restore_detects_console_ko_despite_rc_zero(self):
+        # The real 36.x console answers a rejected snapshot load with a
+        # KO line on stdout AND returncode 0 (attempt 1, run
+        # 20260819T203941Z). rc alone would record a restore that never
+        # happened; stdout is the verdict.
+        self.mock_runner.return_value = CommandResult(
+            argv=["adb", "-s", "emulator-5554", "emu", "avd", "snapshot",
+                  "load", SNAPSHOT_NAME],
+            start_utc="", end_utc="", returncode=0,
+            stdout=b"KO: unknown command, try 'help'\r\n", stderr=b"",
+        )
+        res = self.harness.restore()
+        self.assertEqual(res.returncode, 1)
+        self.assertIn(b"console rejected restore", res.stderr)
+        self.assertIn(b"KO: unknown command", res.stderr)
+
+    def test_restore_ok_line_passes_through(self):
+        self.mock_runner.return_value = CommandResult(
+            argv=[], start_utc="", end_utc="", returncode=0,
+            stdout=b"OK", stderr=b"",
+        )
+        res = self.harness.restore()
+        self.assertEqual(res.returncode, 0)
 
     def test_release_emulator_process(self):
         mock_process = MagicMock()

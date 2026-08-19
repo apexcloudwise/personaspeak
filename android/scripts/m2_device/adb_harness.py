@@ -92,10 +92,13 @@ REWRITE_TAP = (116, 1452)
 CANCEL_TAP = (180, 1452)
 APPLY_TAP = (105, 1452)
 DISMISS_TAP = (328, 1452)
-# InputMethod window frame (dumpsys window): the compact row tops out
-# at y=1378; Review expands upward past y=1330. Frame top below the
-# compact line means the panel grew — the machine-visible half of the
-# review-ready signal; the candidate surface itself is screenshot-bound.
+# InputMethod window geometry (dumpsys window): the compact row's
+# touchable region tops out at y=1378; Review expands it upward past
+# y=1330. A region top below the compact line means the panel grew —
+# the machine-visible half of the review-ready signal; the candidate
+# surface itself is screenshot-bound. (API 34 publishes this only as the
+# touchable region; the window frame itself is fill-parent in both
+# states — probe 2026-08-20.)
 IME_COMPACT_TOP = 1378
 IME_EXPANDED_MAX_TOP = 1330
 # FakeProvider's fixture latency is 400ms; the host sleeps past it
@@ -681,8 +684,9 @@ class AdbHarness:
 
     def _ime_window_frame(self, steps, tag: str) -> tuple[int, int] | None:
         """dumpsys window: the InputMethod window owned by our package,
-        shown and drawn. Returns (top, bottom) of its frame, or None on
-        any refusal — never a guessed frame."""
+        shown and drawn. Returns (top, bottom) of its touchable region —
+        the visible keyboard area — or None on any refusal, never a
+        guessed frame."""
         res = self._shell("dumpsys", "window", "windows")
         if self._ambiguous(res) or self._rc_of(res) != 0:
             self._step(steps, f"verify_ime_window_{tag}", res)
@@ -700,17 +704,32 @@ class AdbHarness:
                     "mViewVisibility=0x0", "isReadyForDisplay()=true",
                     "shown=true")):
                 errors.append("window not shown")
+            # The real block (API 34, emulator 36.6.11 — probe
+            # 2026-08-20) carries no mFrame line: the window frame is
+            # fill-parent in both panel states. The visible keyboard
+            # geometry lives in the touchable region, which moves with
+            # the panel — that region is the review signal's source.
             fm = re.search(
-                r"mFrame=\[(-?\d+),(-?\d+)\]\[(-?\d+),(-?\d+)\]", block)
+                r"touchable region=SkRegion\("
+                r"\((-?\d+),(-?\d+),(-?\d+),(-?\d+)\)\)", block)
             if fm is None:
-                errors.append("frame absent")
+                errors.append("touchable region absent")
             if errors:
-                self._step(steps, f"verify_ime_window_{tag}",
-                           self._fail("window", "; ".join(errors).encode()))
+                # The raw block rides in the failure record so a format
+                # drift is diagnosable from the record alone.
+                self._step(
+                    steps, f"verify_ime_window_{tag}",
+                    self._fail(
+                        "window",
+                        ("; ".join(errors) + "\n" + block[:8192]).encode()))
                 return None
             return int(fm.group(2)), int(fm.group(4))
-        self._step(steps, f"verify_ime_window_{tag}",
-                   self._fail("window", b"no InputMethod window"))
+        self._step(
+            steps, f"verify_ime_window_{tag}",
+            self._fail(
+                "window",
+                b"no InputMethod window\n"
+                + out[:8192].encode("utf-8", "replace")))
         return None
 
     def _verify_window_state(self, steps, tag: str, expanded: bool) -> bool:
@@ -1072,7 +1091,21 @@ class AdbHarness:
             except Exception:
                 pass
             self.screenrecord_process = None
-        return self._host("emu", "snapshot", "load", SNAPSHOT_NAME, timeout=30.0)
+        # The 36.x console nests the snapshot family under `avd` (probe
+        # 2026-08-20): the bare top-level form draws "KO: unknown
+        # command". Console KOs arrive with returncode 0, so stdout —
+        # not rc — is the verdict.
+        res = self._host("emu", "avd", "snapshot", "load", SNAPSHOT_NAME,
+                         timeout=30.0)
+        out = res.stdout.decode("utf-8", errors="replace")
+        if res.returncode == 0 and "KO:" in out:
+            return CommandResult(
+                argv=res.argv, start_utc=res.start_utc,
+                end_utc=res.end_utc, returncode=1, stdout=res.stdout,
+                stderr=("console rejected restore: "
+                        + out.strip()).encode(),
+            )
+        return res
 
     def verify_restore(self) -> PriorDeviceState:
         state = self.capture_prior_state()

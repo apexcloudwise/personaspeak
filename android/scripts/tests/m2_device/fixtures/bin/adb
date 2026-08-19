@@ -52,7 +52,7 @@ APPLY_TAP = (105, 1452)
 DISMISS_TAP = (328, 1452)
 TAP_SLOP = 54  # half a 108px key cell
 COMPACT_TOP = 1378
-EXPANDED_TOP = 1260
+EXPANDED_TOP = 1283
 
 
 def _read(path):
@@ -208,34 +208,44 @@ def _dumpsys_input_method():
 
 
 def _dumpsys_window():
+    # Mirrors the real API-34 dump (probe 2026-08-20,
+    # ~/m2-probe-20260820/dumpsys_window_{compact,expanded}.txt): no
+    # mFrame lines exist — each block carries a fill-parent Frames: line,
+    # and the InputMethod block's touchable region moves with the panel.
+    settings_block = (
+        "  Window #7 Window{213d245 u0 com.android.settings/com.android.settings.Settings}:\n"
+        "    mOwnerUid=1000 showForAllUsers=false package=com.android.settings appop=NONE\n"
+        "    mViewVisibility=0x0 mHaveFrame=true mObscured=false\n"
+        "    mHasSurface=true isReadyForDisplay()=true mWindowRemovalAllowed=false\n"
+        "    Frames: parent=[0,128][1080,2400] display=[0,128][1080,2400] frame=[0,128][1080,2400] last=[0,128][1080,2400] insetsChanged=false\n"
+        "    touchable region=SkRegion((0,0,1080,2400))\n"
+        "    WindowStateAnimator{b1c2d3 Settings}:\n"
+        "      Surface: shown=true layer=0 alpha=1.0 rect=(0.0,0.0)  transform=(1.0, 0.0, 0.0, 0.0)\n"
+        "      mDrawState=HAS_DRAWN       mLastHidden=false\n"
+    )
     if os.environ.get("FAKE_ADB_IME_WINDOW_MISSING") or not _ime_bound():
-        return (
-            "  Window #1 Window{abc123 u0 com.android.settings/com.android.settings.Settings}:\n"
-            "    mOwnerUid=1000 package=com.android.settings\n"
-            "    mViewVisibility=0x0\n"
-            "    isReadyForDisplay()=true\n"
-            "    mFrame=[0,0][1080,2400]\n"
-            "    HAS_DRAWN\n"
-        )
+        return settings_block
     _advance_loading()
     if _panel_expanded() and not os.environ.get("FAKE_ADB_WINDOW_NEVER_EXPANDS"):
         top = EXPANDED_TOP
     else:
         top = COMPACT_TOP
-    return (
-        "  Window #1 Window{abc123 u0 com.android.settings/com.android.settings.Settings}:\n"
-        "    mOwnerUid=1000 package=com.android.settings\n"
-        "    mViewVisibility=0x0\n"
-        "    isReadyForDisplay()=true\n"
-        "    mFrame=[0,0][1080,2400]\n"
-        "    HAS_DRAWN\n"
-        "  Window #4 Window{d4e5f6 u0 InputMethod}:\n"
-        f"    mOwnerUid=10198 mShowToOwnerOnly=true package={KEYBOARD_PACKAGE} userId=0\n"
-        "    mAttrs=WM.LayoutParams{(0,0)(fillxfh) gr=#11 sim=#32 ty=INPUT_METHOD fmt=-3}\n"
-        "    mViewVisibility=0x0 mHaveFrame=true\n"
-        "    isReadyForDisplay()=true\n"
-        f"    mFrame=[0,{top}][1080,2400]\n"
-        "    HAS_DRAWN\n"
+    return settings_block + (
+        "  Window #8 Window{d035f22 u0 InputMethod}:\n"
+        "    mDisplayId=0 rootTaskId=1 mSession=Session{38d43d5 4903:u0a10192} mClient=android.os.BinderProxy@2b264ed\n"
+        "    mOwnerUid=10192 showForAllUsers=false package=" + KEYBOARD_PACKAGE + " appop=NONE\n"
+        "    mAttrs={(0,0)(fillxfill) gr=BOTTOM CENTER_VERTICAL sim={adjust=pan} ty=INPUT_METHOD fmt=TRANSPARENT wanim=0x1030056 receive insets ignoring z-order\n"
+        "    Requested w=1080 h=2272 mLayoutSeq=176\n"
+        "    mIsImWindow=true mIsWallpaper=false mIsFloatingLayer=true\n"
+        "    mViewVisibility=0x0 mHaveFrame=true mObscured=false\n"
+        "    mGivenContentInsets=[0,1250][0,0] mGivenVisibleInsets=[0,1250][0,0]\n"
+        f"    touchable region=SkRegion((0,{top},1080,2400))\n"
+        "    mHasSurface=true isReadyForDisplay()=true mWindowRemovalAllowed=false\n"
+        "    Frames: parent=[0,128][1080,2400] display=[0,128][1080,2400] frame=[0,128][1080,2400] last=[0,128][1080,2400] insetsChanged=false\n"
+        "    WindowStateAnimator{a8b0090 InputMethod}:\n"
+        "      mSurface=Surface(name=InputMethod)/@0x6bb4d89\n"
+        "      Surface: shown=true layer=0 alpha=1.0 rect=(0.0,0.0)  transform=(1.0, 0.0, 0.0, 0.0)\n"
+        "      mDrawState=HAS_DRAWN       mLastHidden=false\n"
     )
 
 
@@ -450,13 +460,25 @@ elif cmd.startswith("shell ") or (
     for segment in payload.replace("&&", ";").split(";"):
         if segment.strip():
             _run_shell_segment(segment.strip())
-elif "emu snapshot load" in cmd:
+elif "emu avd snapshot load" in cmd:
+    # The 36.x console grammar: snapshots live under `avd` (probe
+    # 2026-08-20). The bare top-level form below is the form the real
+    # console rejects.
     if os.environ.get("FAKE_ADB_RESTORE_FAIL"):
         sys.exit(2)
+    if os.environ.get("FAKE_ADB_RESTORE_KO"):
+        # The console's lie class: a KO line on stdout with rc 0.
+        print("KO: unknown command, try 'help'")
+        sys.exit(0)
     if not os.environ.get("FAKE_ADB_RESTORE_NORESET"):
         _reset_to_pristine()
     if _wm_flag:
         _write(_wm_flag, "1")
+elif "emu snapshot load" in cmd:
+    # No top-level snapshot command on the real 36.x console; the KO
+    # arrives with rc 0, which is exactly why the harness reads stdout.
+    print("KO: unknown command, try 'help'")
+    sys.exit(0)
 elif "emu kill" in cmd:
     pass
 elif "pull" in sys.argv:

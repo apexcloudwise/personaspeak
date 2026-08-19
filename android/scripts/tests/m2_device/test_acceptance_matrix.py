@@ -227,7 +227,7 @@ GOLDEN_CONTACTS = (
     "adb: -s emulator-5554 shell screencap -p /sdcard/07-settings.png",
     "adb: -s emulator-5554 pull /sdcard/07-settings.png <RUN>/artifacts/07-settings.png",
     "adb: -s emulator-5554 pull /sdcard/journey.mp4 <RUN>/artifacts/journey.mp4",
-    "adb: -s emulator-5554 emu snapshot load m2_pristine",
+    "adb: -s emulator-5554 emu avd snapshot load m2_pristine",
     "adb: -s emulator-5554 shell getprop sys.boot_completed",
     "adb: -s emulator-5554 shell getprop ro.build.fingerprint",
     "adb: -s emulator-5554 shell getprop ro.build.version.sdk",
@@ -413,7 +413,7 @@ GOLDEN_LEDGER_ARGV = (
     ["<BIN>/adb", "-s", "emulator-5554", "pull", "/sdcard/07-settings.png", "<RUN>/artifacts/07-settings.png", "host"],
     ["<BIN>/adb", "-s", "emulator-5554", "shell", "screenrecord", "--time-limit", "30", "/sdcard/journey.mp4", "shell"],
     ["<BIN>/adb", "-s", "emulator-5554", "pull", "/sdcard/journey.mp4", "<RUN>/artifacts/journey.mp4", "host"],
-    ["<BIN>/adb", "-s", "emulator-5554", "emu", "snapshot", "load", "m2_pristine", "host"],
+    ["<BIN>/adb", "-s", "emulator-5554", "emu", "avd", "snapshot", "load", "m2_pristine", "host"],
     ["<BIN>/adb", "-s", "emulator-5554", "shell", "getprop", "sys.boot_completed", "shell"],
     ["<BIN>/adb", "-s", "emulator-5554", "shell", "getprop", "ro.build.fingerprint", "shell"],
     ["<BIN>/adb", "-s", "emulator-5554", "shell", "getprop", "ro.build.version.sdk", "shell"],
@@ -977,6 +977,27 @@ class TestAcceptanceMatrix(unittest.TestCase):
         restore = self._last(record, "restore")
         self.assertEqual(restore.cause, TerminalCause.CLEANUP_PARTIAL)
         self.assertEqual(restore.result.returncode, 2)
+        verify = self._last(record, "verify_restore")
+        self.assertEqual(verify.cause, TerminalCause.RESTORATION_MISMATCH)
+        self.assertEqual(self._last(record, "release_emulator").cause,
+                         TerminalCause.COMPLETED)
+        self.assertEqual(self._last(record, "ledger").cause,
+                         TerminalCause.COMPLETED)
+
+    def test_matrix_console_ko_restore(self):
+        # The console's lie class from attempt 1 (run 20260819T203941Z):
+        # a rejected snapshot load answers KO on stdout with returncode
+        # 0. The restore step must read the verdict from stdout, record
+        # CLEANUP_PARTIAL instead of a false COMPLETED, and the
+        # un-restored device must still fail the restoration verdict.
+        result = self._run({"FAKE_ADB_RESTORE_KO": "1"})
+        self.assertNotEqual(result.returncode, 0)
+        _, record = self._record()
+        self._assert_common(record)
+        restore = self._last(record, "restore")
+        self.assertEqual(restore.cause, TerminalCause.CLEANUP_PARTIAL)
+        self.assertEqual(restore.result.returncode, 1)
+        self.assertIn(b"console rejected restore", restore.result.stderr)
         verify = self._last(record, "verify_restore")
         self.assertEqual(verify.cause, TerminalCause.RESTORATION_MISMATCH)
         self.assertEqual(self._last(record, "release_emulator").cause,
