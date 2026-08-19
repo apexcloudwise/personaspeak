@@ -10,6 +10,17 @@ Newest first, like all respectable patch notes.
 
 ---
 
+## 2026-08-19 — The fourth tool finally signs the guest book
+
+- The signer gate gained an apksigner in PR #76's second round, but the
+  capture record's tool identities never learned its name — the run
+  could prove the APK's certificate while staying mum about which
+  binary vouched for it. The recorded tool set now includes apksigner
+  alongside adb and emulator, so a qualification record names every
+  tool whose verdict it carries.
+
+---
+
 ## 2026-08-19 — The pins meet the actual fixture and admit they'd never met before
 
 - Seven instrument constants were fake-echo values — strings the test
