@@ -77,6 +77,9 @@ def main():
         "FAKE_ADB_STATE": os.path.join(test_dir, "edittext.state"),
         "FAKE_ADB_KEYBOARD": os.path.join(test_dir, "keyboard.state"),
         "FAKE_ADB_FOCUS": os.path.join(test_dir, "focus.state"),
+        "FAKE_ADB_SCREEN": os.path.join(test_dir, "screen.state"),
+        "FAKE_ADB_IME": os.path.join(test_dir, "ime.state"),
+        "FAKE_ADB_CANDIDATE_SOURCE": os.path.join(test_dir, "candidate_source.state"),
         "FAKE_ADB_REPHRASING": CANDIDATE_REPHRASING,
         "FAKE_GIT_HEAD": head,
         "PYTHONPATH": _repo_root,
@@ -85,7 +88,9 @@ def main():
     for key, value in os.environ.items():
         if key.startswith(("FAKE_ADB_", "FAKE_EMU_", "FAKE_GIT_")):
             env[key] = value
-    for k in ("FAKE_ADB_STATE", "FAKE_ADB_KEYBOARD", "FAKE_ADB_FOCUS"):
+    for k in ("FAKE_ADB_STATE", "FAKE_ADB_KEYBOARD", "FAKE_ADB_FOCUS",
+              "FAKE_ADB_SCREEN", "FAKE_ADB_IME",
+              "FAKE_ADB_CANDIDATE_SOURCE"):
         with open(env[k], "w") as f:
             f.write("")
 

@@ -10,6 +10,32 @@ Newest first, like all respectable patch notes.
 
 ---
 
+## 2026-08-19 — The journey-facts layer, rebuilt on channels that exist
+
+- The overseer-approved replacement (#79, PR #80) is implemented. The
+  journey now enables and selects the IME after install (both
+  fail-closed), proves binding through dumpsys input_method and the
+  InputMethod window through dumpsys window, and reads every typed and
+  applied character from the Settings search editor's own hierarchy
+  node — a channel that works on real hardware, unlike the hierarchy
+  keyboard facts it replaces. Key geometry is recalibrated and pinned
+  against the actual layout: letter rows sit ~400px lower than the old
+  pins assumed, which is how an eleven-tap sentence once wandered into
+  Google Assistant settings. Panel taps (Rewrite, Use this, Dismiss)
+  are pinned too, each verified through the editor-text bridge; the
+  candidate surface itself stays screenshot-bound for the owner's eyes,
+  with the window frame's growth as the machine-visible half of the
+  review signal. verify_restore now asserts pristine facts (identity,
+  IME baseline, package absence, search screen gone) instead of
+  demanding a journey-time editor survive a snapshot restore. The fake
+  adb stopped conjuring keyboard nodes into hierarchies and learned the
+  new channels honestly, failure knobs included; the matrix and both
+  exact goldens were regenerated from what the fake actually does.
+  Suite 347/347 twice; budgets 1029/1100 and 2647/2700, limits
+  unchanged.
+
+---
+
 ## 2026-08-19 — The journey learns to watch what the device actually shows
 
 - After two counted instrument failures, the overseer approved replacing
