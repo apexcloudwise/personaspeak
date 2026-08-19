@@ -424,7 +424,7 @@ class AdbHarness:
                 return None
             package_hash = None
             if package_present:
-                dev_path = pkg.split(":", 1)[1].strip()
+                dev_path = pkg_out.split(":", 1)[1].strip()
                 h = _query("sha256sum", dev_path)
                 if h:
                     package_hash = h.split()[0]

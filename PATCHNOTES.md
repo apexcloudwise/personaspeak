@@ -22,7 +22,11 @@ Newest first, like all respectable patch notes.
   stops the run. The fake adb used to exit 0 here, which is how 342
   green tests certified a harness that could never boot its own
   fixture; it now lies no more. Regressions ride along, and the
-  acceptance matrix documents its one honest nonzero exit.
+  acceptance matrix documents its one honest nonzero exit. Review round
+  2 caught the present-package path reading a variable that no longer
+  existed — absence had been taught so well that presence forgot its
+  own name — so a dirty-fixture run would have crashed instead of
+  hashing the installed APK. Both paths now have their regression.
 
 ---
 
