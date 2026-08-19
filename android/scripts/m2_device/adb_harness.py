@@ -404,8 +404,24 @@ class AdbHarness:
             if not m:
                 return None
             sw, sh = int(m.group(1)), int(m.group(2))
-            pkg = _query("pm", "path", KEYBOARD_PACKAGE)
-            package_present = pkg.startswith("package:")
+            # pm path for an absent package exits 1 with empty output —
+            # that is the pristine fixture's REQUIRED state, not an
+            # error (the fake toolkit used to exit 0 here, hiding the
+            # difference). rc=1 with output stays unknown state, which
+            # must stop the run rather than guess.
+            pkg_res = self._shell("pm", "path", KEYBOARD_PACKAGE)
+            if pkg_res.remote_rc is None:
+                raise commands.RemoteAmbiguousError("pm path")
+            pkg_out = pkg_res.transport.stdout.decode(
+                "utf-8", errors="replace").strip()
+            pkg_err = pkg_res.transport.stderr.decode(
+                "utf-8", errors="replace").strip()
+            if pkg_res.remote_rc == 0:
+                package_present = pkg_out.startswith("package:")
+            elif pkg_res.remote_rc == 1 and not pkg_out and not pkg_err:
+                package_present = False
+            else:
+                return None
             package_hash = None
             if package_present:
                 dev_path = pkg.split(":", 1)[1].strip()

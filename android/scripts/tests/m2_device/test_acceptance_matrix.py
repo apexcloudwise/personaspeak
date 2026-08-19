@@ -600,9 +600,19 @@ class TestAcceptanceMatrix(unittest.TestCase):
         normalized = [[self._normalize(a) for a in e["argv"]] + [e["kind"]]
                       for e in ledger]
         self.assertEqual(normalized, [list(x) for x in GOLDEN_LEDGER_ARGV])
+        # One documented nonzero exception: pm path for the absent
+        # target package exits 1 on a real device — that IS the pristine
+        # state — and the fake mirrors it. Every other entry stays clean.
+        pm_path_argv_prefix = ("<BIN>/adb", "-s", "emulator-5554",
+                               "shell", "pm", "path")
         for e in ledger:
-            self.assertEqual(e["transport_rc"], 0,
-                             f"nonzero transport rc: {e['argv']}")
+            norm = tuple(self._normalize(a) for a in e["argv"])
+            if norm[:len(pm_path_argv_prefix)] == pm_path_argv_prefix:
+                self.assertEqual(e["transport_rc"], 1,
+                                 f"pm path must reflect absence: {e['argv']}")
+            else:
+                self.assertEqual(e["transport_rc"], 0,
+                                 f"nonzero transport rc: {e['argv']}")
             self.assertFalse(e["timed_out"])
 
         # Primary outcome: every recorded step completed, canonical set
