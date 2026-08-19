@@ -30,7 +30,11 @@ preconditions. The density probe reads `qemu.sf.lcd_density`
 (`ro.sf.lcd_density` is empty on this image); `versionName` is 1.13.1 (the
 vendored keyboard's numbering); the signer pin is the on-device
 PackageSignatures digest; the enabled-IME baseline is the receipt's list.
-Line budgets are unchanged.
+Review round 2 (PR #76) hardened the signer gate: the dumpsys value is a
+32-bit Signature.hashCode kept only as device-side corroboration, while the
+gate itself is the signing certificate's SHA-256 pinned from
+`apksigner verify --print-certs` and compared as an exact output line
+before any install mutation. The budget limits are unchanged.
 
 Amended 2026-08-11 (issue #65 execution-boundary totality) to 750/2,100, amended
 2026-08-16 (issue #65 review findings) to 850/2,300, again the same day (issue

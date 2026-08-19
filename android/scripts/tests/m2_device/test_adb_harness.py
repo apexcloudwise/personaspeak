@@ -19,6 +19,7 @@ from android.scripts.m2_device.adb_harness import (
     AVD_NAME,
     CANDIDATE_REPHRASING,
     EXPECTED_SIGNER,
+    EXPECTED_SIGNER_CERT_SHA256,
     EXPECTED_VERSION_CODE,
     EXPECTED_VERSION_NAME,
     FINGERPRINT,
@@ -213,6 +214,7 @@ class TestAdbHarness(unittest.TestCase):
         )
         self.harness.adb_tool = ToolIdentity(name="adb", path="adb", version="1.0")
         self.harness.emulator_tool = ToolIdentity(name="emulator", path="emulator", version="1.0")
+        self.harness.apksigner_tool = ToolIdentity(name="apksigner", path="apksigner", version="0.9")
 
     def tearDown(self):
         self.tmp_dir.cleanup()
@@ -222,10 +224,13 @@ class TestAdbHarness(unittest.TestCase):
     @patch("android.scripts.m2_device.commands.resolve_tool")
     def test_preflight_success(self, mock_resolve, mock_socket_cls):
         def fake_resolve(name, **kwargs):
+            if name == "apksigner":
+                version = "0.9"
+            else:
+                version = (f"Android {'Debug Bridge' if name == 'adb' else 'emulator'} "
+                           f"version {'1.0.41' if name == 'adb' else '36.6.11.0'}")
             return ToolIdentity(
-                name=name, path=f"/bin/{name}",
-                version=f"Android {'Debug Bridge' if name == 'adb' else 'emulator'} version "
-                        f"{'1.0.41' if name == 'adb' else '36.6.11.0'}",
+                name=name, path=f"/bin/{name}", version=version,
                 digest="abc123",
             )
         mock_resolve.side_effect = fake_resolve
@@ -499,6 +504,10 @@ class TestAdbHarness(unittest.TestCase):
 
         def side_effect(argv, **kwargs):
             cmd = " ".join(argv)
+            if "apksigner" in cmd:
+                return _cr(rc=0, stdout=(
+                    f"Signer #1 certificate SHA-256 digest: {EXPECTED_SIGNER_CERT_SHA256}\n"
+                ).encode())
             if "dumpsys" in cmd:
                 return _cr(rc=0, stdout=(
                     f"versionName={EXPECTED_VERSION_NAME}\n"
@@ -516,6 +525,10 @@ class TestAdbHarness(unittest.TestCase):
             cmd = " ".join(argv)
             if "install" in cmd and "pull" not in cmd:
                 return _cr(rc=0, stdout=b"Success")
+            if "apksigner" in cmd:
+                return _cr(rc=0, stdout=(
+                    f"Signer #1 certificate SHA-256 digest: {EXPECTED_SIGNER_CERT_SHA256}\n"
+                ).encode())
             if "dumpsys" in cmd:
                 return _cr(rc=0, stdout=(
                     f"versionName={EXPECTED_VERSION_NAME}\n"
@@ -532,6 +545,10 @@ class TestAdbHarness(unittest.TestCase):
     def test_install_apk_host_failure(self):
         def side_effect(argv, **kwargs):
             cmd = " ".join(argv)
+            if "apksigner" in cmd:
+                return _cr(rc=0, stdout=(
+                    f"Signer #1 certificate SHA-256 digest: {EXPECTED_SIGNER_CERT_SHA256}\n"
+                ).encode())
             if "install" in cmd and "pull" not in cmd:
                 return _cr(rc=1, stderr=b"device not found")
             return _cr(rc=0)
@@ -539,6 +556,39 @@ class TestAdbHarness(unittest.TestCase):
         self.mock_runner.side_effect = side_effect
         res = self.harness.install_apk()
         self.assertEqual(res.returncode, 1)
+
+    def test_install_apk_rejects_wrong_signer_certificate(self):
+        # A different certificate digest must fail closed before the
+        # device is ever asked to install (review finding, PR 76).
+        def side_effect(argv, **kwargs):
+            cmd = " ".join(argv)
+            if "apksigner" in cmd:
+                return _cr(rc=0, stdout=(
+                    "Signer #1 certificate SHA-256 digest: "
+                    + "deadbeef" * 8 + "\n").encode())
+            return _cr(rc=0)
+
+        self.mock_runner.side_effect = side_effect
+        res = self.harness.install_apk()
+        self.assertEqual(res.returncode, 1)
+        self.assertIn(b"signer certificate mismatch", res.stderr)
+        for call in self.mock_runner.call_args_list:
+            self.assertNotIn(
+                "install", " ".join(call.args[0]),
+                "device install ran despite signer mismatch")
+
+    def test_install_apk_rejects_missing_digest_line(self):
+        # rc=0 from the tool but no digest line at all is not a pass.
+        def side_effect(argv, **kwargs):
+            cmd = " ".join(argv)
+            if "apksigner" in cmd:
+                return _cr(rc=0, stdout=b"Signer #1 certificate DN: C=US\n")
+            return _cr(rc=0)
+
+        self.mock_runner.side_effect = side_effect
+        res = self.harness.install_apk()
+        self.assertEqual(res.returncode, 1)
+        self.assertIn(b"signer certificate mismatch", res.stderr)
 
     def test_run_journey_success(self):
         self.mock_runner.side_effect = _journey_pull_writer()

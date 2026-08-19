@@ -29,6 +29,14 @@ Newest first, like all respectable patch notes.
   lives — inside the snapshot, not at the AVD top level. Fakes, tests,
   and both exact goldens updated to match reality; the journey is now
   runnable on the actual fixture instead of merely on its admirers.
+- Review round 2 caught the signer pin admiring itself: the dumpsys
+  digest is a 32-bit hash, collision-trivial and checked as a loose
+  substring. The signer gate is now cryptographic — the canonical APK's
+  certificate SHA-256, pinned from apksigner verify --print-certs and
+  compared as an exact line before the device is ever asked to install.
+  The 32-bit value stays on as device-side corroboration, honestly
+  labeled. Wrong-certificate and missing-digest regressions ride along;
+  a mismatch now stops the install rather than following it.
 
 ---
 

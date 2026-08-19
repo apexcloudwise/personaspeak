@@ -50,6 +50,7 @@ REPO_ROOT_ABS = os.path.abspath(os.path.join(HERE, "..", "..", "..", ".."))
 GOLDEN_CONTACTS = (
     "adb: --version",
     "emulator: --version",
+    "apksigner: --version",
     "emulator: -list-avds",
     "git: rev-parse HEAD",
     "git: status --porcelain",
@@ -70,6 +71,7 @@ GOLDEN_CONTACTS = (
     "adb: -s emulator-5554 shell settings get global transition_animation_scale",
     "adb: -s emulator-5554 shell settings get global animator_duration_scale",
     "adb: -s emulator-5554 shell settings get secure default_input_method",
+    "apksigner: verify --print-certs <T>/mock_app.apk",
     "adb: -s emulator-5554 install -r <T>/mock_app.apk",
     "adb: -s emulator-5554 shell dumpsys package biz.pixelperfectstudios.personaspeak",
     "adb: -s emulator-5554 shell screenrecord --time-limit 30 /sdcard/journey.mp4",
@@ -564,7 +566,7 @@ class TestAcceptanceMatrix(unittest.TestCase):
     def _assert_contacts_fake_only(self):
         for line in self._contacts():
             self.assertTrue(
-                line.startswith(("adb: ", "emulator: ", "git: ")),
+                line.startswith(("adb: ", "emulator: ", "apksigner: ", "git: ")),
                 f"contact with unknown tool: {line}")
 
     # ---------- happy path ----------
