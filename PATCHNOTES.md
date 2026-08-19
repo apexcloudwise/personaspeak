@@ -10,6 +10,22 @@ Newest first, like all respectable patch notes.
 
 ---
 
+## 2026-08-19 — The journey learns to watch what the device actually shows
+
+- After two counted instrument failures, the overseer approved replacing
+  the journey-facts layer outright (#79): uiautomator cannot observe an
+  IME window on this Android, the fakes had been politely pretending it
+  could, and the stored tap geometry matched a keyboard that exists
+  nowhere. The replacement design note lands first — enable and select
+  the IME for real, read binding and visibility from dumpsys, use the
+  host editor's own node as the behavioral bridge for typed and applied
+  text, recalibrate geometry against the actual layout, and let
+  screenshots plus the owner's eyes carry the candidate surface. The
+  proven outer instrument is untouched; the count resets narrowly and
+  honestly for the replacement layer.
+
+---
+
 ## 2026-08-19 — Absence acquires an exit code the harness can respect
 
 - The first real qualification attempt stopped itself at
