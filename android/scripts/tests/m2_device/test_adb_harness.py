@@ -414,7 +414,7 @@ class TestAdbHarness(unittest.TestCase):
                     stdout=f"Physical size: {SCREEN_WIDTH}x{SCREEN_HEIGHT}\n".encode()
                 )
             if "pm path" in cmd:
-                return _cr(stdout=b"")  # Not present
+                return _cr(rc=1)  # absent on a real device: exit 1, empty output
             if "settings get secure enabled_input_methods" in cmd:
                 return _cr(stdout=enabled_imes.encode())
             if "settings get secure default_input_method" in cmd:
@@ -433,6 +433,94 @@ class TestAdbHarness(unittest.TestCase):
         self.assertFalse(state.package_present)
         self.assertEqual(len(state.enabled_imes), 2)
         self.assertEqual(state.default_ime, gboard)
+
+    def test_capture_prior_state_absent_package_rc1(self):
+        # Regression (first counted failure, run 20260819T005731Z): the
+        # pristine fixture's REQUIRED state is package-absent, and real
+        # pm path exits 1 for it. That must yield prior state with
+        # package_present False, not prior_state_unavailable.
+        gboard = (
+            "com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME"
+        )
+
+        def side_effect(argv, **kwargs):
+            cmd = " ".join(argv)
+            if "getprop sys.boot_completed" in cmd:
+                return _cr(stdout=b"1\n")
+            if "getprop ro.build.fingerprint" in cmd:
+                return _cr(stdout=FINGERPRINT.encode())
+            if "getprop ro.build.version.sdk" in cmd:
+                return _cr(stdout=f"{API_LEVEL}\n".encode())
+            if "wm size" in cmd:
+                return _cr(stdout=f"Physical size: {SCREEN_WIDTH}x{SCREEN_HEIGHT}\n".encode())
+            if "pm path" in cmd:
+                return _cr(rc=1)  # absent: the real device's answer
+            if "settings get secure enabled_input_methods" in cmd:
+                return _cr(stdout=gboard.encode())
+            if "settings get secure default_input_method" in cmd:
+                return _cr(stdout=gboard.encode())
+            return _cr()
+
+        self.mock_runner.side_effect = side_effect
+        state = self.harness.capture_prior_state()
+        self.assertIsNotNone(state)
+        self.assertFalse(state.package_present)
+
+    def test_capture_prior_state_present_package_hashes(self):
+        # Review round 2: the present-package path must still parse the
+        # apk path and hash the on-device APK (rc=0, package: output).
+        gboard = (
+            "com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME"
+        )
+        dev_apk = ("/data/app/~~abc/biz.pixelperfectstudios.personaspeak-xyz/base.apk")
+        sha = "ab" * 32
+
+        def side_effect(argv, **kwargs):
+            cmd = " ".join(argv)
+            if "getprop sys.boot_completed" in cmd:
+                return _cr(stdout=b"1\n")
+            if "getprop ro.build.fingerprint" in cmd:
+                return _cr(stdout=FINGERPRINT.encode())
+            if "getprop ro.build.version.sdk" in cmd:
+                return _cr(stdout=f"{API_LEVEL}\n".encode())
+            if "wm size" in cmd:
+                return _cr(stdout=f"Physical size: {SCREEN_WIDTH}x{SCREEN_HEIGHT}\n".encode())
+            if "pm path" in cmd:
+                return _cr(rc=0, stdout=f"package:{dev_apk}\n".encode())
+            if "sha256sum" in cmd:
+                self.assertIn(dev_apk, cmd)
+                return _cr(rc=0, stdout=f"{sha}  {dev_apk}\n".encode())
+            if "settings get secure enabled_input_methods" in cmd:
+                return _cr(stdout=gboard.encode())
+            if "settings get secure default_input_method" in cmd:
+                return _cr(stdout=gboard.encode())
+            return _cr()
+
+        self.mock_runner.side_effect = side_effect
+        state = self.harness.capture_prior_state()
+        self.assertIsNotNone(state)
+        self.assertTrue(state.package_present)
+        self.assertEqual(state.package_hash, sha)
+
+    def test_capture_prior_state_pm_path_unknown_stops(self):
+        # rc=1 WITH output is not absence — unknown state stops the run.
+        def side_effect(argv, **kwargs):
+            cmd = " ".join(argv)
+            if "getprop sys.boot_completed" in cmd:
+                return _cr(stdout=b"1\n")
+            if "getprop ro.build.fingerprint" in cmd:
+                return _cr(stdout=FINGERPRINT.encode())
+            if "getprop ro.build.version.sdk" in cmd:
+                return _cr(stdout=f"{API_LEVEL}\n".encode())
+            if "wm size" in cmd:
+                return _cr(stdout=f"Physical size: {SCREEN_WIDTH}x{SCREEN_HEIGHT}\n".encode())
+            if "pm path" in cmd:
+                return _cr(rc=1, stdout=b"error: device still settling\n")
+            return _cr()
+
+        self.mock_runner.side_effect = side_effect
+        state = self.harness.capture_prior_state()
+        self.assertIsNone(state)
 
     def test_capture_prior_state_empty_streams(self):
         self.mock_runner.return_value = _cr(stdout=b"")

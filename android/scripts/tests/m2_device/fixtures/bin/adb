@@ -223,7 +223,8 @@ elif "settings get secure default_input_method" in cmd:
 elif "wm size" in cmd:
     print("Physical size: 1080x2400")
 elif "pm path" in cmd:
-    pass
+    # Absent package on a real device: exit 1, no output.
+    sys.exit(1)
 elif "settings get secure enabled_input_methods" in cmd:
     print("com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME:com.google.android.tts/com.google.android.apps.speech.tts.googletts.settings.asr.voiceime.VoiceInputMethodService")
 elif "settings get secure default_input_method" in cmd:

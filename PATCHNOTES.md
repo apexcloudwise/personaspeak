@@ -10,6 +10,26 @@ Newest first, like all respectable patch notes.
 
 ---
 
+## 2026-08-19 — Absence acquires an exit code the harness can respect
+
+- The first real qualification attempt stopped itself at
+  prior_state_unavailable, and the reason was almost philosophical: pm
+  path for a missing package exits 1 on a real device, and the pristine
+  fixture's entire point is that the package is missing. The harness
+  read that exit code as "cannot determine state" — correct instinct,
+  wrong target. Absence (exit 1, no output) is now recognized as the
+  pristine state it is; exit 1 WITH output remains unknown and still
+  stops the run. The fake adb used to exit 0 here, which is how 342
+  green tests certified a harness that could never boot its own
+  fixture; it now lies no more. Regressions ride along, and the
+  acceptance matrix documents its one honest nonzero exit. Review round
+  2 caught the present-package path reading a variable that no longer
+  existed — absence had been taught so well that presence forgot its
+  own name — so a dirty-fixture run would have crashed instead of
+  hashing the installed APK. Both paths now have their regression.
+
+---
+
 ## 2026-08-19 — The fourth tool finally signs the guest book
 
 - The signer gate gained an apksigner in PR #76's second round, but the
