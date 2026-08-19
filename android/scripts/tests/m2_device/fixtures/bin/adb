@@ -19,12 +19,13 @@ if log_path:
     with open(log_path, "a") as f:
         f.write(f"adb: {' '.join(sys.argv[1:])}\n")
 
-STATE_FILE = os.environ.get("FAKE_ADB_STATE", "/tmp/fake_adb_edittext.state")
-KB_FILE = os.environ.get("FAKE_ADB_KEYBOARD", "/tmp/fake_adb_keyboard.state")
-FOCUS_FILE = os.environ.get("FAKE_ADB_FOCUS", "/tmp/fake_adb_focus.state")
-SCREEN_FILE = os.environ.get("FAKE_ADB_SCREEN", "/tmp/fake_adb_screen.state")
-IME_FILE = os.environ.get("FAKE_ADB_IME", "/tmp/fake_adb_ime.state")
-CAND_SRC_FILE = os.environ.get("FAKE_ADB_CANDIDATE_SOURCE", "/tmp/fake_adb_cand_src.state")
+_uid = os.getuid()
+STATE_FILE = os.environ.get("FAKE_ADB_STATE", f"/tmp/fake_adb_edittext.{_uid}.state")
+KB_FILE = os.environ.get("FAKE_ADB_KEYBOARD", f"/tmp/fake_adb_keyboard.{_uid}.state")
+FOCUS_FILE = os.environ.get("FAKE_ADB_FOCUS", f"/tmp/fake_adb_focus.{_uid}.state")
+SCREEN_FILE = os.environ.get("FAKE_ADB_SCREEN", f"/tmp/fake_adb_screen.{_uid}.state")
+IME_FILE = os.environ.get("FAKE_ADB_IME", f"/tmp/fake_adb_ime.{_uid}.state")
+CAND_SRC_FILE = os.environ.get("FAKE_ADB_CANDIDATE_SOURCE", f"/tmp/fake_adb_cand_src.{_uid}.state")
 CANDIDATE = os.environ.get("FAKE_ADB_REPHRASING", "")
 SOURCE = "Tea at six."
 STALE = "Tea at seven."
