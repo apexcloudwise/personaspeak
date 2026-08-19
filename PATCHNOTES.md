@@ -10,6 +10,30 @@ Newest first, like all respectable patch notes.
 
 ---
 
+## 2026-08-20 — The instrument learns how a real device phrases things
+
+- Qualification attempt 1 under the replacement (run 20260819T203941Z)
+  got further than any run before it — IME enabled and selected, editor
+  focused, binding proven live — and then failed on two defects that
+  only real hardware could expose, both since pinned by an
+  owner-authorized probe. First: the real API-34 dumpsys window output
+  has no mFrame line at all; the keyboard's visible geometry lives in
+  the touchable region, which is where the parser now reads it (compact
+  top 1378 exact, Review expands it to 1283 — the review signal, in the
+  device's own words). Failed window checks now carry the raw block in
+  the record, so the next format drift is diagnosable without another
+  probe. Second: the emulator 36.x console moved the snapshot family
+  under avd, and it announces a rejected load with a KO line while
+  reporting success on the exit-code channel; restore now speaks the
+  avd grammar and believes stdout over returncode. The fake toolkit
+  mirrors both real formats, rejects the dead command form exactly as
+  the real console does, and the fake's Review expansion moved to the
+  real 1283. Five new regressions pin the parser to the probe's actual
+  bytes. The console's parting gift remains on record: it lied about
+  the exit code, so now nothing trusts it.
+
+---
+
 ## 2026-08-19 — The journey-facts layer, rebuilt on channels that exist
 
 - The overseer-approved replacement (#79, PR #80) is implemented. The
