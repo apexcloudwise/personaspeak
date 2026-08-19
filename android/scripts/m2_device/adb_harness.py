@@ -75,28 +75,48 @@ ASK_KEY_COORDS: dict[str, tuple[int, int]] = {
 }
 KEYBOARD_EXPECTED_BOUNDS = "[0,1300][1080,2400]"
 
-EXPECTED_VERSION_NAME = "0.1.0"
+# Package identity as the device reports it (2026-08-19 capability probe on
+# the pinned fixture; versionName is the vendored keyboard's own numbering).
+EXPECTED_VERSION_NAME = "1.13.1"
 EXPECTED_VERSION_CODE = "1"
-EXPECTED_SIGNER = "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2"
+# On-device PackageSignatures digest of the canonical APK's signing
+# cert, as dumpsys prints it. Corroboration only: this is a 32-bit
+# Signature.hashCode, not a cryptographic digest, so it can never be
+# the signer gate — EXPECTED_SIGNER_CERT_SHA256 below is that gate.
+EXPECTED_SIGNER = "847f3baa"
+# The signer gate: SHA-256 of the canonical APK's signing certificate,
+# compared as an exact line of `apksigner verify --print-certs` output.
+EXPECTED_SIGNER_CERT_SHA256 = (
+    "0f62f45e45adda3af137ac4d9cb48f642975d9c1a35c52e61f8df41188cfc807"
+)
+# build-tools 34.0.0's apksigner self-reports this version string.
+EXPECTED_APKSIGNER_VERSION = "0.9"
 EXPECTED_ADB_VERSION = "1.0.41"
-EXPECTED_EMULATOR_VERSION = "33.1.24.0"
+# Local instrument, probe-proven to load the pinned m2_pristine snapshot
+# under the software renderer (prep ran 34.2.16; that version is no longer
+# installable, and the pin must name the tool that actually runs).
+EXPECTED_EMULATOR_VERSION = "36.6.11"
 SYSTEM_IMAGE_ID = "google/sdk_gphone64_arm64/emu64a:14"
 FIXTURE_RECEIPT_DIGEST = (
     "dad6f7ac3b3c10ac7b88dfe2397746acb11ee6a42957cf2d1fee7afe1325bdb0"
 )
 EXPECTED_BUILD_TOOLS_VERSION = "34.0.0"
+# IME baseline exactly as the accepted #56 receipt and the live fixture
+# both record it: Gboard LatinIME plus the Google TTS voice service.
 EXPECTED_ENABLED_IMES = [
     "com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME",
-    "com.google.android.inputmethod.latin/com.google.android.apps.inputmethod.latin.MockVoiceIME",
+    "com.google.android.tts/com.google.android.apps.speech.tts.googletts.settings.asr.voiceime.VoiceInputMethodService",
 ]
 EXPECTED_EDITOR_CLASS = "android.widget.EditText"
 ANIMATOR_SCALE = "null"  # fixture pins animator unset
 
 # Fixture transaction: the snapshot files whose exact bytes the
 # accepted #56 receipt pins. Defaults are the pinned digests; fake-only
-# runs inject digests computed from their own fixture files.
+# runs inject digests computed from their own fixture files. hardware.ini
+# is a snapshot content file (receipt: snapshot/files/hardware.ini), not
+# an AVD-top-level file — the real fixture has it only under the snapshot.
 FIXTURE_FILES = {
-    "M2_Qual_Fixture.avd/hardware.ini": HARDWARE_INI_HASH,
+    "M2_Qual_Fixture.avd/snapshots/m2_pristine/hardware.ini": HARDWARE_INI_HASH,
     "M2_Qual_Fixture.avd/snapshots/m2_pristine/ram.bin": RAM_BIN_HASH,
     "M2_Qual_Fixture.avd/snapshots/m2_pristine/textures.bin": TEXTURES_BIN_HASH,
 }
@@ -135,6 +155,7 @@ class AdbHarness:
             self.fixture_digests.update(fixture_digests)
         self.adb_tool: ToolIdentity | None = None
         self.emulator_tool: ToolIdentity | None = None
+        self.apksigner_tool: ToolIdentity | None = None
         self.build_tools_tool: ToolIdentity | None = None
         self.emulator_process: commands.ManagedProcess | None = None
         self.screenrecord_process: commands.ManagedProcess | None = None
@@ -164,6 +185,11 @@ class AdbHarness:
         return [
             self.emulator_tool.path, "-avd", AVD_NAME,
             "-snapshot", SNAPSHOT_NAME, "-no-snapshot-save", "-port", "5554",
+            # The pinned snapshot was saved under the software renderer;
+            # under the 36.x default (gfxstream) the load is refused and
+            # the emulator cold-boots instead, failing the run's
+            # preconditions. The renderer must match the saved one.
+            "-gpu", "swiftshader_indirect",
         ]
 
     @staticmethod
@@ -184,10 +210,13 @@ class AdbHarness:
         try:
             self.adb_tool = commands.resolve_tool("adb")
             self.emulator_tool = commands.resolve_tool("emulator")
+            self.apksigner_tool = commands.resolve_tool("apksigner")
             if EXPECTED_ADB_VERSION not in self.adb_tool.version:
                 return self._fail("preflight", f"adb version mismatch: {self.adb_tool.version}".encode())
             if EXPECTED_EMULATOR_VERSION not in self.emulator_tool.version:
                 return self._fail("preflight", f"emulator version mismatch: {self.emulator_tool.version}".encode())
+            if EXPECTED_APKSIGNER_VERSION not in self.apksigner_tool.version:
+                return self._fail("preflight", f"apksigner version mismatch: {self.apksigner_tool.version}".encode())
             if self.adb_tool.digest is None or self.emulator_tool.digest is None:
                 return self._fail("preflight", b"tool digest unavailable")
             avds = self.runner([self.emulator_tool.path, "-list-avds"], timeout=10)
@@ -418,7 +447,7 @@ class AdbHarness:
             (("getprop", "persist.sys.timezone"), TIMEZONE),
             (("getprop", "ro.product.locale"), LOCALE),
             (("getprop", "ro.product.cpu.abi"), ABI),
-            (("getprop", "ro.sf.lcd_density"), str(SCREEN_DPI)),
+            (("getprop", "qemu.sf.lcd_density"), str(SCREEN_DPI)),
             (("settings", "get", "global", "window_animation_scale"), ANIMATION_SCALE),
             (("settings", "get", "global", "transition_animation_scale"), ANIMATION_SCALE),
             (("settings", "get", "global", "animator_duration_scale"), ANIMATOR_SCALE),
@@ -472,6 +501,27 @@ class AdbHarness:
             f" {FIXTURE_RECEIPT_DIGEST[:12]}.".encode())
 
     def install_apk(self) -> CommandResult:
+        # The signer gate runs before any device mutation: a certificate
+        # mismatch must stop the install, not follow it.
+        if self.apksigner_tool is None:
+            return self._fail("install_apk", b"apksigner tool unresolved")
+        certs = self.runner(
+            [self.apksigner_tool.path, "verify", "--print-certs",
+             self.apk_path], timeout=60.0)
+        if certs.timed_out:
+            return self._fail("install_apk", b"apksigner verify timed out")
+        if certs.returncode != 0:
+            return self._fail(
+                "install_apk", f"apksigner rc={certs.returncode}".encode())
+        expected_line = (
+            "Signer #1 certificate SHA-256 digest: "
+            f"{EXPECTED_SIGNER_CERT_SHA256}")
+        if expected_line not in certs.stdout.decode(
+                "utf-8", errors="replace").splitlines():
+            return self._fail(
+                "install_apk",
+                b"signer certificate mismatch: apksigner SHA-256 digest "
+                b"does not exactly match the pinned certificate")
         res = self._host("install", "-r", self.apk_path, timeout=120.0)
         if res.returncode != 0:
             return res

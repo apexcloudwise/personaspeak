@@ -50,10 +50,11 @@ REPO_ROOT_ABS = os.path.abspath(os.path.join(HERE, "..", "..", "..", ".."))
 GOLDEN_CONTACTS = (
     "adb: --version",
     "emulator: --version",
+    "apksigner: --version",
     "emulator: -list-avds",
     "git: rev-parse HEAD",
     "git: status --porcelain",
-    "emulator: -avd M2_Qual_Fixture -snapshot m2_pristine -no-snapshot-save -port 5554",
+    "emulator: -avd M2_Qual_Fixture -snapshot m2_pristine -no-snapshot-save -port 5554 -gpu swiftshader_indirect",
     "adb: -s emulator-5554 wait-for-device",
     "adb: -s emulator-5554 shell getprop sys.boot_completed",
     "adb: -s emulator-5554 shell getprop ro.build.fingerprint",
@@ -65,11 +66,12 @@ GOLDEN_CONTACTS = (
     "adb: -s emulator-5554 shell getprop persist.sys.timezone",
     "adb: -s emulator-5554 shell getprop ro.product.locale",
     "adb: -s emulator-5554 shell getprop ro.product.cpu.abi",
-    "adb: -s emulator-5554 shell getprop ro.sf.lcd_density",
+    "adb: -s emulator-5554 shell getprop qemu.sf.lcd_density",
     "adb: -s emulator-5554 shell settings get global window_animation_scale",
     "adb: -s emulator-5554 shell settings get global transition_animation_scale",
     "adb: -s emulator-5554 shell settings get global animator_duration_scale",
     "adb: -s emulator-5554 shell settings get secure default_input_method",
+    "apksigner: verify --print-certs <T>/mock_app.apk",
     "adb: -s emulator-5554 install -r <T>/mock_app.apk",
     "adb: -s emulator-5554 shell dumpsys package biz.pixelperfectstudios.personaspeak",
     "adb: -s emulator-5554 shell screenrecord --time-limit 30 /sdcard/journey.mp4",
@@ -207,7 +209,7 @@ GOLDEN_CONTACTS = (
 
 # argv of every ledgered command (normalized) + its kind token.
 GOLDEN_LEDGER_ARGV = (
-    ["<BIN>/emulator", "-avd", "M2_Qual_Fixture", "-snapshot", "m2_pristine", "-no-snapshot-save", "-port", "5554", "launch"],
+    ["<BIN>/emulator", "-avd", "M2_Qual_Fixture", "-snapshot", "m2_pristine", "-no-snapshot-save", "-port", "5554", "-gpu", "swiftshader_indirect", "launch"],
     ["<BIN>/adb", "-s", "emulator-5554", "wait-for-device", "host"],
     ["<BIN>/adb", "-s", "emulator-5554", "shell", "getprop", "sys.boot_completed", "shell"],
     ["<BIN>/adb", "-s", "emulator-5554", "shell", "getprop", "ro.build.fingerprint", "shell"],
@@ -219,7 +221,7 @@ GOLDEN_LEDGER_ARGV = (
     ["<BIN>/adb", "-s", "emulator-5554", "shell", "getprop", "persist.sys.timezone", "shell"],
     ["<BIN>/adb", "-s", "emulator-5554", "shell", "getprop", "ro.product.locale", "shell"],
     ["<BIN>/adb", "-s", "emulator-5554", "shell", "getprop", "ro.product.cpu.abi", "shell"],
-    ["<BIN>/adb", "-s", "emulator-5554", "shell", "getprop", "ro.sf.lcd_density", "shell"],
+    ["<BIN>/adb", "-s", "emulator-5554", "shell", "getprop", "qemu.sf.lcd_density", "shell"],
     ["<BIN>/adb", "-s", "emulator-5554", "shell", "settings", "get", "global", "window_animation_scale", "shell"],
     ["<BIN>/adb", "-s", "emulator-5554", "shell", "settings", "get", "global", "transition_animation_scale", "shell"],
     ["<BIN>/adb", "-s", "emulator-5554", "shell", "settings", "get", "global", "animator_duration_scale", "shell"],
@@ -392,7 +394,7 @@ class TestAcceptanceMatrix(unittest.TestCase):
         self.fixture_root = os.path.join(self.test_dir, "avd")
         self.digests_path = os.path.join(self.test_dir, "fixture_digests.json")
         self._fixture_rels = (
-            "M2_Qual_Fixture.avd/hardware.ini",
+            "M2_Qual_Fixture.avd/snapshots/m2_pristine/hardware.ini",
             "M2_Qual_Fixture.avd/snapshots/m2_pristine/ram.bin",
             "M2_Qual_Fixture.avd/snapshots/m2_pristine/textures.bin",
         )
@@ -564,7 +566,7 @@ class TestAcceptanceMatrix(unittest.TestCase):
     def _assert_contacts_fake_only(self):
         for line in self._contacts():
             self.assertTrue(
-                line.startswith(("adb: ", "emulator: ", "git: ")),
+                line.startswith(("adb: ", "emulator: ", "apksigner: ", "git: ")),
                 f"contact with unknown tool: {line}")
 
     # ---------- happy path ----------

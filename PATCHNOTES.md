@@ -10,6 +10,36 @@ Newest first, like all respectable patch notes.
 
 ---
 
+## 2026-08-19 — The pins meet the actual fixture and admit they'd never met before
+
+- Seven instrument constants were fake-echo values — strings the test
+  fakes printed at the harness, which then pinned its own echo. The
+  2026-08-19 capability probe against the real pinned fixture replaced
+  every one of them with receipt- or device-derived facts: the emulator
+  pin is 36.6.11 (the version that demonstrably loads the pinned
+  snapshot), the launch argv gains `-gpu swiftshader_indirect` (without
+  it the 36.x default renderer refuses the snapshot and the emulator
+  cold-boots into the wrong state), the density probe reads
+  `qemu.sf.lcd_density` because `ro.sf.lcd_density` is empty on this
+  image, `versionName` is 1.13.1 (the vendored keyboard's numbering,
+  not a PersonaSpeak release number), the signer pin is the real
+  on-device PackageSignatures digest, the enabled-IME baseline is the
+  receipt's list (Gboard plus the Google TTS voice service), and the
+  fixture transaction hashes `hardware.ini` where the receipt says it
+  lives — inside the snapshot, not at the AVD top level. Fakes, tests,
+  and both exact goldens updated to match reality; the journey is now
+  runnable on the actual fixture instead of merely on its admirers.
+- Review round 2 caught the signer pin admiring itself: the dumpsys
+  digest is a 32-bit hash, collision-trivial and checked as a loose
+  substring. The signer gate is now cryptographic — the canonical APK's
+  certificate SHA-256, pinned from apksigner verify --print-certs and
+  compared as an exact line before the device is ever asked to install.
+  The 32-bit value stays on as device-side corroboration, honestly
+  labeled. Wrong-certificate and missing-digest regressions ride along;
+  a mismatch now stops the install rather than following it.
+
+---
+
 ## 2026-08-19 — The except clause signs an affidavit about its own breadth
 
 - The hierarchy reader's `OSError` catch is deliberately wider than

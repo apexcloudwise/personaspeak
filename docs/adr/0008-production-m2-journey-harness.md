@@ -18,6 +18,24 @@ We amend the project complexity budget to exactly six production modules and at 
 - The remaining five files (`cli.py`, `commands.py`, `orchestrator.py`, `evidence.py`, `records.py`) have a remaining budget of 1,150 lines.
 - Static tests enforce these limits.
 
+Amended 2026-08-19 (Stage 5 pre-run probe, issue #55): the instrument pins
+were re-derived from the accepted #56 receipt and the live fixture, replacing
+fake-echo values the fakes had printed back into the harness. The emulator pin
+became 36.6.11 (the prep ran 34.2.16 per the #56 archive, but that version is
+no longer installable; the probe proved 36.6.11 loads the pinned snapshot).
+The launch argv gained `-gpu swiftshader_indirect`: the snapshot was saved
+under the software renderer, and under the 36.x default (gfxstream) the load
+is refused and the emulator cold-boots instead, failing the run's
+preconditions. The density probe reads `qemu.sf.lcd_density`
+(`ro.sf.lcd_density` is empty on this image); `versionName` is 1.13.1 (the
+vendored keyboard's numbering); the signer pin is the on-device
+PackageSignatures digest; the enabled-IME baseline is the receipt's list.
+Review round 2 (PR #76) hardened the signer gate: the dumpsys value is a
+32-bit Signature.hashCode kept only as device-side corroboration, while the
+gate itself is the signing certificate's SHA-256 pinned from
+`apksigner verify --print-certs` and compared as an exact output line
+before any install mutation. The budget limits are unchanged.
+
 Amended 2026-08-11 (issue #65 execution-boundary totality) to 750/2,100, amended
 2026-08-16 (issue #65 review findings) to 850/2,300, again the same day (issue
 #63 fixture transaction) to 1,000/2,500, and once more that day to the round

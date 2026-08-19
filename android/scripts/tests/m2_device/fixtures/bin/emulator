@@ -13,7 +13,7 @@ if "-version" in sys.argv or "--version" in sys.argv:
     if os.environ.get("FAKE_EMU_VERSION_BOGUS"):
         print("Android emulator version 0.0.0")
     else:
-        print("Android emulator version 33.1.24.0")
+        print("Android emulator version 36.6.11.0 (build_id 15507667)")
     sys.exit(0)
 
 if "-list-avds" in sys.argv:
