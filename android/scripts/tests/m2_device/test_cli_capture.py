@@ -83,13 +83,19 @@ class TestCliCapture(unittest.TestCase):
             "FAKE_ADB_IME": os.path.join(self.test_dir, "ime.state"),
             "FAKE_ADB_CANDIDATE_SOURCE": os.path.join(
                 self.test_dir, "candidate_source.state"),
+            # #82 fake state, pinned for the same residue reason.
+            "FAKE_ADB_SHIFT": os.path.join(self.test_dir, "shift.state"),
+            "FAKE_ADB_BACK": os.path.join(self.test_dir, "back.state"),
+            "FAKE_ADB_BOOT_POLLS_LEFT": os.path.join(
+                self.test_dir, "boot_polls_left.state"),
             "FAKE_ADB_REPHRASING": CANDIDATE_REPHRASING,
             "FAKE_GIT_HEAD": head,
             "PYTHONPATH": self.repo_root_abs,
         }
         for k in ("FAKE_ADB_STATE", "FAKE_ADB_KEYBOARD", "FAKE_ADB_FOCUS",
                   "FAKE_ADB_SCREEN", "FAKE_ADB_IME",
-                  "FAKE_ADB_CANDIDATE_SOURCE"):
+                  "FAKE_ADB_CANDIDATE_SOURCE", "FAKE_ADB_SHIFT",
+                  "FAKE_ADB_BACK", "FAKE_ADB_BOOT_POLLS_LEFT"):
             with open(env[k], "w") as f:
                 f.write("")
         result = subprocess.run(
@@ -207,6 +213,11 @@ class TestCliCapture(unittest.TestCase):
             "FAKE_ADB_IME": os.path.join(self.test_dir, "ime.state"),
             "FAKE_ADB_CANDIDATE_SOURCE": os.path.join(
                 self.test_dir, "candidate_source.state"),
+            # #82 fake state, pinned for the same residue reason.
+            "FAKE_ADB_SHIFT": os.path.join(self.test_dir, "shift.state"),
+            "FAKE_ADB_BACK": os.path.join(self.test_dir, "back.state"),
+            "FAKE_ADB_BOOT_POLLS_LEFT": os.path.join(
+                self.test_dir, "boot_polls_left.state"),
             "FAKE_ADB_REPHRASING": CANDIDATE_REPHRASING,
             "FAKE_GIT_HEAD": head,
             "PYTHONPATH": self.repo_root_abs,
@@ -214,7 +225,8 @@ class TestCliCapture(unittest.TestCase):
         env.update(extra_env)
         for k in ("FAKE_ADB_STATE", "FAKE_ADB_KEYBOARD", "FAKE_ADB_FOCUS",
                   "FAKE_ADB_SCREEN", "FAKE_ADB_IME",
-                  "FAKE_ADB_CANDIDATE_SOURCE"):
+                  "FAKE_ADB_CANDIDATE_SOURCE", "FAKE_ADB_SHIFT",
+                  "FAKE_ADB_BACK", "FAKE_ADB_BOOT_POLLS_LEFT"):
             with open(env[k], "w") as f:
                 f.write("")
         return subprocess.run(

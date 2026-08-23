@@ -95,12 +95,14 @@ class TestArchitecture(unittest.TestCase):
             f"adb_harness.py exceeds 1100 lines: {module_counts.get('adb_harness.py', 0)}"
         )
 
-        # total <= 2700 lines (2026-08-16: same rationale; #64 grows
-        # evidence.py and cli.py)
+        # total <= 2750 lines (2026-08-23: round-number raise for the
+        # #82 dry-run corrections — engine-log capture, post-restore
+        # settle, shift protocol, and diagnostic headless mode consume
+        # the 2026-08-16 headroom; stated in the correction PR)
         self.assertLessEqual(
             total_lines,
-            2700,
-            f"Total production line count exceeds 2700 lines: {total_lines} ({module_counts})"
+            2750,
+            f"Total production line count exceeds 2750 lines: {total_lines} ({module_counts})"
         )
 
 

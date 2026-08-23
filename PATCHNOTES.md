@@ -10,6 +10,26 @@ Newest first, like all respectable patch notes.
 
 ---
 
+## 2026-08-23 — The dry-run findings, shipped properly
+
+- The diagnostic dry-run (#82) enumerated every way the qualification
+  instrument disagreed with reality; this PR is that inventory, landed.
+  The keyboard's x-row was one key too far left, the editor never
+  auto-capitalized (our fake did, which was flattering and useless),
+  one BACK closes a keyboard rather than a screen, and a restoring
+  device answers its first health checks the way anyone mid-reboot
+  does: silence. All fixed, all live-proven by the first complete
+  end-to-end journey in M2 history.
+- The emulator now leaves its engine log in the evidence, on the
+  principle that a silent crash is a rumor and a log is a fact.
+- Emulator attach and restore settle budgets grew from 30s to
+  host-tolerance bounds, because a busy machine is slow, not broken.
+- New `--headless` diagnostic flag for seats without a GUI, per the
+  owner's ruling. The counted qualification stays windowed; a
+  qualification you cannot see is a different qualification.
+
+---
+
 ## 2026-08-20 — The instrument learns how a real device phrases things
 
 - Qualification attempt 1 under the replacement (run 20260819T203941Z)

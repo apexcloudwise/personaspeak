@@ -257,6 +257,10 @@ class TestFinalize(unittest.TestCase):
                 journey_xml if label == probe_label else b"<hierarchy/>")
         files[evidence.CANONICAL_LEDGER_NAME] = (
             ledger_bytes if ledger_bytes is not None else self._ledger_bytes())
+        # The engine log is canonical since #82 (defect F): written by
+        # the launch step in every capture, so finalize expects it.
+        files[evidence.CANONICAL_EMULATOR_LOG_NAME] = (
+            b"INFO | Android emulator version 36.6.11.0\n")
         man = {}
         for name, data in files.items():
             with open(os.path.join(d, name), "wb") as f:

@@ -159,12 +159,14 @@ def start(
     env: dict[str, str] | None = None,
     cwd: str | None = None,
     new_session: bool = False,
+    stdout: int | None = None,
+    stderr: int | None = None,
 ) -> ManagedProcess:
     start_time = _UTC()
     proc = subprocess.Popen(
         argv,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        stdout=stdout if stdout is not None else subprocess.PIPE,
+        stderr=stderr if stderr is not None else subprocess.PIPE,
         env=env,
         cwd=cwd,
         start_new_session=new_session,

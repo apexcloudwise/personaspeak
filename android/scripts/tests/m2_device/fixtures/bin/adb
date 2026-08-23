@@ -26,6 +26,18 @@ FOCUS_FILE = os.environ.get("FAKE_ADB_FOCUS", f"/tmp/fake_adb_focus.{_uid}.state
 SCREEN_FILE = os.environ.get("FAKE_ADB_SCREEN", f"/tmp/fake_adb_screen.{_uid}.state")
 IME_FILE = os.environ.get("FAKE_ADB_IME", f"/tmp/fake_adb_ime.{_uid}.state")
 CAND_SRC_FILE = os.environ.get("FAKE_ADB_CANDIDATE_SOURCE", f"/tmp/fake_adb_cand_src.{_uid}.state")
+SHIFT_FILE = os.environ.get("FAKE_ADB_SHIFT", f"/tmp/fake_adb_shift.{_uid}.state")
+# BACK presses since the last screen entry. The real Settings search
+# screen dismisses the IME on the first BACK and closes on the second
+# (iteration-3 record, #82); the harness sends both on one transport.
+BACK_COUNT_FILE = os.environ.get("FAKE_ADB_BACK", f"/tmp/fake_adb_back.{_uid}.state")
+# Post-restore adbd-restart emulation (defect H, #82): answer the first
+# N boot_completed polls with rc 1 and empty output, exactly as adbd
+# mid-restart does, then settle to 1. The countdown persists in a file
+# because every adb invocation is a fresh process.
+BOOT_POLLS = int(os.environ.get("FAKE_ADB_BOOT_POLLS", "0"))
+BOOT_POLLS_LEFT_FILE = os.environ.get(
+    "FAKE_ADB_BOOT_POLLS_LEFT", f"/tmp/fake_adb_boot_polls.{_uid}.state")
 CANDIDATE = os.environ.get("FAKE_ADB_REPHRASING", "")
 SOURCE = "Tea at six."
 STALE = "Tea at seven."
@@ -36,16 +48,21 @@ EDITOR_RES_ID = "com.google.android.settings.intelligence:id/open_search_view_ed
 EDITOR_HINT = "Search settings"
 SEARCH_BAR_RES_ID = "com.android.settings:id/search_action_bar"
 
-# Real-layout geometry (2026-08-19 debug session), mirrored from the
-# harness pins so the fake only answers taps the real keyboard has.
+# Real-layout geometry, mirrored from the harness pins (derived from
+# the vendored ASK layout XML, #82) so the fake only answers taps the
+# real keyboard has.
 SEARCH_BAR_BOUNDS = (42, 591, 1038, 728)
 EDITOR_BOUNDS = (126, 149, 1080, 275)
 KEY_COORDS = {
     "t": (486, 1794), "e": (270, 1794), "a": (108, 1932),
-    "s": (216, 1932), "i": (810, 1794), "x": (215, 2072),
-    "v": (431, 2072), "n": (647, 2072),
-    " ": (566, 2210), ".": (755, 2210),
+    "s": (216, 1932), "i": (810, 1794), "x": (324, 2072),
+    "v": (540, 2072), "n": (756, 2072),
+    " ": (567, 2210), ".": (756, 2210),
 }
+# Row-3 sticky shift: one shot, releases after the next letter. The
+# editor does not auto-capitalize (attempt-2 raw bytes, #82) — capitals
+# ride exactly this latch.
+SHIFT_COORDS = (81, 2072)
 REWRITE_TAP = (116, 1452)
 CANCEL_TAP = (180, 1452)
 APPLY_TAP = (105, 1452)
@@ -77,6 +94,11 @@ def _reset_to_pristine():
     _write(SCREEN_FILE, "")
     _write(IME_FILE, "")
     _write(CAND_SRC_FILE, "")
+    _write(SHIFT_FILE, "")
+    _write(BACK_COUNT_FILE, "")
+    # Each snapshot load re-arms the adbd-restart transients: only the
+    # load event arms them, so pre-load queries always answer.
+    _write(BOOT_POLLS_LEFT_FILE, str(BOOT_POLLS))
 
 
 def _write_png(path):
@@ -258,6 +280,8 @@ def _run_tap(x, y):
             _write(STATE_FILE, "")
             _write(KB_FILE, "")
             _write(FOCUS_FILE, "1")
+            _write(SHIFT_FILE, "")
+            _write(BACK_COUNT_FILE, "")
         return
     ex1, ey1, ex2, ey2 = EDITOR_BOUNDS
     if ex1 <= x <= ex2 and ey1 <= y <= ey2:
@@ -298,22 +322,40 @@ def _run_tap(x, y):
         if abs(x - kx) <= TAP_SLOP and abs(y - ky) <= TAP_SLOP:
             if _read(FOCUS_FILE) == "1":
                 cur = _read(STATE_FILE)
-                if not cur and ch.isalpha():
-                    cur = ch.upper()
+                # No editor auto-capitalization: only the sticky shift
+                # latch (one shot) can produce a capital.
+                if _read(SHIFT_FILE) and ch.isalpha():
+                    cur += ch.upper()
+                    _write(SHIFT_FILE, "")
                 else:
                     cur += ch
                 _write(STATE_FILE, cur)
             return
+    # The sticky shift latch itself: sets, never inserts.
+    sx, sy = SHIFT_COORDS
+    if abs(x - sx) <= TAP_SLOP and abs(y - sy) <= TAP_SLOP:
+        _write(SHIFT_FILE, "1")
+        return
 
 
 def _run_keyevent(code):
-    if code == "4":  # BACK: the search screen closes, session ends.
+    if code == "4":  # BACK
         if _read(SCREEN_FILE) == "search":
-            _write(SCREEN_FILE, "")
-            _write(STATE_FILE, "")
-            _write(KB_FILE, "")
-            _write(FOCUS_FILE, "")
-            _write(CAND_SRC_FILE, "")
+            n = int(_read(BACK_COUNT_FILE) or "0") + 1
+            if n == 1:
+                # First BACK dismisses the IME only; the screen stays
+                # (iteration-3 record, #82).
+                _write(BACK_COUNT_FILE, str(n))
+                _write(KB_FILE, "")
+                _write(SHIFT_FILE, "")
+            else:
+                # Second BACK closes the search screen; session ends.
+                _write(SCREEN_FILE, "")
+                _write(STATE_FILE, "")
+                _write(KB_FILE, "")
+                _write(FOCUS_FILE, "")
+                _write(CAND_SRC_FILE, "")
+                _write(BACK_COUNT_FILE, "")
         return
     if code == "67" and _read(SCREEN_FILE) == "search":  # DEL
         if _read(FOCUS_FILE) == "1":
@@ -394,6 +436,13 @@ if (_wm_flag and _wm_drift and "wm size" in cmd
     sys.exit(0)
 
 if "getprop sys.boot_completed" in cmd:
+    _armed = _read(BOOT_POLLS_LEFT_FILE)
+    if _armed != "" and int(_armed) > 0:
+        # adbd mid-restart after a snapshot load: rc 1, no answer.
+        # Armed only by the load itself, never by process start.
+        _write(BOOT_POLLS_LEFT_FILE, str(int(_armed) - 1))
+        sys.stderr.write("error: device not responding\n")
+        sys.exit(1)
     print("1")
 elif "getprop ro.build.fingerprint" in cmd:
     print("google/sdk_gphone64_arm64/emu64a:14/UE1A.230829.050/12077443:userdebug/dev-keys")

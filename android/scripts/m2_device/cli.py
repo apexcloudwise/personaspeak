@@ -40,6 +40,7 @@ def cmd_capture(args: argparse.Namespace) -> int:
     harness = AdbHarness(
         run_dir=run_dir, apk_path=args.apk_path, repo_root=args.repo_root,
         fixture_root=args.fixture_root, fixture_digests=fixture_digests,
+        headless=args.headless,
     )
     orchestrator = Orchestrator(
         harness=harness, apk_sha256=args.apk_sha256,
@@ -178,6 +179,10 @@ def build_parser() -> argparse.ArgumentParser:
                           "fake-only runs. Mechanical boundary: providing "
                           "it blanks the recorded fixture receipt digest, "
                           "so the run cannot claim the accepted fixture")
+    cap.add_argument("--headless", action="store_true",
+                     help="diagnostic only (#82): launch without a window "
+                          "when no WindowServer context exists; the "
+                          "counted qualification always runs windowed")
     cap.set_defaults(func=cmd_capture)
 
     fin = sub.add_parser("finalize", help="produce final receipt")
