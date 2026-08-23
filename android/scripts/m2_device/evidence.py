@@ -49,12 +49,17 @@ CANONICAL_HIERARCHY_LABELS = (
     "home_4", "focus_4", "typed_4", "typed_stale", "after_stale",
     "verify_restore",
 )
+# The emulator engine's own stdout/stderr, persisted by the harness
+# from launch (defect F, #82): without it a launch/attach failure is
+# undiagnosable from the run dir alone. Written by the launch step, so
+# it is present in every capture record's manifest — completed or not.
+CANONICAL_EMULATOR_LOG_NAME = "emulator.log"
 CANONICAL_LEDGER_NAME = "command_ledger.json"
 CANONICAL_ARTIFACTS = frozenset(
     f"{n}.png" for n in CANONICAL_PNG_NAMES
 ) | {f"{CANONICAL_MP4_NAME}.mp4"} | {
     f"{label}.xml" for label in CANONICAL_HIERARCHY_LABELS
-} | {CANONICAL_LEDGER_NAME}
+} | {CANONICAL_LEDGER_NAME, CANONICAL_EMULATOR_LOG_NAME}
 
 
 def enforce_canonical_set(manifest: dict[str, str]) -> None:

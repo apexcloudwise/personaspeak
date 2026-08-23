@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 import re
 import socket
+import subprocess
 import time
 import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
@@ -73,16 +74,31 @@ SEARCH_BAR_RES_ID = f"{SETTINGS_PACKAGE}:id/search_action_bar"
 EDITOR_RES_ID = (
     "com.google.android.settings.intelligence:id/open_search_view_edit_text")
 EDITOR_HINT = "Search settings"
-# ASK key geometry recalibrated against the real layout (2026-08-19
-# debug-session screenshot; the utility row sits ABOVE the letter rows,
-# so the old y-band ~1375-1690 hit app content and drifted into Google
-# Assistant settings). Letter keys sit on a 108px grid at 420dpi.
+# ASK key geometry, derived device-free from the vendored layout XML and
+# live-confirmed through the editor-text bridge (diagnostic dry-run
+# 2026-08-23, #82; iteration 4 read back "Tea at six." exactly, four
+# times). Sources: keyboard/addons/languages/english/pack/src/main/res/
+# xml/qwerty.xml (letter rows) and ime/app/src/main/res/xml/
+# ext_kbd_bottom_row_regular_with_voice.xml (bottom row, normal mode).
+# Screen is 1080px wide, so 1%p = 10.8px. Rows 1-2 keys are 10% wide
+# (row 2 opens with a 5% gap). Row 3 opens with a 15%p SHIFT key:
+# z[162,270] c216, x[270,378] c324, v[486,594] c540, n[702,810] c756.
+# Bottom row: space 25% [432,702] c567, period [702,810] c756. The
+# utility row sits ABOVE the letter rows (2026-08-19 debug session), so
+# y-bands below ~1690 hit app content; letter rows sit on the observed
+# 138px grid at 420dpi.
 ASK_KEY_COORDS: dict[str, tuple[int, int]] = {
-    "T": (486, 1794), "E": (270, 1794), "A": (108, 1932),
-    "S": (216, 1932), "I": (810, 1794), "X": (215, 2072),
-    "V": (431, 2072), "N": (647, 2072),
-    " ": (566, 2210), ".": (755, 2210),
+    "T": (486, 1794), "E": (270, 1794), "A": (108, 1932), "S": (216, 1932),
+    "I": (810, 1794),
+    "X": (324, 2072), "V": (540, 2072), "N": (756, 2072),
+    " ": (567, 2210), ".": (756, 2210),
 }
+# The row-3 shift key (15%p wide, [0,162] → center x=81). Sticky
+# single-shot: tapping it capitalizes exactly the next letter, then the
+# latch releases. The Settings-intelligence editor does not
+# auto-capitalize (attempt-2 raw bytes read back a lowercase "t" after
+# an unshifted T tap), so capitals must ride the real shift key.
+SHIFT_TAP = (81, 2072)
 # PersonaSpeak's panel row. No dump channel can observe it (uiautomator
 # is structurally blind to the IME window on API 34, issue #79): these
 # taps are pinned against the real layout and every one is verified
@@ -167,6 +183,7 @@ class AdbHarness:
         repo_root: str = "",
         fixture_root: str = "",
         fixture_digests: dict[str, str] | None = None,
+        headless: bool = False,
     ):
         self.run_dir = run_dir
         self.apk_path = apk_path
@@ -194,6 +211,11 @@ class AdbHarness:
         self._owned_identity: commands.ProcessIdentity | None = None
         self._launch_identity: commands.ProcessIdentity | None = None
         self._session_launched = False
+        # Diagnostic-only launch mode (owner ruling 2026-08-23, #82):
+        # agent seats without a WindowServer context cannot create the
+        # engine window. Opt-in flag; the counted qualification always
+        # runs windowed.
+        self.headless = headless
         self.ledger = commands.CommandLedger()
 
     @property
@@ -217,6 +239,12 @@ class AdbHarness:
             # preconditions. The renderer must match the saved one.
             "-gpu", "swiftshader_indirect",
         ]
+        if self.headless:
+            # Diagnostic only (owner ruling 2026-08-23, #82): omit the
+            # engine window when no WindowServer context exists. Never
+            # set for the counted qualification — it runs windowed.
+            argv.append("-no-window")
+        return argv
 
     @staticmethod
     def _ok(op: str, stdout: bytes = b"") -> CommandResult:
@@ -301,7 +329,18 @@ class AdbHarness:
 
     def launch_emulator(self) -> CommandResult:
         argv = self._emu_argv()
-        self.emulator_process = self.starter(argv, new_session=True)
+        # The engine's own output is part of the record (defect F, #82):
+        # without it a launch/attach failure is undiagnosable from the
+        # run dir alone — the 2026-08-23 windowed launch died silently
+        # at Qt window creation and only the engine log said so. The
+        # child inherits the descriptor; this parent copy closes right
+        # after spawn.
+        os.makedirs(edir := os.path.join(self.run_dir, "artifacts"), exist_ok=True)
+        with open(os.path.join(edir, "emulator.log"), "ab") as log_fh:
+            self.emulator_process = self.starter(
+                argv, new_session=True,
+                stdout=log_fh.fileno(), stderr=log_fh.fileno(),
+            )
         self._session_launched = True
         pid = self.emulator_process.proc.pid
         # Observed from the process itself immediately after launch —
@@ -349,7 +388,12 @@ class AdbHarness:
         )
 
     def attach(self) -> CommandResult:
-        return self._host("wait-for-device", timeout=30.0)
+        # Host-start latency varies with load (dry-run 2026-08-23: 5s
+        # on an idle host, >180s on the same host hours later; healthy
+        # runs attach in <10s). wait-for-device returns the moment adbd
+        # answers, so a generous bound only ever absorbs host slowness —
+        # it never gates a healthy run (defect E, #82).
+        return self._host("wait-for-device", timeout=self.ATTACH_TIMEOUT_SECONDS)
 
     def _shell(self, *args: str, timeout: float = 30.0) -> RemoteResult:
         argv = self._cmd("shell", *args)
@@ -846,6 +890,15 @@ class AdbHarness:
 
     def _type_text(self, steps, text, op="type_text"):
         for ch in text:
+            # Capitals ride the real sticky shift key: the editor does
+            # not auto-capitalize (attempt-2 raw bytes, #82), so an
+            # unshifted tap inserts a lowercase letter and fails the
+            # bridge readback.
+            if ch.isupper():
+                if not self._step(steps, "tap_key_shift",
+                                  self._shell("input", "tap",
+                                              *map(str, SHIFT_TAP))):
+                    return False
             if not self._tap_ask_key(steps, ch):
                 return False
         return True
@@ -862,7 +915,14 @@ class AdbHarness:
         return True
 
     def _exit_session(self, steps, n: int) -> bool:
-        res = self._shell("input", "keyevent", KEYEVENT_BACK)
+        # Two BACKs on one transport (defect G, #82; iteration-3 record
+        # 20260823T065235Z): with the IME visible the first BACK only
+        # dismisses the keyboard and the search screen stays up — the
+        # next session's dump then finds no search bar. The second
+        # clears the screen itself, so the following am start opens
+        # Settings home fresh either way.
+        res = self._shell("input", "keyevent", KEYEVENT_BACK,
+                          ";", "input", "keyevent", KEYEVENT_BACK)
         return self._step(steps, f"exit_session_{n}", res)
 
     def _take_screenshot(self, steps, name):
@@ -1107,7 +1167,47 @@ class AdbHarness:
             )
         return res
 
+    # Host-tolerance bounds, not capture conditions (defect E, #82;
+    # dry-run 2026-08-23: the same host attached in 5s when idle and
+    # >180s when busy, and a snapshot resume took a further ~120s to
+    # boot_completed=1). Healthy runs clear both in seconds, so the
+    # generous deadlines only ever absorb host slowness.
+    ATTACH_TIMEOUT_SECONDS = 360.0
+    RESTORE_SETTLE_TIMEOUT_SECONDS = 300.0
+    RESTORE_SETTLE_POLL_SECONDS = 2.0
+
+    # After a console snapshot load the framework is mid-resume and
+    # adbd itself restarts, so early queries fail or answer stale
+    # (iteration-3 record 20260823T065235Z: the first poll drew rc 1
+    # while adbd was offline). Transient failures retry within the
+    # bounded window; only the deadline is fatal, and it raises carrying
+    # the last failed query's bytes so a hard tool failure surfaces as
+    # itself, not as an opaque slow resume (defect H, #82).
+    def _await_boot_settled(self) -> None:
+        deadline = time.monotonic() + self.RESTORE_SETTLE_TIMEOUT_SECONDS
+        last: RemoteResult | None = None
+        attempts = 0
+        while True:
+            attempts += 1
+            res = self._shell("getprop", "sys.boot_completed")
+            if (not self._ambiguous(res) and not self._timed_out(res)
+                    and self._rc_of(res) == 0
+                    and self._out(res).strip() == "1"):
+                return
+            last = res  # bytes of the last failed poll ride the deadline
+            if time.monotonic() < deadline:
+                time.sleep(self.RESTORE_SETTLE_POLL_SECONDS)
+                continue
+            tail = "" if last is None else (
+                f" last rc={self._rc_of(last)}"
+                f" out={last.transport.stdout[:160]!r}"
+                f" err={last.transport.stderr[:160]!r}")
+            raise RuntimeError(
+                "device did not settle to boot_completed=1 after restore"
+                f" ({attempts} polls):{tail}")
+
     def verify_restore(self) -> PriorDeviceState:
+        self._await_boot_settled()
         state = self.capture_prior_state()
         if state is None:
             raise RuntimeError("verification prior state unavailable")

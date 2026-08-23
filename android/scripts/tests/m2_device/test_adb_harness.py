@@ -17,6 +17,7 @@ from android.scripts.m2_device.adb_harness import (
     ABI,
     API_LEVEL,
     AVD_NAME,
+    ASK_KEY_COORDS,
     CANDIDATE_REPHRASING,
     EXPECTED_SIGNER,
     EXPECTED_SIGNER_CERT_SHA256,
@@ -27,6 +28,7 @@ from android.scripts.m2_device.adb_harness import (
     SCREEN_HEIGHT,
     SCREEN_WIDTH,
     SETTINGS_ACTION,
+    SHIFT_TAP,
     SNAPSHOT_NAME,
     SOURCE_TEXT,
     STALE_TEXT,
@@ -103,12 +105,16 @@ class _DeviceModel:
         self.window_missing = window_missing
         self.never_expands = never_expands
         self.apply_mutates_stale = apply_mutates_stale
+        # Mirrors the harness pins (vendored-XML derivation, #82).
         self.key_coords = {
             "t": (486, 1794), "e": (270, 1794), "a": (108, 1932),
-            "s": (216, 1932), "i": (810, 1794), "x": (215, 2072),
-            "v": (431, 2072), "n": (647, 2072),
-            " ": (566, 2210), ".": (755, 2210),
+            "s": (216, 1932), "i": (810, 1794), "x": (324, 2072),
+            "v": (540, 2072), "n": (756, 2072),
+            " ": (567, 2210), ".": (756, 2210),
         }
+        self.shift_coords = (81, 2072)
+        self.shift_latched = False
+        self.back_count = 0
 
     # -- hierarchy rendering -------------------------------------------
 
@@ -200,6 +206,8 @@ class _DeviceModel:
                 self.editor = ""
                 self.panel = ""
                 self.focused = True
+                self.shift_latched = False
+                self.back_count = 0
             return
         if 126 <= x <= 1080 and 149 <= y <= 275:
             self.focused = True
@@ -229,24 +237,41 @@ class _DeviceModel:
             if self.panel == "REVIEW":
                 self.panel = ""
             return
+        # Sticky shift: one shot, releases on the next letter. No
+        # auto-capitalization exists in this editor (attempt 2, #82).
+        if near(*self.shift_coords):
+            self.shift_latched = True
+            return
         for ch, (kx, ky) in self.key_coords.items():
             kx, ky = kx + self.key_shift, ky + self.key_shift
             if abs(x - kx) <= 54 and abs(y - ky) <= 54 and self.focused:
-                cur = self.editor
-                self.editor = (
-                    ch.upper() if (not cur and ch.isalpha()) else cur + ch)
+                if self.shift_latched and ch.isalpha():
+                    self.editor += ch.upper()
+                    self.shift_latched = False
+                else:
+                    self.editor += ch
                 return
 
     def keyevent(self, code):
         if code == "4" and self.screen == "search":
-            self.screen = "home"
-            self.editor = ""
-            self.panel = ""
-            self.focused = False
+            # First BACK dismisses the IME only; the second closes the
+            # search screen (iteration-3 record, #82).
+            self.back_count += 1
+            if self.back_count == 1:
+                self.panel = ""
+                self.shift_latched = False
+            else:
+                self.screen = "home"
+                self.editor = ""
+                self.panel = ""
+                self.focused = False
+                self.back_count = 0
         elif code == "67" and self.screen == "search" and self.focused:
             self.editor = self.editor[:-1]
 
     def shell(self, cmd):
+        if "getprop sys.boot_completed" in cmd:
+            return "1"
         if "ime enable" in cmd:
             self.ime = "enabled"
         elif "ime set" in cmd:
@@ -514,8 +539,11 @@ class TestAdbHarness(unittest.TestCase):
         self.mock_runner.return_value = _cr(rc=0)
         res = self.harness.attach()
         self.assertEqual(res.returncode, 0)
+        # Host-tolerance bound, not a capture condition (#82): healthy
+        # runs attach in seconds; 360s only absorbs host load.
         self.mock_runner.assert_called_once_with(
-            ["adb", "-s", "emulator-5554", "wait-for-device"], timeout=30.0
+            ["adb", "-s", "emulator-5554", "wait-for-device"],
+            timeout=AdbHarness.ATTACH_TIMEOUT_SECONDS,
         )
 
     def test_capture_prior_state(self):
@@ -1260,6 +1288,66 @@ class TestAdbHarness(unittest.TestCase):
         self.assertEqual(res.returncode, 1)
 
 
+    # ---------- #82 corrections: shift protocol, settle, geometry ------
+
+    def test_type_text_capitals_ride_shift_taps(self):
+        # The editor does not auto-capitalize (defect B, #82): every
+        # capital in the source text must be preceded by a real sticky
+        # shift tap, or the bridge readback fails.
+        argvs = []
+        writer = _journey_runner()
+
+        def side_effect(argv, **kwargs):
+            argvs.append(argv)
+            return writer(argv, **kwargs)
+
+        self.mock_runner.side_effect = side_effect
+        self.assertTrue(self.harness._type_text([], "Tea"))
+        taps = [a for a in argvs if "tap" in a]
+        self.assertEqual(
+            [t[-2:] for t in taps],
+            [[str(SHIFT_TAP[0]), str(SHIFT_TAP[1])], ["486", "1794"],
+             ["270", "1794"], ["108", "1932"]])
+
+    def test_verify_restore_settles_after_transient_polls(self):
+        # Post-snapshot-load adbd restarts make early boot_completed
+        # queries fail (defect H, #82); they must be retried in-bound.
+        calls = {"n": 0}
+        writer = _journey_runner()
+
+        def side_effect(argv, **kwargs):
+            if "boot_completed" in " ".join(argv):
+                calls["n"] += 1
+                if calls["n"] <= 2:
+                    return _cr(rc=1, stderr=b"error: device not responding")
+                return _cr(stdout=b"1")
+            return writer(argv, **kwargs)
+
+        self.mock_runner.side_effect = side_effect
+        with patch.object(self.harness, "capture_prior_state",
+                          return_value=object()), \
+             patch.object(AdbHarness, "RESTORE_SETTLE_POLL_SECONDS", 0):
+            self.harness.verify_restore()
+        self.assertEqual(calls["n"], 3)
+
+    def test_verify_restore_never_settling_raises_with_bytes(self):
+        # A device that never settles fails closed at the deadline AND
+        # the error carries the last failed query's bytes — a hard tool
+        # failure surfaces as itself, not as an opaque slow resume.
+        def side_effect(argv, **kwargs):
+            return _cr(rc=1, stderr=b"error: device still resuming")
+
+        self.mock_runner.side_effect = side_effect
+        with patch.object(self.harness, "capture_prior_state",
+                          return_value=object()), \
+             patch.object(AdbHarness, "RESTORE_SETTLE_TIMEOUT_SECONDS", 0.1), \
+             patch.object(AdbHarness, "RESTORE_SETTLE_POLL_SECONDS", 0.01):
+            with self.assertRaises(RuntimeError) as cm:
+                self.harness.verify_restore()
+        self.assertIn("did not settle to boot_completed=1", str(cm.exception))
+        self.assertIn("device still resuming", str(cm.exception))
+
+
 class TestScreenrecordBoundary(unittest.TestCase):
     """screenrecord start/finish must cross the execution boundary:
     shell-v2 argv, bounded finish, RemoteResult conversion, ledger."""
@@ -1487,6 +1575,76 @@ class TestScreenrecordBoundary(unittest.TestCase):
         self.assertEqual(leftovers, [])
         with open(path) as fh:
             self.assertEqual(json.load(fh)[0]["kind"], "shell")
+
+
+class TestKeyboardGeometryPins(unittest.TestCase):
+    """The tap coordinates are not free constants: they are derived
+    from the vendored ASK layout XML (defect A, #82). Recompute the
+    x-centers from the actual vendored files and compare against the
+    harness pins, so a keyboard layout change fails here instead of on
+    the device. (y-centers depend on rendered row heights and stay
+    pinned by the goldens.)"""
+
+    SCREEN_W = 1080  # 1%p = 10.8px
+
+    def _row_centers(self, row, default_width):
+        centers = {}
+        x = 0.0
+        for key in row:
+            gap = key.get("{http://schemas.android.com/apk/res/android}"
+                          "horizontalGap")
+            if gap:
+                x += float(gap.rstrip("%p")) * self.SCREEN_W / 100.0
+            width = key.get("{http://schemas.android.com/apk/res/android}"
+                            "keyWidth") or default_width
+            w = float(width.rstrip("%p")) * self.SCREEN_W / 100.0
+            centers[key.get("{http://schemas.android.com/apk/res/android}"
+                            "codes")] = x + w / 2.0
+            x += w
+        return centers
+
+    def test_pins_match_vendored_layout(self):
+        import xml.etree.ElementTree as ET
+
+        repo = os.path.abspath(os.path.join(
+            os.path.dirname(__file__), "..", "..", "..", ".."))
+        qwerty = ET.parse(os.path.join(
+            repo, "android/keyboard/addons/languages/english/pack/"
+            "src/main/res/xml/qwerty.xml")).getroot()
+        letters = {}
+        for row in qwerty.iter("Row"):
+            row_default = row.get(
+                "{http://schemas.android.com/apk/res/android}keyWidth",
+                qwerty.get("{http://schemas.android.com/apk/res/android}"
+                           "keyWidth", "10%p"))
+            letters.update(self._row_centers(row, row_default))
+        bottom = ET.parse(os.path.join(
+            repo, "android/keyboard/ime/app/src/main/res/xml/"
+            "ext_kbd_bottom_row_regular_with_voice.xml")).getroot()
+        normal = next(
+            r for r in bottom.iter("Row")
+            if r.get("{http://schemas.android.com/apk/res/android}"
+                     "keyboardMode") == "@integer/keyboard_mode_normal")
+        bottom_centers = self._row_centers(
+            normal, normal.get(
+                "{http://schemas.android.com/apk/res/android}keyWidth"))
+
+        # qwerty.xml rows: codes are ASCII; -1 is the sticky shift.
+        self.assertEqual(int(ASK_KEY_COORDS["T"][0]), round(letters["116"]))
+        self.assertEqual(int(ASK_KEY_COORDS["E"][0]), round(letters["101"]))
+        self.assertEqual(int(ASK_KEY_COORDS["A"][0]), round(letters["97"]))
+        self.assertEqual(int(ASK_KEY_COORDS["S"][0]), round(letters["115"]))
+        self.assertEqual(int(ASK_KEY_COORDS["I"][0]), round(letters["105"]))
+        self.assertEqual(int(ASK_KEY_COORDS["X"][0]), round(letters["120"]))
+        self.assertEqual(int(ASK_KEY_COORDS["V"][0]), round(letters["118"]))
+        self.assertEqual(int(ASK_KEY_COORDS["N"][0]), round(letters["110"]))
+        self.assertEqual(int(SHIFT_TAP[0]), round(letters["-1"]))
+        # Bottom row: space and period by resource-ref and code.
+        space = next(v for k, v in bottom_centers.items()
+                     if k and "key_code_space" in k)
+        self.assertEqual(int(ASK_KEY_COORDS[" "][0]), round(space))
+        self.assertEqual(int(ASK_KEY_COORDS["."][0]),
+                         round(bottom_centers["46"]))
 
 
 if __name__ == "__main__":
