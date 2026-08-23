@@ -10,6 +10,15 @@ Newest first, like all respectable patch notes.
 
 ---
 
+## 2026-08-23 — The roadmap learns what happened
+
+- ROADMAP.md stopped describing milestone 2 as awaiting qualification;
+  the qualification receipt is now cited where the caveat used to be.
+  Documentation's least glamorous job, done anyway: the map now
+  matches the territory.
+
+---
+
 ## 2026-08-23 — Milestone 2 qualified on real hardware
 
 - The unified PersonaSpeak build has, at last, been formally qualified
