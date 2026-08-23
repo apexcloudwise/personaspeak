@@ -1370,15 +1370,15 @@ class TestAdbHarness(unittest.TestCase):
 
     def test_verify_restore_unambiguous_failure_fails_fast(self):
         # Round-2 finding (Sigrid, #83): a query that answers with an
-        # unambiguous remote verdict (rc 1, no transport error) is a
-        # deterministic tool failure — it must surface immediately with
-        # its bytes, never ride the settle deadline as a slow resume.
+        # unambiguous remote FAILURE (rc != 0) is a deterministic tool
+        # failure — it must surface immediately with its bytes, never
+        # ride the settle deadline as a slow resume.
         calls = {"n": 0}
 
         def side_effect(argv, **kwargs):
             if "boot_completed" in " ".join(argv):
                 calls["n"] += 1
-                return _cr(rc=1)  # remote exit 1, empty stderr: unambiguous
+                return _cr(rc=1)  # remote exit 1: unambiguous failure
             return _cr(stdout=b"1")
 
         self.mock_runner.side_effect = side_effect
@@ -1388,6 +1388,45 @@ class TestAdbHarness(unittest.TestCase):
                 self.harness.verify_restore()
         self.assertIn("failed deterministically", str(cm.exception))
         self.assertEqual(calls["n"], 1)
+
+    def test_verify_restore_polls_through_booting_answers(self):
+        # Round-3 finding (#83 reviews): rc 0 with a value other than
+        # "1" — including the empty property of a framework still
+        # resuming — is the NORMAL state the bounded poll exists to
+        # await, not a tool failure. Settle must ride it out.
+        answers = [b"", b"", b"1"]
+        writer = _journey_runner()
+
+        def side_effect(argv, **kwargs):
+            if "boot_completed" in " ".join(argv):
+                if answers:
+                    return _cr(stdout=answers.pop(0))
+                return _cr(stdout=b"1")
+            return writer(argv, **kwargs)
+
+        self.mock_runner.side_effect = side_effect
+        with patch.object(self.harness, "capture_prior_state",
+                          return_value=object()), \
+             patch.object(AdbHarness, "RESTORE_SETTLE_POLL_SECONDS", 0):
+            self.harness.verify_restore()
+        self.assertEqual(answers, [])
+
+    def test_verify_restore_never_booting_fails_at_deadline(self):
+        # The still-booting state that never clears: fail closed at the
+        # deadline with the last answer's bytes.
+        def side_effect(argv, **kwargs):
+            if "boot_completed" in " ".join(argv):
+                return _cr(stdout=b"")  # healthy transport, empty value
+            return _cr(stdout=b"1")
+
+        self.mock_runner.side_effect = side_effect
+        with patch.object(self.harness, "capture_prior_state",
+                          return_value=object()), \
+             patch.object(AdbHarness, "RESTORE_SETTLE_TIMEOUT_SECONDS", 0.05), \
+             patch.object(AdbHarness, "RESTORE_SETTLE_POLL_SECONDS", 0.01):
+            with self.assertRaises(RuntimeError) as cm:
+                self.harness.verify_restore()
+        self.assertIn("did not settle to boot_completed=1", str(cm.exception))
 
 
 class TestScreenrecordBoundary(unittest.TestCase):

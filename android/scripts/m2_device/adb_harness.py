@@ -1179,12 +1179,15 @@ class AdbHarness:
     # After a console snapshot load the framework is mid-resume and
     # adbd itself restarts, so early queries can fail at the transport
     # (iteration-3 record 20260823T065235Z: the first poll drew an
-    # adb-level error while adbd was offline). Transport ambiguity —
-    # no remote verdict at all — is the transient that retries, within
-    # the bounded window. A query that unambiguously answers (remote
-    # rc, or a clean non-"1" value) fails fast with its bytes: per the
-    # #82 ruling a hard tool failure must surface as itself, not ride
-    # the deadline out as a slow resume.
+    # adb-level error while adbd was offline), and once the transport
+    # clears, sys.boot_completed is simply not "1" yet — the property
+    # reads empty while the framework finishes resuming. Two distinct
+    # non-success classes, opposite obligations (round-3 ruling, #83):
+    # transport ambiguity (no remote verdict) and healthy still-booting
+    # answers (rc 0, value != "1") retry within the bounded window; an
+    # unambiguous remote FAILURE (rc != 0) is a deterministic tool
+    # failure and raises immediately carrying its bytes — never riding
+    # the deadline out disguised as a slow resume.
     def _await_boot_settled(self) -> None:
         deadline = time.monotonic() + self.RESTORE_SETTLE_TIMEOUT_SECONDS
         last: RemoteResult | None = None
@@ -1194,15 +1197,16 @@ class AdbHarness:
             res = self._shell("getprop", "sys.boot_completed")
             if self._ambiguous(res) or self._timed_out(res):
                 last = res  # transport bytes ride the deadline evidence
-            elif (self._rc_of(res) == 0
-                    and self._out(res).strip() == "1"):
-                return
-            else:
+            elif self._rc_of(res) != 0:
                 raise RuntimeError(
                     "boot_completed query failed deterministically"
                     f" (poll {attempts}): rc={self._rc_of(res)}"
                     f" out={res.transport.stdout[:160]!r}"
                     f" err={res.transport.stderr[:160]!r}")
+            elif self._out(res).strip() == "1":
+                return
+            else:
+                last = res  # healthy still-booting answer: keep polling
             if time.monotonic() < deadline:
                 time.sleep(self.RESTORE_SETTLE_POLL_SECONDS)
                 continue
