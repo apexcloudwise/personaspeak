@@ -57,11 +57,11 @@ persona strip above the keys that rewrites what you've typed.
       [ADR-0007](docs/adr/0007-dedicated-personaspeak-row.md) dedicated-row
       geometry on an emulator. The source and build cutover is implemented and
       passes the host gate, and the dedicated-row geometry is proven by host
-      tests. Final real-device qualification is not done: mutation against a
-      real `InputConnection`, the height cap on a real screen, and restoration
-      after real mutation all remain pending in a follow-up PR under issue #47,
-      together with the device orchestrator that runs them. The earlier device
-      receipt was not accepted and is no longer tracked in this repository.
+      tests. Real-device qualification is **done** (2026-08-23, issue #47
+      closed): the device orchestrator ran the full journey on the pinned
+      snapshot fixture — 145/145 steps, exact mutation counts, verified
+      restoration (run 20260823T122133Z, receipt PR #84, evidence on the
+      protected `evidence` branch).
 - [ ] Persona strip grafted onto the chosen base as its own row above ASK's
       untouched suggestions and keys: persona chip + mood chip + transform,
       reading the draft and replacing it in place
