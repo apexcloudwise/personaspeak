@@ -1290,6 +1290,28 @@ class TestAdbHarness(unittest.TestCase):
 
     # ---------- #82 corrections: shift protocol, settle, geometry ------
 
+    def test_emu_argv_headless_is_opt_in(self):
+        # Round-1 finding on #83 (cassie): the headless append was dead
+        # code after an early return, making --headless a silent no-op.
+        # The launch argv is windowed by default — the counted
+        # qualification's configuration — and grows the token only when
+        # the diagnostic flag is set.
+        base = self.harness._emu_argv()
+        self.assertNotIn("-no-window", base)
+        self.assertIn("-gpu", base)
+        self.assertIn("swiftshader_indirect", base)
+        headless_harness = AdbHarness(
+            run_dir=self.run_dir, apk_path=self.apk_path,
+            runner=self.mock_runner, starter=self.mock_starter,
+            finisher=self.mock_finisher, fixture_root=self.fixture_root,
+            fixture_digests=self.fixture_digests, headless=True,
+        )
+        headless_harness.emulator_tool = ToolIdentity(
+            name="emulator", path="emulator", version="1.0")
+        argv = headless_harness._emu_argv()
+        self.assertIn("-no-window", argv)
+        self.assertEqual(argv[:-1], base)
+
     def test_type_text_capitals_ride_shift_taps(self):
         # The editor does not auto-capitalize (defect B, #82): every
         # capital in the source text must be preceded by a real sticky
@@ -1331,9 +1353,8 @@ class TestAdbHarness(unittest.TestCase):
         self.assertEqual(calls["n"], 3)
 
     def test_verify_restore_never_settling_raises_with_bytes(self):
-        # A device that never settles fails closed at the deadline AND
-        # the error carries the last failed query's bytes — a hard tool
-        # failure surfaces as itself, not as an opaque slow resume.
+        # A device whose transport never clears fails closed at the
+        # deadline AND the error carries the last failed query's bytes.
         def side_effect(argv, **kwargs):
             return _cr(rc=1, stderr=b"error: device still resuming")
 
@@ -1346,6 +1367,27 @@ class TestAdbHarness(unittest.TestCase):
                 self.harness.verify_restore()
         self.assertIn("did not settle to boot_completed=1", str(cm.exception))
         self.assertIn("device still resuming", str(cm.exception))
+
+    def test_verify_restore_unambiguous_failure_fails_fast(self):
+        # Round-2 finding (Sigrid, #83): a query that answers with an
+        # unambiguous remote verdict (rc 1, no transport error) is a
+        # deterministic tool failure — it must surface immediately with
+        # its bytes, never ride the settle deadline as a slow resume.
+        calls = {"n": 0}
+
+        def side_effect(argv, **kwargs):
+            if "boot_completed" in " ".join(argv):
+                calls["n"] += 1
+                return _cr(rc=1)  # remote exit 1, empty stderr: unambiguous
+            return _cr(stdout=b"1")
+
+        self.mock_runner.side_effect = side_effect
+        with patch.object(self.harness, "capture_prior_state",
+                          return_value=object()):
+            with self.assertRaises(RuntimeError) as cm:
+                self.harness.verify_restore()
+        self.assertIn("failed deterministically", str(cm.exception))
+        self.assertEqual(calls["n"], 1)
 
 
 class TestScreenrecordBoundary(unittest.TestCase):

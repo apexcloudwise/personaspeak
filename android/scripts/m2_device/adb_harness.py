@@ -230,7 +230,7 @@ class AdbHarness:
     def _emu_argv(self) -> list[str]:
         if self.emulator_tool is None:
             raise RuntimeError("emulator not resolved")
-        return [
+        argv = [
             self.emulator_tool.path, "-avd", AVD_NAME,
             "-snapshot", SNAPSHOT_NAME, "-no-snapshot-save", "-port", "5554",
             # The pinned snapshot was saved under the software renderer;
@@ -1177,12 +1177,14 @@ class AdbHarness:
     RESTORE_SETTLE_POLL_SECONDS = 2.0
 
     # After a console snapshot load the framework is mid-resume and
-    # adbd itself restarts, so early queries fail or answer stale
-    # (iteration-3 record 20260823T065235Z: the first poll drew rc 1
-    # while adbd was offline). Transient failures retry within the
-    # bounded window; only the deadline is fatal, and it raises carrying
-    # the last failed query's bytes so a hard tool failure surfaces as
-    # itself, not as an opaque slow resume (defect H, #82).
+    # adbd itself restarts, so early queries can fail at the transport
+    # (iteration-3 record 20260823T065235Z: the first poll drew an
+    # adb-level error while adbd was offline). Transport ambiguity —
+    # no remote verdict at all — is the transient that retries, within
+    # the bounded window. A query that unambiguously answers (remote
+    # rc, or a clean non-"1" value) fails fast with its bytes: per the
+    # #82 ruling a hard tool failure must surface as itself, not ride
+    # the deadline out as a slow resume.
     def _await_boot_settled(self) -> None:
         deadline = time.monotonic() + self.RESTORE_SETTLE_TIMEOUT_SECONDS
         last: RemoteResult | None = None
@@ -1190,11 +1192,17 @@ class AdbHarness:
         while True:
             attempts += 1
             res = self._shell("getprop", "sys.boot_completed")
-            if (not self._ambiguous(res) and not self._timed_out(res)
-                    and self._rc_of(res) == 0
+            if self._ambiguous(res) or self._timed_out(res):
+                last = res  # transport bytes ride the deadline evidence
+            elif (self._rc_of(res) == 0
                     and self._out(res).strip() == "1"):
                 return
-            last = res  # bytes of the last failed poll ride the deadline
+            else:
+                raise RuntimeError(
+                    "boot_completed query failed deterministically"
+                    f" (poll {attempts}): rc={self._rc_of(res)}"
+                    f" out={res.transport.stdout[:160]!r}"
+                    f" err={res.transport.stderr[:160]!r}")
             if time.monotonic() < deadline:
                 time.sleep(self.RESTORE_SETTLE_POLL_SECONDS)
                 continue
