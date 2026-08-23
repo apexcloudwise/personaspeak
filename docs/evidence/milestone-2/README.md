@@ -12,9 +12,21 @@ mutation counts, and verified restoration to pristine state.
   findings. Restoration verified against captured prior state.
 - **Media**: 7 structurally valid screenshots + 1 journey video,
   owner-approved (visual/privacy) and bound to the capture and manifest
-  digests (`bc3e7733…`).
-- **Counts** (machine-derived in `receipt.json`): journey steps,
-  mutations, media, restoration, and rejected-file counts all exact.
+  digests (`bc3e7733…`). Known limitation, ruled non-blocking by the
+  overseer (PR #84 review): `07-settings.png` caught the Settings
+  window mid-fade, so the visual restoration proof rests on the
+  machine verdict — the `verify_restore` step asserted the pristine
+  hierarchy facts (search editor absent, prior identity matched) and
+  the receipt records `restoration: verified`.
+- **Receipt counts** (the five the machine derives in `receipt.json`):
+  journey_steps_completed 132, png 7, mp4 1, release_ok 1,
+  verify_release_ok 1. Verdicts: restoration `verified`, media_ok,
+  privacy_ok.
+- **Mutation and rejection totals** (derived from the capture record,
+  per the overseer's receipt-index ruling): Apply exactly **1**
+  mutation, single application with no retry; Dismiss **0**; stale
+  apply **0**; rewrite-then-cancel **0**; rejected files **0** — the
+  manifest was accepted as exactly the canonical set.
 - **Evidence of record**: the append-only `evidence` branch — run
   commit `61c71af` (artifacts, ledger, gate log), receipt commit
   `3f0df9a` (approval + this receipt's bytes). `61c71af` is the
