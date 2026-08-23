@@ -10,6 +10,18 @@ Newest first, like all respectable patch notes.
 
 ---
 
+## 2026-08-23 — Milestone 2 qualified on real hardware
+
+- The unified PersonaSpeak build has, at last, been formally qualified
+  on the pinned emulator fixture: 145 steps, four editor sessions,
+  every journey path, exact mutation counts, restoration verified. The
+  receipt is in docs/evidence/milestone-2/; the media and logs are on
+  the append-only evidence branch, where nothing can be quietly
+  revised. Milestone 2 is done. The keyboard works; the paperwork now
+  agrees.
+
+---
+
 ## 2026-08-23 — The dry-run findings, shipped properly
 
 - The diagnostic dry-run (#82) enumerated every way the qualification
