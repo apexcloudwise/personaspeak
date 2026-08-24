@@ -15,10 +15,10 @@ import org.junit.runners.JUnit4
 class BackupRuleFilesTest {
 
     private fun ruleFile(name: String): File {
-        // <repo>/android/personaspeak-data -> <repo>/android/keyboard/ime/app/...
+        // <repo>/android/personaspeak-data -> <repo>/android/personaspeak-ui/...
         val candidates = listOf(
-            File("../keyboard/ime/app/src/main/res/xml/$name"),
-            File("keyboard/ime/app/src/main/res/xml/$name"),
+            File("../personaspeak-ui/src/main/res/xml/$name"),
+            File("personaspeak-ui/src/main/res/xml/$name"),
         )
         return candidates.firstOrNull { it.isFile }
             ?: error("rule file $name not found from ${File(".").absolutePath}")

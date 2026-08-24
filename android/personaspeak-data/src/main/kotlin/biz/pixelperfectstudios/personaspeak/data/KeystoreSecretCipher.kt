@@ -102,7 +102,24 @@ class KeystoreSecretCipher(
         val keyStore = KeyStore.getInstance(ANDROID_KEYSTORE).apply { load(null) }
         (keyStore.getKey(keyAlias, null) as? SecretKey)?.let { return it }
 
-        val builder = KeyGenParameterSpec.Builder(
+        val wantStrongBox = KeyStrengthPolicy.requestStrongBox(sdkInt)
+        return try {
+            if (wantStrongBox) generateKey(strongBox = true) else generateKey(strongBox = false)
+        } catch (e: Exception) {
+            if (!wantStrongBox) throw CipherUnavailableException(e)
+            Log.w(TAG, "STRONGBOX_UNAVAILABLE_FALLBACK")
+            try {
+                // Fresh spec: the failed attempt must not leave its StrongBox
+                // request behind on the retry.
+                generateKey(strongBox = false)
+            } catch (e2: Exception) {
+                throw CipherUnavailableException(e2)
+            }
+        }
+    }
+
+    private fun newSpecBuilder(): KeyGenParameterSpec.Builder =
+        KeyGenParameterSpec.Builder(
             keyAlias,
             KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT,
         )
@@ -111,27 +128,16 @@ class KeystoreSecretCipher(
             .setKeySize(KEY_SIZE_BITS)
             .setRandomizedEncryptionRequired(false)
 
-        return try {
-            generateKey(builder, strongBox = KeyStrengthPolicy.requestStrongBox(sdkInt))
-        } catch (e: Exception) {
-            if (!KeyStrengthPolicy.requestStrongBox(sdkInt)) throw CipherUnavailableException(e)
-            Log.w(TAG, "STRONGBOX_UNAVAILABLE_FALLBACK")
-            try {
-                generateKey(builder, strongBox = false)
-            } catch (e2: Exception) {
-                throw CipherUnavailableException(e2)
-            }
-        }
-    }
-
-    private fun generateKey(base: KeyGenParameterSpec.Builder, strongBox: Boolean): SecretKey {
-        if (KeyStrengthPolicy.requestStrongBox(sdkInt)) {
-            // Explicitly set either way so the fallback attempt clears the
-            // StrongBox request from the shared spec builder.
-            base.setIsStrongBoxBacked(strongBox)
-        }
+    @android.annotation.TargetApi(android.os.Build.VERSION_CODES.P)
+    private fun generateKey(strongBox: Boolean): SecretKey {
         val generator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, ANDROID_KEYSTORE)
-        generator.init(base.build())
+        val builder = newSpecBuilder()
+        if (strongBox) {
+            // Only reachable when KeyStrengthPolicy.requestStrongBox(sdkInt)
+            // is true, i.e. sdkInt >= 28.
+            builder.setIsStrongBoxBacked(true)
+        }
+        generator.init(builder.build())
         return generator.generateKey()
     }
 
