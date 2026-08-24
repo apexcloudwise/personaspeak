@@ -6,9 +6,9 @@
 **Plan precedent:** PR #91 (`be0e563`), PR #94 (`c54ad91`)  
 **Reviewer assignment:** Seraph (@seraph-pixelperfect), Cassie (@cassievale-pixelperfect), Sigrid (@sigrid-pixelperfect)  
 
-**Revision r3** — addressing reviewer seats (Seraph S1–S3, Sigrid 1–3, Cassie §4.2):
-- **Cassie §4.2 (Concrete behavioral network transport observation):** Added concrete `adb`/`proc/net`/`netstat` command sequence for observing real device sockets by app UID, DNS cross-checking against `api.anthropic.com`, and redacting proxy option for header name/SNI capture.
-- **S1 & Sigrid 1 (Harness & protocol correction):** Corrected package to `biz.pixelperfectstudios.personaspeak.data.harness.PersonaspeakStorageHarnessActivity`, matched intent action dispatch (`...harness.SEED/QUERY/CLEAR/CANARY`), updated positive-control canary to `personaspeak_backup_canary.txt`, and eliminated credential-carrying intent extras.
+**Revision r4** — addressing full reviewer feedback (Seraph S1–S3, Sigrid 1–3, Cassie §4.2):
+- **Sigrid 1 & S1 (Harness SecureRandom seeding & ledger):** Planned update to `PersonaspeakStorageHarnessActivity` (`ime/app/src/debug`) to generate on-device random bytes via `SecureRandom` on `ACTION_SEED`, eliminating the hardcoded string literal; ledgered for `UPSTREAM-MODIFIED.md`.
+- **Cassie & Sigrid 2 (§4.2 Behavioral network transport observation protocol):** Concrete command sequence specifying UID/PID-scoped `/proc/net/tcp` and `netstat` socket sampling during request execution, DNS IP cross-checking against `api.anthropic.com`, port 443 HTTPS assertion, and redacting proxy option.
 - **S2 & Sigrid 2 (Credential lifecycle & transport modes):** Defined exact two-mode execution for the parser journey: Mode A (injectable `HttpTransport` seam on-device for offline ART parser validation) and Mode B (optional live egress smoke with strict out-of-band host provisioning, ephemeral memory injection, immediate revocation, and sanitized receipt retention).
 - **S3 (Header citation):** Fixed PR #94 approved plan head to `c54ad91`.
 - **Sigrid 3 & Seraph §10 (Enablement governance & durable destination):** Defined durable documentation destinations (`ROADMAP.md`, `docs/adr/0005-privacy-posture-fork-audit.md`, #89 closeout) and explicitly recorded structural default-disabled wiring.
@@ -72,24 +72,29 @@ Milestone 4 Slice 1 established and verified backup exclusion on modern Android 
 
 This pass executes the behavioral backup-and-restore cycle on an API 27 AVD using `bmgr` to prove that credential ciphertext, staging files, and metadata are excluded from legacy backups while positive control data is preserved.
 
-### 2.2 Prerequisites & test environment
+### 2.2 Harness refinement (SecureRandom seeding)
+
+To strictly enforce the rule that no hardcoded credentials or fixed secret strings exist in source or intents:
+- In the implementation PR, `PersonaspeakStorageHarnessActivity.kt` is refined so `ACTION_SEED` generates 32 random bytes on-device via `java.security.SecureRandom().nextBytes(bytes)` when executed.
+- No string literal (`"harness-seeded-credential"`) or intent extra (`--es key ...`) is used.
+- This change modifies `keyboard/ime/app/src/debug/.../PersonaspeakStorageHarnessActivity.kt` and is ledgered in `android/keyboard/UPSTREAM-MODIFIED.md`.
+
+### 2.3 Prerequisites & test environment
 
 - **AVD Target:** Android 8.1 (API 27), x86_64 or arm64 system image (`system-images;android-27;default;x86_64`).
 - **APK Target:** `app-debug.apk` containing `PersonaspeakStorageHarnessActivity`.
 - **Package Name:** `biz.pixelperfectstudios.personaspeak.debug` (or active debug package ID).
 - **Required Host Tools:** `adb`, `emulator`.
 
-### 2.3 Executable verification protocol
-
-The protocol strictly uses the merged debug harness `biz.pixelperfectstudios.personaspeak.data.harness.PersonaspeakStorageHarnessActivity`:
+### 2.4 Executable verification protocol
 
 ```bash
 # 1. Boot API 27 AVD & install debug APK
 adb wait-for-device
 adb install -r android/keyboard/ime/app/build/outputs/apk/debug/app-debug.apk
 
-# 2. Seed store with synthetic non-secret test bytes via harness SEED action
-# No credential-bearing string is passed; harness defaults to on-device synthetic test token
+# 2. Seed store with on-device SecureRandom bytes via harness SEED action
+# No credential string or intent extra is passed
 adb shell am start -n biz.pixelperfectstudios.personaspeak.debug/biz.pixelperfectstudios.personaspeak.data.harness.PersonaspeakStorageHarnessActivity \
     -a biz.pixelperfectstudios.personaspeak.data.harness.SEED
 # Verify in logcat: PsStorageHarness: SEED_DONE Configured
@@ -124,7 +129,7 @@ adb shell am start -n biz.pixelperfectstudios.personaspeak.debug/biz.pixelperfec
 # Verify in logcat: PsStorageHarness: QUERY_OUTCOME Unconfigured secret_len=0
 ```
 
-### 2.4 Expected acceptance criteria
+### 2.5 Expected acceptance criteria
 
 1. **Positive control preserved:** `files/personaspeak_backup_canary.txt` is present and non-empty after restore.
 2. **Excluded artifacts absent:** `files/personaspeak_secret.bin`, `files/personaspeak_secret.bin.staging`, and `datastore/personaspeak_provider_config.preferences_pb` DO NOT EXIST in the restored package directory.
@@ -184,28 +189,33 @@ Perform an exhaustive inspection of `/data/data/biz.pixelperfectstudios.personas
 
 ### 4.2 Egress & network transport behavioral audit
 
-To independently prove zero third-party egress and strict single-endpoint binding on the real device (beyond compile-time/unit assertions), the pass uses active socket observation scoped to the application UID:
+To independently prove zero third-party egress and strict single-endpoint binding on the real device (beyond compile-time/unit assertions), the pass executes active socket observation scoped to the application UID:
 
 ```bash
-# 1. Resolve application UID on the disposable device
+# 1. Resolve application UID and PID on the disposable device
 APP_UID=$(adb shell "dumpsys package biz.pixelperfectstudios.personaspeak.debug | grep userId= | head -n 1" | awk -F= '{print $2}' | tr -d ' ')
+APP_PID=$(adb shell "pidof biz.pixelperfectstudios.personaspeak.debug || true")
 
-# 2. Sample kernel TCP connection tables before, during, and after request execution
-# Reads socket state filtered to the app UID:
+# 2. Continuous socket connection sampling before, during, and after request execution
+# Query kernel TCP sockets filtered by app UID:
 adb shell "grep -w $APP_UID /proc/net/tcp /proc/net/tcp6 || true"
+# Or using netstat scoped to process PID:
+adb shell "netstat -tnp | grep $APP_PID || true"
 
-# 3. For any active socket connection during execution:
-# - Convert hex IP to dotted quad
-# - Assert remote destination port is strictly 443 (HTTPS)
-# - Assert remote IP resolves in reverse DNS / forward lookup to api.anthropic.com
-# - Assert zero connections exist to third-party domains (analytics, crashlytics, telemetry)
+# 3. Destination endpoint & DNS correlation:
+# - Hex-decode destination IP from socket table to dotted quad
+# - Perform DNS query to resolve active IP addresses for api.anthropic.com:
+#   host api.anthropic.com
+# - Assert that all socket connections from APP_UID map strictly to api.anthropic.com's IP pool
+# - Assert destination port is strictly 443 (HTTPS)
 # - Assert zero connections to unencrypted HTTP (port 80)
+# - Assert zero connections to any third-party host (telemetry, analytics, crashlytics)
 
-# Optional Alternative: Local redacting proxy on host/AVD
-# - Configure AVD HTTP proxy to localhost redacting proxy
-# - Assert request SNI is strictly "api.anthropic.com"
-# - Assert request path is strictly "/v1/messages"
-# - Record sanitized header names present (x-api-key, anthropic-version, content-type) with values redacted
+# Optional Redacting Proxy Setup (mitmproxy / Charles forwarder):
+# - Configure AVD proxy: adb shell settings put global http_proxy 10.0.2.2:8080
+# - Proxy rule captures: SNI Host ("api.anthropic.com"), Path ("/v1/messages"), Header Names ("x-api-key", "anthropic-version", "content-type")
+# - Values and request/response payloads are redacted (0 bytes recorded)
+# - Teardown proxy: adb shell settings put global http_proxy :0
 ```
 
 **Receipt Output:** Sealed in `docs/evidence/milestone-4/storage-egress-audit-receipt.json` containing:
@@ -263,10 +273,10 @@ In PR #95 review, Cassie noted that `AnthropicMessagesAdapter.rewrite` converts 
 
 ## 7. ASK-tree rent & UPSTREAM-MODIFIED.md ledger
 
-- **New ASK-tree modifications in Slice 3:** **ZERO**.
-- **Existing ledger verification:**
-  1. `android/keyboard/ime/app/src/main/AndroidManifest.xml` (Settings activity & backup exclusion rules)
-  2. `android/keyboard/ime/app/build.gradle` (Dependency on `:personaspeak-providers`)
+- **ASK-Tree Scope in Slice 3:**
+  - One debug-only modification in `keyboard/ime/app/src/debug/java/.../PersonaspeakStorageHarnessActivity.kt` replacing hardcoded seed strings with `SecureRandom` bytes.
+  - Ledger entry in `android/keyboard/UPSTREAM-MODIFIED.md` updated to document the debug harness `SecureRandom` seeding.
+  - Zero modifications to production keyboard code.
 - **Automated Verification:** All 7 verifier fixture suites pass with zero ledger drift.
 
 ---
@@ -301,6 +311,7 @@ Level 1: JVM Unit Tests (:personaspeak-providers, :personaspeak-data, :personasp
 - [ ] **M4 Slice 2:** Merged (PR #95, `672a808`) — Provider adapter & truthful states.
 - [ ] **M4 Slice 3 Plan:** Reviewed and approved by Seraph, Cassie, Sigrid (this PR).
 - [ ] **M4 Slice 3 Implementation & Receipts:**
+  - [ ] Debug harness `SecureRandom` seeding implemented & ledgered in `UPSTREAM-MODIFIED.md`.
   - [ ] API 26/27 legacy backup exclusion verified and receipt sealed (`backup-api27-receipt.json`).
   - [ ] Disposable-device parser journey verified and receipt sealed (`adapter-parser-receipt.json`).
   - [ ] Storage & egress audit completed and receipt sealed (`storage-egress-audit-receipt.json`).
