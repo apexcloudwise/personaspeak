@@ -702,7 +702,7 @@ private fun ErrorLayout(
                     onClick = onSettings,
                     modifier = Modifier
                         .heightIn(min = MinInteractiveHeight)
-                        .testTag("personaspeak_error_settings"),
+                        .testTag("personaspeak_settings"),
                 ) {
                     Text("Open settings")
                 }
@@ -716,9 +716,6 @@ private fun ErrorLayout(
             ) {
                 Text("Dismiss")
             }
-
-            Spacer(modifier = Modifier.weight(1f))
-            SettingsButton(onSettings)
         }
     }
 }

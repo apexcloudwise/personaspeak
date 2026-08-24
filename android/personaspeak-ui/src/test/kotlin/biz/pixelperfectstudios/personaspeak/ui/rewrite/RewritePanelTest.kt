@@ -201,7 +201,7 @@ class RewritePanelTest {
     }
 
     @Test
-    fun `write unconfirmed error state exposes dismiss only - no retry, use this, or again affordances`() {
+    fun `write unconfirmed error state exposes dismiss only - no retry, use this, again, or settings affordances`() {
         setPanel(
             RewritePanelState.Error(
                 error = StitchError.WriteUnconfirmed,
@@ -216,10 +216,11 @@ class RewritePanelTest {
             .assertIsDisplayed()
             .assertHeightIsAtLeast(48.dp)
 
-        // Verify strictly dismiss only: no retry, no apply, no again buttons
+        // Verify strictly dismiss only: no retry, no apply, no again, no settings buttons
         composeRule.onNodeWithTag("personaspeak_retry").assertDoesNotExist()
         composeRule.onNodeWithTag("personaspeak_apply").assertDoesNotExist()
         composeRule.onNodeWithTag("personaspeak_again").assertDoesNotExist()
+        composeRule.onNodeWithTag("personaspeak_settings").assertDoesNotExist()
     }
 
     @Test
@@ -240,10 +241,32 @@ class RewritePanelTest {
         composeRule.onNodeWithTag("personaspeak_dismiss")
             .assertIsDisplayed()
             .assertHeightIsAtLeast(48.dp)
+        composeRule.onNodeWithTag("personaspeak_settings").assertDoesNotExist()
     }
 
     @Test
-    fun `offline error state renders amber card with message and 48dp actions`() {
+    fun `no provider error state renders settings and dismiss`() {
+        setPanel(
+            RewritePanelState.Error(
+                error = StitchError.NoProvider,
+                persona = testPersona,
+                mood = Mood.Polite,
+            ),
+        )
+
+        composeRule.onNodeWithTag("personaspeak_error_card").assertIsDisplayed()
+        composeRule.onNodeWithTag("personaspeak_message").assertIsDisplayed()
+        composeRule.onNodeWithTag("personaspeak_settings")
+            .assertIsDisplayed()
+            .assertHeightIsAtLeast(48.dp)
+        composeRule.onNodeWithTag("personaspeak_dismiss")
+            .assertIsDisplayed()
+            .assertHeightIsAtLeast(48.dp)
+        composeRule.onNodeWithTag("personaspeak_retry").assertDoesNotExist()
+    }
+
+    @Test
+    fun `offline error state renders amber card with message and 48dp retry and dismiss actions`() {
         setPanel(
             RewritePanelState.Error(
                 error = StitchError.Offline,
@@ -260,9 +283,7 @@ class RewritePanelTest {
         composeRule.onNodeWithTag("personaspeak_dismiss")
             .assertIsDisplayed()
             .assertHeightIsAtLeast(48.dp)
-        composeRule.onNodeWithTag("personaspeak_settings")
-            .assertIsDisplayed()
-            .assertHeightIsAtLeast(48.dp)
+        composeRule.onNodeWithTag("personaspeak_settings").assertDoesNotExist()
     }
 
     @Test
