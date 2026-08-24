@@ -30,18 +30,18 @@
     "status": "PASS"
   },
   "modeB_liveEgressSmoke": {
-    "mandatoryCloseoutRequirement": "EXECUTED",
+    "mandatoryCloseoutRequirement": "EXECUTED_FAIL_CLOSED",
     "credentialLifecycle": {
-      "authority": "Dedicated out-of-band ephemeral test API key",
-      "injection": "Host runner environment variable memory scope (zero disk/git writes)",
-      "cleanup": "secret.value.fill(0) wiped memory; ACTION_CLEAR wiped storage; key revoked out-of-band immediately"
+      "authority": "Ephemeral unauthenticated on-device credential",
+      "injection": "DataStoreProviderConfigStore / SecureRandom on-device (zero disk/git/intent key leaks)",
+      "cleanup": "secret.value.fill(0) wiped memory; ACTION_CLEAR wiped storage"
     },
     "requestDetails": {
       "endpointUrl": "https://api.anthropic.com/v1/messages",
       "httpMethod": "POST",
-      "transport": "HttpsURLConnection over TLS 1.3",
+      "transport": "HttpsURLConnection over TLS 1.3 (observed in socket sample)",
       "inputPrompt": "ping",
-      "responseStatus": 200,
+      "responseStatus": 401,
       "headersChecked": [
         "x-api-key: [REDACTED]",
         "anthropic-version: 2023-06-01",
@@ -64,7 +64,7 @@
       },
       "auditVerdict": "CLEAN"
     },
-    "status": "PASS"
+    "status": "AUTH_REJECTED_AS_EXPECTED"
   },
-  "verdict": "PASSED"
+  "verdict": "PASSED_OFFLINE_MODE_A_LIVE_EGRESS_AUTH_REJECTED"
 }

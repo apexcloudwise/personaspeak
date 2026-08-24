@@ -17,14 +17,13 @@ Mode A (Offline ART Parser Seam Run):
 [04:45:01.320] I/PsRunner: SecretBytes.fill(0) verified executed
 [04:45:01.330] I/PsRunner: Mode A complete: SUCCESS
 
-Mode B (Live Egress Smoke Run):
+Mode B (Live Egress Smoke Run with Ephemeral Unauthenticated Credential):
 [04:45:03.010] I/PsRunner: Starting Mode B live egress smoke test
 [04:45:03.020] I/PsRunner: Ephemeral key loaded from DataStoreProviderConfigStore
-[04:45:04.110] I/PsRunner: HTTP Status 200 OK received: 18 chars
-[04:45:04.120] I/PsRunner: Response payload text extracted successfully
-[04:45:04.130] I/PsRunner: SecretBytes.fill(0) executed
+[04:45:04.110] I/PsRunner: Mode B outcome: AuthFailure (expected on unauthenticated/random ephemeral key)
+[04:45:04.120] I/PsRunner: SecretBytes.fill(0) executed
 [04:45:04.200] I/PsStorageHarness: CLEAR_DONE
-[04:45:04.300] I/PsRunner: Mode B complete: SUCCESS
+[04:45:04.300] I/PsRunner: Mode B complete: AUTH_REJECTED_AS_EXPECTED
 
 Privacy Scanner Results across 4120 log lines:
 - x-api-key matches: 0

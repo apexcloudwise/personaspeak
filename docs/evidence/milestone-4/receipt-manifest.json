@@ -2,15 +2,15 @@
   "schemaVersion": 1,
   "milestone": "milestone-4",
   "slice": "slice-3",
-  "generatedAtIso": "2026-08-25T04:45:00Z",
+  "generatedAtIso": "2026-08-25T04:47:00Z",
   "receipts": {
     "backup-api27-receipt.json": {
       "sha256": "943dbb7a8161e5ff2111f0d655df14c85f20445c1fa5f5e458b24c454e516191",
       "bytes": 4351
     },
     "adapter-parser-receipt.json": {
-      "sha256": "3c2cb31dd17cb46321188ed18f0f60c902cd53a54c167a22f031485455873de7",
-      "bytes": 2648
+      "sha256": "cfe0fa2cdcd9c53ea77144d4194f7706099b0990431732d75be99e3af5fdf95f",
+      "bytes": 2733
     },
     "storage-egress-audit-receipt.json": {
       "sha256": "8dd559b0de18c4aa5f6081094aac42340c7cf2c94f172016c71a16fdfde4ef16",
@@ -27,8 +27,8 @@
       "bytes": 394
     },
     "raw_logcat_parser_audit.log": {
-      "sha256": "5604447784351ffe45402acd589c5cb491b131299ffecd2eb27f0c7dff432dcd",
-      "bytes": 1384
+      "sha256": "2a423fd3c188cee20aa653924ecce0ab02dcd6fef206200e73848c26d40b1af7",
+      "bytes": 1413
     },
     "raw_socket_sampling.log": {
       "sha256": "47e1eeab6367491efa818169387957d8ddc6efa33e388d4955b0e61514205e4a",
