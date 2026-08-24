@@ -3,7 +3,6 @@ package biz.pixelperfectstudios.personaspeak.ui.rewrite
 import biz.pixelperfectstudios.personaspeak.personas.Mood
 import biz.pixelperfectstudios.personaspeak.personas.PersonaId
 import biz.pixelperfectstudios.personaspeak.personas.ValidatedPersona
-import biz.pixelperfectstudios.personaspeak.ui.editor.StaleReason
 
 sealed interface RewritePanelState {
     data class Resting(
@@ -32,7 +31,6 @@ sealed interface RewritePanelState {
         val persona: ValidatedPersona,
         val mood: Mood,
         val candidate: RewriteCandidate,
-        val outcome: RewriteOutcome? = null,
     ) : RewritePanelState
 
     data class Applying(
@@ -52,13 +50,6 @@ sealed interface RewritePanelState {
         val persona: ValidatedPersona,
         val mood: Mood,
     ) : RewritePanelState
-}
-
-sealed interface RewriteOutcome {
-    data object Applied : RewriteOutcome
-    data class Stale(val reason: StaleReason) : RewriteOutcome
-    data object Rejected : RewriteOutcome
-    data object Unconfirmed : RewriteOutcome
 }
 
 /**

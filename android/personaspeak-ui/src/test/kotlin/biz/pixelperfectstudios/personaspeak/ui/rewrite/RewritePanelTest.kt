@@ -68,6 +68,7 @@ class RewritePanelTest {
         preExpansionImeHeightPx: Int = 1000,
         onDismiss: () -> Unit = {},
         onRewrite: () -> Unit = {},
+        onApply: () -> Unit = {},
         onOpenPersonaPicker: () -> Unit = {},
         onOpenMoodPicker: () -> Unit = {},
     ) {
@@ -75,7 +76,7 @@ class RewritePanelTest {
             RewritePanel(
                 state = state,
                 onRewrite = onRewrite,
-                onApply = {},
+                onApply = onApply,
                 onDismiss = onDismiss,
                 onSettings = {},
                 preExpansionImeHeightPx = { preExpansionImeHeightPx },
@@ -190,7 +191,59 @@ class RewritePanelTest {
     }
 
     @Test
-    fun `error state renders amber card with message and 48dp actions`() {
+    fun `applied verified state renders badge and 48dp dismiss`() {
+        setPanel(RewritePanelState.AppliedVerified(testPersona, Mood.Polite, candidate))
+
+        composeRule.onNodeWithTag("personaspeak_applied_verified").assertIsDisplayed()
+        composeRule.onNodeWithTag("personaspeak_dismiss")
+            .assertIsDisplayed()
+            .assertHeightIsAtLeast(48.dp)
+    }
+
+    @Test
+    fun `write unconfirmed error state exposes dismiss only - no retry, use this, or again affordances`() {
+        setPanel(
+            RewritePanelState.Error(
+                error = StitchError.WriteUnconfirmed,
+                persona = testPersona,
+                mood = Mood.Polite,
+            ),
+        )
+
+        composeRule.onNodeWithTag("personaspeak_error_card").assertIsDisplayed()
+        composeRule.onNodeWithTag("personaspeak_message").assertIsDisplayed()
+        composeRule.onNodeWithTag("personaspeak_dismiss")
+            .assertIsDisplayed()
+            .assertHeightIsAtLeast(48.dp)
+
+        // Verify strictly dismiss only: no retry, no apply, no again buttons
+        composeRule.onNodeWithTag("personaspeak_retry").assertDoesNotExist()
+        composeRule.onNodeWithTag("personaspeak_apply").assertDoesNotExist()
+        composeRule.onNodeWithTag("personaspeak_again").assertDoesNotExist()
+    }
+
+    @Test
+    fun `stale editor error state exposes retry and dismiss`() {
+        setPanel(
+            RewritePanelState.Error(
+                error = StitchError.StaleEditor,
+                persona = testPersona,
+                mood = Mood.Polite,
+            ),
+        )
+
+        composeRule.onNodeWithTag("personaspeak_error_card").assertIsDisplayed()
+        composeRule.onNodeWithTag("personaspeak_message").assertIsDisplayed()
+        composeRule.onNodeWithTag("personaspeak_retry")
+            .assertIsDisplayed()
+            .assertHeightIsAtLeast(48.dp)
+        composeRule.onNodeWithTag("personaspeak_dismiss")
+            .assertIsDisplayed()
+            .assertHeightIsAtLeast(48.dp)
+    }
+
+    @Test
+    fun `offline error state renders amber card with message and 48dp actions`() {
         setPanel(
             RewritePanelState.Error(
                 error = StitchError.Offline,

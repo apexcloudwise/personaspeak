@@ -98,11 +98,9 @@ class RewritePanelViewModel(
                         persona = activePersona,
                         mood = activeMood,
                         candidate = result.candidate,
-                        outcome = null,
                     )
                 }
                 is RewriteRequestResult.NoPersona -> {
-                    // Fallback per Stitch contract: missing persona uses bundled fallback
                     activePersona = resolvePersona(PersonaId.bundled("jeeves"))
                     _state.value = RewritePanelState.Error(
                         error = StitchError.NoProvider,
@@ -164,32 +162,28 @@ class RewritePanelViewModel(
         activeRequest = viewModelScope.launch {
             when (val result = coordinator.apply(candidate)) {
                 is ApplyResult.AppliedVerified ->
-                    _state.value = RewritePanelState.Review(
+                    _state.value = RewritePanelState.AppliedVerified(
                         persona = activePersona,
                         mood = activeMood,
                         candidate = candidate,
-                        outcome = RewriteOutcome.Applied,
                     )
                 is ApplyResult.Stale ->
-                    _state.value = RewritePanelState.Review(
+                    _state.value = RewritePanelState.Error(
+                        error = StitchError.StaleEditor,
                         persona = activePersona,
                         mood = activeMood,
-                        candidate = candidate,
-                        outcome = RewriteOutcome.Stale(result.reason),
                     )
                 is ApplyResult.WriteRejected ->
-                    _state.value = RewritePanelState.Review(
+                    _state.value = RewritePanelState.Error(
+                        error = StitchError.WriteRejected,
                         persona = activePersona,
                         mood = activeMood,
-                        candidate = candidate,
-                        outcome = RewriteOutcome.Rejected,
                     )
                 is ApplyResult.WriteUnconfirmed ->
-                    _state.value = RewritePanelState.Review(
+                    _state.value = RewritePanelState.Error(
+                        error = StitchError.WriteUnconfirmed,
                         persona = activePersona,
                         mood = activeMood,
-                        candidate = candidate,
-                        outcome = RewriteOutcome.Unconfirmed,
                     )
             }
         }

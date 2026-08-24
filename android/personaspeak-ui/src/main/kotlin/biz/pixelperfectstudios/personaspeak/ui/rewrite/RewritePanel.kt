@@ -8,11 +8,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -20,7 +18,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -137,7 +134,7 @@ fun RewritePanel(
                 ReviewLayout(
                     state = state,
                     maxBodyHeightPx = reviewBodyMaxHeightPx,
-                    onRewrite = onRewrite,
+                    onAgain = onRewrite,
                     onApply = onApply,
                     onDismiss = onDismiss,
                     onSettings = onSettings,
@@ -474,7 +471,7 @@ private fun LoadingLayout(
 private fun ReviewLayout(
     state: RewritePanelState.Review,
     maxBodyHeightPx: Int,
-    onRewrite: () -> Unit,
+    onAgain: () -> Unit,
     onApply: () -> Unit,
     onDismiss: () -> Unit,
     onSettings: () -> Unit,
@@ -528,53 +525,29 @@ private fun ReviewLayout(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            if (state.outcome == null) {
-                TextButton(
-                    onClick = onApply,
-                    modifier = Modifier
-                        .heightIn(min = MinInteractiveHeight)
-                        .testTag("personaspeak_apply"),
-                ) {
-                    Text("Use this")
-                }
-                TextButton(
-                    onClick = onRewrite,
-                    modifier = Modifier
-                        .heightIn(min = MinInteractiveHeight)
-                        .testTag("personaspeak_again"),
-                ) {
-                    Text("↻ Again")
-                }
-                TextButton(
-                    onClick = onDismiss,
-                    modifier = Modifier
-                        .heightIn(min = MinInteractiveHeight)
-                        .testTag("personaspeak_dismiss"),
-                ) {
-                    Text("Dismiss")
-                }
-            } else {
-                val label = when (state.outcome) {
-                    is RewriteOutcome.Applied -> "Applied"
-                    is RewriteOutcome.Stale -> "Stale: text changed"
-                    is RewriteOutcome.Rejected -> "Rejected by editor"
-                    is RewriteOutcome.Unconfirmed -> "Unconfirmed"
-                }
-                Text(
-                    text = label,
-                    style = MaterialTheme.typography.labelSmall,
-                    modifier = Modifier
-                        .weight(1f)
-                        .testTag("personaspeak_outcome"),
-                )
-                TextButton(
-                    onClick = onDismiss,
-                    modifier = Modifier
-                        .heightIn(min = MinInteractiveHeight)
-                        .testTag("personaspeak_dismiss"),
-                ) {
-                    Text("Dismiss")
-                }
+            TextButton(
+                onClick = onApply,
+                modifier = Modifier
+                    .heightIn(min = MinInteractiveHeight)
+                    .testTag("personaspeak_apply"),
+            ) {
+                Text("Use this")
+            }
+            TextButton(
+                onClick = onAgain,
+                modifier = Modifier
+                    .heightIn(min = MinInteractiveHeight)
+                    .testTag("personaspeak_again"),
+            ) {
+                Text("↻ Again")
+            }
+            TextButton(
+                onClick = onDismiss,
+                modifier = Modifier
+                    .heightIn(min = MinInteractiveHeight)
+                    .testTag("personaspeak_dismiss"),
+            ) {
+                Text("Dismiss")
             }
 
             Spacer(modifier = Modifier.weight(1f))
@@ -650,12 +623,15 @@ private fun AppliedVerifiedLayout(
         Text(
             text = "✓ Applied",
             style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.SemiBold,
             color = MaterialTheme.colorScheme.primary,
             modifier = Modifier.testTag("personaspeak_applied_verified"),
         )
         TextButton(
             onClick = onDismiss,
-            modifier = Modifier.heightIn(min = MinInteractiveHeight),
+            modifier = Modifier
+                .heightIn(min = MinInteractiveHeight)
+                .testTag("personaspeak_dismiss"),
         ) {
             Text("Done")
         }

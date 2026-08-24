@@ -134,7 +134,7 @@ class RewritePanelViewModelTest {
     }
 
     @Test
-    fun `apply maps AppliedVerified to Review with Applied outcome`() = runTest {
+    fun `apply maps AppliedVerified to AppliedVerified state`() = runTest {
         fakeEditor.captureResult = CaptureResult.Captured(
             EditorSnapshot(
                 session = EditorSessionToken(1L),
@@ -154,13 +154,15 @@ class RewritePanelViewModelTest {
 
         val state = vm.state.value
         assertTrue(
-            "Expected Review(Applied), got $state",
-            state is RewritePanelState.Review && state.outcome == RewriteOutcome.Applied,
+            "Expected AppliedVerified, got $state",
+            state is RewritePanelState.AppliedVerified,
         )
+        val applied = state as RewritePanelState.AppliedVerified
+        assertEquals("replaced", applied.candidate.replacement)
     }
 
     @Test
-    fun `apply maps Stale to Review with Stale outcome`() = runTest {
+    fun `apply maps Stale to Error(StaleEditor) state`() = runTest {
         fakeEditor.captureResult = CaptureResult.Captured(
             EditorSnapshot(
                 session = EditorSessionToken(1L),
@@ -180,13 +182,15 @@ class RewritePanelViewModelTest {
 
         val state = vm.state.value
         assertTrue(
-            "Expected Review(Stale), got $state",
-            state is RewritePanelState.Review && state.outcome is RewriteOutcome.Stale,
+            "Expected Error(StaleEditor), got $state",
+            state is RewritePanelState.Error && state.error == StitchError.StaleEditor,
         )
+        val error = state as RewritePanelState.Error
+        assertTrue(error.error.canRetry)
     }
 
     @Test
-    fun `apply maps WriteRejected to Review with Rejected outcome`() = runTest {
+    fun `apply maps WriteRejected to Error(WriteRejected) state`() = runTest {
         fakeEditor.captureResult = CaptureResult.Captured(
             EditorSnapshot(
                 session = EditorSessionToken(1L),
@@ -206,13 +210,15 @@ class RewritePanelViewModelTest {
 
         val state = vm.state.value
         assertTrue(
-            "Expected Review(Rejected), got $state",
-            state is RewritePanelState.Review && state.outcome == RewriteOutcome.Rejected,
+            "Expected Error(WriteRejected), got $state",
+            state is RewritePanelState.Error && state.error == StitchError.WriteRejected,
         )
+        val error = state as RewritePanelState.Error
+        assertFalse(error.error.canRetry)
     }
 
     @Test
-    fun `apply maps WriteUnconfirmed to Review with Unconfirmed outcome`() = runTest {
+    fun `apply maps WriteUnconfirmed to Error(WriteUnconfirmed) state without retry`() = runTest {
         fakeEditor.captureResult = CaptureResult.Captured(
             EditorSnapshot(
                 session = EditorSessionToken(1L),
@@ -232,9 +238,11 @@ class RewritePanelViewModelTest {
 
         val state = vm.state.value
         assertTrue(
-            "Expected Review(Unconfirmed), got $state",
-            state is RewritePanelState.Review && state.outcome == RewriteOutcome.Unconfirmed,
+            "Expected Error(WriteUnconfirmed), got $state",
+            state is RewritePanelState.Error && state.error == StitchError.WriteUnconfirmed,
         )
+        val error = state as RewritePanelState.Error
+        assertFalse("WriteUnconfirmed must not offer retry", error.error.canRetry)
     }
 
     @Test
