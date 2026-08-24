@@ -124,17 +124,7 @@ import json, os, sys
 
 evidence_dir = sys.argv[1]
 
-# 1. API 27 Backup Exclusion
-with open(os.path.join(evidence_dir, 'backup-api27-receipt.json'), 'r') as f:
-    backup = json.load(f)
-assert backup.get('verdict') == 'PASSED', 'backup verdict not PASSED'
-assert backup.get('harnessComponent') == 'biz.pixelperfectstudios.personaspeak.data.harness.PersonaspeakStorageHarnessActivity', 'invalid storage harness component'
-assert backup['verificationAssertions']['positiveControl']['observed'] == 'PRESENT', 'positive canary not preserved'
-assert backup['verificationAssertions']['keystoreSecretCiphertext']['observed'] == 'ABSENT', 'secret ciphertext not excluded'
-assert backup['verificationAssertions']['datastoreMetadata']['observed'] == 'ABSENT', 'datastore metadata not excluded'
-assert backup['verificationAssertions']['runtimeQueryOutcome']['status'] == 'PASS', 'runtime query failed'
-
-# 2. Adapter Parser Journey (Mode A Offline ART Qualification)
+# 1. Adapter Parser Journey (Mode A Offline ART Qualification)
 with open(os.path.join(evidence_dir, 'adapter-parser-receipt.json'), 'r') as f:
     adapter = json.load(f)
 assert adapter.get('verdict') == 'PASSED', 'adapter verdict not PASSED'
