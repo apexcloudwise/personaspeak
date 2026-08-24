@@ -60,8 +60,21 @@
 
         <!-- ui activities -->
         <!-- settings ui activities -->
-        <!-- this is just a proxy activity, it does nothing but direct to the actual setting activity
-        I use this, so I can 'disable' this activity at runtime, and so remove ASK from the launcher's icons -->
+        <!-- PersonaSpeak Settings Activity -->
+        <activity
+            android:name="biz.pixelperfectstudios.personaspeak.ui.settings.PersonaSpeakSettingsActivity"
+            android:icon="@mipmap/ic_launcher"
+            android:label="@string/ime_name"
+            android:launchMode="singleTop"
+            android:roundIcon="@mipmap/ic_launcher_round"
+            android:theme="@style/Theme.AskApp"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="biz.pixelperfectstudios.personaspeak.action.SETTINGS" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
         <activity
             android:exported="true"
             android:name="com.menny.android.anysoftkeyboard.LauncherSettingsActivity"

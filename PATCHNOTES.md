@@ -10,6 +10,24 @@ Newest first, like all respectable patch notes.
 
 ---
 
+## 2026-08-24 — Settings stops dangling: Persona browser lands and the Brain stays honest
+
+- Shipped `PersonaSpeakSettingsActivity` in `:ime:app` and the first-party settings
+  surface in `:personaspeak-ui`: Settings Home (`settings/home`), full Persona
+  Browser library (`settings/personas`), and per-character dossiers (`settings/personas/{personaId}`).
+- Wired the strip's Settings button, the Persona Picker's `+ Browse all characters`
+  action, and the typed error card `Open settings` affordances to launch the real
+  same-package settings activity with deep-link intent routing.
+- Grouped settings into CHARACTERS (character browser, default mood selector,
+  and fixed "review before replacing" notice), THE BRAIN (disabled-but-honest
+  FakeProvider baseline stating cloud providers and Keystore arrive in M4), and
+  TYPING (direct link to inherited AnySoftKeyboard settings).
+- Kept the hard boundaries intact: zero persistence shims or storage writes (M4),
+  zero onboarding graph creep (M5), and zero programmatic IME switching in the "Try
+  on keyboard" guidance card.
+
+---
+
 ## 2026-08-24 — The strip gets its wardrobe: real states, character tiles, and mood chips
 
 - Replaced the placeholder "Rewrite" button with the full dedicated-row state
