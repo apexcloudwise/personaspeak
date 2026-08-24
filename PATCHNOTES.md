@@ -18,11 +18,8 @@ Newest first, like all respectable patch notes.
     and ledgering the change in `android/keyboard/UPSTREAM-MODIFIED.md`.
   - Configured API 26/27 legacy backup-exclusion rules under `fullBackupContent`
     to exclude AES-GCM ciphertext and DataStore metadata (device qualification pending).
-  - Added debug-only `PersonaspeakAdapterHarnessActivity` and qualified `AnthropicMessagesAdapter`
-    for Mode A offline parser validation with verified memory zeroing
-    (`docs/evidence/milestone-4/adapter-parser-receipt.json`).
-  - Added `receipt-manifest.json` anchoring SHA-256 digests for authentic receipts, and wired
-    `verify-milestone-4.sh` gate verifier and `:ime:app:compileDebugKotlin` compile check into CI.
+  - Added debug-only `PersonaspeakAdapterHarnessActivity` with deterministic memory
+    zeroing assertions and wired `verify-milestone-4.sh` compile check into CI.
   - Refined §10 key-String security checklist and source documentation.
   - Recorded structural default-disabled governance in ROADMAP.md and ADR-0005: `FakeProvider`
     remains active in rewrite coordinator; cloud egress strictly gated on Milestone 5

@@ -1,17 +1,21 @@
-# Milestone 4 — Secure Provider Configuration & Persistence Evidence Receipts
+# Milestone 4 — Secure Provider Configuration & Persistence Evidence
 
-**Status: MODE A QUALIFIED; LIVE DEVICE QUALIFICATION PENDING.** Slice 3 Mode A offline HTTP transport seam parser validation and compile gates are qualified. Device-level qualification (API 27 legacy backup exclusion and Mode B live cloud egress) remains pending a dedicated device fixture run outside this sandbox.
+**Status: SOURCE & COMPILE SCAFFOLDING QUALIFIED; LIVE DEVICE QUALIFICATION PENDING.**
 
-## Evidence Manifest & Authority
+Milestone 4 implementation and verifiable code scaffolding are landed:
+- On-device secure random generation in `PersonaspeakStorageHarnessActivity` (`ACTION_SEED`).
+- Compiling fail-closed debug harness in `PersonaspeakAdapterHarnessActivity` with `SecretBytes.fill(0)` memory zeroing.
+- Static no-secret-logging scan and clean `./gradlew :ime:app:compileDebugKotlin` compilation enforced in CI via `verify-milestone-4.sh`.
 
-The authority manifest is [`receipt-manifest.json`](receipt-manifest.json) (`schemaVersion: 1`).
+## Pending Device Qualification Receipts
 
-| Receipt File | Scope & Invariants |
-|---|---|
-| [`adapter-parser-receipt.json`](adapter-parser-receipt.json) | `AnthropicMessagesAdapter` & `extractTextFromResponse` offline parser qualification via `MockAndroidHttpTransport`. Mode A (offline `HttpTransport` seam validation, JSON escaping/Unicode handling, and `SecretBytes.fill(0)` zeroing: PASS). |
+Device-level qualification receipts remain pending a dedicated physical device / AVD execution pass outside this sandbox:
+1. **API 27 Legacy Backup Exclusion**: Verification of Keystore ciphertext and DataStore metadata exclusion under `fullBackupContent` via `bmgr`.
+2. **ART Response Parser Validation (Mode A)**: Execution of `PersonaspeakAdapterHarnessActivity` against synthetic payloads on Android ART.
+3. **Live Egress Smoke Test & Socket Audit (Mode B)**: Verified single-endpoint TLS 1.3 network egress to `api.anthropic.com` with zero leaks.
 
 ## Architectural & Governance Baseline
 
 - **Provider Enablement**: The Anthropic provider adapter remains **structurally disabled by default** in production builds at Milestone 4 closeout (`FakeProvider` active in rewrite coordinator; adapter registered in DI but unselected).
-- **Transport Binding**: `AnthropicMessagesAdapter` connects over HTTPS (`api.anthropic.com/v1/messages`).
+- **Transport Binding**: `AnthropicMessagesAdapter` connects over HTTPS (`api.anthropic.com/v1/messages`) with closed error taxonomy.
 - **Milestone 5 Seam**: Live cloud network egress is strictly gated on explicit user configuration and opt-in in the Milestone 5 Settings & Onboarding UI graph.

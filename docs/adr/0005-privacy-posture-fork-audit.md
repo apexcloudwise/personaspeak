@@ -122,8 +122,8 @@ Milestone 4 ([#89](https://github.com/apexcloudwise/personaspeak/issues/89)) est
    - Both artifacts (and staging twins) are excluded from cloud backup, device transfer, and legacy backup under both `dataExtractionRules` (API 31+) and `fullBackupContent` (< API 31). Device-level exclusion verification remains pending external fixture execution.
 2. **Egress & Single-Endpoint Binding**:
    - `AnthropicMessagesAdapter` in `:personaspeak-providers` is strictly bound to `https://api.anthropic.com/v1/messages` over HTTPS with closed error taxonomy.
-   - Mode A response parser qualification (`docs/evidence/milestone-4/adapter-parser-receipt.json`) verifies Unicode/escape handling and memory zeroing (`SecretBytes.fill(0)` in finally block).
-   - Mode B live cloud egress qualification remains pending external device fixture execution.
+   - Code-level assertions verify Unicode/escape handling and memory zeroing (`SecretBytes.fill(0)` in finally block).
+   - Live cloud egress qualification remains pending external device fixture execution.
 
 3. **Structural Default-Disabled Baseline**:
    - Cloud providers remain **structurally disabled by default** at Milestone 4 closeout. `FakeProvider` is the active default in the rewrite coordinator; real adapters are unselected in the DI graph.

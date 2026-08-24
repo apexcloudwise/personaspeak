@@ -69,10 +69,9 @@ persona strip above the keys that rewrites what you've typed.
       `ProviderConfigStore` port, Preferences DataStore metadata + AndroidKeyStore
       AES-GCM ciphertext persistence, backup exclusion configured for API 26/27
       and API 31+, `AnthropicMessagesAdapter` in `:personaspeak-providers` with closed error taxonomy
-      over HTTPS, Mode A response parser qualification (`docs/evidence/milestone-4/adapter-parser-receipt.json`),
-      and memory zeroing assertions. Shipped **structurally disabled by default** (`FakeProvider` active default in rewrite
+      over HTTPS, and memory zeroing assertions. Shipped **structurally disabled by default** (`FakeProvider` active default in rewrite
       coordinator; real adapters unselected in DI; live cloud egress gated on Milestone 5 user opt-in).
-      Device qualification (API 27 backup & Mode B live egress) pending external fixture execution.
+      Device qualification (API 27 backup, ART runner, & Mode B live egress) pending external fixture execution.
 - [ ] app: onboarding (enable → set default → pick provider → try it),
       persona browser, settings (Milestone 5)
 - [ ] CI: assembleDebug + unit tests per PR; APK artifact on tags
