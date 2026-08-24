@@ -10,9 +10,9 @@ Newest first, like all respectable patch notes.
 
 ---
 
-## 2026-08-25 — The Brain advances: Mode A qualified offline, compile gates active
+## 2026-08-25 — The Brain advances: source contracts and compile gates active
 
-- Shipped Milestone 4 slice 3 verification code, debug harnesses, and Mode A qualification:
+- Shipped Milestone 4 slice 3 verification scaffolding, debug harnesses, and CI gates:
   - Upgraded `PersonaspeakStorageHarnessActivity.ACTION_SEED` to generate 32 on-device
     cryptographically secure random bytes via `SecureRandom`, removing literal seed strings
     and ledgering the change in `android/keyboard/UPSTREAM-MODIFIED.md`.
