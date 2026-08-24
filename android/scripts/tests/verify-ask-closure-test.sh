@@ -53,6 +53,7 @@ cat > "$canonical" <<'EOF'
 :ime:voiceime
 :junit-sharding
 :personaspeak-data
+:personaspeak-providers
 :personaspeak-ui
 EOF
 
@@ -65,7 +66,7 @@ while IFS= read -r p; do
   rel="${p#:}"
   rel="${rel//://}"
   case "$p" in
-    :core-personas | :core-providers | :personaspeak-ui | :personaspeak-data) dir="$fixture_root/$rel" ;;
+    :core-personas | :core-providers | :personaspeak-ui | :personaspeak-data | :personaspeak-providers) dir="$fixture_root/$rel" ;;
     *) dir="$fixture_root/keyboard/$rel" ;;
   esac
   mkdir -p "$dir"

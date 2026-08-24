@@ -117,7 +117,7 @@ while IFS= read -r p; do
   rel="${p#:}"
   rel="${rel//://}"
   case "$p" in
-    :core-personas | :core-providers | :personaspeak-ui | :personaspeak-data) dir="$root/$rel" ;;
+    :core-personas | :core-providers | :personaspeak-ui | :personaspeak-data | :personaspeak-providers) dir="$root/$rel" ;;
     *) dir="$root/keyboard/$rel" ;;
   esac
   for build_file in "$dir/build.gradle" "$dir/build.gradle.kts"; do

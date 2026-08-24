@@ -28,5 +28,6 @@
 :ime:remote
 :ime:voiceime
 :junit-sharding
-:personaspeak-ui
 :personaspeak-data
+:personaspeak-providers
+:personaspeak-ui
