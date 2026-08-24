@@ -10,26 +10,24 @@ Newest first, like all respectable patch notes.
 
 ---
 
-## 2026-08-25 — The Brain graduates: Milestone 4 qualified on device and sealed
+## 2026-08-25 — The Brain advances: Mode A qualified on device, compile gates active
 
-- Shipped Milestone 4 closeout evidence and refinements:
+- Shipped Milestone 4 slice 3 verification code, debug harnesses, and Mode A qualification:
   - Upgraded `PersonaspeakStorageHarnessActivity.ACTION_SEED` to generate 32 on-device
     cryptographically secure random bytes via `SecureRandom`, removing literal seed strings
     and ledgering the change in `android/keyboard/UPSTREAM-MODIFIED.md`.
   - Executed API 26/27 legacy backup-exclusion pass via `bmgr`: positive control canary
     restored, AES-GCM ciphertext and DataStore metadata excluded under `fullBackupContent`
     (`docs/evidence/milestone-4/backup-api27-receipt.json`).
-  - Qualified `AnthropicMessagesAdapter` and `extractTextFromResponse` under Android ART
-    with zero secret/prompt leaks across offline Mode A and mandatory live Mode B
+  - Added debug-only `PersonaspeakAdapterHarnessActivity` and qualified `AnthropicMessagesAdapter`
+    under Android ART for Mode A offline parser validation with verified memory zeroing
     (`docs/evidence/milestone-4/adapter-parser-receipt.json`).
-  - Completed package-private storage and UID-scoped socket-level egress audits proving
-    zero plaintext leaks and HTTPS binding to `api.anthropic.com` (TLS 1.3 observed in run)
-    (`docs/evidence/milestone-4/storage-egress-audit-receipt.json`).
-  - Added authority receipt manifest (`receipt-manifest.json`), retained raw execution logs (`docs/evidence/milestone-4/raw/`), and `verify-milestone-4.sh` gate verifier wired into CI.
+  - Added `receipt-manifest.json` anchoring SHA-256 digests for authentic receipts, and wired
+    `verify-milestone-4.sh` gate verifier and `:ime:app:compileDebugKotlin` compile check into CI.
   - Refined §10 key-String security checklist and source documentation.
   - Recorded structural default-disabled governance in ROADMAP.md and ADR-0005: `FakeProvider`
     remains active in rewrite coordinator; cloud egress strictly gated on Milestone 5
-    settings opt-in. (#96)
+    settings opt-in. Mode B live cloud egress qualification remains pending external fixture execution. (#96)
 
 ---
 

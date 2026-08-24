@@ -65,16 +65,15 @@ persona strip above the keys that rewrites what you've typed.
 - [ ] Persona strip grafted onto the chosen base as its own row above ASK's
       untouched suggestions and keys: persona chip + mood chip + transform,
       reading the draft and replacing it in place
-- [x] **Milestone 4 — Secure provider configuration & persistence** (issue #89):
+- [ ] **Milestone 4 — Secure provider configuration & persistence** (issue #89):
       `ProviderConfigStore` port, Preferences DataStore metadata + AndroidKeyStore
       AES-GCM ciphertext persistence, backup exclusion verified on both API 26/27
       and API 31+ (`docs/evidence/milestone-4/backup-api27-receipt.json`),
       `AnthropicMessagesAdapter` in `:personaspeak-providers` with closed error taxonomy
-      over HTTPS (TLS 1.3 observed in recorded device run),
-      response parser qualification (`docs/evidence/milestone-4/adapter-parser-receipt.json`),
-      and package storage/egress audits (`docs/evidence/milestone-4/storage-egress-audit-receipt.json`).
-      Shipped **structurally disabled by default** (`FakeProvider` active default in rewrite
+      over HTTPS, Mode A response parser qualification (`docs/evidence/milestone-4/adapter-parser-receipt.json`),
+      and memory zeroing assertions. Shipped **structurally disabled by default** (`FakeProvider` active default in rewrite
       coordinator; real adapters unselected in DI; live cloud egress gated on Milestone 5 user opt-in).
+      Mode B live cloud egress qualification pending external device fixture execution.
 - [ ] app: onboarding (enable → set default → pick provider → try it),
       persona browser, settings (Milestone 5)
 - [ ] CI: assembleDebug + unit tests per PR; APK artifact on tags
