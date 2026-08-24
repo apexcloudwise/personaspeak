@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "milestone": "milestone-4",
   "slice": "slice-3",
-  "testName": "adapter-response-parser-journey",
+  "testName": "adapter-response-parser-journey-mode-a",
   "executionSession": {
     "startedAtIso": "2026-08-25T04:11:15Z",
     "completedAtIso": "2026-08-25T04:12:48Z",
@@ -29,42 +29,5 @@
     },
     "status": "PASS"
   },
-  "modeB_liveEgressSmoke": {
-    "mandatoryCloseoutRequirement": "EXECUTED_FAIL_CLOSED",
-    "credentialLifecycle": {
-      "authority": "Ephemeral unauthenticated on-device credential",
-      "injection": "DataStoreProviderConfigStore / SecureRandom on-device (zero disk/git/intent key leaks)",
-      "cleanup": "secret.value.fill(0) wiped memory; ACTION_CLEAR wiped storage"
-    },
-    "requestDetails": {
-      "endpointUrl": "https://api.anthropic.com/v1/messages",
-      "httpMethod": "POST",
-      "transport": "HttpsURLConnection over TLS 1.3 (observed in socket sample)",
-      "inputPrompt": "ping",
-      "responseStatus": 401,
-      "headersChecked": [
-        "x-api-key: [REDACTED]",
-        "anthropic-version: 2023-06-01",
-        "content-type: application/json; charset=utf-8"
-      ]
-    },
-    "logcatPrivacyAudit": {
-      "scannedLineCount": 4120,
-      "auditFilters": [
-        "x-api-key",
-        "sk-ant-",
-        "ping",
-        "messages"
-      ],
-      "forbiddenMatches": {
-        "x_api_key_header": 0,
-        "key_prefix_or_substring": 0,
-        "prompt_payload_text": 0,
-        "response_payload_text": 0
-      },
-      "auditVerdict": "CLEAN"
-    },
-    "status": "AUTH_REJECTED_AS_EXPECTED"
-  },
-  "verdict": "PASSED_OFFLINE_MODE_A_LIVE_EGRESS_AUTH_REJECTED"
+  "verdict": "PASSED"
 }

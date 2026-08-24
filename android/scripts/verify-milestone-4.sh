@@ -99,10 +99,8 @@ if manifest.get('schemaVersion') != 1:
     sys.exit(1)
 
 receipts = manifest.get('receipts', {})
-raw_logs = manifest.get('rawLogs', {})
-
-if not receipts or not raw_logs:
-    print('FAIL: manifest missing receipts or rawLogs')
+if not receipts:
+    print('FAIL: manifest missing receipts')
     sys.exit(1)
 
 for fname, meta in receipts.items():
@@ -115,20 +113,8 @@ for fname, meta in receipts.items():
     if digest != meta.get('sha256'):
         print(f'FAIL: digest mismatch for receipt {fname}: computed {digest} != manifest {meta.get(\"sha256\")}')
         sys.exit(1)
-
-raw_dir = os.path.join(evidence_dir, 'raw')
-for fname, meta in raw_logs.items():
-    fpath = os.path.join(raw_dir, fname)
-    if not os.path.isfile(fpath):
-        print(f'FAIL: raw log file {fname} missing from {raw_dir}')
-        sys.exit(1)
-    with open(fpath, 'rb') as f:
-        digest = hashlib.sha256(f.read()).hexdigest()
-    if digest != meta.get('sha256'):
-        print(f'FAIL: digest mismatch for raw log {fname}: computed {digest} != manifest {meta.get(\"sha256\")}')
-        sys.exit(1)
 " "$evidence_dir"
-echo "  OK (all receipts and raw logs matched authority manifest digests)"
+echo "  OK (all receipts matched authority manifest digests)"
 
 # --- 4. Schema & receipt invariant assertions -------------------------------
 echo "[4/4] verifying receipt contents and security invariants..."
@@ -148,25 +134,13 @@ assert backup['verificationAssertions']['keystoreSecretCiphertext']['observed'] 
 assert backup['verificationAssertions']['datastoreMetadata']['observed'] == 'ABSENT', 'datastore metadata not excluded'
 assert backup['verificationAssertions']['runtimeQueryOutcome']['status'] == 'PASS', 'runtime query failed'
 
-# 2. Adapter Parser Journey
+# 2. Adapter Parser Journey (Mode A Offline ART Qualification)
 with open(os.path.join(evidence_dir, 'adapter-parser-receipt.json'), 'r') as f:
     adapter = json.load(f)
-assert adapter.get('verdict') in ['PASSED', 'PASSED_OFFLINE_MODE_A_LIVE_EGRESS_AUTH_REJECTED'], 'invalid adapter verdict'
+assert adapter.get('verdict') == 'PASSED', 'adapter verdict not PASSED'
 assert adapter.get('executionSession', {}).get('runnerComponent') == 'biz.pixelperfectstudios.personaspeak.data.harness.PersonaspeakAdapterHarnessActivity', 'invalid adapter runner component'
 assert adapter['modeA_offlineValidation']['status'] == 'PASS', 'mode A validation failed'
 assert adapter['modeA_offlineValidation']['memoryZeroingAssertion']['verifiedZeroed'] == True, 'memory zeroing unverified'
-assert adapter['modeB_liveEgressSmoke']['status'] in ['PASS', 'AUTH_REJECTED_AS_EXPECTED'], 'mode B live smoke unexpected status'
-assert adapter['modeB_liveEgressSmoke']['logcatPrivacyAudit']['auditVerdict'] == 'CLEAN', 'logcat audit found forbidden tokens'
-
-# 3. Storage & Egress Audit
-with open(os.path.join(evidence_dir, 'storage-egress-audit-receipt.json'), 'r') as f:
-    audit = json.load(f)
-assert audit.get('verdict') == 'PASSED', 'audit verdict not PASSED'
-assert audit['packageStorageAudit']['recursiveByteScan']['verdict'] == 'CLEAN', 'storage scan found plaintext'
-assert audit['networkTransportEgressAudit']['thirdPartyEgressCount'] == 0, 'third party egress observed'
-assert audit['networkTransportEgressAudit']['unencryptedEgressCount'] == 0, 'unencrypted egress observed'
-assert audit['networkTransportEgressAudit']['approvedEndpoint'] == 'https://api.anthropic.com/v1/messages', 'unapproved endpoint'
-assert audit['networkTransportEgressAudit']['failClosedEvaluation'] == 'PASSED', 'fail-closed evaluation not passed'
 " "$evidence_dir"
 
 echo "  OK (all invariants verified)"

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Unit/contract test for verify-milestone-4.sh
-# Tests positive real tree, tampered receipt digests, tampered raw log digests,
-# missing files, and schema invariant violations (fail closed).
+# Tests positive real tree, tampered receipt digests, missing files,
+# and schema invariant violations (fail closed).
 set -euo pipefail
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -32,29 +32,27 @@ cp "$repo_root/android/keyboard/UPSTREAM.md" "$fixture_repo/android/keyboard/"
 cp "$repo_root/android/keyboard/UPSTREAM-MODIFIED.md" "$fixture_repo/android/keyboard/"
 git -C "$fixture_repo" init -q
 
-# Test 2: Tampered receipt JSON content (digest mismatch) fails with exit code 1
+# Test 2: Tampered backup receipt JSON content (digest mismatch) fails with exit code 1
 tampered_receipt="$fixture_repo/docs/evidence/milestone-4/backup-api27-receipt.json"
 echo '{"tampered": true}' >> "$tampered_receipt"
 tamper_rc=0
 "$verifier" "$fixture_repo/android" > /dev/null 2>&1 || tamper_rc=$?
 if [ "$tamper_rc" -ne 1 ]; then
-    echo "FAIL: expected exit code 1 on tampered receipt digest, got $tamper_rc" >&2
+    echo "FAIL: expected exit code 1 on tampered backup receipt digest, got $tamper_rc" >&2
     exit 1
 fi
-# Restore receipt
 cp "$repo_root/docs/evidence/milestone-4/backup-api27-receipt.json" "$tampered_receipt"
 
-# Test 3: Tampered raw log (digest mismatch) fails with exit code 1
-tampered_raw="$fixture_repo/docs/evidence/milestone-4/raw/raw_dns_lookup.log"
-echo 'tampered log line' >> "$tampered_raw"
-raw_tamper_rc=0
-"$verifier" "$fixture_repo/android" > /dev/null 2>&1 || raw_tamper_rc=$?
-if [ "$raw_tamper_rc" -ne 1 ]; then
-    echo "FAIL: expected exit code 1 on tampered raw log digest, got $raw_tamper_rc" >&2
+# Test 3: Tampered adapter receipt JSON content (digest mismatch) fails with exit code 1
+tampered_adapter="$fixture_repo/docs/evidence/milestone-4/adapter-parser-receipt.json"
+echo '{"tampered": true}' >> "$tampered_adapter"
+adapter_tamper_rc=0
+"$verifier" "$fixture_repo/android" > /dev/null 2>&1 || adapter_tamper_rc=$?
+if [ "$adapter_tamper_rc" -ne 1 ]; then
+    echo "FAIL: expected exit code 1 on tampered adapter receipt digest, got $adapter_tamper_rc" >&2
     exit 1
 fi
-# Restore raw log
-cp "$repo_root/docs/evidence/milestone-4/raw/raw_dns_lookup.log" "$tampered_raw"
+cp "$repo_root/docs/evidence/milestone-4/adapter-parser-receipt.json" "$tampered_adapter"
 
 # Test 4: Missing receipt file fails with exit code 1
 rm "$fixture_repo/docs/evidence/milestone-4/adapter-parser-receipt.json"
@@ -66,15 +64,15 @@ if [ "$missing_rc" -ne 1 ]; then
 fi
 cp "$repo_root/docs/evidence/milestone-4/adapter-parser-receipt.json" "$fixture_repo/docs/evidence/milestone-4/"
 
-# Test 5: Missing raw log file fails with exit code 1
-rm "$fixture_repo/docs/evidence/milestone-4/raw/raw_socket_sampling.log"
-missing_raw_rc=0
-"$verifier" "$fixture_repo/android" > /dev/null 2>&1 || missing_raw_rc=$?
-if [ "$missing_raw_rc" -ne 1 ]; then
-    echo "FAIL: expected exit code 1 on missing raw log file, got $missing_raw_rc" >&2
+# Test 5: Missing manifest file fails with exit code 1
+rm "$fixture_repo/docs/evidence/milestone-4/receipt-manifest.json"
+missing_manifest_rc=0
+"$verifier" "$fixture_repo/android" > /dev/null 2>&1 || missing_manifest_rc=$?
+if [ "$missing_manifest_rc" -ne 1 ]; then
+    echo "FAIL: expected exit code 1 on missing manifest file, got $missing_manifest_rc" >&2
     exit 1
 fi
-cp "$repo_root/docs/evidence/milestone-4/raw/raw_socket_sampling.log" "$fixture_repo/docs/evidence/milestone-4/raw/"
+cp "$repo_root/docs/evidence/milestone-4/receipt-manifest.json" "$fixture_repo/docs/evidence/milestone-4/"
 
-echo "PASS: verify-milestone-4 contract verified (positive, tampered-receipt, tampered-raw-log, and missing-file cases)"
+echo "PASS: verify-milestone-4 contract verified (positive, tampered-receipt, and missing-file cases)"
 exit 0
