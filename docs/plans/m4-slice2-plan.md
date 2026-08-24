@@ -5,17 +5,15 @@
 **Plan precedent:** PR #91 (`be0e563`)  
 **Reviewer assignment:** Seraph, Cassie, Sigrid (same gate as slice 1 — plan reviewed and approved before any implementation)
 
-**Revision r2** — amendments from Seraph's plan-gate review ([#94 comment](https://github.com/apexcloudwise/personaspeak/pull/94#issuecomment-5401612001)):
+**Revision r4** — full reviewer convergence (Seraph A4 comment, Cassie r2 review, Sigrid r2 review):
 - **A1** Save/clear edges in the state machine are harness/test-driven this slice only (no production UI entry point)
 - **A2** `NetworkFailure` carries `NetworkErrorCode` (enum) instead of `Throwable`
-- **A3** Drop `ProviderStatus` sealed interface; use `StoreOutcome` directly in `SettingsState`
-- **§13 resolved**: Q1 → **Anthropic Messages API** (one concrete adapter); Q2 → Option B confirmed; Q3 → `clear()` already exists on the port; Q4 → no auto-wipe on request-time auth failure confirmed
-
-**Revision r3** — blockers from Sigrid and Cassie's CHANGES_REQUESTED at `646fdbf` (review link: [Sigrid](https://github.com/apexcloudwise/personaspeak/pull/94#pullrequestreview-5012727697), [Cassie](https://github.com/apexcloudwise/personaspeak/pull/94)):
-- **B1 (Sigrid)** ASK ledger corrected: `keyboard/ime/app/build.gradle` is ASK-owned → requires UPSTREAM-MODIFIED.md entry; §2.3 and §3 updated
-- **B2 (Sigrid)** Network data-classification table fixed: draft/prompt text IS sent over network (product purpose, consistent with ADR-0005); prior "❌ sent" was wrong
-- **B3 (Sigrid)** `PATCHNOTES.md` entry added (CI gate)
-- **B4 (Cassie)** `AuthFailure` mapping corrected: introduce `CredentialRejected` as a new `StoreOutcome` variant (§2.4); must not reuse `InvalidCredentials` which contracts a load-time artifact wipe
+- **A3** Drop `ProviderStatus` sealed interface; `SettingsState.providerOutcome: StoreOutcome` direct for store operations
+- **A4 (Seraph/Cassie/Sigrid)** Resolve auth-state collision: `StoreOutcome` reflects store operations only (`InvalidCredentials` keeps its wipe postcondition inviolate); adapter request observations live in `SettingsState.lastRewriteResult: AdapterResult?` (cleared on success / config change). Store is NOT wiped on request failure.
+- **Anthropic headers (Cassie)**: Concrete provider scheme is `x-api-key` + `anthropic-version: 2023-06-01` (not generic Bearer); §4.1, §4.3, §5 updated; secret byte zeroing in §10 checklist
+- **Module arrows & ASK ledger (Sigrid)**: Explicit dependency graph (`:personaspeak-providers -> :core-providers`, `:personaspeak-providers -> :personaspeak-ui`, `:ime:app -> :personaspeak-providers`); `keyboard/ime/app/build.gradle` modification ledgered for `UPSTREAM-MODIFIED.md`
+- **Egress & data classification (Sigrid)**: Egress strictly bound to `https://api.anthropic.com/v1/messages`; draft/prompt and response text prohibited from persistence, URLs, logs, telemetry, exceptions, fixtures
+- **PATCHNOTES.md (Sigrid)**: Entry added for PR #94
 
 ---
 
@@ -104,7 +102,7 @@ interface ProviderAdapter {
 
     /**
      * Executes a rewrite with the credential retrieved from the store.
-     * All network errors → Unavailable; auth failures → InvalidCredentials.
+     * All network errors → AdapterResult.NetworkFailure(code); auth failures → AdapterResult.AuthFailure.
      * Never logs [secret] or any fragment of [text].
      */
     suspend fun rewrite(
@@ -122,47 +120,31 @@ sealed interface AdapterResult {
 }
 ```
 
-`AdapterResult` maps to `StoreOutcome` states at the call site in `SettingsViewModel`:
-- `Success` → no store change
-- `NetworkFailure(code)` → surface as `StoreOutcome.Unavailable(StoreFailure.IO_ERROR)` in UI state (no wipe); `code` is for internal diagnostics only, never logged
-- `AuthFailure` → surface as `StoreOutcome.CredentialRejected` in UI state (see §2.4 and §6.1 — **B4: must NOT reuse `InvalidCredentials` which contracts a load-time wipe**)
+### 2.3 Adapter observation vs. store outcome separation (A4 resolution)
 
-### 2.4 New `StoreOutcome` variant: `CredentialRejected` (B4)
+Per Seraph's A4 ruling ([#94 comment](https://github.com/apexcloudwise/personaspeak/pull/94#issuecomment-5401673732)) endorsed by Cassie and Sigrid:
 
-Cassie's finding: mapping `AdapterResult.AuthFailure → StoreOutcome.InvalidCredentials` collides with `InvalidCredentials`'s documented contract that artifacts were wiped. A request-time auth rejection doesn't wipe anything; mapping it to `InvalidCredentials` produces a state where the UI says "Invalid Credentials" but the next `load()` returns `Configured` — incoherent.
+- **`StoreOutcome` remains untouched** as the 4-state domain type for storage/Keystore lifecycle alone (`Unconfigured`, `Configured`, `Unavailable(reasonCode)`, `InvalidCredentials`). `StoreOutcome.InvalidCredentials` retains its strict postcondition: *artifacts were wiped, caller must reconfigure from scratch*.
+- **Adapter request execution is a separate observation**: surfaced in `SettingsState.lastRewriteResult: AdapterResult?`.
+- **Call site mapping in `SettingsViewModel`**:
+  - `AdapterResult.Success(text)` → set `lastRewriteResult = null`, `providerOutcome` remains `Configured`
+  - `AdapterResult.NetworkFailure(code)` → set `lastRewriteResult = NetworkFailure(code)`, `providerOutcome` remains `Configured` (no store mutation)
+  - `AdapterResult.AuthFailure` → set `lastRewriteResult = AuthFailure`, `providerOutcome` remains `Configured` (store is NOT wiped; UI renders "key rejected", not "invalid credentials")
+- `lastRewriteResult` is cleared on successful rewrite, provider re-configuration, or explicit clear.
 
-**Fix**: add `CredentialRejected` to `StoreOutcome` (same module — `personaspeak-ui/brain/ProviderConfig.kt`):
+### 2.4 Module placement & concrete dependency graph
 
-```kotlin
-// plan only — B4 addition to StoreOutcome
-sealed interface StoreOutcome {
-    data object Unconfigured : StoreOutcome
-    data class Configured(val providerId: String, val configuredAtEpochMs: Long, val generation: String) : StoreOutcome
-    data class Unavailable(val reasonCode: StoreFailure) : StoreOutcome
-    data object InvalidCredentials : StoreOutcome  // load-time: artifacts wiped, re-configure from scratch
-    data object CredentialRejected : StoreOutcome  // request-time: provider rejected credential; store unchanged; user may retry or clear
-}
-```
+**Option B confirmed (Q2)** — new `:personaspeak-providers` Gradle module.
 
-Contract for `CredentialRejected`:
-- Set by `SettingsViewModel` when `AdapterResult.AuthFailure` is received
-- Never set by the store itself (`DataStoreProviderConfigStore` sets `InvalidCredentials` only)
-- No artifact mutation; the next `load()` will still return `Configured`
-- User action: clear and re-enter credential, or ignore (may be a transient service error)
+Concrete dependency arrows:
+- `:personaspeak-providers` `implementation(project(":core-providers"))` (implements provider interfaces)
+- `:personaspeak-providers` `implementation(project(":personaspeak-ui"))` (consumes `SecretBytes`)
+- `:keyboard:ime:app` `implementation(project(":personaspeak-providers"))` (wires concrete provider in app DI graph)
 
-`ProviderConfig.kt` additions: one new `data object CredentialRejected : StoreOutcome` line. The `StoreOutcome` sealed interface already lives in `personaspeak-ui` (same module as `SettingsViewModel`) so no cross-module dependency change.
+Rent impact:
+- One new entry in `android/settings.gradle.kts`: `include(":personaspeak-providers")`
+- One new entry in `android/keyboard/ime/app/build.gradle`: `implementation(project(":personaspeak-providers"))` (ASK-owned file — requires `UPSTREAM-MODIFIED.md` entry, see §3)
 
-
-### 2.3 Module placement decision
-
-Options (choice gated on ASK-tree assessment per §3):
-
-| Option | Module | Pros | Cons |
-|---|---|---|---|
-| A | Add adapter classes to `:personaspeak-data` | No new module rent | Mixes network with storage |
-| B | New `:personaspeak-providers` Gradle module | Clean separation, testable in isolation | One new `debugImplementation` + `implementation` entry |
-
-**Option B confirmed (Q2)**. The module holds adapter implementations and wires `ProviderAdapter` → `CompletionProvider`. Rent impact: one new module entry in `android/settings.gradle.kts`, one `implementation(project(":personaspeak-providers"))` in `keyboard/ime/app/build.gradle` (ASK-owned — requires UPSTREAM-MODIFIED.md entry, see §3).
 
 ---
 
@@ -188,15 +170,16 @@ This slice implements **one** concrete adapter: **Anthropic Messages API** (Q1 r
 |---|---|---|
 | Metadata | `providerId`, `configuredAtEpochMs`, `schemaVersion`, `generation` | Provider display name, URL, user-typed API key in plaintext |
 | Credential | AES-GCM ciphertext of API key bytes only | Partial keys, key prefixes, prompt fragments, history |
-| Network layer | No request/response body logged | URL parameters that encode credentials, bearer tokens in logs |
+| Network layer | No request/response body logged | URL parameters that encode credentials, `x-api-key` or `authorization` headers in logs |
 
 ### 4.2 Network behavior
 
 - HTTPS only; certificate validation not relaxed.
+- Egress strictly bound to `https://api.anthropic.com/v1/messages` (endpoint verified at compile-time / test-gate).
 - No retry storms: `NetworkFailure` is returned immediately; retry policy is the caller's responsibility.
-- Timeouts set at call site; `NetworkFailure` on timeout.
+- Timeouts set at call site (connect/read ≤ 30s); `NetworkFailure(TIMEOUT)` on timeout.
 - No telemetry, no analytics callbacks, no third-party SDK beyond a plain HTTP client.
-- **Egress proof required**: a test or build-time lint rule asserting that no class in `:personaspeak-providers` makes a network call except through the single approved call site.
+- **Egress proof required**: a test asserting that no class in `:personaspeak-providers` makes a network call except to `https://api.anthropic.com/v1/messages`.
 
 ### 4.3 Secret flow
 
@@ -208,23 +191,25 @@ AndroidKeyStore
     ProviderAdapter.rewrite(system, text, secret: SecretBytes)
             │
             ▼
-    HTTP client — secret injected as Bearer header only
-    (header value never logged; request/response body never logged)
+    HTTP client — secret injected as x-api-key header
+    (with anthropic-version: 2023-06-01; headers and bodies never logged)
+            │
+            ▼
+    SecretBytes underlying ByteArray zeroed in memory after request
 ```
 
 `SecretBytes` is `@JvmInline value class` — value does not survive serialization. It must not be placed in a Bundle, Intent extra, shared preference, or log statement.
 
-### 4.4 Error taxonomy mapped to four states
+### 4.4 Error taxonomy mapped to store and observation states
 
-| Source | Condition | StoreOutcome mapping |
+| Source | Condition | State update |
 |---|---|---|
-| `KeystoreSecretCipher` | `CipherUnavailableException` on fast-path | `Unavailable(KEYSTORE_UNAVAILABLE)` — no mutation |
-| `KeystoreSecretCipher` | Corrupt ciphertext → `null` on decrypt | `InvalidCredentials` — store clears artifacts |
-| `ProviderAdapter.rewrite` | `NetworkFailure(TIMEOUT)` or `NetworkFailure(IO_ERROR)` | `Unavailable(IO_ERROR)` — no mutation, no wipe |
-| `ProviderAdapter.rewrite` | `NetworkFailure(HTTP_SERVER_ERROR)` | `Unavailable(IO_ERROR)` — treat 5xx as transient |
-| `ProviderAdapter.rewrite` | `AuthFailure` (HTTP 401/403) | **`CredentialRejected`** (B4 — store NOT mutated, artifacts intact; next `load()` returns `Configured`) |
-| `DataStoreProviderConfigStore.load` | meta null + live blob exists | `InvalidCredentials` + wipe (existing behavior — unchanged) |
-
+| `KeystoreSecretCipher` | `CipherUnavailableException` on fast-path | `providerOutcome = StoreOutcome.Unavailable(KEYSTORE_UNAVAILABLE)` (no mutation) |
+| `KeystoreSecretCipher` | Corrupt ciphertext → `null` on decrypt | `providerOutcome = StoreOutcome.InvalidCredentials` (store clears artifacts) |
+| `DataStoreProviderConfigStore.load` | meta null + live blob exists | `providerOutcome = StoreOutcome.InvalidCredentials` (store clears artifacts) |
+| `ProviderAdapter.rewrite` | `NetworkFailure(TIMEOUT)` or `NetworkFailure(IO_ERROR)` | `lastRewriteResult = NetworkFailure(...)` (`providerOutcome` remains `Configured`, no wipe) |
+| `ProviderAdapter.rewrite` | `NetworkFailure(HTTP_SERVER_ERROR)` | `lastRewriteResult = NetworkFailure(HTTP_SERVER_ERROR)` (`providerOutcome` remains `Configured`, no wipe) |
+| `ProviderAdapter.rewrite` | `AuthFailure` (HTTP 401/403) | `lastRewriteResult = AdapterResult.AuthFailure` (`providerOutcome` remains `Configured`; **store is NOT wiped**) |
 
 ---
 
@@ -233,29 +218,30 @@ AndroidKeyStore
 Building on PR #91 rules (carried from slice 1):
 
 1. `StoreLog` codes only — no plaintext in any log call anywhere in the adapter.
-2. HTTP request headers containing credentials must not be logged by any interceptor.
+2. HTTP request headers containing credentials (`x-api-key`, `authorization`, etc.) must not be logged by any interceptor.
 3. HTTP response bodies must not be logged at any level (may contain credential echo or user content).
-4. Test fixtures must not contain real API keys. Fixture secrets are syntactically valid random bytes only.
-5. **Build-time check**: a lint rule or `grep`-based CI step asserts no `Log.d/v/i/w/e` call in `:personaspeak-providers` contains `secret`, `key`, `bearer`, or `authorization` (case-insensitive).
+4. Draft/prompt text and rewrite response text are strictly prohibited from persistence, URLs, logcat, telemetry, exception messages, and test fixtures.
+5. Test fixtures must not contain real API keys. Fixture secrets are syntactically valid random bytes only.
+6. **Build-time check**: a lint rule or `grep`-based CI step asserts no `Log.d/v/i/w/e` call in `:personaspeak-providers` contains `secret`, `key`, `x-api-key`, `bearer`, or `authorization` (case-insensitive).
 
 ---
 
 ## 6. Truthful runtime state model
 
-This slice adds `CredentialRejected` to `StoreOutcome` (§2.4) making it a **five-state** model. The UI connects all five:
+Per A4, `StoreOutcome` (4 states) tracks storage lifecycle alone, while `lastRewriteResult` tracks request-time execution observations.
 
 ### 6.1 State machine
 
 ```
-             ┌─────────────────────────────────────────────────────────┐
-             │                   SettingsViewModel                      │
-             │                                                          │
+             ┌──────────────────────────────────────────────────────────────────┐
+             │                         SettingsViewModel                        │
+             │                                                                  │
   start ──→  Unconfigured ──→ [save, harness-driven] ──→ Saving ──→ Configured ──→ [rewrite]
                                                                         │               │
-                          ┌─────────────────────────────────────────────┤               ▼
-                          │                                             │         CredentialRejected
-                          ▼                                             ▼         (store intact;
-                    Unavailable ←── network/keystore fault        [clear, harness]  re-enter or retry)
+                          ┌─────────────────────────────────────────────┤               ├─ Success ──→ lastRewriteResult = null
+                          │                                             │               ├─ NetworkFailure(code) ──→ lastRewriteResult = NetworkFailure(code)
+                          ▼                                             ▼               └─ AuthFailure ──→ lastRewriteResult = AuthFailure
+                    Unavailable ←── store fault                   [clear, harness]       (store intact; UI renders "key rejected")
                     (no wipe)                                           │
                           │                                             ▼
                           ▼                                       Unconfigured
@@ -263,29 +249,29 @@ This slice adds `CredentialRejected` to `StoreOutcome` (§2.4) making it a **fiv
                           │
                           ▼
                    InvalidCredentials ←── load-time only (artifacts already wiped)
-                   (user must re-enter key)
+                   (user must re-configure)
 ```
-
 
 ### 6.2 `SettingsState` additions (slice 2)
 
-**A3**: `ProviderStatus` is dropped — `StoreOutcome` is used directly (`personaspeak-ui/brain` and `personaspeak-ui/settings` are the same module).
-
 ```kotlin
-// plan only — r2, A3 applied
+// plan only — r4, A3 + A4 applied
 data class SettingsState(
     // ... existing fields unchanged ...
     val providerOutcome: StoreOutcome = StoreOutcome.Unconfigured,
+    val lastRewriteResult: AdapterResult? = null,
     val isSavingProvider: Boolean = false,
 )
 ```
 
 ### 6.3 `SettingsViewModel` additions
 
-- On init: call `providerConfigStore.load()`, set `providerOutcome` from the returned `ProviderConfigSnapshot.outcome`.
-- `saveProviderKey(providerId: String, keyBytes: ByteArray)`: wraps in `SecretBytes`, calls `providerConfigStore.save(...)`, sets `isSavingProvider = true` while in flight. **A1: the production UI entry point for this is NOT in scope this slice — the save path is exercised only via the debug harness and tests.**
-- `clearProvider()`: calls `providerConfigStore.clear()` — confirmed to exist on the port (Q3). **A1: same as above — harness/test-driven only this slice.**
+- On init: call `providerConfigStore.load()`, set `providerOutcome` from the returned `ProviderConfigSnapshot.outcome`, clear `lastRewriteResult = null`.
+- `saveProviderKey(providerId: String, keyBytes: ByteArray)`: wraps in `SecretBytes`, calls `providerConfigStore.save(...)`, sets `isSavingProvider = true` while in flight. Clears `lastRewriteResult = null`. **A1: harness/test-driven only this slice.**
+- `clearProvider()`: calls `providerConfigStore.clear()`, clears `lastRewriteResult = null`. **A1: harness/test-driven only this slice.**
+- `onRewriteCompleted(result: AdapterResult)`: updates `lastRewriteResult = if (result is AdapterResult.Success) null else result`. `providerOutcome` is unchanged.
 - All state transitions are pure — no side-effecting code in the `update { }` lambda.
+
 
 
 ---
@@ -305,25 +291,27 @@ data class SettingsState(
 
 | Test | What it proves |
 |---|---|
-| `AdapterNetworkFailureTest` | `NetworkFailure` → `Unavailable` mapping; no mutation of store |
-| `AdapterAuthFailureTest` | `AuthFailure` → `InvalidCredentials` UI state; store NOT wiped by adapter |
-| `AdapterSecretFlowTest` | Secret injected into header; no log calls in adapter code path |
-| `AdapterNetworkErrorCodeTest` | `NetworkFailure(TIMEOUT/IO_ERROR/HTTP_SERVER_ERROR)` → `Unavailable`; `NetworkFailure(HTTP_CLIENT_ERROR)` classified correctly; no `Throwable` escapes |
+| `AdapterNetworkFailureTest` | `NetworkFailure(code)` → `lastRewriteResult = NetworkFailure(code)`; store and `providerOutcome` untouched |
+| `AdapterAuthFailureTest` | `AuthFailure` → `lastRewriteResult = AuthFailure`; store is NOT wiped and `providerOutcome` remains `Configured` (A4) |
+| `SettingsViewModelTruthfulnessTest` | `Configured` + `lastRewriteResult = AuthFailure` renders as "key rejected", never claims `InvalidCredentials` / store wipe |
+| `AdapterSecretFlowTest` | Secret injected into `x-api-key` header (with `anthropic-version: 2023-06-01`); no log calls in adapter code path; secret bytes zeroed |
+| `AdapterNetworkErrorCodeTest` | `NetworkFailure(TIMEOUT/IO_ERROR/HTTP_SERVER_ERROR/HTTP_CLIENT_ERROR)` carried as enum code; no `Throwable` escapes |
 | `AdapterNoEgressTest` | Adapter class does not resolve a real hostname in unit context (mock `HttpClient`) |
-| `SettingsViewModelStoreOutcomeTest` | State machine transitions using `StoreOutcome` directly: `Unconfigured → Configured → Unavailable → Unconfigured` (A3) |
+| `AdapterEgressBindingTest` | Adapter enforces request destination is strictly `https://api.anthropic.com/v1/messages` |
+| `SettingsViewModelStoreOutcomeTest` | State machine transitions using `StoreOutcome` for store operations: `Unconfigured → Configured → Unavailable → Unconfigured` |
 
 ### 8.2 Robolectric (`personaspeak-data`)
 
 - Round-trip: `save()` with a known `SecretBytes` → `load()` → `Configured` with matching `providerId`.
 - Unavailable path: mock `KeystoreSecretCipher` throwing `CipherUnavailableException` → `Unavailable`, no artifact mutation.
-- `InvalidCredentials` path: corrupt ciphertext → store clears → `InvalidCredentials`.
+- `InvalidCredentials` path: corrupt ciphertext → store clears → `InvalidCredentials` (wipe postcondition held).
 
 ### 8.3 Disposable-device verification (required before merge)
 
 - Adapter round-trip with a real Keystore key and a real (sandboxed) network endpoint.
-- Confirm no secret appears in `logcat` at any log level (adb logcat run during save/load/rewrite).
+- Confirm no secret (`x-api-key`, ciphertext, or prompt text) appears in `logcat` at any log level (adb logcat run during save/load/rewrite).
 - Confirm `Unavailable` is returned when airplane mode is active.
-- Confirm `InvalidCredentials` is returned when a deliberately corrupt key is injected.
+- Confirm `InvalidCredentials` is returned when a deliberately corrupt key is injected into the keystore blob.
 
 All device receipts must be linked in the implementation PR body.
 
@@ -337,28 +325,29 @@ Extension of the PR #91 classification, scoped to the network layer:
 |---|---|---|---|
 | API key (plaintext) | ❌ | ❌ | ❌ |
 | API key (AES-GCM ciphertext) | ✅ (liveBlob only) | ❌ | ❌ |
-| Draft / prompt text | ❌ | ✅ (in request body, user-initiated only) | ❌ |
-| Rewrite result text | ❌ | received only (response body) | ❌ |
+| Draft / prompt text | ❌ | ✅ (`https://api.anthropic.com/v1/messages` request body, user-initiated only) | ❌ |
+| Rewrite result text | ❌ | received only (`api.anthropic.com` response body) | ❌ |
 | Provider ID (opaque string) | ✅ | ❌ | ✅ (event code only) |
 | `configuredAtEpochMs` | ✅ | ❌ | ❌ |
-| Request URL | ❌ | ✅ (HTTPS, `api.anthropic.com` only) | ❌ |
+| Request URL | ❌ | ✅ (HTTPS, `https://api.anthropic.com/v1/messages` only) | ❌ |
 | Request body | ❌ | ✅ (system prompt + draft text + model params; no credential) | ❌ |
 | Response body | ❌ | received only | ❌ |
-| Bearer credential (in-flight header) | ❌ | ✅ (TLS only, never logged) | ❌ |
+| `x-api-key` credential (in-flight header) | ❌ | ✅ (TLS only to `api.anthropic.com`, never logged) | ❌ |
 
-> **B2 clarification**: draft/prompt text leaves the device in the request body, user-initiated, to the user's chosen provider only — this is the product's stated purpose and consistent with ADR-0005. It is never stored to disk and never appears in logs. The previous table row "Draft / prompt text: ❌ sent" was incorrect.
-
+> **Data privacy invariant**: draft/prompt text leaves the device in the request body, user-initiated, to the user's chosen provider (`https://api.anthropic.com/v1/messages`) only — this is the product's stated purpose and consistent with ADR-0005. It is strictly prohibited from local disk persistence, query parameters, logcat, telemetry, exception messages, and test fixtures.
 
 ---
 
 ## 10. Security review checklist (per provider)
 
-- [ ] API key is extracted from `SecretBytes` at the call site only; never stored in a local variable that survives the network call scope.
+- [ ] API key is extracted from `SecretBytes` at the call site only; never stored in a field that survives the network call scope.
+- [ ] Underlying `ByteArray` in `SecretBytes` is zeroed in memory after single use.
+- [ ] Injected as `x-api-key` header with `anthropic-version: 2023-06-01`; headers and bodies never logged.
 - [ ] HTTP client intercept chain reviewed: no logging interceptor for headers or bodies in non-debug builds.
 - [ ] TLS: no custom `TrustManager`, no hostname verifier override.
 - [ ] Redirect policy: follow HTTPS→HTTPS only; abort on HTTP downgrade.
 - [ ] Timeout: connect + read timeout ≤ 30 s; no infinite wait.
-- [ ] Error message from HTTP 4xx/5xx response body is NOT surfaced in logs (may contain user context echoed by some APIs).
+- [ ] Error message from HTTP 4xx/5xx response body is NOT surfaced in logs (may contain user context echoed by APIs).
 - [ ] No third-party analytics, crash, or telemetry SDK introduced.
 - [ ] `SecretBytes` value does not appear in any `toString()`, `equals()`, `hashCode()` that risks logcat emission.
 
@@ -378,20 +367,21 @@ Extension of the PR #91 classification, scoped to the network layer:
 
 ## 12. Rollback / cleanup path
 
-1. The `:personaspeak-providers` module is a pure addition; removing it requires deleting the module directory and removing its entry from `android/settings.gradle.kts` and `android/keyboard/ime/app/build.gradle`. No existing files are modified in a way that is hard to revert.
-2. The `SettingsState` and `SettingsViewModel` additions are additive. Rollback: delete the new `providerOutcome` and `isSavingProvider` fields from `SettingsState`; restore the original class. Compilation will flag all callers. (A3: no `ProviderStatus` type to remove.)
+1. The `:personaspeak-providers` module is a pure addition; removing it requires deleting the module directory and removing its entry from `android/settings.gradle.kts` and `android/keyboard/ime/app/build.gradle` (and reverting the `UPSTREAM-MODIFIED.md` entry).
+2. The `SettingsState` and `SettingsViewModel` additions are additive. Rollback: delete `providerOutcome`, `lastRewriteResult`, and `isSavingProvider` fields from `SettingsState`; restore the original class. Compilation will flag all callers.
 3. No migration needed for `DataStoreMetaStore` because the slice does not change the DataStore schema.
 
 ---
 
 ## 13. §13 rulings (resolved by Seraph at plan-gate review)
 
-> See [#94 comment](https://github.com/apexcloudwise/personaspeak/pull/94#issuecomment-5401612001) for full rationale.
+> See [#94 comment](https://github.com/apexcloudwise/personaspeak/pull/94#issuecomment-5401612001) and [A4 comment](https://github.com/apexcloudwise/personaspeak/pull/94#issuecomment-5401673732) for full rationale.
 
 | Q | Question | Ruling |
 |---|---|---|
-| Q1 | Provider candidate | **Anthropic Messages API**; `providerId = "anthropic"`. Matches desktop CLI reality. |
+| Q1 | Provider candidate | **Anthropic Messages API**; `providerId = "anthropic"`. Header scheme is `x-api-key` + `anthropic-version: 2023-06-01`. |
 | Q2 | Module boundary | **Option B confirmed** — new `:personaspeak-providers` Gradle module. |
 | Q3 | `clear()` on port | `clear()` **already exists** on `ProviderConfigStore`. No port change needed. |
-| Q4 | AuthFailure wipe policy | **No auto-wipe on request-time auth failure confirmed.** Wipe is load-time only. **B4 (Cassie)**: adapter auth failure maps to `CredentialRejected` (new `StoreOutcome` variant, §2.4) — NOT `InvalidCredentials` which contracts a load-time wipe. |
+| Q4 | AuthFailure wipe policy | **No auto-wipe on request-time auth failure confirmed.** Wipe is load-time only. **A4 resolution**: `StoreOutcome.InvalidCredentials` keeps its wipe postcondition inviolate (tracks store operations only); request observation lives in `SettingsState.lastRewriteResult: AdapterResult?`. |
+
 

@@ -14,14 +14,17 @@ Newest first, like all respectable patch notes.
 
 - The M4 slice-2 plan establishes the Anthropic Messages API adapter behind the
   existing `:personaspeak-data` persistence seam: `ProviderAdapter` contract with
-  a closed `NetworkErrorCode` (no `Throwable` escapes the boundary), a new
-  `CredentialRejected` state added to `StoreOutcome` to distinguish request-time
-  auth rejections from load-time `InvalidCredentials` (which wipes), and the
-  data-classification table corrected: draft text does reach the Anthropic endpoint —
-  that is the product's stated purpose and is now stated plainly.
-- `ProviderStatus` sealed interface rejected; `StoreOutcome` used directly.
-- `keyboard/ime/app/build.gradle` is ASK-owned; the plan now correctly records it
-  as requiring a UPSTREAM-MODIFIED.md ledger entry.
+  a closed `NetworkErrorCode` (no `Throwable` escapes the boundary), concrete
+  Anthropic `x-api-key` + `anthropic-version: 2023-06-01` header scheme, and
+  a dedicated `lastRewriteResult: AdapterResult?` observation field in
+  `SettingsState` (A4) so `StoreOutcome.InvalidCredentials` keeps its wipe
+  postcondition inviolate while transient request errors never wipe storage.
+- Egress strictly bound to `https://api.anthropic.com/v1/messages`; data
+  classification corrected to state draft text leaves the device in the request
+  body to that endpoint alone.
+- `ProviderStatus` sealed interface rejected; `StoreOutcome` used directly for storage.
+- `keyboard/ime/app/build.gradle` is ASK-owned; the plan requires a `UPSTREAM-MODIFIED.md`
+  ledger entry for the `:personaspeak-providers` dependency.
 - Plan-only PR: no production adapter, no network calls, no live provider. (#93)
 
 ---
