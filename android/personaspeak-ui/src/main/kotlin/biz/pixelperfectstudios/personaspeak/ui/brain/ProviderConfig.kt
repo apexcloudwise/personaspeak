@@ -62,3 +62,24 @@ data class ProviderConfigSnapshot(
     val outcome: StoreOutcome,
     val secret: SecretBytes? = null,
 )
+
+/**
+ * Sanitized closed network error taxonomy.
+ * Code-based (not exception-based) to eliminate stack-trace and payload leakage surfaces.
+ */
+enum class NetworkErrorCode {
+    TIMEOUT,
+    IO_ERROR,
+    HTTP_SERVER_ERROR,
+    HTTP_CLIENT_ERROR,
+}
+
+/**
+ * Closed outcome hierarchy for provider adapter executions.
+ */
+sealed interface AdapterResult {
+    data class Success(val rewritten: String) : AdapterResult
+    data class NetworkFailure(val code: NetworkErrorCode) : AdapterResult
+    data object AuthFailure : AdapterResult
+}
+

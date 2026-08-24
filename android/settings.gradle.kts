@@ -20,6 +20,7 @@ include(":core-personas")
 include(":core-providers")
 include(":personaspeak-ui")
 include(":personaspeak-data")
+include(":personaspeak-providers")
 
 // Restricted ASK closure: every logical path maps explicitly onto the vendored
 // snapshot under keyboard/. The set must stay identical to

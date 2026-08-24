@@ -1,16 +1,24 @@
 package biz.pixelperfectstudios.personaspeak.ui.settings
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import biz.pixelperfectstudios.personaspeak.personas.Mood
 import biz.pixelperfectstudios.personaspeak.personas.PersonaId
+import biz.pixelperfectstudios.personaspeak.ui.brain.AdapterResult
+import biz.pixelperfectstudios.personaspeak.ui.brain.ProviderConfig
+import biz.pixelperfectstudios.personaspeak.ui.brain.ProviderConfigSnapshot
+import biz.pixelperfectstudios.personaspeak.ui.brain.ProviderConfigStore
+import biz.pixelperfectstudios.personaspeak.ui.brain.SecretBytes
+import biz.pixelperfectstudios.personaspeak.ui.brain.StoreOutcome
 import biz.pixelperfectstudios.personaspeak.ui.personas.PersonaRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
 /**
- * ViewModel managing PersonaSpeak Settings state and navigation.
+ * ViewModel managing PersonaSpeak Settings state, navigation, and provider status.
  */
 class SettingsViewModel(
     private val personasRepo: PersonaRepository,
@@ -18,6 +26,7 @@ class SettingsViewModel(
     private val sessionState: PersonaSpeakSessionState = PersonaSpeakSessionState.instance,
     initialPersonaId: PersonaId = sessionState.activePersonaId,
     initialMood: Mood = sessionState.defaultMood,
+    private val providerConfigStore: ProviderConfigStore? = null,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(
@@ -31,7 +40,13 @@ class SettingsViewModel(
 
     init {
         loadPersonas()
+        if (providerConfigStore != null) {
+            viewModelScope.launch {
+                loadProviderConfig()
+            }
+        }
     }
+
 
     fun loadPersonas() {
         val loaded = personasRepo.loadAll().getOrDefault(emptyList())
@@ -82,4 +97,52 @@ class SettingsViewModel(
     fun clearNotice() {
         _state.update { it.copy(notice = null) }
     }
+
+    suspend fun loadProviderConfig() {
+        val snapshot = providerConfigStore?.load() ?: ProviderConfigSnapshot(StoreOutcome.Unconfigured)
+        _state.update { current ->
+            current.copy(
+                providerOutcome = snapshot.outcome,
+                lastRewriteResult = null,
+            )
+        }
+    }
+
+    suspend fun saveProviderKey(
+        providerId: String,
+        keyBytes: ByteArray,
+        epochMs: Long = System.currentTimeMillis(),
+    ): StoreOutcome {
+        _state.update { it.copy(isSavingProvider = true) }
+        val config = ProviderConfig(providerId = providerId, configuredAtEpochMs = epochMs)
+        val outcome = providerConfigStore?.save(config, SecretBytes(keyBytes))
+            ?: StoreOutcome.Unconfigured
+        _state.update { current ->
+            current.copy(
+                isSavingProvider = false,
+                providerOutcome = outcome,
+                lastRewriteResult = null,
+            )
+        }
+        return outcome
+    }
+
+    suspend fun clearProvider() {
+        providerConfigStore?.clear()
+        _state.update { current ->
+            current.copy(
+                providerOutcome = StoreOutcome.Unconfigured,
+                lastRewriteResult = null,
+            )
+        }
+    }
+
+    fun onRewriteCompleted(result: AdapterResult) {
+        _state.update { current ->
+            current.copy(
+                lastRewriteResult = if (result is AdapterResult.Success) null else result,
+            )
+        }
+    }
 }
+

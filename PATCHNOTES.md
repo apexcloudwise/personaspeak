@@ -10,7 +10,30 @@ Newest first, like all respectable patch notes.
 
 ---
 
+## 2026-08-25 — The Brain talks to Claude: Anthropic Messages API adapter lands
+
+- Shipped `:personaspeak-providers`, the M4 slice-2 provider adapter foundation:
+  `ProviderAdapter` interface and `AnthropicMessagesAdapter` targeting the
+  Anthropic Messages API (`https://api.anthropic.com/v1/messages`) via
+  `x-api-key` and `anthropic-version: 2023-06-01` headers.
+- Implemented closed `NetworkErrorCode` taxonomy (`TIMEOUT`, `IO_ERROR`,
+  `HTTP_SERVER_ERROR`, `HTTP_CLIENT_ERROR`) ensuring zero raw `Throwable`
+  instances cross the adapter boundary.
+- Enforced defense-in-depth secret hygiene: `SecretBytes` underlying `ByteArray`
+  is zeroed in memory immediately upon request completion.
+- Connected truthful runtime state observation to `SettingsViewModel` via
+  `SettingsState.lastRewriteResult: AdapterResult?` (A4): request-time auth
+  rejections and network failures never wipe keystore artifacts, keeping
+  `StoreOutcome.InvalidCredentials`'s wipe postcondition intact.
+- Ledgered `android/keyboard/ime/app/build.gradle` dependency in `UPSTREAM-MODIFIED.md`
+  and verified exact ASK closure with `verify-ask-closure.sh`.
+- Default-disabled baseline preserved: `FakeProvider` remains active in the rewrite
+  panel; adapter enablement awaits slice-3 device verification. (#93)
+
+---
+
 ## 2026-08-25 — The Brain gets its first real provider: Anthropic adapter plan lands
+
 
 - The M4 slice-2 plan establishes the Anthropic Messages API adapter behind the
   existing `:personaspeak-data` persistence seam: `ProviderAdapter` contract with
