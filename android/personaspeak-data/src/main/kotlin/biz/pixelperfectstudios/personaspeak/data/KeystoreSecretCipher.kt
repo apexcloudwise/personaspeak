@@ -62,6 +62,7 @@ interface SecretCipher {
 class KeystoreSecretCipher(
     private val sdkInt: Int,
     private val keyAlias: String = DEFAULT_KEY_ALIAS,
+    private val keyStoreProvider: () -> KeyStore = { KeyStore.getInstance(ANDROID_KEYSTORE) },
 ) : SecretCipher {
 
     override fun encrypt(secret: SecretBytes, generation: ByteArray): ByteArray {
@@ -99,8 +100,22 @@ class KeystoreSecretCipher(
     }
 
     private fun obtainKey(): SecretKey {
-        val keyStore = KeyStore.getInstance(ANDROID_KEYSTORE).apply { load(null) }
-        (keyStore.getKey(keyAlias, null) as? SecretKey)?.let { return it }
+        // Fast path: the steady-state retrieval once a key exists. Any
+        // KeyStore/Provider failure here is a device condition (broken or
+        // locked keystore, OEM key cleanup), not proof of corruption — it must
+        // surface as CipherUnavailableException so the store reports
+        // Unavailable without mutating artifacts.
+        val keyStore = try {
+            keyStoreProvider().apply { load(null) }
+        } catch (e: Exception) {
+            throw CipherUnavailableException(e)
+        }
+        val existing = try {
+            keyStore.getKey(keyAlias, null) as? SecretKey
+        } catch (e: Exception) {
+            throw CipherUnavailableException(e)
+        }
+        if (existing != null) return existing
 
         val wantStrongBox = KeyStrengthPolicy.requestStrongBox(sdkInt)
         return try {
