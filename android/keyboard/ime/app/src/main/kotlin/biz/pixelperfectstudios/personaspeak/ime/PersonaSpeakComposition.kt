@@ -24,7 +24,8 @@ import biz.pixelperfectstudios.personaspeak.ui.personas.BundledPersonaRepository
 import biz.pixelperfectstudios.personaspeak.ui.rewrite.RewriteCoordinator
 import biz.pixelperfectstudios.personaspeak.ui.rewrite.RewritePanel
 import biz.pixelperfectstudios.personaspeak.ui.rewrite.RewritePanelViewModel
-import com.menny.android.anysoftkeyboard.LauncherSettingsActivity
+import biz.pixelperfectstudios.personaspeak.ui.settings.PersonaSpeakSessionState
+import biz.pixelperfectstudios.personaspeak.ui.settings.PersonaSpeakSettingsActivity
 
 class PersonaSpeakComposition @JvmOverloads constructor(
     private val context: Context,
@@ -35,7 +36,6 @@ class PersonaSpeakComposition @JvmOverloads constructor(
     },
 ) {
 
-    private val personaId = PersonaId.bundled("jeeves")
     private val sessionState = EditorSessionState()
     private val editorPort = InputConnectionEditorPort(
         sessionState = sessionState,
@@ -89,10 +89,13 @@ class PersonaSpeakComposition @JvmOverloads constructor(
                     modelClass: Class<T>,
                     extras: CreationExtras,
                 ): T {
+                    val session = PersonaSpeakSessionState.instance
                     return RewritePanelViewModel(
                         coordinator = coordinator,
                         personas = personaRepo,
-                        initialPersonaId = personaId,
+                        sessionState = session,
+                        initialPersonaId = session.activePersonaId,
+                        initialMood = session.defaultMood,
                         savedStateHandle = SavedStateHandle(),
                     ) as T
                 }
@@ -116,6 +119,7 @@ class PersonaSpeakComposition @JvmOverloads constructor(
                 onSelectPersona = vm::selectPersona,
                 onOpenMoodPicker = vm::openMoodPicker,
                 onSelectMood = vm::selectMood,
+                onOpenPersonaBrowser = { launchSettings(PersonaSpeakSettingsActivity.DESTINATION_PERSONAS) },
             )
         }
     }
@@ -142,8 +146,8 @@ class PersonaSpeakComposition @JvmOverloads constructor(
         sessionState.finish()
     }
 
-    private fun launchSettings() {
-        val intent = Intent(context, LauncherSettingsActivity::class.java).apply {
+    private fun launchSettings(destination: String = PersonaSpeakSettingsActivity.DESTINATION_HOME) {
+        val intent = PersonaSpeakSettingsActivity.createIntent(context, destination).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK
         }
         context.startActivity(intent)

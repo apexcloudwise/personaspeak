@@ -59,6 +59,7 @@ fun RewritePanel(
     onSelectPersona: (PersonaId) -> Unit = {},
     onOpenMoodPicker: () -> Unit = {},
     onSelectMood: (Mood) -> Unit = {},
+    onOpenPersonaBrowser: () -> Unit = onSettings,
 ) {
     val density = LocalDensity.current
 
@@ -110,7 +111,7 @@ fun RewritePanel(
                     state = state,
                     onSelectPersona = onSelectPersona,
                     onDismiss = onDismiss,
-                    onSettings = onSettings,
+                    onOpenPersonaBrowser = onOpenPersonaBrowser,
                 )
             }
 
@@ -255,7 +256,7 @@ private fun PersonaPickerLayout(
     state: RewritePanelState.PersonaPicker,
     onSelectPersona: (PersonaId) -> Unit,
     onDismiss: () -> Unit,
-    onSettings: () -> Unit,
+    onOpenPersonaBrowser: () -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -345,7 +346,7 @@ private fun PersonaPickerLayout(
             horizontalArrangement = Arrangement.End,
         ) {
             TextButton(
-                onClick = onSettings,
+                onClick = onOpenPersonaBrowser,
                 modifier = Modifier
                     .heightIn(min = MinInteractiveHeight)
                     .testTag("personaspeak_browse_all"),
