@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "milestone": "milestone-4",
   "slice": "slice-3",
-  "generatedAtIso": "2026-08-25T04:43:00Z",
+  "generatedAtIso": "2026-08-25T04:45:00Z",
   "receipts": {
     "backup-api27-receipt.json": {
       "sha256": "943dbb7a8161e5ff2111f0d655df14c85f20445c1fa5f5e458b24c454e516191",
@@ -27,8 +27,8 @@
       "bytes": 394
     },
     "raw_logcat_parser_audit.log": {
-      "sha256": "12afd28c0e737c86fc9e5ee9bbf51b6a63878e0b634d3abc0158424b50d64200",
-      "bytes": 1375
+      "sha256": "5604447784351ffe45402acd589c5cb491b131299ffecd2eb27f0c7dff432dcd",
+      "bytes": 1384
     },
     "raw_socket_sampling.log": {
       "sha256": "47e1eeab6367491efa818169387957d8ddc6efa33e388d4955b0e61514205e4a",

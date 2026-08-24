@@ -74,7 +74,7 @@ class PersonaspeakAdapterHarnessActivity : Activity() {
                     val snapshot = store.load()
                     val keyBytes = snapshot.secret?.value ?: ByteArray(32).also { java.security.SecureRandom().nextBytes(it) }
                     val secret = SecretBytes(keyBytes)
-                    android.util.Log.i(tag, "Ephemeral key injected into execution context")
+                    android.util.Log.i(tag, "Ephemeral key loaded from DataStoreProviderConfigStore")
                     val adapter = AnthropicMessagesAdapter()
                     val result = adapter.rewrite(
                         system = "Respond with ping only",
@@ -85,20 +85,28 @@ class PersonaspeakAdapterHarnessActivity : Activity() {
                         is AdapterResult.Success -> {
                             android.util.Log.i(tag, "HTTP Status 200 OK received: ${result.rewritten.length} chars")
                             android.util.Log.i(tag, "Response payload text extracted successfully")
+                            if (secret.value.all { it == 0.toByte() }) {
+                                android.util.Log.i(tag, "SecretBytes.fill(0) executed")
+                            }
+                            store.clear()
+                            android.util.Log.i("PsStorageHarness", "CLEAR_DONE")
+                            android.util.Log.i(tag, "Mode B complete: SUCCESS")
                         }
                         is AdapterResult.NetworkFailure -> {
-                            android.util.Log.i(tag, "HTTP Status outcome: NetworkFailure ${result.code}")
+                            android.util.Log.e(tag, "Mode B failed with NetworkFailure: ${result.code}")
+                            store.clear()
+                            android.util.Log.i("PsStorageHarness", "CLEAR_DONE")
                         }
                         is AdapterResult.AuthFailure -> {
-                            android.util.Log.i(tag, "HTTP Status outcome: AuthFailure")
+                            android.util.Log.i(tag, "Mode B outcome: AuthFailure (expected on unauthenticated/random ephemeral key)")
+                            if (secret.value.all { it == 0.toByte() }) {
+                                android.util.Log.i(tag, "SecretBytes.fill(0) executed")
+                            }
+                            store.clear()
+                            android.util.Log.i("PsStorageHarness", "CLEAR_DONE")
+                            android.util.Log.i(tag, "Mode B complete: AUTH_REJECTED_AS_EXPECTED")
                         }
                     }
-                    if (secret.value.all { it == 0.toByte() }) {
-                        android.util.Log.i(tag, "SecretBytes.fill(0) executed")
-                    }
-                    store.clear()
-                    android.util.Log.i("PsStorageHarness", "CLEAR_DONE")
-                    android.util.Log.i(tag, "Mode B complete: SUCCESS")
                     finish()
                 }
             }
