@@ -10,6 +10,22 @@ Newest first, like all respectable patch notes.
 
 ---
 
+## 2026-08-25 — The Brain gets its first real provider: Anthropic adapter plan lands
+
+- The M4 slice-2 plan establishes the Anthropic Messages API adapter behind the
+  existing `:personaspeak-data` persistence seam: `ProviderAdapter` contract with
+  a closed `NetworkErrorCode` (no `Throwable` escapes the boundary), a new
+  `CredentialRejected` state added to `StoreOutcome` to distinguish request-time
+  auth rejections from load-time `InvalidCredentials` (which wipes), and the
+  data-classification table corrected: draft text does reach the Anthropic endpoint —
+  that is the product's stated purpose and is now stated plainly.
+- `ProviderStatus` sealed interface rejected; `StoreOutcome` used directly.
+- `keyboard/ime/app/build.gradle` is ASK-owned; the plan now correctly records it
+  as requiring a UPSTREAM-MODIFIED.md ledger entry.
+- Plan-only PR: no production adapter, no network calls, no live provider. (#93)
+
+---
+
 ## 2026-08-24 — The Brain gets a vault: provider credentials move into the Keystore
 
 - Shipped `:personaspeak-data`, the M4 slice-1 storage foundation: Preferences

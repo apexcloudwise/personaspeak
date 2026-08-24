@@ -11,6 +11,12 @@
 - **A3** Drop `ProviderStatus` sealed interface; use `StoreOutcome` directly in `SettingsState`
 - **§13 resolved**: Q1 → **Anthropic Messages API** (one concrete adapter); Q2 → Option B confirmed; Q3 → `clear()` already exists on the port; Q4 → no auto-wipe on request-time auth failure confirmed
 
+**Revision r3** — blockers from Sigrid and Cassie's CHANGES_REQUESTED at `646fdbf` (review link: [Sigrid](https://github.com/apexcloudwise/personaspeak/pull/94#pullrequestreview-5012727697), [Cassie](https://github.com/apexcloudwise/personaspeak/pull/94)):
+- **B1 (Sigrid)** ASK ledger corrected: `keyboard/ime/app/build.gradle` is ASK-owned → requires UPSTREAM-MODIFIED.md entry; §2.3 and §3 updated
+- **B2 (Sigrid)** Network data-classification table fixed: draft/prompt text IS sent over network (product purpose, consistent with ADR-0005); prior "❌ sent" was wrong
+- **B3 (Sigrid)** `PATCHNOTES.md` entry added (CI gate)
+- **B4 (Cassie)** `AuthFailure` mapping corrected: introduce `CredentialRejected` as a new `StoreOutcome` variant (§2.4); must not reuse `InvalidCredentials` which contracts a load-time artifact wipe
+
 ---
 
 ## 0. Plan-only scope statement
@@ -118,8 +124,33 @@ sealed interface AdapterResult {
 
 `AdapterResult` maps to `StoreOutcome` states at the call site in `SettingsViewModel`:
 - `Success` → no store change
-- `NetworkFailure(code)` → surface as `StoreOutcome.Unavailable(StoreFailure.IO_ERROR)` in UI state (no wipe); `code` is for internal diagnostics only, never logged as a string containing secrets
-- `AuthFailure` → surface as `StoreOutcome.InvalidCredentials` in UI state; **store does NOT auto-wipe on request failure** — wipe is load-time only (Q4 confirmed)
+- `NetworkFailure(code)` → surface as `StoreOutcome.Unavailable(StoreFailure.IO_ERROR)` in UI state (no wipe); `code` is for internal diagnostics only, never logged
+- `AuthFailure` → surface as `StoreOutcome.CredentialRejected` in UI state (see §2.4 and §6.1 — **B4: must NOT reuse `InvalidCredentials` which contracts a load-time wipe**)
+
+### 2.4 New `StoreOutcome` variant: `CredentialRejected` (B4)
+
+Cassie's finding: mapping `AdapterResult.AuthFailure → StoreOutcome.InvalidCredentials` collides with `InvalidCredentials`'s documented contract that artifacts were wiped. A request-time auth rejection doesn't wipe anything; mapping it to `InvalidCredentials` produces a state where the UI says "Invalid Credentials" but the next `load()` returns `Configured` — incoherent.
+
+**Fix**: add `CredentialRejected` to `StoreOutcome` (same module — `personaspeak-ui/brain/ProviderConfig.kt`):
+
+```kotlin
+// plan only — B4 addition to StoreOutcome
+sealed interface StoreOutcome {
+    data object Unconfigured : StoreOutcome
+    data class Configured(val providerId: String, val configuredAtEpochMs: Long, val generation: String) : StoreOutcome
+    data class Unavailable(val reasonCode: StoreFailure) : StoreOutcome
+    data object InvalidCredentials : StoreOutcome  // load-time: artifacts wiped, re-configure from scratch
+    data object CredentialRejected : StoreOutcome  // request-time: provider rejected credential; store unchanged; user may retry or clear
+}
+```
+
+Contract for `CredentialRejected`:
+- Set by `SettingsViewModel` when `AdapterResult.AuthFailure` is received
+- Never set by the store itself (`DataStoreProviderConfigStore` sets `InvalidCredentials` only)
+- No artifact mutation; the next `load()` will still return `Configured`
+- User action: clear and re-enter credential, or ignore (may be a transient service error)
+
+`ProviderConfig.kt` additions: one new `data object CredentialRejected : StoreOutcome` line. The `StoreOutcome` sealed interface already lives in `personaspeak-ui` (same module as `SettingsViewModel`) so no cross-module dependency change.
 
 
 ### 2.3 Module placement decision
@@ -131,18 +162,19 @@ Options (choice gated on ASK-tree assessment per §3):
 | A | Add adapter classes to `:personaspeak-data` | No new module rent | Mixes network with storage |
 | B | New `:personaspeak-providers` Gradle module | Clean separation, testable in isolation | One new `debugImplementation` + `implementation` entry |
 
-**Default recommendation: Option B**, following the same philosophy as the existing `core-providers`/`personaspeak-data` split. The module holds adapter implementations and wires `ProviderAdapter` → `CompletionProvider`. Rent impact: one new module entry in `settings.gradle.kts`, one `implementation(project(":personaspeak-providers"))` in the app `build.gradle`. No upstream ASK-tree modifications.
+**Option B confirmed (Q2)**. The module holds adapter implementations and wires `ProviderAdapter` → `CompletionProvider`. Rent impact: one new module entry in `android/settings.gradle.kts`, one `implementation(project(":personaspeak-providers"))` in `keyboard/ime/app/build.gradle` (ASK-owned — requires UPSTREAM-MODIFIED.md entry, see §3).
 
 ---
 
 ## 3. ASK-tree assessment and upstream-rent ledger
 
-- **No modifications to AnySoftKeyboard core** are required for this slice.
+- **ASK-tree modification: one file** — `keyboard/ime/app/build.gradle` is an ASK-owned file. Adding `implementation(project(":personaspeak-providers"))` to it must be ledgered in `UPSTREAM-MODIFIED.md`. **B1 corrected**: the plan previously stated "zero changes to UPSTREAM-MODIFIED.md" — that was wrong.
 - **Upstream-rent delta (planned):**
-  - If Option B: one new line in `android/settings.gradle.kts` (`include(":personaspeak-providers")`)
-  - One `implementation(project(":personaspeak-providers"))` in `android/keyboard/ime/app/build.gradle`
-  - Zero changes to `UPSTREAM-MODIFIED.md` (no ASK source files touched)
-- Ledger rule from PR #91 plan: all modifications tracked; this slice adds ≤ 2 entries.
+  - One new line in `android/settings.gradle.kts` (`include(":personaspeak-providers")`) — new first-party module, not ASK-owned
+  - One `implementation(project(":personaspeak-providers"))` in `android/keyboard/ime/app/build.gradle` — ASK-owned, ledger entry required
+  - **`UPSTREAM-MODIFIED.md` entry to add** in the implementation PR: `- ime/app/build.gradle — added implementation(project(":personaspeak-providers")) to wire the PersonaSpeak provider module into the app dependency graph. No behavioral delta to ASK keyboard functionality.`
+- Ledger rule from PR #91 plan: all modifications tracked; this slice adds 1 ASK-tree ledger entry.
+
 
 ---
 
@@ -190,8 +222,8 @@ AndroidKeyStore
 | `KeystoreSecretCipher` | Corrupt ciphertext → `null` on decrypt | `InvalidCredentials` — store clears artifacts |
 | `ProviderAdapter.rewrite` | `NetworkFailure(TIMEOUT)` or `NetworkFailure(IO_ERROR)` | `Unavailable(IO_ERROR)` — no mutation, no wipe |
 | `ProviderAdapter.rewrite` | `NetworkFailure(HTTP_SERVER_ERROR)` | `Unavailable(IO_ERROR)` — treat 5xx as transient |
-| `ProviderAdapter.rewrite` | `AuthFailure` (HTTP 401/403) | Surface `InvalidCredentials` in UI; **store does NOT auto-wipe on request failure** — wipe is load-time only (Q4 confirmed) |
-| `DataStoreProviderConfigStore.load` | meta null + live blob exists | `InvalidCredentials` + wipe (existing behavior) |
+| `ProviderAdapter.rewrite` | `AuthFailure` (HTTP 401/403) | **`CredentialRejected`** (B4 — store NOT mutated, artifacts intact; next `load()` returns `Configured`) |
+| `DataStoreProviderConfigStore.load` | meta null + live blob exists | `InvalidCredentials` + wipe (existing behavior — unchanged) |
 
 
 ---
@@ -210,29 +242,30 @@ Building on PR #91 rules (carried from slice 1):
 
 ## 6. Truthful runtime state model
 
-The four states already exist in `StoreOutcome`. This slice connects them to the UI:
+This slice adds `CredentialRejected` to `StoreOutcome` (§2.4) making it a **five-state** model. The UI connects all five:
 
 ### 6.1 State machine
 
 ```
-             ┌────────────────────────────────────────────────────┐
-             │                 SettingsViewModel                   │
-             │                                                     │
-  start ──→  Unconfigured ──→ [user enters key] ──→ Saving ──→ Configured
-                                                                    │
-                         ┌──────────────────────────────────────────┤
-                         │                                          │
-                         ▼                                          ▼
-                   Unavailable ←── transient fault          [user clears]
-                   (no wipe)                                        │
-                         │                                          │
-                         ▼                                          ▼
-                   [retry / dismiss]                         Unconfigured
-                         │
-                         ▼
-                  InvalidCredentials ←── unrecoverable (load-time wipe already done)
-                  (user must re-enter key)
+             ┌─────────────────────────────────────────────────────────┐
+             │                   SettingsViewModel                      │
+             │                                                          │
+  start ──→  Unconfigured ──→ [save, harness-driven] ──→ Saving ──→ Configured ──→ [rewrite]
+                                                                        │               │
+                          ┌─────────────────────────────────────────────┤               ▼
+                          │                                             │         CredentialRejected
+                          ▼                                             ▼         (store intact;
+                    Unavailable ←── network/keystore fault        [clear, harness]  re-enter or retry)
+                    (no wipe)                                           │
+                          │                                             ▼
+                          ▼                                       Unconfigured
+                    [retry / dismiss]
+                          │
+                          ▼
+                   InvalidCredentials ←── load-time only (artifacts already wiped)
+                   (user must re-enter key)
 ```
+
 
 ### 6.2 `SettingsState` additions (slice 2)
 
@@ -304,13 +337,17 @@ Extension of the PR #91 classification, scoped to the network layer:
 |---|---|---|---|
 | API key (plaintext) | ❌ | ❌ | ❌ |
 | API key (AES-GCM ciphertext) | ✅ (liveBlob only) | ❌ | ❌ |
-| Draft / prompt text | ❌ | ❌ | ❌ |
-| Rewrite result text | ❌ | ❌ | ❌ |
+| Draft / prompt text | ❌ | ✅ (in request body, user-initiated only) | ❌ |
+| Rewrite result text | ❌ | received only (response body) | ❌ |
 | Provider ID (opaque string) | ✅ | ❌ | ✅ (event code only) |
 | `configuredAtEpochMs` | ✅ | ❌ | ❌ |
-| Request URL | ❌ | ✅ (HTTPS only) | ❌ |
-| Request body | ❌ | ✅ (system + text, no key) | ❌ |
+| Request URL | ❌ | ✅ (HTTPS, `api.anthropic.com` only) | ❌ |
+| Request body | ❌ | ✅ (system prompt + draft text + model params; no credential) | ❌ |
 | Response body | ❌ | received only | ❌ |
+| Bearer credential (in-flight header) | ❌ | ✅ (TLS only, never logged) | ❌ |
+
+> **B2 clarification**: draft/prompt text leaves the device in the request body, user-initiated, to the user's chosen provider only — this is the product's stated purpose and consistent with ADR-0005. It is never stored to disk and never appears in logs. The previous table row "Draft / prompt text: ❌ sent" was incorrect.
+
 
 ---
 
@@ -356,5 +393,5 @@ Extension of the PR #91 classification, scoped to the network layer:
 | Q1 | Provider candidate | **Anthropic Messages API**; `providerId = "anthropic"`. Matches desktop CLI reality. |
 | Q2 | Module boundary | **Option B confirmed** — new `:personaspeak-providers` Gradle module. |
 | Q3 | `clear()` on port | `clear()` **already exists** on `ProviderConfigStore`. No port change needed. |
-| Q4 | AuthFailure wipe policy | **No auto-wipe on request-time auth failure confirmed.** Wipe is load-time only; adapter surfaces `InvalidCredentials` in UI state, store is not mutated. |
+| Q4 | AuthFailure wipe policy | **No auto-wipe on request-time auth failure confirmed.** Wipe is load-time only. **B4 (Cassie)**: adapter auth failure maps to `CredentialRejected` (new `StoreOutcome` variant, §2.4) — NOT `InvalidCredentials` which contracts a load-time wipe. |
 
