@@ -3,5 +3,14 @@
 
     <application
         android:name="com.anysoftkeyboard.debug.DebugAnyApplication"
-        tools:replace="android:name" />
+        tools:replace="android:name">
+
+        <!-- Debug-only storage verification harness for the M4 slice-1
+             disposable-AVD pass. Never present in release builds. -->
+        <activity
+            android:name="biz.pixelperfectstudios.personaspeak.data.harness.PersonaspeakStorageHarnessActivity"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:noHistory="true" />
+    </application>
 </manifest>

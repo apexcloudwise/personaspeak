@@ -10,6 +10,22 @@ Newest first, like all respectable patch notes.
 
 ---
 
+## 2026-08-24 — The Brain gets a vault: provider credentials move into the Keystore
+
+- Shipped `:personaspeak-data`, the M4 slice-1 storage foundation: Preferences
+  DataStore for non-secret config, an AndroidKeyStore AES-256-GCM ciphertext
+  file for credentials, bound by a generation UUID and saved stage/commit/swap
+  so a mid-save crash always leaves either the old or the new credential —
+  never nothing.
+- Wired backup exclusion for both artifacts (plus the staging twin) into the
+  app manifest under both regimes; restored ciphertext would be undecryptable
+  off-device anyway, so the rules make the privacy story literal.
+- THE BRAIN's honest "arrives in Milestone 4" sign stays up: no configuration
+  UI and no network this slice — the store ships with its full recovery-matrix
+  test suite and a debug-only harness activity for device verification. (#90)
+
+---
+
 ## 2026-08-24 — Settings stops dangling: Persona browser lands and the Brain stays honest
 
 - Shipped `PersonaSpeakSettingsActivity` in `:ime:app` and the first-party settings

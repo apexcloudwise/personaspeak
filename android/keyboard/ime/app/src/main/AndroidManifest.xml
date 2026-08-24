@@ -31,6 +31,8 @@
         android:restoreAnyVersion="true"
         android:fullBackupOnly="true"
         android:allowBackup="true"
+        android:dataExtractionRules="@xml/personaspeak_data_extraction_rules"
+        android:fullBackupContent="@xml/personaspeak_full_backup_content"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:theme="@style/Theme.AskApp"
         tools:ignore="GoogleAppIndexingWarning,UnusedAttribute">

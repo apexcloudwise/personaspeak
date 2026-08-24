@@ -19,10 +19,11 @@ rootProject.name = "personaboard"
 include(":core-personas")
 include(":core-providers")
 include(":personaspeak-ui")
+include(":personaspeak-data")
 
 // Restricted ASK closure: every logical path maps explicitly onto the vendored
 // snapshot under keyboard/. The set must stay identical to
-// scripts/expected-ask-projects.txt (minus the three first-party libraries).
+// scripts/expected-ask-projects.txt (minus the four first-party libraries).
 fun askProject(path: String, directory: String) {
     include(path)
     project(path).projectDir = file("keyboard/$directory")
