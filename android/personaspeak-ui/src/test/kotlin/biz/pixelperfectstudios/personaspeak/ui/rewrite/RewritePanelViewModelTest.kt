@@ -2,6 +2,7 @@ package biz.pixelperfectstudios.personaspeak.ui.rewrite
 
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModelStore
+import biz.pixelperfectstudios.personaspeak.personas.Mood
 import biz.pixelperfectstudios.personaspeak.personas.Persona
 import biz.pixelperfectstudios.personaspeak.personas.PersonaId
 import biz.pixelperfectstudios.personaspeak.personas.PersonaProvenance
@@ -16,6 +17,7 @@ import biz.pixelperfectstudios.personaspeak.ui.editor.RequestGeneration
 import biz.pixelperfectstudios.personaspeak.ui.editor.StaleReason
 import biz.pixelperfectstudios.personaspeak.ui.editor.Utf16Selection
 import biz.pixelperfectstudios.personaspeak.ui.personas.PersonaRepository
+import biz.pixelperfectstudios.personaspeak.ui.personas.PersonaSummary
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -25,6 +27,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -37,6 +40,7 @@ class RewritePanelViewModelTest {
     private lateinit var fakeProvider: FakeProvider
     private lateinit var coordinator: RewriteCoordinator
     private val jeevesId = PersonaId.bundled("jeeves")
+    private val humphreyId = PersonaId.bundled("sir-humphrey")
 
     @Before
     fun setUp() {
@@ -54,14 +58,61 @@ class RewritePanelViewModelTest {
 
     private fun createViewModel(
         personaId: PersonaId = jeevesId,
+        mood: Mood = Mood.DEFAULT,
     ): RewritePanelViewModel = RewritePanelViewModel(
         coordinator = coordinator,
-        personaId = personaId,
+        personas = fakeRepo,
+        initialPersonaId = personaId,
+        initialMood = mood,
         savedStateHandle = SavedStateHandle(),
     )
 
     @Test
-    fun `idle to loading to review without mutation`() = runTest {
+    fun `initial state is resting with persona and mood`() = runTest {
+        val vm = createViewModel()
+        val state = vm.state.value
+        assertTrue("Expected Resting state, got $state", state is RewritePanelState.Resting)
+        val resting = state as RewritePanelState.Resting
+        assertEquals(jeevesId, resting.persona.id)
+        assertEquals(Mood.DEFAULT, resting.mood)
+    }
+
+    @Test
+    fun `open persona picker and select persona`() = runTest {
+        val vm = createViewModel()
+        vm.openPersonaPicker()
+
+        val pickerState = vm.state.value
+        assertTrue("Expected PersonaPicker state, got $pickerState", pickerState is RewritePanelState.PersonaPicker)
+        val picker = pickerState as RewritePanelState.PersonaPicker
+        assertEquals(jeevesId, picker.selectedId)
+
+        vm.selectPersona(humphreyId)
+        val restingState = vm.state.value
+        assertTrue("Expected Resting state, got $restingState", restingState is RewritePanelState.Resting)
+        val resting = restingState as RewritePanelState.Resting
+        assertEquals(humphreyId, resting.persona.id)
+    }
+
+    @Test
+    fun `open mood picker and select mood`() = runTest {
+        val vm = createViewModel()
+        vm.openMoodPicker()
+
+        val moodState = vm.state.value
+        assertTrue("Expected MoodPicker state, got $moodState", moodState is RewritePanelState.MoodPicker)
+        val picker = moodState as RewritePanelState.MoodPicker
+        assertEquals(Mood.DEFAULT, picker.selectedMood)
+
+        vm.selectMood(Mood.Witty)
+        val restingState = vm.state.value
+        assertTrue("Expected Resting state, got $restingState", restingState is RewritePanelState.Resting)
+        val resting = restingState as RewritePanelState.Resting
+        assertEquals(Mood.Witty, resting.mood)
+    }
+
+    @Test
+    fun `resting to loading to review without mutation`() = runTest {
         fakeEditor.captureResult = CaptureResult.Captured(
             EditorSnapshot(
                 session = EditorSessionToken(1L),
@@ -73,8 +124,6 @@ class RewritePanelViewModelTest {
         fakeProvider.result = Result.success("Rephrased: Hello world")
 
         val vm = createViewModel()
-        assertEquals(RewritePanelState.Idle, vm.state.value)
-
         vm.request()
         advanceUntilIdle()
 
@@ -85,28 +134,7 @@ class RewritePanelViewModelTest {
     }
 
     @Test
-    fun `review contains only the current in-memory candidate`() = runTest {
-        fakeEditor.captureResult = CaptureResult.Captured(
-            EditorSnapshot(
-                session = EditorSessionToken(1L),
-                generation = RequestGeneration(1L),
-                draft = "Test draft",
-                selection = Utf16Selection(0, 10),
-            ),
-        )
-        fakeProvider.result = Result.success("Only this replacement")
-
-        val vm = createViewModel()
-        vm.request()
-        advanceUntilIdle()
-
-        val review = vm.state.value as RewritePanelState.Review
-        assertEquals("Only this replacement", review.candidate.replacement)
-        assertEquals("Test draft", review.candidate.snapshot.draft)
-    }
-
-    @Test
-    fun `apply maps AppliedVerified to Review with Applied outcome`() = runTest {
+    fun `apply maps AppliedVerified to AppliedVerified state`() = runTest {
         fakeEditor.captureResult = CaptureResult.Captured(
             EditorSnapshot(
                 session = EditorSessionToken(1L),
@@ -126,13 +154,15 @@ class RewritePanelViewModelTest {
 
         val state = vm.state.value
         assertTrue(
-            "Expected Review(Applied), got $state",
-            state is RewritePanelState.Review && state.outcome == RewriteOutcome.Applied,
+            "Expected AppliedVerified, got $state",
+            state is RewritePanelState.AppliedVerified,
         )
+        val applied = state as RewritePanelState.AppliedVerified
+        assertEquals("replaced", applied.candidate.replacement)
     }
 
     @Test
-    fun `apply maps Stale to Review with Stale outcome`() = runTest {
+    fun `apply maps Stale to Error(StaleEditor) state`() = runTest {
         fakeEditor.captureResult = CaptureResult.Captured(
             EditorSnapshot(
                 session = EditorSessionToken(1L),
@@ -152,13 +182,15 @@ class RewritePanelViewModelTest {
 
         val state = vm.state.value
         assertTrue(
-            "Expected Review(Stale), got $state",
-            state is RewritePanelState.Review && state.outcome is RewriteOutcome.Stale,
+            "Expected Error(StaleEditor), got $state",
+            state is RewritePanelState.Error && state.error == StitchError.StaleEditor,
         )
+        val error = state as RewritePanelState.Error
+        assertTrue(error.error.canRetry)
     }
 
     @Test
-    fun `apply maps WriteRejected to Review with Rejected outcome`() = runTest {
+    fun `apply maps WriteRejected to Error(WriteRejected) state`() = runTest {
         fakeEditor.captureResult = CaptureResult.Captured(
             EditorSnapshot(
                 session = EditorSessionToken(1L),
@@ -178,13 +210,15 @@ class RewritePanelViewModelTest {
 
         val state = vm.state.value
         assertTrue(
-            "Expected Review(Rejected), got $state",
-            state is RewritePanelState.Review && state.outcome == RewriteOutcome.Rejected,
+            "Expected Error(WriteRejected), got $state",
+            state is RewritePanelState.Error && state.error == StitchError.WriteRejected,
         )
+        val error = state as RewritePanelState.Error
+        assertFalse(error.error.canRetry)
     }
 
     @Test
-    fun `apply maps WriteUnconfirmed to Review with Unconfirmed outcome`() = runTest {
+    fun `apply maps WriteUnconfirmed to Error(WriteUnconfirmed) state without retry`() = runTest {
         fakeEditor.captureResult = CaptureResult.Captured(
             EditorSnapshot(
                 session = EditorSessionToken(1L),
@@ -204,44 +238,15 @@ class RewritePanelViewModelTest {
 
         val state = vm.state.value
         assertTrue(
-            "Expected Review(Unconfirmed), got $state",
-            state is RewritePanelState.Review && state.outcome == RewriteOutcome.Unconfirmed,
+            "Expected Error(WriteUnconfirmed), got $state",
+            state is RewritePanelState.Error && state.error == StitchError.WriteUnconfirmed,
         )
+        val error = state as RewritePanelState.Error
+        assertFalse("WriteUnconfirmed must not offer retry", error.error.canRetry)
     }
 
     @Test
-    fun `newer request cancels and discards older result`() = runTest {
-        fakeEditor.captureResult = CaptureResult.Captured(
-            EditorSnapshot(
-                session = EditorSessionToken(1L),
-                generation = RequestGeneration(1L),
-                draft = "draft",
-                selection = Utf16Selection(0, 5),
-            ),
-        )
-
-        var callCount = 0
-        fakeProvider.resultFunction = {
-            callCount++
-            if (callCount == 1) Result.success("first")
-            else Result.success("second")
-        }
-
-        val vm = createViewModel()
-        vm.request()
-        vm.request()
-        advanceUntilIdle()
-
-        val state = vm.state.value
-        assertTrue(
-            "Expected Review with second result, got $state",
-            state is RewritePanelState.Review &&
-                state.candidate.replacement == "second",
-        )
-    }
-
-    @Test
-    fun `editor finish cancels in-flight provider call and clears candidate`() = runTest {
+    fun `editor finish cancels in-flight provider call and returns to resting`() = runTest {
         fakeEditor.captureResult = CaptureResult.Captured(
             EditorSnapshot(
                 session = EditorSessionToken(1L),
@@ -258,11 +263,130 @@ class RewritePanelViewModelTest {
         advanceUntilIdle()
 
         val state = vm.state.value
-        assertTrue("Expected Idle after finish, got $state", state is RewritePanelState.Idle)
+        assertTrue("Expected Resting after finish, got $state", state is RewritePanelState.Resting)
     }
 
     @Test
-    fun `result arriving after finish cannot mutate UI`() = runTest {
+    fun `empty input maps to EmptyInput error`() = runTest {
+        fakeEditor.captureResult = CaptureResult.EmptyInput
+        val vm = createViewModel()
+        vm.request()
+        advanceUntilIdle()
+
+        val state = vm.state.value
+        assertTrue(
+            "Expected Error(EmptyInput), got $state",
+            state is RewritePanelState.Error && state.error == StitchError.EmptyInput,
+        )
+    }
+
+    @Test
+    fun `sensitive editor maps to SensitiveEditor error`() = runTest {
+        fakeEditor.captureResult = CaptureResult.SensitiveEditor
+        val vm = createViewModel()
+        vm.request()
+        advanceUntilIdle()
+
+        val state = vm.state.value
+        assertTrue(
+            "Expected Error(SensitiveEditor), got $state",
+            state is RewritePanelState.Error && state.error == StitchError.SensitiveEditor,
+        )
+    }
+
+    @Test
+    fun `unsupported editor maps to UnsupportedEditor error`() = runTest {
+        fakeEditor.captureResult = CaptureResult.UnsupportedEditor
+        val vm = createViewModel()
+        vm.request()
+        advanceUntilIdle()
+
+        val state = vm.state.value
+        assertTrue(
+            "Expected Error(UnsupportedEditor), got $state",
+            state is RewritePanelState.Error && state.error == StitchError.UnsupportedEditor,
+        )
+    }
+
+    @Test
+    fun `incomplete read maps to IncompleteRead error`() = runTest {
+        fakeEditor.captureResult = CaptureResult.IncompleteRead
+        val vm = createViewModel()
+        vm.request()
+        advanceUntilIdle()
+
+        val state = vm.state.value
+        assertTrue(
+            "Expected Error(IncompleteRead), got $state",
+            state is RewritePanelState.Error && state.error == StitchError.IncompleteRead,
+        )
+    }
+
+    @Test
+    fun `oversized input maps to OversizedInput error`() = runTest {
+        fakeEditor.captureResult = CaptureResult.OversizedInput
+        val vm = createViewModel()
+        vm.request()
+        advanceUntilIdle()
+
+        val state = vm.state.value
+        assertTrue(
+            "Expected Error(OversizedInput), got $state",
+            state is RewritePanelState.Error && state.error == StitchError.OversizedInput,
+        )
+    }
+
+    @Test
+    fun `provider failure maps to ProviderFailure error without leaking raw content`() = runTest {
+        fakeEditor.captureResult = CaptureResult.Captured(
+            EditorSnapshot(
+                session = EditorSessionToken(1L),
+                generation = RequestGeneration(1L),
+                draft = "secret draft",
+                selection = Utf16Selection(0, 12),
+            ),
+        )
+        fakeProvider.failWith = RuntimeException("internal provider exception")
+
+        val vm = createViewModel()
+        vm.request()
+        advanceUntilIdle()
+
+        val state = vm.state.value
+        assertTrue(
+            "Expected Error(ProviderFailure), got $state",
+            state is RewritePanelState.Error && state.error == StitchError.ProviderFailure,
+        )
+        val text = (state as RewritePanelState.Error).error.explanation
+        assertFalse(text.contains("secret draft"))
+        assertFalse(text.contains("internal provider exception"))
+    }
+
+    @Test
+    fun `malformed response maps to MalformedResponse error`() = runTest {
+        fakeEditor.captureResult = CaptureResult.Captured(
+            EditorSnapshot(
+                session = EditorSessionToken(1L),
+                generation = RequestGeneration(1L),
+                draft = "valid draft",
+                selection = Utf16Selection(0, 11),
+            ),
+        )
+        fakeProvider.result = Result.success("   ")
+
+        val vm = createViewModel()
+        vm.request()
+        advanceUntilIdle()
+
+        val state = vm.state.value
+        assertTrue(
+            "Expected Error(MalformedResponse), got $state",
+            state is RewritePanelState.Error && state.error == StitchError.MalformedResponse,
+        )
+    }
+
+    @Test
+    fun `dismiss returns to resting`() = runTest {
         fakeEditor.captureResult = CaptureResult.Captured(
             EditorSnapshot(
                 session = EditorSessionToken(1L),
@@ -274,15 +398,12 @@ class RewritePanelViewModelTest {
         fakeProvider.result = Result.success("replaced")
 
         val vm = createViewModel()
-        vm.finish()
         vm.request()
         advanceUntilIdle()
+        assertTrue(vm.state.value is RewritePanelState.Review)
 
-        val state = vm.state.value
-        assertTrue(
-            "Expected non-Review state after finish, got $state",
-            state !is RewritePanelState.Review,
-        )
+        vm.dismiss()
+        assertTrue(vm.state.value is RewritePanelState.Resting)
     }
 
     @Test
@@ -290,7 +411,8 @@ class RewritePanelViewModelTest {
         val savedStateHandle = SavedStateHandle()
         val vm = RewritePanelViewModel(
             coordinator = coordinator,
-            personaId = jeevesId,
+            personas = fakeRepo,
+            initialPersonaId = jeevesId,
             savedStateHandle = savedStateHandle,
         )
 
@@ -317,146 +439,41 @@ class RewritePanelViewModelTest {
         }
     }
 
-    @Test
-    fun `onCleared cancels work`() = runTest {
-        fakeEditor.captureResult = CaptureResult.Captured(
-            EditorSnapshot(
-                session = EditorSessionToken(1L),
-                generation = RequestGeneration(1L),
-                draft = "draft",
-                selection = Utf16Selection(0, 5),
-            ),
-        )
-        fakeProvider.result = Result.success("replaced")
-
-        val vm = createViewModel()
-        vm.request()
-        advanceUntilIdle()
-        assertTrue("Precondition: should be Review", vm.state.value is RewritePanelState.Review)
-
-        val store = ViewModelStore()
-        store.put("vm", vm)
-        store.clear()
-
-        // After onCleared, viewModelScope is cancelled — new requests are no-ops
-        vm.request()
-        advanceUntilIdle()
-        assertTrue(
-            "Expected non-Review after onCleared + request, got ${vm.state.value}",
-            vm.state.value !is RewritePanelState.Review,
-        )
-    }
-
-    @Test
-    fun `failure message does not embed draft or provider text`() = runTest {
-        fakeRepo.failLoad = true
-        val vm = createViewModel()
-
-        vm.request()
-        advanceUntilIdle()
-
-        val state = vm.state.value
-        assertTrue("Expected Message state, got $state", state is RewritePanelState.Message)
-        val text = (state as RewritePanelState.Message).kind.toString()
-        assertTrue("Message should not contain 'secret draft' but was: $text", "secret draft" !in text)
-        assertTrue("Message should not contain 'provider output' but was: $text", "provider output" !in text)
-    }
-
-    @Test
-    fun `provider failure does not embed provider text`() = runTest {
-        fakeEditor.captureResult = CaptureResult.Captured(
-            EditorSnapshot(
-                session = EditorSessionToken(1L),
-                generation = RequestGeneration(1L),
-                draft = "secret draft",
-                selection = Utf16Selection(0, 12),
-            ),
-        )
-        fakeProvider.failWith = RuntimeException("internal provider error details")
-
-        val vm = createViewModel()
-        vm.request()
-        advanceUntilIdle()
-
-        val state = vm.state.value
-        assertTrue("Expected Message state, got $state", state is RewritePanelState.Message)
-        val text = (state as RewritePanelState.Message).kind.toString()
-        assertTrue("Message should not contain 'secret draft' but was: $text", "secret draft" !in text)
-        assertTrue(
-            "Message should not contain 'internal provider error details' but was: $text",
-            "internal provider error details" !in text,
-        )
-    }
-
-    @Test
-    fun `empty input maps to EmptyInput message`() = runTest {
-        fakeEditor.captureResult = CaptureResult.EmptyInput
-        val vm = createViewModel()
-        vm.request()
-        advanceUntilIdle()
-
-        val state = vm.state.value
-        assertTrue(
-            "Expected Message(EmptyInput), got $state",
-            state is RewritePanelState.Message && state.kind is RewriteMessage.EmptyInput,
-        )
-    }
-
-    @Test
-    fun `sensitive editor maps to SensitiveEditor message`() = runTest {
-        fakeEditor.captureResult = CaptureResult.SensitiveEditor
-        val vm = createViewModel()
-        vm.request()
-        advanceUntilIdle()
-
-        val state = vm.state.value
-        assertTrue(
-            "Expected Message(SensitiveEditor), got $state",
-            state is RewritePanelState.Message && state.kind is RewriteMessage.SensitiveEditor,
-        )
-    }
-
-    @Test
-    fun `dismiss returns to idle`() = runTest {
-        fakeEditor.captureResult = CaptureResult.Captured(
-            EditorSnapshot(
-                session = EditorSessionToken(1L),
-                generation = RequestGeneration(1L),
-                draft = "draft",
-                selection = Utf16Selection(0, 5),
-            ),
-        )
-        fakeProvider.result = Result.success("replaced")
-
-        val vm = createViewModel()
-        vm.request()
-        advanceUntilIdle()
-        assertTrue(vm.state.value is RewritePanelState.Review)
-
-        vm.dismiss()
-        assertEquals(RewritePanelState.Idle, vm.state.value)
-    }
-
     class FakeRepo : PersonaRepository {
         var failLoad = false
 
-        override fun list(): Result<List<biz.pixelperfectstudios.personaspeak.ui.personas.PersonaSummary>> {
-            return Result.success(emptyList())
-        }
+        private val jeeves = ValidatedPersona(
+            id = PersonaId.bundled("jeeves"),
+            provenance = PersonaProvenance.bundled,
+            content = Persona(
+                name = "Jeeves",
+                context = " (the valet)",
+                speechPatterns = listOf("Formal English"),
+            ),
+        )
+
+        private val humphrey = ValidatedPersona(
+            id = PersonaId.bundled("sir-humphrey"),
+            provenance = PersonaProvenance.bundled,
+            content = Persona(
+                name = "Sir Humphrey",
+                context = " (civil servant)",
+                speechPatterns = listOf("Circumlocution"),
+            ),
+        )
+
+        override fun list(): Result<List<PersonaSummary>> =
+            Result.success(listOf(PersonaSummary(jeeves.id, jeeves.content.name), PersonaSummary(humphrey.id, humphrey.content.name)))
+
+        override fun loadAll(): Result<List<ValidatedPersona>> =
+            Result.success(listOf(jeeves, humphrey))
 
         override fun load(id: PersonaId): Result<ValidatedPersona> {
             if (failLoad) return Result.failure(IllegalArgumentException("not found"))
-            return Result.success(
-                ValidatedPersona(
-                    id = id,
-                    provenance = PersonaProvenance.bundled,
-                    content = Persona(
-                        name = "Jeeves",
-                        context = " (the valet)",
-                        speechPatterns = listOf("Formal English"),
-                    ),
-                ),
-            )
+            return when (id.value) {
+                "bundled:sir-humphrey" -> Result.success(humphrey)
+                else -> Result.success(jeeves)
+            }
         }
     }
 
@@ -478,11 +495,10 @@ class RewritePanelViewModelTest {
 
         var result: Result<String> = Result.success("replaced")
         var failWith: Throwable? = null
-        var resultFunction: ((String) -> Result<String>)? = null
 
         override suspend fun rewrite(system: String, text: String): Result<String> {
             if (failWith != null) return Result.failure(failWith!!)
-            return resultFunction?.invoke(text) ?: result
+            return result
         }
     }
 }

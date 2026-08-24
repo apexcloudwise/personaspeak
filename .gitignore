@@ -5,7 +5,8 @@ __pycache__/
 
 # Android (Phase 1+)
 android/**/build/
-android/.gradle/
+android/**/.gradle/
+android/outputs/
 android/local.properties
 android/.idea/
 *.apk

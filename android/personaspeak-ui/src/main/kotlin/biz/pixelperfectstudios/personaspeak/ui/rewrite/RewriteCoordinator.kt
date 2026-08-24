@@ -1,5 +1,6 @@
 package biz.pixelperfectstudios.personaspeak.ui.rewrite
 
+import biz.pixelperfectstudios.personaspeak.personas.Mood
 import biz.pixelperfectstudios.personaspeak.personas.PersonaId
 import biz.pixelperfectstudios.personaspeak.personas.PromptBuilder
 import biz.pixelperfectstudios.personaspeak.providers.CompletionProvider
@@ -72,7 +73,7 @@ class RewriteCoordinator(
     private val provider: CompletionProvider,
 ) {
 
-    suspend fun request(personaId: PersonaId): RewriteRequestResult {
+    suspend fun request(personaId: PersonaId, mood: Mood? = null): RewriteRequestResult {
         val persona = personas.load(personaId).getOrNull()
             ?: return RewriteRequestResult.NoPersona
 
@@ -85,7 +86,7 @@ class RewriteCoordinator(
             CaptureResult.OversizedInput -> return RewriteRequestResult.OversizedInput
         }
 
-        val system = PromptBuilder.build(persona.content)
+        val system = PromptBuilder.build(persona.content, mood)
 
         val result = try {
             provider.rewrite(system, snapshot.draft)
