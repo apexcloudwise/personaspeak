@@ -11,8 +11,8 @@ jobs:
     name: Validate personas & smoke-test CLI
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
       - name: Install dependencies
@@ -37,7 +37,7 @@ jobs:
           echo "::notice::Patch-note gate intentionally skipped — this PR carries the 'no-patchnote' label. A loud skip, not a silent one."
       - name: Checkout (full history so we can diff against the base)
         if: ${{ !contains(github.event.pull_request.labels.*.name, 'no-patchnote') }}
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
       - name: Require PATCHNOTES.md in the diff
@@ -60,8 +60,8 @@ jobs:
     name: M2 device qualification suite
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
       - name: Run m2_device focused suite
@@ -77,9 +77,13 @@ jobs:
     # Android qualification when the PR is ready, and always on main pushes.
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: "21"
@@ -100,7 +104,7 @@ jobs:
       # it has to be a CI step and not something we notice on a laptop.
       - name: Restore the ASK Robolectric jar cache
         id: robolectric-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: android/keyboard/.robolectric-android-all-jars
           key: robolectric-jars-${{ hashFiles('android/keyboard/scripts/robolectric_jars_versions.txt') }}
@@ -150,7 +154,7 @@ jobs:
       # Only the canonical APK. Uploading a second one would recreate, in the
       # artifact tab, exactly the ambiguity the cutover removed from the tree.
       - name: Upload canonical APK
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: personaspeak-debug-apk
           path: android/keyboard/ime/app/build/outputs/apk/debug/app-debug.apk
@@ -158,7 +162,7 @@ jobs:
           retention-days: 14
       - name: Upload non-APK reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: milestone-2-reports
           path: |

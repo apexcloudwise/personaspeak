@@ -10,6 +10,20 @@ Newest first, like all respectable patch notes.
 
 ---
 
+## 2026-08-24 — CI supply chain gets adult supervision
+
+- Added the official verified SHA-256 (`distributionSha256Sum`) to
+  `android/gradle/wrapper/gradle-wrapper.properties` for Gradle 9.2.1-all, so
+  the wrapper actually checks what it downloads instead of trusting the wire.
+- Hardened the Android CI job's token posture to explicit `permissions:
+  contents: read` with `persist-credentials: false` on checkout.
+- Bumped GitHub Actions (`actions/checkout` v5, `actions/setup-python` v6,
+  `actions/setup-java` v5, `actions/cache` v5, `actions/upload-artifact` v6)
+  to Node 24 majors, banishing the Node 20 deprecation calendar invitations
+  from our CI logs.
+
+---
+
 ## 2026-08-23 — The roadmap learns what happened
 
 - ROADMAP.md stopped describing milestone 2 as awaiting qualification;
