@@ -62,14 +62,15 @@ persona strip above the keys that rewrites what you've typed.
       snapshot fixture — 145/145 steps, exact mutation counts, verified
       restoration (run 20260823T122133Z, receipt PR #84, evidence on the
       protected `evidence` branch).
-- [x] Persona strip grafted onto the chosen base as its own row above ASK's
+- [ ] Persona strip grafted onto the chosen base as its own row above ASK's
       untouched suggestions and keys: persona chip + mood chip + transform,
-      reading the draft and replacing it in place (M3: PR #87, PR #88).
+      reading the draft and replacing it in place
 - [x] **Milestone 4 — Secure provider configuration & persistence** (issue #89):
       `ProviderConfigStore` port, Preferences DataStore metadata + AndroidKeyStore
       AES-GCM ciphertext persistence, backup exclusion verified on both API 26/27
       and API 31+ (`docs/evidence/milestone-4/backup-api27-receipt.json`),
-      `AnthropicMessagesAdapter` in `:personaspeak-providers` with closed error taxonomy,
+      `AnthropicMessagesAdapter` in `:personaspeak-providers` with closed error taxonomy
+      over HTTPS (TLS 1.3 observed in recorded device run),
       response parser qualification (`docs/evidence/milestone-4/adapter-parser-receipt.json`),
       and package storage/egress audits (`docs/evidence/milestone-4/storage-egress-audit-receipt.json`).
       Shipped **structurally disabled by default** (`FakeProvider` active default in rewrite

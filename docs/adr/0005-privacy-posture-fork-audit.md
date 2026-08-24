@@ -123,7 +123,7 @@ Milestone 4 ([#89](https://github.com/apexcloudwise/personaspeak/issues/89)) est
    - Package-private sandbox inspection and byte-level scanning prove 0 plaintext keys, prompts, candidates, or rewrite history stored on disk (receipt `docs/evidence/milestone-4/storage-egress-audit-receipt.json`).
 
 2. **Egress & Single-Endpoint Binding**:
-   - `AnthropicMessagesAdapter` in `:personaspeak-providers` is strictly bound to `https://api.anthropic.com/v1/messages` over TLS 1.3.
+   - `AnthropicMessagesAdapter` in `:personaspeak-providers` is strictly bound to `https://api.anthropic.com/v1/messages` over HTTPS (TLS 1.3 observed in the recorded device run).
    - Network transport behavioral audit (UID-scoped kernel socket sampling) confirms 0 third-party egress, 0 telemetry/crashlytics calls, and 0 unencrypted HTTP (port 80) connections.
 
 3. **Structural Default-Disabled Baseline**:

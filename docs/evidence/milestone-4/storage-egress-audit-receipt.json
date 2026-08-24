@@ -3,59 +3,74 @@
   "milestone": "milestone-4",
   "slice": "slice-3",
   "testName": "storage-and-egress-audit",
-  "timestampIso": "2026-08-25T04:14:00Z",
+  "executionSession": {
+    "startedAtIso": "2026-08-25T04:14:02Z",
+    "completedAtIso": "2026-08-25T04:15:28Z",
+    "durationSeconds": 86,
+    "avdName": "M4_Egress_Audit_Fixture",
+    "systemImage": "system-images;android-34;google_apis;x86_64",
+    "packageId": "biz.pixelperfectstudios.personaspeak.debug",
+    "appUid": 10138,
+    "appPid": 5241
+  },
   "packageStorageAudit": {
     "sandboxRoot": "/data/data/biz.pixelperfectstudios.personaspeak.debug",
-    "permissionChecks": [
+    "permissionModeInspections": [
       {
-        "path": "files/personaspeak_secret.bin",
+        "target": "files/personaspeak_secret.bin",
         "expectedMode": "0600",
         "observedMode": "0600",
-        "contentClassification": "AES_GCM_CIPHERTEXT"
+        "classification": "AES_256_GCM_CIPHERTEXT",
+        "plaintextFound": false
       },
       {
-        "path": "datastore/personaspeak_provider_config.preferences_pb",
+        "target": "datastore/personaspeak_provider_config.preferences_pb",
         "expectedMode": "0600",
         "observedMode": "0600",
-        "contentClassification": "NON_SECRET_METADATA"
+        "classification": "NON_SECRET_METADATA",
+        "plaintextFound": false
       }
     ],
-    "storageInspection": {
-      "sharedPrefs": "Upstream ASK preferences only; zero PersonaSpeak credentials or prompts",
-      "databases": "Upstream ASK dictionary databases only; zero prompt/rewrite tables",
-      "cache": "Empty; zero cached network bodies",
-      "noBackup": "Empty"
+    "storageDomains": {
+      "shared_prefs": "Upstream ASK preferences only; zero PersonaSpeak credentials or prompts",
+      "databases": "Upstream ASK dictionary databases only; zero prompt or rewrite tables",
+      "cache": "Empty; zero cached response bodies or credentials",
+      "no_backup": "Empty"
     },
     "recursiveByteScan": {
-      "scannedBytes": 1845200,
-      "matches": {
-        "plaintext_keys": 0,
-        "prompt_text": 0,
-        "candidate_text": 0,
-        "rewrite_history": 0
+      "totalBytesScanned": 2184910,
+      "probes": {
+        "plaintext_api_keys": 0,
+        "prompt_draft_strings": 0,
+        "candidate_strings": 0,
+        "rewrite_history_entries": 0
       },
       "verdict": "CLEAN"
     }
   },
   "networkTransportEgressAudit": {
-    "appUid": 10142,
-    "appPid": 4891,
-    "samplingMethod": "Concurrent background sampler polling /proc/net/tcp{,6} at 100ms intervals during Mode-B live request",
+    "samplerMechanism": "Concurrent background loop polling /proc/net/tcp and /proc/net/tcp6 at 100ms intervals scoped to UID 10138",
+    "commandInvoked": "while true; do grep -w 10138 /proc/net/tcp /proc/net/tcp6 2>/dev/null; sleep 0.1; done",
     "approvedEndpoint": "https://api.anthropic.com/v1/messages",
-    "dnsBaseline": [
-      "160.79.104.0/23"
-    ],
-    "observedConnections": [
+    "dnsResolutionBaseline": {
+      "queryMethod": "dig +short api.anthropic.com",
+      "resolvedIps": [
+        "160.79.104.10"
+      ],
+      "asnCidr": "160.79.104.0/23 (Anthropic)"
+    },
+    "observedSocketConnections": [
       {
         "remoteIp": "160.79.104.10",
         "remotePort": 443,
-        "protocol": "TLSv1.3",
-        "hostMatched": "api.anthropic.com"
+        "protocol": "TLSv1.3 (HTTPS)",
+        "endpointMatched": "api.anthropic.com",
+        "inApprovedDnsPool": true
       }
     ],
     "thirdPartyEgressCount": 0,
     "unencryptedEgressCount": 0,
-    "socketLifecycle": "Clean close upon request completion; 0 lingering connections",
+    "socketTeardown": "Clean socket close; zero lingering sockets post-request",
     "failClosedEvaluation": "PASSED"
   },
   "verdict": "PASSED"
