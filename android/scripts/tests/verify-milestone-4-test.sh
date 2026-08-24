@@ -20,13 +20,32 @@ fi
 
 # Set up temporary isolated fixture to test failure modes
 fixture_repo="$tmp/repo"
-mkdir -p "$fixture_repo/android/scripts"
-cp -r "$repo_root/android/scripts"/* "$fixture_repo/android/scripts/"
-mkdir -p "$fixture_repo/android/personaspeak-providers"
-cp -r "$repo_root/android/personaspeak-providers"/* "$fixture_repo/android/personaspeak-providers/"
-mkdir -p "$fixture_repo/android/keyboard"
-cp -r "$repo_root/android/keyboard"/* "$fixture_repo/android/keyboard/"
+mkdir -p "$fixture_repo"
+cp -r "$repo_root/android" "$fixture_repo/android"
+mkdir -p "$fixture_repo/docs/evidence/milestone-4"
 git -C "$fixture_repo" init -q
+
+# Pre-captured ASK closure seam outputs
+projects_good="$tmp/projects.txt"
+{
+  echo "Root project 'personaboard'"
+  while IFS= read -r p; do
+    [ -z "$p" ] && continue
+    echo "+--- Project '$p'"
+  done < "$repo_root/android/scripts/expected-ask-projects.txt"
+} > "$projects_good"
+
+deps_good="$tmp/deps.txt"
+{
+  echo "debugRuntimeClasspath - Runtime classpath of compilation 'debug' (target  (androidJvm))."
+  echo "+--- project :personaspeak-ui"
+  echo "+--- project :addons:base"
+  echo "+--- project :addons:languages:english:pack"
+  echo "\\--- project :ime:base"
+} > "$deps_good"
+
+export ASK_CLOSURE_PROJECTS_OUTPUT="$projects_good"
+export ASK_CLOSURE_DEPS_OUTPUT="$deps_good"
 
 # Test 2: Tampered adapter harness with forbidden intent key exposure fails with exit code 1
 adapter_harness="$fixture_repo/android/keyboard/ime/app/src/debug/java/biz/pixelperfectstudios/personaspeak/data/harness/PersonaspeakAdapterHarnessActivity.kt"
