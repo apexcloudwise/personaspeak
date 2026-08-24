@@ -102,25 +102,31 @@ partial clear, so every artifact carries a **generation marker**: a random
 UUID written into the DataStore payload *and* into the blob header
 (`magic ‖ version ‖ generation-uuid ‖ IV ‖ ciphertext`).
 
-**Save ordering (metadata follows bytes):**
+**Save ordering (stage → commit → swap; never destroys the old credential):**
 
-1. Serialize blob with new generation UUID → write to
-   `files/personaspeak_secret.bin.tmp` → fsync → **atomic rename** onto
-   `personaspeak_secret.bin`.
-2. Only then update the DataStore entry (provider id, timestamp, schema
-   version, generation UUID). DataStore writes are atomic internally.
+1. **Stage:** serialize blob with new generation UUID → write to
+   `files/personaspeak_secret.bin.staging` → fsync. The live
+   `personaspeak_secret.bin` is untouched, so a crash here costs nothing.
+2. **Commit:** update the DataStore entry (provider id, timestamp, schema
+   version, new generation UUID). DataStore writes are atomic internally.
+3. **Swap:** atomic rename `personaspeak_secret.bin.staging` over
+   `personaspeak_secret.bin`; delete any stale staging file on load.
 
-If step 2 fails or crashes, step 1's orphaned blob is detected at load by the
-UUID mismatch — never trusted.
+The old working credential stays intact until the metadata that names the new
+generation has committed — a mid-save crash can always be resolved to either
+the old or the new state, never to nothing. `clear()` removes both files plus
+metadata in the reverse order (meta first, then bytes).
 
-**Load-time mismatch matrix (all fail-closed, no partial trust):**
+**Load-time mismatch matrix (all fail-closed about trust, none destructive
+of a recoverable state):**
 
 | Observed state | Outcome | Recovery action |
 |---|---|---|
-| meta present, gen matches blob | healthy | none |
-| blob newer/different gen than meta (crash between steps) | `InvalidCredentials` | delete blob, clear meta |
-| meta absent, blob present | `InvalidCredentials` | delete blob |
-| meta present, blob absent (restore/partial clear) | `InvalidCredentials` | clear meta |
+| meta gen matches live blob | healthy | delete stale staging if present |
+| meta = new gen, live blob = old gen, staging matches meta (crash between steps 2 and 3) | healthy (new state) | complete the swap: rename staging → live |
+| meta = old gen, live blob = old gen, stray staging present (crash inside step 1) | healthy (old state) | delete orphan staging |
+| meta absent, blob present | `InvalidCredentials` | delete blob + staging |
+| meta present, blob absent (restore/partial clear) | `InvalidCredentials` | clear meta, delete staging |
 | both absent | `Unconfigured` | none |
 | KeyStore/IO failure during load | `Unavailable` | retry once, then report |
 
@@ -153,7 +159,9 @@ touched. `core-personas` untouched entirely; `core-providers` untouched.
 ### Backup policy — one rule per artifact, stated once
 
 **Both artifacts are excluded from every backup/transfer regime** (cloud
-backup, device transfer, legacy full backup). Rationale: restoring the
+backup, device transfer, legacy full backup) — as is the transient
+`.staging` file, which holds the same kind of bytes mid-save. Rationale:
+restoring the
 ciphertext to another device is useless by construction — the AndroidKeyStore
 key is non-exportable, so restored bytes decrypt to `AEADBadTagException` →
 `InvalidCredentials` → auto-delete anyway. Excluding them up front avoids
@@ -167,10 +175,12 @@ API 31+ (`personaspeak_data_extraction_rules.xml`) — valid children only:
 <data-extraction-rules>
     <cloud-backup>
         <exclude domain="file" path="personaspeak_secret.bin" />
+        <exclude domain="file" path="personaspeak_secret.bin.staging" />
         <exclude domain="file" path="datastore/personaspeak_provider_config.preferences_pb" />
     </cloud-backup>
     <device-transfer>
         <exclude domain="file" path="personaspeak_secret.bin" />
+        <exclude domain="file" path="personaspeak_secret.bin.staging" />
         <exclude domain="file" path="datastore/personaspeak_provider_config.preferences_pb" />
     </device-transfer>
 </data-extraction-rules>
@@ -182,6 +192,7 @@ Legacy (<API 31, `personaspeak_full_backup_content.xml`):
 <?xml version="1.0" encoding="utf-8"?>
 <full-backup-content>
     <exclude domain="file" path="personaspeak_secret.bin" />
+    <exclude domain="file" path="personaspeak_secret.bin.staging" />
     <exclude domain="file" path="datastore/personaspeak_provider_config.preferences_pb" />
 </full-backup-content>
 ```
@@ -278,14 +289,17 @@ until a later M4 slice lands real providers *and* their routing.
      → bytes shown to be ciphertext-only (entropy + absence of entered key substring),
      driven by a test harness activity in the debug build, not product UI.
    - **Backup-exclusion proof, restore-based (stream-parsing is not reliably
-     available on ordinary devices):** seed artifacts via the store →
+     available on ordinary devices), with a positive control:** the test
+     harness writes `files/personaspeak_backup_canary.txt` — deliberately
+     *not* excluded — before the backup. Seed artifacts via the store →
      `adb shell bmgr backupnow <pkg>` → `pm clear` (or uninstall/reinstall) →
      `adb shell bmgr restore <token> <pkg>` → assert via `run-as ls` that
-     **neither** `personaspeak_secret.bin` nor
-     `datastore/personaspeak_provider_config.preferences_pb` reappears, i.e.
-     the exclusion rules actually held end-to-end through a real backup
-     transport. Repeated on one API 26/27 emulator (legacy regime) and one
-     API 31+ emulator (extraction-rules regime).
+     (a) the canary **does** reappear — proving the backup/restore round-trip
+     actually ran, so the negative assertion cannot pass vacuously — and
+     (b) neither `personaspeak_secret.bin`, its `.staging` file, nor
+     `datastore/personaspeak_provider_config.preferences_pb` reappears.
+     Repeated on one API 26/27 emulator (legacy regime) and one API 31+
+     emulator (extraction-rules regime).
    - Teardown hygiene identical to M3 evidence passes.
 
 ### Non-goals (explicit)
