@@ -5,6 +5,12 @@
 **Plan precedent:** PR #91 (`be0e563`)  
 **Reviewer assignment:** Seraph, Cassie, Sigrid (same gate as slice 1 — plan reviewed and approved before any implementation)
 
+**Revision r2** — amendments from Seraph's plan-gate review ([#94 comment](https://github.com/apexcloudwise/personaspeak/pull/94#issuecomment-5401612001)):
+- **A1** Save/clear edges in the state machine are harness/test-driven this slice only (no production UI entry point)
+- **A2** `NetworkFailure` carries `NetworkErrorCode` (enum) instead of `Throwable`
+- **A3** Drop `ProviderStatus` sealed interface; use `StoreOutcome` directly in `SettingsState`
+- **§13 resolved**: Q1 → **Anthropic Messages API** (one concrete adapter); Q2 → Option B confirmed; Q3 → `clear()` already exists on the port; Q4 → no auto-wipe on request-time auth failure confirmed
+
 ---
 
 ## 0. Plan-only scope statement
@@ -70,10 +76,19 @@ This PR contains **plan documents and stub files only**. No production adapter c
 
 ### 2.2 Adapter interface (new, slice 2)
 
-A thin seam will be added in `personaspeak-data` (or a new `:personaspeak-providers` module — decision gated on ASK-tree impact assessment in §3):
+A thin seam added to `:personaspeak-providers` (Option B — confirmed, §3):
 
 ```kotlin
 // proposed — plan only, not production code
+
+/** A2: code-based, not exception-based, so no stack-trace leaks into logs */
+enum class NetworkErrorCode {
+    TIMEOUT,
+    IO_ERROR,
+    HTTP_SERVER_ERROR,    // 5xx
+    HTTP_CLIENT_ERROR,    // 4xx non-auth (e.g. 400 bad request)
+}
+
 interface ProviderAdapter {
     /** Stable provider identifier; matches ProviderConfig.providerId in storage. */
     val providerId: String
@@ -95,15 +110,17 @@ interface ProviderAdapter {
 
 sealed interface AdapterResult {
     data class Success(val rewritten: String) : AdapterResult
-    data class NetworkFailure(val cause: Throwable) : AdapterResult
+    /** A2: carries a code, not a Throwable — no stack trace in the result type */
+    data class NetworkFailure(val code: NetworkErrorCode) : AdapterResult
     data object AuthFailure : AdapterResult
 }
 ```
 
 `AdapterResult` maps to `StoreOutcome` states at the call site in `SettingsViewModel`:
 - `Success` → no store change
-- `NetworkFailure` → surface as `StoreOutcome.Unavailable(StoreFailure.IO_ERROR)` in the UI state (no wipe)
-- `AuthFailure` → surface as `StoreOutcome.InvalidCredentials` in the UI state (no automatic wipe at this layer — wipe is the store's job on load, not the adapter's job on a request)
+- `NetworkFailure(code)` → surface as `StoreOutcome.Unavailable(StoreFailure.IO_ERROR)` in UI state (no wipe); `code` is for internal diagnostics only, never logged as a string containing secrets
+- `AuthFailure` → surface as `StoreOutcome.InvalidCredentials` in UI state; **store does NOT auto-wipe on request failure** — wipe is load-time only (Q4 confirmed)
+
 
 ### 2.3 Module placement decision
 
@@ -129,11 +146,9 @@ Options (choice gated on ASK-tree assessment per §3):
 
 ---
 
-## 4. Per-candidate adapter plan
+## 4. Anthropic Messages API adapter plan
 
-This slice implements **one** adapter (the candidate is the primary BYOK provider). The exact provider identity is not named in the plan document per #89 sequencing (Seraph to confirm in review if a specific target must be named here or if the plan is candidate-agnostic).
-
-For each candidate adapter:
+This slice implements **one** concrete adapter: **Anthropic Messages API** (Q1 resolved — matches desktop CLI reality). `providerId = "anthropic"`.
 
 ### 4.1 Permitted persisted values (from #91 data classification, extended)
 
@@ -173,9 +188,11 @@ AndroidKeyStore
 |---|---|---|
 | `KeystoreSecretCipher` | `CipherUnavailableException` on fast-path | `Unavailable(KEYSTORE_UNAVAILABLE)` — no mutation |
 | `KeystoreSecretCipher` | Corrupt ciphertext → `null` on decrypt | `InvalidCredentials` — store clears artifacts |
-| `ProviderAdapter.rewrite` | `NetworkFailure` | `Unavailable(IO_ERROR)` — no mutation, no wipe |
-| `ProviderAdapter.rewrite` | `AuthFailure` | Surface `InvalidCredentials` in UI; **store does NOT auto-wipe on request failure** — wipe requires explicit user confirmation or re-load |
+| `ProviderAdapter.rewrite` | `NetworkFailure(TIMEOUT)` or `NetworkFailure(IO_ERROR)` | `Unavailable(IO_ERROR)` — no mutation, no wipe |
+| `ProviderAdapter.rewrite` | `NetworkFailure(HTTP_SERVER_ERROR)` | `Unavailable(IO_ERROR)` — treat 5xx as transient |
+| `ProviderAdapter.rewrite` | `AuthFailure` (HTTP 401/403) | Surface `InvalidCredentials` in UI; **store does NOT auto-wipe on request failure** — wipe is load-time only (Q4 confirmed) |
 | `DataStoreProviderConfigStore.load` | meta null + live blob exists | `InvalidCredentials` + wipe (existing behavior) |
+
 
 ---
 
@@ -219,30 +236,24 @@ The four states already exist in `StoreOutcome`. This slice connects them to the
 
 ### 6.2 `SettingsState` additions (slice 2)
 
+**A3**: `ProviderStatus` is dropped — `StoreOutcome` is used directly (`personaspeak-ui/brain` and `personaspeak-ui/settings` are the same module).
+
 ```kotlin
-// plan only
+// plan only — r2, A3 applied
 data class SettingsState(
     // ... existing fields unchanged ...
-    val providerStatus: ProviderStatus = ProviderStatus.Unconfigured,
+    val providerOutcome: StoreOutcome = StoreOutcome.Unconfigured,
     val isSavingProvider: Boolean = false,
 )
-
-sealed interface ProviderStatus {
-    data object Unconfigured : ProviderStatus
-    data class Configured(val providerId: String, val configuredAtEpochMs: Long) : ProviderStatus
-    data class Unavailable(val failure: StoreFailure) : ProviderStatus
-    data object InvalidCredentials : ProviderStatus
-}
 ```
-
-`ProviderStatus` maps 1:1 from `StoreOutcome`; it is a UI-layer type so the UI module does not import `StoreOutcome` directly (which lives in `personaspeak-ui/brain`, same module — actually this is fine; direct use is acceptable).
 
 ### 6.3 `SettingsViewModel` additions
 
-- On init: call `providerConfigStore.load()`, map to `ProviderStatus`, set in state.
-- `saveProviderKey(providerId: String, keyBytes: ByteArray)`: wraps in `SecretBytes`, calls `providerConfigStore.save(...)`, sets `isSavingProvider = true` while in flight.
-- `clearProvider()`: calls `providerConfigStore.clear()` (if such a method exists; otherwise calls `save()` with a tombstone — to be decided based on the `ProviderConfigStore` port signature survey).
+- On init: call `providerConfigStore.load()`, set `providerOutcome` from the returned `ProviderConfigSnapshot.outcome`.
+- `saveProviderKey(providerId: String, keyBytes: ByteArray)`: wraps in `SecretBytes`, calls `providerConfigStore.save(...)`, sets `isSavingProvider = true` while in flight. **A1: the production UI entry point for this is NOT in scope this slice — the save path is exercised only via the debug harness and tests.**
+- `clearProvider()`: calls `providerConfigStore.clear()` — confirmed to exist on the port (Q3). **A1: same as above — harness/test-driven only this slice.**
 - All state transitions are pure — no side-effecting code in the `update { }` lambda.
+
 
 ---
 
@@ -264,8 +275,9 @@ sealed interface ProviderStatus {
 | `AdapterNetworkFailureTest` | `NetworkFailure` → `Unavailable` mapping; no mutation of store |
 | `AdapterAuthFailureTest` | `AuthFailure` → `InvalidCredentials` UI state; store NOT wiped by adapter |
 | `AdapterSecretFlowTest` | Secret injected into header; no log calls in adapter code path |
+| `AdapterNetworkErrorCodeTest` | `NetworkFailure(TIMEOUT/IO_ERROR/HTTP_SERVER_ERROR)` → `Unavailable`; `NetworkFailure(HTTP_CLIENT_ERROR)` classified correctly; no `Throwable` escapes |
 | `AdapterNoEgressTest` | Adapter class does not resolve a real hostname in unit context (mock `HttpClient`) |
-| `SettingsViewModelProviderStatusTest` | State machine transitions: `Unconfigured → Configured → Unavailable → Unconfigured` |
+| `SettingsViewModelStoreOutcomeTest` | State machine transitions using `StoreOutcome` directly: `Unconfigured → Configured → Unavailable → Unconfigured` (A3) |
 
 ### 8.2 Robolectric (`personaspeak-data`)
 
@@ -329,15 +341,20 @@ Extension of the PR #91 classification, scoped to the network layer:
 
 ## 12. Rollback / cleanup path
 
-1. The adapter module (`:personaspeak-providers` or additions to `:personaspeak-data`) is a pure addition; removing it requires deleting the module directory and removing its entry from `settings.gradle.kts` and the app `build.gradle`. No existing files are modified in a way that is hard to revert.
-2. The `SettingsState` and `SettingsViewModel` additions are additive. Rollback: delete the new fields and the new `ProviderStatus` type; restore the original `SettingsState` class. Compilation will flag all callers.
+1. The `:personaspeak-providers` module is a pure addition; removing it requires deleting the module directory and removing its entry from `android/settings.gradle.kts` and `android/keyboard/ime/app/build.gradle`. No existing files are modified in a way that is hard to revert.
+2. The `SettingsState` and `SettingsViewModel` additions are additive. Rollback: delete the new `providerOutcome` and `isSavingProvider` fields from `SettingsState`; restore the original class. Compilation will flag all callers. (A3: no `ProviderStatus` type to remove.)
 3. No migration needed for `DataStoreMetaStore` because the slice does not change the DataStore schema.
 
 ---
 
-## 13. Open questions for reviewers
+## 13. §13 rulings (resolved by Seraph at plan-gate review)
 
-1. **Provider candidate identity**: should this plan name a specific provider (e.g. OpenAI, Anthropic, OpenRouter) or remain candidate-agnostic? If agnostic, implementation will pick the simplest BYOK REST provider to minimize adapter surface area.
-2. **Module boundary**: confirm Option B (`:personaspeak-providers`) is preferred over adding to `:personaspeak-data`. Seraph to arbitrate if Cassie and Sigrid disagree.
-3. **`ProviderConfigStore.clear()` method**: the port as observed does not surface a `clear()` method explicitly in the truncated view. Implementation will add it if missing. Reviewers: confirm the port should expose `clear()` or if clearing is modelled as `save()` with a null secret.
-4. **`AuthFailure` wipe policy**: plan says adapter does NOT auto-wipe on a single request failure. Reviewers: confirm this is correct (user must explicitly clear or the next `load()` will re-attempt).
+> See [#94 comment](https://github.com/apexcloudwise/personaspeak/pull/94#issuecomment-5401612001) for full rationale.
+
+| Q | Question | Ruling |
+|---|---|---|
+| Q1 | Provider candidate | **Anthropic Messages API**; `providerId = "anthropic"`. Matches desktop CLI reality. |
+| Q2 | Module boundary | **Option B confirmed** — new `:personaspeak-providers` Gradle module. |
+| Q3 | `clear()` on port | `clear()` **already exists** on `ProviderConfigStore`. No port change needed. |
+| Q4 | AuthFailure wipe policy | **No auto-wipe on request-time auth failure confirmed.** Wipe is load-time only; adapter surfaces `InvalidCredentials` in UI state, store is not mutated. |
+
