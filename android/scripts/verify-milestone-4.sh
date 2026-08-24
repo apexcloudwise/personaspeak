@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # Aggregate Milestone 4 verification gate:
 # - No-secret-logging static scan
+# - Debug Kotlin compilation (:ime:app:compileDebugKotlin)
 # - Exact ASK closure & upstream-rent ledger verification
-# - Milestone 4 evidence receipts manifest & SHA-256 integrity check
-# - Invariant validation across storage, backup exclusion, and network egress receipts
+# - Milestone 4 Mode A offline parser validation receipt & SHA-256 integrity check
 #
 # usage: verify-milestone-4.sh [<android-root>]
 #

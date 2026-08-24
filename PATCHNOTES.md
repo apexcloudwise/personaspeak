@@ -10,7 +10,7 @@ Newest first, like all respectable patch notes.
 
 ---
 
-## 2026-08-25 — The Brain advances: Mode A qualified on device, compile gates active
+## 2026-08-25 — The Brain advances: Mode A qualified offline, compile gates active
 
 - Shipped Milestone 4 slice 3 verification code, debug harnesses, and Mode A qualification:
   - Upgraded `PersonaspeakStorageHarnessActivity.ACTION_SEED` to generate 32 on-device
@@ -19,7 +19,7 @@ Newest first, like all respectable patch notes.
   - Configured API 26/27 legacy backup-exclusion rules under `fullBackupContent`
     to exclude AES-GCM ciphertext and DataStore metadata (device qualification pending).
   - Added debug-only `PersonaspeakAdapterHarnessActivity` and qualified `AnthropicMessagesAdapter`
-    under Android ART for Mode A offline parser validation with verified memory zeroing
+    for Mode A offline parser validation with verified memory zeroing
     (`docs/evidence/milestone-4/adapter-parser-receipt.json`).
   - Added `receipt-manifest.json` anchoring SHA-256 digests for authentic receipts, and wired
     `verify-milestone-4.sh` gate verifier and `:ime:app:compileDebugKotlin` compile check into CI.
