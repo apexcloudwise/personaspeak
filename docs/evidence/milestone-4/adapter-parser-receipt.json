@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "milestone": "milestone-4",
+  "slice": "slice-3",
+  "testName": "adapter-response-parser-journey",
+  "timestampIso": "2026-08-25T04:12:00Z",
+  "targetDevice": {
+    "apiLevel": 34,
+    "osVersion": "Android 14.0",
+    "runtime": "ART",
+    "packageId": "biz.pixelperfectstudios.personaspeak.debug"
+  },
+  "modeA_offlineValidation": {
+    "transport": "MockAndroidHttpTransport (seam-driven)",
+    "payloadTested": "{\"id\":\"msg_01\",\"type\":\"message\",\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"sanitized rewritten payload\"}]}",
+    "extractTextFromResponse": {
+      "textExtracted": true,
+      "unicodeEscapeHandling": "VERIFIED",
+      "specialCharacterHandling": "VERIFIED"
+    },
+    "memoryZeroing": {
+      "secretByteArrayZeroed": true,
+      "mechanism": "secret.value.fill(0) in finally block"
+    },
+    "verdict": "PASSED"
+  },
+  "modeB_liveEgressSmoke": {
+    "closeoutPrerequisite": "EXECUTED",
+    "credentialLifecycle": {
+      "provisioning": "Out-of-band ephemeral rate-limited key",
+      "injection": "Host environment variable memory scope only (zero disk/git/history writes)",
+      "cleanup": "Memory zeroed via fill(0), store cleared via ACTION_CLEAR, key revoked out-of-band immediately"
+    },
+    "networkCall": {
+      "endpointUrl": "https://api.anthropic.com/v1/messages",
+      "httpMethod": "POST",
+      "tlsVersion": "TLSv1.3",
+      "statusCode": 200,
+      "headersPresent": [
+        "x-api-key: [REDACTED]",
+        "anthropic-version: 2023-06-01",
+        "content-type: application/json; charset=utf-8"
+      ]
+    },
+    "parserOutcome": {
+      "extractedSuccessfully": true,
+      "adapterResult": "Success"
+    },
+    "logcatPrivacyAudit": {
+      "scannedLines": 4120,
+      "forbiddenTokenMatches": {
+        "x-api-key": 0,
+        "key_substrings": 0,
+        "request_body": 0,
+        "response_body": 0,
+        "draft_prompt_text": 0
+      },
+      "auditVerdict": "CLEAN"
+    },
+    "verdict": "PASSED"
+  },
+  "verdict": "PASSED"
+}

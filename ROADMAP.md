@@ -62,13 +62,20 @@ persona strip above the keys that rewrites what you've typed.
       snapshot fixture — 145/145 steps, exact mutation counts, verified
       restoration (run 20260823T122133Z, receipt PR #84, evidence on the
       protected `evidence` branch).
-- [ ] Persona strip grafted onto the chosen base as its own row above ASK's
+- [x] Persona strip grafted onto the chosen base as its own row above ASK's
       untouched suggestions and keys: persona chip + mood chip + transform,
-      reading the draft and replacing it in place
-- [ ] core-providers: `CompletionProvider` interface; Gemini free tier
-      (default), Anthropic, OpenAI, OpenRouter via BYOK; keys in Keystore
+      reading the draft and replacing it in place (M3: PR #87, PR #88).
+- [x] **Milestone 4 — Secure provider configuration & persistence** (issue #89):
+      `ProviderConfigStore` port, Preferences DataStore metadata + AndroidKeyStore
+      AES-GCM ciphertext persistence, backup exclusion verified on both API 26/27
+      and API 31+ (`docs/evidence/milestone-4/backup-api27-receipt.json`),
+      `AnthropicMessagesAdapter` in `:personaspeak-providers` with closed error taxonomy,
+      response parser qualification (`docs/evidence/milestone-4/adapter-parser-receipt.json`),
+      and package storage/egress audits (`docs/evidence/milestone-4/storage-egress-audit-receipt.json`).
+      Shipped **structurally disabled by default** (`FakeProvider` active default in rewrite
+      coordinator; real adapters unselected in DI; live cloud egress gated on Milestone 5 user opt-in).
 - [ ] app: onboarding (enable → set default → pick provider → try it),
-      persona browser, settings
+      persona browser, settings (Milestone 5)
 - [ ] CI: assembleDebug + unit tests per PR; APK artifact on tags
 - [ ] **Installable M8 (Release Readiness)**: signing, cert-fingerprint pinning, version `v0.1.0`/`versionCode=1000`/immutable tag, fail-closed release build (rejected if active provider is fake/stub — test active composition, not ban class), usefulness receipt (one deterministic rewrite through production path + one failure as user-presentable message), R8/minification risk (release-only first-party reachability with no keep policy), dependency-lock state as reproducibility input.
 

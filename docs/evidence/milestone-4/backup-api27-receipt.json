@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "milestone": "milestone-4",
+  "slice": "slice-3",
+  "testName": "api27-legacy-backup-exclusion",
+  "timestampIso": "2026-08-25T04:10:00Z",
+  "targetDevice": {
+    "apiLevel": 27,
+    "osVersion": "Android 8.1.0",
+    "abi": "x86_64",
+    "packageId": "biz.pixelperfectstudios.personaspeak.debug"
+  },
+  "harnessComponent": "biz.pixelperfectstudios.personaspeak.data.harness.PersonaspeakStorageHarnessActivity",
+  "preBackupState": {
+    "seededVia": "ACTION_SEED (SecureRandom 32-byte on-device generation)",
+    "canaryCreatedVia": "ACTION_CANARY",
+    "observedFiles": [
+      "files/personaspeak_backup_canary.txt",
+      "files/personaspeak_secret.bin",
+      "datastore/personaspeak_provider_config.preferences_pb"
+    ]
+  },
+  "backupExecution": {
+    "transport": "com.android.localtransport/.LocalTransport",
+    "command": "bmgr backupnow biz.pixelperfectstudios.personaspeak.debug",
+    "status": "SUCCESS"
+  },
+  "restoreExecution": {
+    "clearCommand": "pm clear biz.pixelperfectstudios.personaspeak.debug",
+    "restoreCommand": "bmgr restore 1 biz.pixelperfectstudios.personaspeak.debug",
+    "status": "SUCCESS"
+  },
+  "postRestoreInspection": {
+    "positiveControl": {
+      "file": "files/personaspeak_backup_canary.txt",
+      "status": "RESTORED",
+      "readable": true
+    },
+    "excludedArtifacts": [
+      {
+        "file": "files/personaspeak_secret.bin",
+        "status": "ABSENT_EXCLUDED",
+        "verified": true
+      },
+      {
+        "file": "files/personaspeak_secret.bin.staging",
+        "status": "ABSENT_EXCLUDED",
+        "verified": true
+      },
+      {
+        "file": "datastore/personaspeak_provider_config.preferences_pb",
+        "status": "ABSENT_EXCLUDED",
+        "verified": true
+      }
+    ]
+  },
+  "runtimeQueryVerification": {
+    "action": "ACTION_QUERY",
+    "logcatOutput": "PsStorageHarness: QUERY_OUTCOME Unconfigured secret_len=0",
+    "storeOutcome": "Unconfigured",
+    "secretLength": 0
+  },
+  "verdict": "PASSED"
+}

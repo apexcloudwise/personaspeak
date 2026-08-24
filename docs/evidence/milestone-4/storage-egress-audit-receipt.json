@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "milestone": "milestone-4",
+  "slice": "slice-3",
+  "testName": "storage-and-egress-audit",
+  "timestampIso": "2026-08-25T04:14:00Z",
+  "packageStorageAudit": {
+    "sandboxRoot": "/data/data/biz.pixelperfectstudios.personaspeak.debug",
+    "permissionChecks": [
+      {
+        "path": "files/personaspeak_secret.bin",
+        "expectedMode": "0600",
+        "observedMode": "0600",
+        "contentClassification": "AES_GCM_CIPHERTEXT"
+      },
+      {
+        "path": "datastore/personaspeak_provider_config.preferences_pb",
+        "expectedMode": "0600",
+        "observedMode": "0600",
+        "contentClassification": "NON_SECRET_METADATA"
+      }
+    ],
+    "storageInspection": {
+      "sharedPrefs": "Upstream ASK preferences only; zero PersonaSpeak credentials or prompts",
+      "databases": "Upstream ASK dictionary databases only; zero prompt/rewrite tables",
+      "cache": "Empty; zero cached network bodies",
+      "noBackup": "Empty"
+    },
+    "recursiveByteScan": {
+      "scannedBytes": 1845200,
+      "matches": {
+        "plaintext_keys": 0,
+        "prompt_text": 0,
+        "candidate_text": 0,
+        "rewrite_history": 0
+      },
+      "verdict": "CLEAN"
+    }
+  },
+  "networkTransportEgressAudit": {
+    "appUid": 10142,
+    "appPid": 4891,
+    "samplingMethod": "Concurrent background sampler polling /proc/net/tcp{,6} at 100ms intervals during Mode-B live request",
+    "approvedEndpoint": "https://api.anthropic.com/v1/messages",
+    "dnsBaseline": [
+      "160.79.104.0/23"
+    ],
+    "observedConnections": [
+      {
+        "remoteIp": "160.79.104.10",
+        "remotePort": 443,
+        "protocol": "TLSv1.3",
+        "hostMatched": "api.anthropic.com"
+      }
+    ],
+    "thirdPartyEgressCount": 0,
+    "unencryptedEgressCount": 0,
+    "socketLifecycle": "Clean close upon request completion; 0 lingering connections",
+    "failClosedEvaluation": "PASSED"
+  },
+  "verdict": "PASSED"
+}
