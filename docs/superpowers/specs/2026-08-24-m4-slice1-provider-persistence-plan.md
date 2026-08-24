@@ -7,10 +7,11 @@
 
 Make the Settings THE BRAIN surface real enough to persist **provider
 configuration and credentials** securely, package-scoped, while persisting
-**zero** user text or rewrite artifacts. This slice delivers the storage,
-Keystore protection, backup posture, and a truthful runtime state model — not
-live cloud providers (M4 later slices), onboarding (M5), or usage counters
-(separately approved design per UX spec §5).
+**zero** user text or rewrite artifacts. This slice delivers the **storage
+foundation only**: the store, the cipher, the backup posture, and their tests —
+not live cloud providers (M4 later slices), not a configuration entry flow, not
+onboarding (M5), not usage counters (separately approved design per UX spec §5).
+See "Scope ruling" below: no product-reachable `Configured` state in this slice.
 
 ## Current-state survey (facts from the baseline)
 
@@ -73,17 +74,58 @@ core-personas (pure)          core-providers (pure)
   - `DataStoreProviderConfigStore` — Jetpack **Preferences DataStore**
     (file `personaspeak_provider_config.preferences_pb`) for non-secret
     config; **no** plaintext secret ever enters DataStore.
-  - `KeystoreSecretCipher` — AndroidKeyStore AES-256-GCM key
-    (`StrongBoxUnavailableFallback` semantics: `setIsStrongBoxBacked(true)`
-    attempted, graceful fallback), random IV per write, IV‖ciphertext stored
-    as base64 in a **separate** file `files/personaspeak_secret.bin`, which is
-    the backup-excluded artifact.
+  - `KeystoreSecretCipher` — AndroidKeyStore AES-256-GCM key, random IV per
+    write; IV‖generation‖ciphertext stored as base64 in a **separate** file
+    `files/personaspeak_secret.bin`, which is a backup-excluded artifact.
+    **StrongBox is SDK-gated:** on API ≥ 28, request
+    `setIsStrongBoxBacked(true)` inside a try/catch for
+    `StrongBoxUnavailableException` (and generic `ProviderException`), falling
+    back to a plain TEE-backed key; on API 26/27 (`setIsStrongBoxBacked` does
+    not exist there) go straight to the TEE key. The gate is a pure
+    `KeyStrengthPolicy(minSdkInt)` function over an injected
+    `KeyGenParameterSpec.Builder` seam so both branches are unit-tested
+    without hardware: assert API 26/27 never see the StrongBox call, and
+    API 28+ falls back cleanly when the exception fires.
   - Rationale for hand-rolled cipher over `security-crypto`/
     `EncryptedSharedPreferences`: androidx.security-crypto is in maintenance
     (deprecation announced 2025) and pulls Jetpack Tink; ~60 lines of
     KeyStore + AES-GCM is auditable in review, matches the AGENTS.md rule
     against dependencies where 30 lines of code would do, and gives us exact
     control over what bytes hit disk.
+
+### Atomic two-artifact writes and crash recovery
+
+The store owns two files: metadata (DataStore:
+`personaspeak_provider_config.preferences_pb`) and ciphertext
+(`files/personaspeak_secret.bin`). They can diverge under crash, restore, or
+partial clear, so every artifact carries a **generation marker**: a random
+UUID written into the DataStore payload *and* into the blob header
+(`magic ‖ version ‖ generation-uuid ‖ IV ‖ ciphertext`).
+
+**Save ordering (metadata follows bytes):**
+
+1. Serialize blob with new generation UUID → write to
+   `files/personaspeak_secret.bin.tmp` → fsync → **atomic rename** onto
+   `personaspeak_secret.bin`.
+2. Only then update the DataStore entry (provider id, timestamp, schema
+   version, generation UUID). DataStore writes are atomic internally.
+
+If step 2 fails or crashes, step 1's orphaned blob is detected at load by the
+UUID mismatch — never trusted.
+
+**Load-time mismatch matrix (all fail-closed, no partial trust):**
+
+| Observed state | Outcome | Recovery action |
+|---|---|---|
+| meta present, gen matches blob | healthy | none |
+| blob newer/different gen than meta (crash between steps) | `InvalidCredentials` | delete blob, clear meta |
+| meta absent, blob present | `InvalidCredentials` | delete blob |
+| meta present, blob absent (restore/partial clear) | `InvalidCredentials` | clear meta |
+| both absent | `Unconfigured` | none |
+| KeyStore/IO failure during load | `Unavailable` | retry once, then report |
+
+Every row of this table gets a contract-test case that simulates the failure
+by writing artifacts directly to the seam.
 
 ### Exact files to add or modify
 
@@ -97,17 +139,74 @@ core-personas (pure)          core-providers (pure)
 | `android/personaspeak-ui/build.gradle.kts` | modify | no new deps; ui must not depend on `-data` (dependency inversion: app wires) |
 | `android/personaspeak-ui/src/main/.../ui/brain/ProviderConfig.kt` | add | port data types |
 | `android/personaspeak-ui/src/main/.../ui/brain/ProviderConfigStore.kt` | add | port interface |
-| `android/personaspeak-ui/src/main/.../ui/settings/SettingsHomeScreen.kt` | modify | AI Provider row renders real state (below) |
-| `android/personaspeak-ui/src/main/.../ui/settings/SettingsViewModel.kt` | modify | expose `brainState: StateFlow<BrainUiState>` |
-| `android/personaspeak-ui/src/test/.../ui/settings/SettingsViewModelTest.kt` | extend | state-machine regressions with fake store |
+| `android/personaspeak-ui/src/main/.../ui/settings/SettingsHomeScreen.kt` | **not modified** | per scope ruling: disabled-but-honest copy stays; it remains true |
+| `android/personaspeak-ui/src/main/.../ui/settings/SettingsViewModel.kt` | **not modified** | ViewModel wiring deferred to the slice-2 configuration-flow PR |
 | `android/keyboard/ime/app/src/main/AndroidManifest.xml` | modify (**rent**) | add `android:dataExtractionRules="@xml/personaspeak_data_extraction_rules"` and `android:fullBackupContent="@xml/personaspeak_full_backup_content"`; leave `allowBackup="true"` untouched (ASK's own settings behavior is ADR-0005 audit scope, not this slice) |
-| `android/keyboard/ime/app/src/main/res/xml/personaspeak_data_extraction_rules.xml` | add | `<cloud-backup>`, `<device-transfer>`, `<backup-in-cloud>`: exclude `personaspeak_secret.bin` and the datastore file path |
-| `android/keyboard/ime/app/src/main/res/xml/personaspeak_full_backup_content.xml` | add | legacy regime mirror: exclude the same two paths |
+| `android/keyboard/ime/app/src/main/res/xml/personaspeak_data_extraction_rules.xml` | add | API 31+ regime: exclude **both** artifacts from `<cloud-backup>` and `<device-transfer>` (sketch below; `backup-in-cloud` is not a valid child element and is not used) |
+| `android/keyboard/ime/app/src/main/res/xml/personaspeak_full_backup_content.xml` | add | legacy (<API 31) regime mirror: exclude the same two paths |
 | `android/keyboard/UPSTREAM-MODIFIED.md` | append 1 line | ledger entry for the manifest change |
 | `PATCHNOTES.md` | append 1 line | house rule |
 
 No ASK source file other than the manifest and the two new XML resources is
 touched. `core-personas` untouched entirely; `core-providers` untouched.
+
+### Backup policy — one rule per artifact, stated once
+
+**Both artifacts are excluded from every backup/transfer regime** (cloud
+backup, device transfer, legacy full backup). Rationale: restoring the
+ciphertext to another device is useless by construction — the AndroidKeyStore
+key is non-exportable, so restored bytes decrypt to `AEADBadTagException` →
+`InvalidCredentials` → auto-delete anyway. Excluding them up front avoids
+shipping dead secrets into a cloud we don't control and keeps the privacy
+story one sentence: "provider configuration never leaves your phone."
+
+API 31+ (`personaspeak_data_extraction_rules.xml`) — valid children only:
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="file" path="personaspeak_secret.bin" />
+        <exclude domain="file" path="datastore/personaspeak_provider_config.preferences_pb" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="file" path="personaspeak_secret.bin" />
+        <exclude domain="file" path="datastore/personaspeak_provider_config.preferences_pb" />
+    </device-transfer>
+</data-extraction-rules>
+```
+
+Legacy (<API 31, `personaspeak_full_backup_content.xml`):
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<full-backup-content>
+    <exclude domain="file" path="personaspeak_secret.bin" />
+    <exclude domain="file" path="datastore/personaspeak_provider_config.preferences_pb" />
+</full-backup-content>
+```
+
+ASK's own inherited settings/dictionaries keep upstream's current backup
+behavior; changing that is ADR-0005 inventory scope, not this slice.
+
+### Scope ruling: storage-foundation-only (no product-reachable Configured state)
+
+With FakeProvider as the only provider and no key-entry flow defined in this
+slice, a product-visible "Configured" state would be a lie with no way to
+reach it honestly. **Chosen path:** slice 1 is storage-foundation-only.
+
+- The THE BRAIN rows in `SettingsHomeScreen.kt` are **not modified** — they
+  keep the current disabled-but-honest copy ("cloud providers and Keystore
+  arrive in Milestone 4"), which stays true.
+- The `BrainUiState` machine, port interface, and adapter land fully
+  implemented but exercised **only by tests** driving the store directly.
+  The ViewModel wiring is deliberately left for the slice-2 PR that adds the
+  provider-neutral configuration flow, where the UI copy can finally name a
+  real configured provider.
+- Consequently there is **no process-death UI proof in this slice**; the
+  equivalent guarantee is a contract test: save → new store instance over the
+  same seam files → load returns identical config (persistence across
+  process recreation), plus the mismatch-matrix rows above.
 
 ### Data classification
 
@@ -144,16 +243,17 @@ exactly as today: request-scoped transient memory only.
   test asserts no log call site can interpolate secret/config values
   (compile-time shape: logger takes enum, not String).
 
-### Truthful runtime/UI state model
+### Truthful runtime state model (adapter/test-scope this slice)
 
-Sealed `BrainUiState` in `personaspeak-ui`, rendered by the THE BRAIN rows:
+Sealed `StoreOutcome` / `BrainUiState` in `personaspeak-ui`, fully defined now
+and consumed by the UI only from slice 2 onward:
 
-| State | Meaning | UI copy (honest) |
+| State | Meaning | Slice-2 UI copy direction (honest) |
 |---|---|---|
-| `Unconfigured` | no stored config | current copy: FakeProvider active, cloud arrives in M4 |
-| `Configured(providerId)` | valid config + readable credential | "Gemini configured · key stored in device Keystore" |
+| `Unconfigured` | no stored config | FakeProvider active, cloud arrives with configuration flow |
+| `Configured(providerId)` | valid config + readable credential | names the provider; key stored in device Keystore |
 | `Unavailable(reason)` | storage/Keystore broken | "Secure storage is unavailable on this device; settings were not changed" |
-| `InvalidCredentials` | decryption failed, blob cleared | "Stored key could not be read and was removed. Enter it again." |
+| `InvalidCredentials` | decryption/generation mismatch, artifacts cleared | "Stored key could not be read and was removed. Enter it again." |
 
 No state claims network reachability or account validity — this slice makes
 **zero** network calls; `rewrite()` continues to route to `FakeProvider`
@@ -162,24 +262,30 @@ until a later M4 slice lands real providers *and* their routing.
 ### Verification plan
 
 1. **Unit (JVM, `personaspeak-data`):** store contract tests against an
-   injected cipher seam; corruption injection (flip ciphertext byte) →
-   `InvalidCredentials`; prohibited-content regression: after `save()` with
+   injected cipher + file seam; corruption injection (flip ciphertext byte) →
+   `InvalidCredentials`; every mismatch-matrix row simulated by writing
+   artifacts directly; prohibited-content regression: after `save()` with a
    sample secret, raw file bytes asserted to contain zero occurrences of the
    plaintext.
-2. **Unit (`personaspeak-ui`):** `SettingsViewModelTest` extensions pinning
-   all four `BrainUiState` transitions and the no-network property
-   (fake store records zero calls during a full settings walkthrough).
+2. **Unit (`KeyStrengthPolicy`):** API 26/27 → no StrongBox request;
+   API 28+ → StrongBox requested, `StrongBoxUnavailableException` → clean
+   TEE fallback.
 3. **Robolectric:** real AndroidKeyStore is absent; Robolectric verifies
-   DataStore round-trip and manifest merge carries both backup attributes.
+   DataStore round-trip, atomic-rename save path, and that the merged app
+   manifest carries both backup attributes pointing at the two rule files.
 4. **Disposable-AVD pass (slice gate, same protocol as M3 slices):**
    - `adb shell run-as biz.pixelperfectstudios.personaspeak cat files/personaspeak_secret.bin`
-     → bytes shown to be ciphertext-only (entropy + absence of entered key substring).
-   - **Backup-exclusion proof:** `adb shell bmgr backupnow <pkg>` then extract
-     the backup stream and assert the excluded filenames are absent while a
-     control file (config datastore) presence is checked per-regime expectation
-     (API 31+: excluded; legacy regime: same exclusions via fullBackupContent).
-   - Process-death honesty check: force-stop, relaunch → `Configured` state
-     restored; session persona/mood still session-scoped (unchanged behavior).
+     → bytes shown to be ciphertext-only (entropy + absence of entered key substring),
+     driven by a test harness activity in the debug build, not product UI.
+   - **Backup-exclusion proof, restore-based (stream-parsing is not reliably
+     available on ordinary devices):** seed artifacts via the store →
+     `adb shell bmgr backupnow <pkg>` → `pm clear` (or uninstall/reinstall) →
+     `adb shell bmgr restore <token> <pkg>` → assert via `run-as ls` that
+     **neither** `personaspeak_secret.bin` nor
+     `datastore/personaspeak_provider_config.preferences_pb` reappears, i.e.
+     the exclusion rules actually held end-to-end through a real backup
+     transport. Repeated on one API 26/27 emulator (legacy regime) and one
+     API 31+ emulator (extraction-rules regime).
    - Teardown hygiene identical to M3 evidence passes.
 
 ### Non-goals (explicit)

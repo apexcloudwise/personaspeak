@@ -10,6 +10,17 @@ Newest first, like all respectable patch notes.
 
 ---
 
+## 2026-08-24 — M4 slice-1 blueprint: the vault gets floor plans
+
+- Plan-only PR (#91): the implementation design for secure provider-config
+  persistence — DataStore metadata plus an AndroidKeyStore AES-GCM ciphertext
+  file, generation-marked and atomically renamed; both artifacts excluded from
+  every backup regime; storage-foundation-only scope, so THE BRAIN keeps its
+  honest "arrives in Milestone 4" sign until slice 2 wires a real flow. No
+  production code in this PR. (#90)
+
+---
+
 ## 2026-08-24 — Settings stops dangling: Persona browser lands and the Brain stays honest
 
 - Shipped `PersonaSpeakSettingsActivity` in `:ime:app` and the first-party settings
