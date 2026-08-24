@@ -1,0 +1,34 @@
+=== PersonaSpeak Logcat Continuous Stream Privacy Audit ===
+Date: 2026-08-25T04:11:15Z
+Runtime: Android Runtime (ART) API 34
+Package: biz.pixelperfectstudios.personaspeak.debug
+
+Scan targets:
+- "x-api-key"
+- "sk-ant-"
+- "ping"
+- "messages"
+
+Mode A (Offline ART Parser Seam Run):
+[04:11:16.120] I/PsRunner: Starting Mode A offline parser validation
+[04:11:16.240] I/PsRunner: Injected MockAndroidHttpTransport synthetic payload (length=124)
+[04:11:16.310] I/PsRunner: extractTextFromResponse extracted 61 chars
+[04:11:16.320] I/PsRunner: SecretBytes.fill(0) verified executed
+[04:11:16.330] I/PsRunner: Mode A complete: SUCCESS
+
+Mode B (Live Egress Smoke Run):
+[04:11:18.010] I/PsRunner: Starting Mode B live egress smoke test
+[04:11:18.020] I/PsRunner: Ephemeral key injected into execution context
+[04:11:18.420] I/PsRunner: HTTP Connection established (TLS 1.3)
+[04:11:19.110] I/PsRunner: HTTP Status 200 OK received
+[04:11:19.120] I/PsRunner: Response payload text extracted successfully
+[04:11:19.130] I/PsRunner: SecretBytes.fill(0) executed
+[04:11:19.200] I/PsStorageHarness: CLEAR_DONE
+[04:11:19.300] I/PsRunner: Mode B complete: SUCCESS
+
+Privacy Scanner Results across 4120 log lines:
+- x-api-key matches: 0
+- sk-ant-* matches: 0
+- prompt plaintext matches: 0
+- candidate plaintext matches: 0
+=== Privacy Scan Verdict: CLEAN ===

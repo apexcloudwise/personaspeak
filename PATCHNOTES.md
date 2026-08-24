@@ -25,7 +25,7 @@ Newest first, like all respectable patch notes.
   - Completed package-private storage and UID-scoped socket-level egress audits proving
     zero plaintext leaks and HTTPS binding to `api.anthropic.com` (TLS 1.3 observed in run)
     (`docs/evidence/milestone-4/storage-egress-audit-receipt.json`).
-  - Added authority receipt manifest (`receipt-manifest.json`) and `verify-milestone-4.sh` gate verifier.
+  - Added authority receipt manifest (`receipt-manifest.json`), retained raw execution logs (`docs/evidence/milestone-4/raw/`), and `verify-milestone-4.sh` gate verifier wired into CI.
   - Refined §10 key-String security checklist and source documentation.
   - Recorded structural default-disabled governance in ROADMAP.md and ADR-0005: `FakeProvider`
     remains active in rewrite coordinator; cloud egress strictly gated on Milestone 5

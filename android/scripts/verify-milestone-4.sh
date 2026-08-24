@@ -96,8 +96,10 @@ if manifest.get('schemaVersion') != 1:
     sys.exit(1)
 
 receipts = manifest.get('receipts', {})
-if not receipts:
-    print('FAIL: manifest contains no receipts')
+raw_logs = manifest.get('rawLogs', {})
+
+if not receipts or not raw_logs:
+    print('FAIL: manifest missing receipts or rawLogs')
     sys.exit(1)
 
 for fname, meta in receipts.items():
@@ -108,10 +110,22 @@ for fname, meta in receipts.items():
     with open(fpath, 'rb') as f:
         digest = hashlib.sha256(f.read()).hexdigest()
     if digest != meta.get('sha256'):
-        print(f'FAIL: digest mismatch for {fname}: computed {digest} != manifest {meta.get(\"sha256\")}')
+        print(f'FAIL: digest mismatch for receipt {fname}: computed {digest} != manifest {meta.get(\"sha256\")}')
+        sys.exit(1)
+
+raw_dir = os.path.join(evidence_dir, 'raw')
+for fname, meta in raw_logs.items():
+    fpath = os.path.join(raw_dir, fname)
+    if not os.path.isfile(fpath):
+        print(f'FAIL: raw log file {fname} missing from {raw_dir}')
+        sys.exit(1)
+    with open(fpath, 'rb') as f:
+        digest = hashlib.sha256(f.read()).hexdigest()
+    if digest != meta.get('sha256'):
+        print(f'FAIL: digest mismatch for raw log {fname}: computed {digest} != manifest {meta.get(\"sha256\")}')
         sys.exit(1)
 " "$evidence_dir"
-echo "  OK (all receipts matched authority manifest digests)"
+echo "  OK (all receipts and raw logs matched authority manifest digests)"
 
 # --- 4. Schema & receipt invariant assertions -------------------------------
 echo "[4/4] verifying receipt contents and security invariants..."
