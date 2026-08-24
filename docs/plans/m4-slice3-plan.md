@@ -6,9 +6,9 @@
 **Plan precedent:** PR #91 (`be0e563`), PR #94 (`c54ad91`)  
 **Reviewer assignment:** Seraph (@seraph-pixelperfect), Cassie (@cassievale-pixelperfect), Sigrid (@sigrid-pixelperfect)  
 
-**Revision r4** — addressing full reviewer feedback (Seraph S1–S3, Sigrid 1–3, Cassie §4.2):
+**Revision r5** — addressing full reviewer feedback (Seraph, Cassie, Sigrid):
+- **Sigrid & Cassie §4.2 (Deterministic concurrent socket capture protocol):** Specified the required concurrent socket sampling script (`sample-egress-sockets.sh` polling `/proc/net/tcp` at 100ms intervals during Mode-B execution), forward DNS IP snapshot matching, strict port 443 HTTPS assertions, fail-closed rule on any unapproved egress, and exact sanitized JSON schema for `storage-egress-audit-receipt.json`.
 - **Sigrid 1 & S1 (Harness SecureRandom seeding & ledger):** Planned update to `PersonaspeakStorageHarnessActivity` (`ime/app/src/debug`) to generate on-device random bytes via `SecureRandom` on `ACTION_SEED`, eliminating the hardcoded string literal; ledgered for `UPSTREAM-MODIFIED.md`.
-- **Cassie & Sigrid 2 (§4.2 Behavioral network transport observation protocol):** Concrete command sequence specifying UID/PID-scoped `/proc/net/tcp` and `netstat` socket sampling during request execution, DNS IP cross-checking against `api.anthropic.com`, port 443 HTTPS assertion, and redacting proxy option.
 - **S2 & Sigrid 2 (Credential lifecycle & transport modes):** Defined exact two-mode execution for the parser journey: Mode A (injectable `HttpTransport` seam on-device for offline ART parser validation) and Mode B (optional live egress smoke with strict out-of-band host provisioning, ephemeral memory injection, immediate revocation, and sanitized receipt retention).
 - **S3 (Header citation):** Fixed PR #94 approved plan head to `c54ad91`.
 - **Sigrid 3 & Seraph §10 (Enablement governance & durable destination):** Defined durable documentation destinations (`ROADMAP.md`, `docs/adr/0005-privacy-posture-fork-audit.md`, #89 closeout) and explicitly recorded structural default-disabled wiring.
@@ -189,40 +189,58 @@ Perform an exhaustive inspection of `/data/data/biz.pixelperfectstudios.personas
 
 ### 4.2 Egress & network transport behavioral audit
 
-To independently prove zero third-party egress and strict single-endpoint binding on the real device (beyond compile-time/unit assertions), the pass executes active socket observation scoped to the application UID:
+To independently prove zero third-party egress and strict single-endpoint binding on the real device (beyond compile-time/unit assertions), the pass executes a deterministic concurrent socket sampling protocol:
 
 ```bash
 # 1. Resolve application UID and PID on the disposable device
 APP_UID=$(adb shell "dumpsys package biz.pixelperfectstudios.personaspeak.debug | grep userId= | head -n 1" | awk -F= '{print $2}' | tr -d ' ')
 APP_PID=$(adb shell "pidof biz.pixelperfectstudios.personaspeak.debug || true")
 
-# 2. Continuous socket connection sampling before, during, and after request execution
-# Query kernel TCP sockets filtered by app UID:
-adb shell "grep -w $APP_UID /proc/net/tcp /proc/net/tcp6 || true"
-# Or using netstat scoped to process PID:
-adb shell "netstat -tnp | grep $APP_PID || true"
+# 2. Snapshot host/device DNS resolution for the approved endpoint prior to request:
+dig +short api.anthropic.com > /tmp/approved_ips.txt
 
-# 3. Destination endpoint & DNS correlation:
-# - Hex-decode destination IP from socket table to dotted quad
-# - Perform DNS query to resolve active IP addresses for api.anthropic.com:
-#   host api.anthropic.com
-# - Assert that all socket connections from APP_UID map strictly to api.anthropic.com's IP pool
-# - Assert destination port is strictly 443 (HTTPS)
-# - Assert zero connections to unencrypted HTTP (port 80)
-# - Assert zero connections to any third-party host (telemetry, analytics, crashlytics)
+# 3. Launch concurrent background socket sampler (polls kernel TCP tables at 100ms):
+adb shell "while true; do grep -w $APP_UID /proc/net/tcp /proc/net/tcp6 2>/dev/null; sleep 0.1; done" > /tmp/raw_sockets.log &
+SAMPLER_PID=$!
 
-# Optional Redacting Proxy Setup (mitmproxy / Charles forwarder):
-# - Configure AVD proxy: adb shell settings put global http_proxy 10.0.2.2:8080
-# - Proxy rule captures: SNI Host ("api.anthropic.com"), Path ("/v1/messages"), Header Names ("x-api-key", "anthropic-version", "content-type")
-# - Values and request/response payloads are redacted (0 bytes recorded)
-# - Teardown proxy: adb shell settings put global http_proxy :0
+# 4. Trigger the Mode-B adapter rewrite request via harness / test runner
+# (Adapter runs HTTPS POST strictly to https://api.anthropic.com/v1/messages)
+
+# 5. Stop the sampler immediately upon request completion:
+kill $SAMPLER_PID 2>/dev/null || true
+
+# 6. Parse and evaluate socket observations:
+# - Extract remote IP and destination port from /tmp/raw_sockets.log (hex to decimal/dotted-quad)
+# - Assert EVERY observed connection has destination port 443 (HTTPS)
+# - Assert EVERY observed remote IP matches an entry in /tmp/approved_ips.txt (api.anthropic.com)
+# - Assert ZERO connections to port 80 (unencrypted HTTP)
+# - Assert ZERO connections from $APP_UID to any unapproved IP (telemetry, analytics, third-party hosts)
+
+# Fail-Closed Rule:
+# If any socket connection from $APP_UID targets an unapproved IP/port,
+# the audit fails immediately with code 1 and no receipt is minted.
 ```
 
-**Receipt Output:** Sealed in `docs/evidence/milestone-4/storage-egress-audit-receipt.json` containing:
-- Inspected UID and recorded socket addresses / hostnames
-- DNS verification mapping remote IP to `api.anthropic.com`
-- Assertion of zero non-approved connections
-- Redacted header-name trace confirmation
+**Sanitized Receipt Schema (`docs/evidence/milestone-4/storage-egress-audit-receipt.json`):**
+```json
+{
+  "timestampIso": "2026-08-25T03:50:00Z",
+  "appUid": 10142,
+  "endpointUrl": "https://api.anthropic.com/v1/messages",
+  "dnsPool": ["160.79.104.0/23"],
+  "observedConnections": [
+    {
+      "remoteIp": "160.79.104.10",
+      "remotePort": 443,
+      "protocol": "TLS",
+      "hostMatched": "api.anthropic.com"
+    }
+  ],
+  "thirdPartyEgressCount": 0,
+  "unencryptedEgressCount": 0,
+  "verdict": "PASSED"
+}
+```
 
 ---
 
