@@ -18,8 +18,9 @@ Newest first, like all respectable patch notes.
 - Hardened the Android CI job's token posture to explicit `permissions:
   contents: read` with `persist-credentials: false` on checkout.
 - Bumped GitHub Actions (`actions/checkout` v5, `actions/setup-python` v6,
-  `actions/setup-java` v5) to Node 24 majors, banishing the Node 20
-  deprecation calendar invitations from our CI logs.
+  `actions/setup-java` v5, `actions/cache` v5, `actions/upload-artifact` v6)
+  to Node 24 majors, banishing the Node 20 deprecation calendar invitations
+  from our CI logs.
 
 ---
 
