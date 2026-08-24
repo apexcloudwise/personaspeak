@@ -36,7 +36,6 @@ class PersonaSpeakComposition @JvmOverloads constructor(
     },
 ) {
 
-    private val personaId = PersonaId.bundled("jeeves")
     private val sessionState = EditorSessionState()
     private val editorPort = InputConnectionEditorPort(
         sessionState = sessionState,
