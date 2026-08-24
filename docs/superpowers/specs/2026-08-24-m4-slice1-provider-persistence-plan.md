@@ -123,10 +123,11 @@ of a recoverable state):**
 | Observed state | Outcome | Recovery action |
 |---|---|---|
 | meta gen matches live blob | healthy | delete stale staging if present |
-| meta = new gen, live blob = old gen, staging matches meta (crash between steps 2 and 3) | healthy (new state) | complete the swap: rename staging → live |
+| meta = new gen, live blob = old gen, staging matches meta (crash between steps 2 and 3 of a re-save) | healthy (new state) | complete the swap: rename staging → live |
+| meta present, live blob absent, staging matches meta (crash between steps 2 and 3 of a **first** save) | healthy (new state) | complete the swap: rename staging → live |
 | meta = old gen, live blob = old gen, stray staging present (crash inside step 1) | healthy (old state) | delete orphan staging |
 | meta absent, blob present | `InvalidCredentials` | delete blob + staging |
-| meta present, blob absent (restore/partial clear) | `InvalidCredentials` | clear meta, delete staging |
+| meta present, blob absent or gen-mismatched, staging absent or also mismatched (restore/partial clear — nothing recoverable) | `InvalidCredentials` | clear meta, delete staging |
 | both absent | `Unconfigured` | none |
 | KeyStore/IO failure during load | `Unavailable` | retry once, then report |
 
