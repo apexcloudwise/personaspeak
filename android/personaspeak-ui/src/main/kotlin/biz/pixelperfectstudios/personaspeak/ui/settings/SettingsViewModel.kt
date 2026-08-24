@@ -15,8 +15,9 @@ import kotlinx.coroutines.flow.update
 class SettingsViewModel(
     private val personasRepo: PersonaRepository,
     initialDestination: SettingsDestination = SettingsDestination.Home,
-    initialPersonaId: PersonaId = PersonaId.bundled("jeeves"),
-    initialMood: Mood = Mood.DEFAULT,
+    private val sessionState: PersonaSpeakSessionState = PersonaSpeakSessionState.instance,
+    initialPersonaId: PersonaId = sessionState.activePersonaId,
+    initialMood: Mood = sessionState.defaultMood,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(
@@ -59,19 +60,21 @@ class SettingsViewModel(
     }
 
     fun selectPersona(personaId: PersonaId) {
+        sessionState.activePersonaId = personaId
         _state.update { current ->
             current.copy(
                 activePersonaId = personaId,
-                notice = "Active character updated. Takes effect on next keyboard initialization.",
+                notice = "Active character updated. Takes effect on next keyboard initialization in this session (not saved to disk).",
             )
         }
     }
 
     fun selectDefaultMood(mood: Mood) {
+        sessionState.defaultMood = mood
         _state.update { current ->
             current.copy(
                 defaultMood = mood,
-                notice = "Default mood updated. Takes effect on next keyboard initialization.",
+                notice = "Default mood updated. Takes effect on next keyboard initialization in this session (not saved to disk).",
             )
         }
     }

@@ -135,7 +135,7 @@ fun SettingsHomeScreen(
 
             // Initialization Note
             Text(
-                text = "ℹ️ Persona and mood defaults take effect on the next keyboard initialization.",
+                text = "ℹ️ Persona and mood defaults take effect on the next keyboard initialization in this session (not saved to disk).",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier

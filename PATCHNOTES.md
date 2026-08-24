@@ -22,6 +22,10 @@ Newest first, like all respectable patch notes.
   and fixed "review before replacing" notice), THE BRAIN (disabled-but-honest
   FakeProvider baseline stating cloud providers and Keystore arrive in M4), and
   TYPING (direct link to inherited AnySoftKeyboard settings).
+- Wired `PersonaSpeakSessionState` in-memory singleton handoff between the Settings
+  Activity and the IME strip, ensuring active persona and default mood selections
+  take effect on the next keyboard initialization in the session with zero disk writes
+  and comprehensive integration test coverage.
 - Kept the hard boundaries intact: zero persistence shims or storage writes (M4),
   zero onboarding graph creep (M5), and zero programmatic IME switching in the "Try
   on keyboard" guidance card.

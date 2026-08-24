@@ -9,6 +9,7 @@ import biz.pixelperfectstudios.personaspeak.personas.PersonaId
 import biz.pixelperfectstudios.personaspeak.personas.PersonaProvenance
 import biz.pixelperfectstudios.personaspeak.personas.ValidatedPersona
 import biz.pixelperfectstudios.personaspeak.ui.personas.PersonaRepository
+import biz.pixelperfectstudios.personaspeak.ui.settings.PersonaSpeakSessionState
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -18,8 +19,9 @@ import kotlinx.coroutines.launch
 class RewritePanelViewModel(
     private val coordinator: RewriteCoordinator,
     private val personas: PersonaRepository,
-    initialPersonaId: PersonaId = PersonaId.bundled("jeeves"),
-    initialMood: Mood = Mood.DEFAULT,
+    private val sessionState: PersonaSpeakSessionState = PersonaSpeakSessionState.instance,
+    initialPersonaId: PersonaId = sessionState.activePersonaId,
+    initialMood: Mood = sessionState.defaultMood,
     @Suppress("UNUSED_PARAMETER") savedStateHandle: SavedStateHandle? = null,
 ) : ViewModel() {
 
@@ -61,6 +63,7 @@ class RewritePanelViewModel(
 
     fun selectPersona(personaId: PersonaId) {
         if (editorFinished) return
+        sessionState.activePersonaId = personaId
         activePersona = resolvePersona(personaId)
         _state.value = RewritePanelState.Resting(activePersona, activeMood)
     }
@@ -78,6 +81,7 @@ class RewritePanelViewModel(
 
     fun selectMood(mood: Mood) {
         if (editorFinished) return
+        sessionState.defaultMood = mood
         activeMood = mood
         _state.value = RewritePanelState.Resting(activePersona, activeMood)
     }

@@ -7,10 +7,12 @@ import biz.pixelperfectstudios.personaspeak.personas.PersonaProvenance
 import biz.pixelperfectstudios.personaspeak.personas.ValidatedPersona
 import biz.pixelperfectstudios.personaspeak.ui.personas.PersonaRepository
 import biz.pixelperfectstudios.personaspeak.ui.personas.PersonaSummary
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
+import org.junit.Before
 import org.junit.Test
 
 class SettingsViewModelTest {
@@ -52,6 +54,12 @@ class SettingsViewModelTest {
             }
     }
 
+    @Before
+    @After
+    fun resetSession() {
+        PersonaSpeakSessionState.instance.reset()
+    }
+
     @Test
     fun `initial state loads personas and defaults to Home`() {
         val vm = SettingsViewModel(personasRepo = fakeRepo)
@@ -90,6 +98,7 @@ class SettingsViewModelTest {
 
         val state = vm.state.value
         assertEquals(schultz.id, state.activePersonaId)
+        assertEquals(schultz.id, PersonaSpeakSessionState.instance.activePersonaId)
         assertTrue(state.notice!!.contains("Takes effect on next keyboard initialization"))
     }
 
@@ -100,6 +109,7 @@ class SettingsViewModelTest {
 
         val state = vm.state.value
         assertEquals(Mood.Witty, state.defaultMood)
+        assertEquals(Mood.Witty, PersonaSpeakSessionState.instance.defaultMood)
         assertTrue(state.notice!!.contains("Takes effect on next keyboard initialization"))
     }
 

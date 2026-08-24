@@ -24,6 +24,7 @@ import biz.pixelperfectstudios.personaspeak.ui.personas.BundledPersonaRepository
 import biz.pixelperfectstudios.personaspeak.ui.rewrite.RewriteCoordinator
 import biz.pixelperfectstudios.personaspeak.ui.rewrite.RewritePanel
 import biz.pixelperfectstudios.personaspeak.ui.rewrite.RewritePanelViewModel
+import biz.pixelperfectstudios.personaspeak.ui.settings.PersonaSpeakSessionState
 import biz.pixelperfectstudios.personaspeak.ui.settings.PersonaSpeakSettingsActivity
 
 class PersonaSpeakComposition @JvmOverloads constructor(
@@ -89,10 +90,13 @@ class PersonaSpeakComposition @JvmOverloads constructor(
                     modelClass: Class<T>,
                     extras: CreationExtras,
                 ): T {
+                    val session = PersonaSpeakSessionState.instance
                     return RewritePanelViewModel(
                         coordinator = coordinator,
                         personas = personaRepo,
-                        initialPersonaId = personaId,
+                        sessionState = session,
+                        initialPersonaId = session.activePersonaId,
+                        initialMood = session.defaultMood,
                         savedStateHandle = SavedStateHandle(),
                     ) as T
                 }
