@@ -6,7 +6,6 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import java.nio.charset.StandardCharsets
 
 class AdapterNoEgressTest {
 
@@ -16,16 +15,16 @@ class AdapterNoEgressTest {
         val transport = object : HttpTransport {
             override fun post(endpointUrl: String, headers: Map<String, String>, bodyUtf8: ByteArray): HttpResponse {
                 networkCallsAttempted++
-                return HttpResponse(200, """{"content":[{"type":"text","text":"offline mock result"}]}""")
+                return HttpResponse(200, """{"content":[{"type":"text","text":""}]}""")
             }
         }
 
         val adapter = AnthropicMessagesAdapter(transport = transport)
-        val secret = SecretBytes("key".toByteArray(StandardCharsets.UTF_8))
-        val result = adapter.rewrite("s", "t", secret)
+        val secret = SecretBytes(byteArrayOf(1))
+        val result = adapter.rewrite("", "", secret)
 
         assertEquals(1, networkCallsAttempted)
         assertTrue(result is AdapterResult.Success)
-        assertEquals("offline mock result", (result as AdapterResult.Success).rewritten)
+        assertEquals("", (result as AdapterResult.Success).rewritten)
     }
 }

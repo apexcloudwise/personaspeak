@@ -139,10 +139,11 @@ echo "  OK ($java_version_line)"
 echo "[3/12] verifier fixture suites..."
 for suite in verify-ask-closure-test verify-dictionary-licenses-test \
              verify-upstream-ledger-test verify-single-apk-test \
-             verify-unified-build-flag-test; do
+             verify-unified-build-flag-test verify-no-secret-logging-test; do
     echo "  - $suite"
     run_checked "$suite" bash "$script_dir/tests/$suite.sh"
 done
+
 echo "  OK"
 
 # --- 4. Exact ASK closure ---------------------------------------------------

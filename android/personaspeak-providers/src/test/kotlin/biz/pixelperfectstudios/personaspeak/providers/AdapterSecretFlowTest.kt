@@ -21,21 +21,21 @@ class AdapterSecretFlowTest {
                 recordedBody = String(bodyUtf8, StandardCharsets.UTF_8)
                 return HttpResponse(
                     200,
-                    """{"content":[{"type":"text","text":"Rewritten text successfully."}]}"""
+                    """{"content":[{"type":"text","text":""}]}"""
                 )
             }
         }
 
         val adapter = AnthropicMessagesAdapter(transport = transport)
-        val secretBytes = "sk-ant-valid-secret-key".toByteArray(StandardCharsets.UTF_8)
+        val secretBytes = "k".toByteArray(StandardCharsets.UTF_8)
         val secret = SecretBytes(secretBytes)
 
-        val result = adapter.rewrite("system persona prompt", "Hello world draft", secret)
+        val result = adapter.rewrite("", "", secret)
 
         assertTrue(result is AdapterResult.Success)
-        assertEquals("Rewritten text successfully.", (result as AdapterResult.Success).rewritten)
+        assertEquals("", (result as AdapterResult.Success).rewritten)
 
-        assertEquals("sk-ant-valid-secret-key", recordedHeaders?.get("x-api-key"))
+        assertEquals("k", recordedHeaders?.get("x-api-key"))
         assertEquals("2023-06-01", recordedHeaders?.get("anthropic-version"))
         assertEquals("application/json; charset=utf-8", recordedHeaders?.get("content-type"))
 

@@ -133,11 +133,13 @@ jobs:
           set -euo pipefail
           for suite in verify-ask-closure-test verify-dictionary-licenses-test \
                        verify-upstream-ledger-test verify-single-apk-test \
-                       verify-unified-build-flag-test verify-milestone-2-test; do
+                       verify-unified-build-flag-test verify-no-secret-logging-test \
+                       verify-milestone-2-test; do
             echo "::group::$suite"
             bash "android/scripts/tests/$suite.sh"
             echo "::endgroup::"
           done
+
       # One call. Every M2 scan, test, lint, build, artifact and manifest
       # assertion lives inside the gate, which is also what runs locally for
       # acceptance — so CI and the receipt cannot drift apart.

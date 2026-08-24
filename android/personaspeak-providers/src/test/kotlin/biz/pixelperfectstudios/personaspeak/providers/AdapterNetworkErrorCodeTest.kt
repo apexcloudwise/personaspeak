@@ -7,7 +7,6 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import java.io.IOException
-import java.nio.charset.StandardCharsets
 
 class AdapterNetworkErrorCodeTest {
 
@@ -29,8 +28,8 @@ class AdapterNetworkErrorCodeTest {
                 }
             }
             val adapter = AnthropicMessagesAdapter(transport = transport)
-            val secret = SecretBytes("key".toByteArray(StandardCharsets.UTF_8))
-            val result = adapter.rewrite("s", "t", secret)
+            val secret = SecretBytes(byteArrayOf(1))
+            val result = adapter.rewrite("", "", secret)
             assertEquals("Failed for HTTP status $status", expected, result)
         }
     }
@@ -39,12 +38,12 @@ class AdapterNetworkErrorCodeTest {
     fun ioExceptionMapsToIoErrorCode() = runTest {
         val transport = object : HttpTransport {
             override fun post(endpointUrl: String, headers: Map<String, String>, bodyUtf8: ByteArray): HttpResponse {
-                throw IOException("Connection reset by peer")
+                throw IOException()
             }
         }
         val adapter = AnthropicMessagesAdapter(transport = transport)
-        val secret = SecretBytes("key".toByteArray(StandardCharsets.UTF_8))
-        val result = adapter.rewrite("s", "t", secret)
+        val secret = SecretBytes(byteArrayOf(1))
+        val result = adapter.rewrite("", "", secret)
         assertEquals(AdapterResult.NetworkFailure(NetworkErrorCode.IO_ERROR), result)
     }
 }

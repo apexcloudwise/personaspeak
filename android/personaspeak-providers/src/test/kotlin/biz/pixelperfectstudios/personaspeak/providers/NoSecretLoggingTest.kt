@@ -1,6 +1,7 @@
 package biz.pixelperfectstudios.personaspeak.providers
 
 import org.junit.Assert.assertTrue
+import org.junit.Assert.fail
 import org.junit.Test
 import java.io.File
 
@@ -8,11 +9,18 @@ class NoSecretLoggingTest {
 
     @Test
     fun noSecretLoggingCallsInProvidersModule() {
-        val srcDir = File("src/main/kotlin")
-        if (!srcDir.exists()) return // skip if run from different working dir
+        val candidates = listOf(
+            File("src/main/kotlin"),
+            File("android/personaspeak-providers/src/main/kotlin"),
+            File("personaspeak-providers/src/main/kotlin"),
+            File("../personaspeak-providers/src/main/kotlin")
+        )
+        val srcDir = candidates.firstOrNull { it.isDirectory }
+            ?: fail("Could not locate personaspeak-providers source directory; checked: $candidates")
 
-        val forbiddenKeywords = listOf("secret", "x-api-key", "bearer", "authorization")
-        val kotlinFiles = srcDir.walkTopDown().filter { it.extension == "kt" }.toList()
+        val forbiddenKeywords = listOf("secret", "x-api-key", "bearer", "authorization", "credential", "token", "password")
+        val kotlinFiles = (srcDir as File).walkTopDown().filter { it.extension == "kt" }.toList()
+        assertTrue("No kotlin files found in $srcDir", kotlinFiles.isNotEmpty())
 
         for (file in kotlinFiles) {
             val lines = file.readLines()
