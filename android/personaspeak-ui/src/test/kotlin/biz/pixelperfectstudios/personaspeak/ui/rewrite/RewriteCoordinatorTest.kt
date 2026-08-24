@@ -139,6 +139,21 @@ class RewriteCoordinatorTest {
         assertEquals("the original draft", provider.calls.single().second)
     }
 
+    @Test
+    fun `request with mood passes mood prompt modifier to provider`() {
+        val snapshot = aSnapshot(draft = "the original draft")
+        val editor = FakeEditorPort(capture = CaptureResult.Captured(snapshot))
+        val provider = FakeCompletionProvider(result = Result.success("witty rewrite"))
+
+        val result = runBlocking {
+            coordinator(editor, provider).request(PERSONA_ID, biz.pixelperfectstudios.personaspeak.personas.Mood.Witty)
+        }
+
+        assertTrue(result is RewriteRequestResult.Ready)
+        val prompt = provider.calls.single().first
+        assertTrue(prompt.contains(biz.pixelperfectstudios.personaspeak.personas.Mood.Witty.promptModifier))
+    }
+
     // -----------------------------------------------------------------
     // Malformed responses
     // -----------------------------------------------------------------

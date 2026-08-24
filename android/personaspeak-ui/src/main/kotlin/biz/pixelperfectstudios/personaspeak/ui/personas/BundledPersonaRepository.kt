@@ -15,6 +15,12 @@ class BundledPersonaRepository(private val source: PersonaDocumentSource) : Pers
             .sortedBy { it.id.value }
     }
 
+    override fun loadAll(): Result<List<ValidatedPersona>> = runCatching {
+        source.slugs().getOrThrow()
+            .map { slug -> validate(slug) }
+            .sortedBy { it.id.value }
+    }
+
     override fun load(id: PersonaId): Result<ValidatedPersona> = runCatching {
         require(id.value.startsWith(BUNDLED_PREFIX)) { "unknown persona source '${id.value.substringBefore(':')}'" }
         val slug = id.value.removePrefix(BUNDLED_PREFIX)

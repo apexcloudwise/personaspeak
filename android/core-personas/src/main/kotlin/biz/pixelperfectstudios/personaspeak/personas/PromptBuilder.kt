@@ -9,7 +9,7 @@ package biz.pixelperfectstudios.personaspeak.personas
  */
 object PromptBuilder {
 
-    fun build(persona: Persona): String {
+    fun build(persona: Persona, mood: Mood? = null): String {
         val lines = mutableListOf(
             "You are a text style-transfer engine. Rewrite the user's message so it " +
                 "sounds like it was spoken by ${persona.name}${persona.context}.",
@@ -35,6 +35,11 @@ object PromptBuilder {
         if (persona.notes.isNotEmpty()) {
             lines.add("")
             lines.add("Notes: ${persona.notes.trim()}")
+        }
+
+        if (mood != null) {
+            lines.add("")
+            lines.add(mood.promptModifier)
         }
 
         lines.add("")

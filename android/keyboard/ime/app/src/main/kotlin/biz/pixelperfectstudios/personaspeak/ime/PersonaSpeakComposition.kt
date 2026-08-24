@@ -43,10 +43,11 @@ class PersonaSpeakComposition @JvmOverloads constructor(
         editorInfoSupplier = editorInfoSupplier,
     )
     private val provider = FakeProvider()
+    private val personaRepo = BundledPersonaRepository(
+        AssetPersonaDocumentSource(context.assets),
+    )
     private val coordinator = RewriteCoordinator(
-        personas = BundledPersonaRepository(
-            AssetPersonaDocumentSource(context.assets),
-        ),
+        personas = personaRepo,
         editor = editorPort,
         provider = provider,
     )
@@ -90,7 +91,8 @@ class PersonaSpeakComposition @JvmOverloads constructor(
                 ): T {
                     return RewritePanelViewModel(
                         coordinator = coordinator,
-                        personaId = personaId,
+                        personas = personaRepo,
+                        initialPersonaId = personaId,
                         savedStateHandle = SavedStateHandle(),
                     ) as T
                 }
@@ -110,6 +112,10 @@ class PersonaSpeakComposition @JvmOverloads constructor(
                 preExpansionImeHeightPx = {
                     (composeView.parent as? View)?.height ?: 0
                 },
+                onOpenPersonaPicker = vm::openPersonaPicker,
+                onSelectPersona = vm::selectPersona,
+                onOpenMoodPicker = vm::openMoodPicker,
+                onSelectMood = vm::selectMood,
             )
         }
     }

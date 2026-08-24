@@ -10,6 +10,22 @@ Newest first, like all respectable patch notes.
 
 ---
 
+## 2026-08-24 — The strip gets its wardrobe: real states, character tiles, and mood chips
+
+- Replaced the placeholder "Rewrite" button with the full dedicated-row state
+  machine in `:personaspeak-ui`: Resting chips (emoji + name + mood), in-row
+  Persona Picker grid, Mood Picker, Review with `↻ Again` fresh re-capture,
+  `Use this` guarded apply, and the complete 14-state typed error card family.
+- Plumbed the product-owned Mood catalog (`polite`, `witty`, `blunt`,
+  `apologetic`, `formal`) and prompt modifiers through `core-personas` and
+  `RewriteCoordinator` while keeping golden prompt tests byte-identical when
+  unmodified.
+- Enforced Android's 48dp minimum interactive touch target floor across all
+  chips, buttons, tiles, and close controls; pinned result body scroll bounding
+  to the frozen `min(320dp, 40% pre-expansion height)` cap.
+
+---
+
 ## 2026-08-24 — CI supply chain gets adult supervision
 
 - Added the official verified SHA-256 (`distributionSha256Sum`) to
