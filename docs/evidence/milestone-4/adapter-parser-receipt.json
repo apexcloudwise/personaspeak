@@ -10,7 +10,8 @@
     "avdName": "M4_Adapter_Qual_Fixture",
     "systemImage": "system-images;android-34;google_apis;x86_64",
     "runtime": "Android Runtime (ART) 14.0",
-    "packageId": "biz.pixelperfectstudios.personaspeak.debug"
+    "packageId": "biz.pixelperfectstudios.personaspeak.debug",
+    "runnerComponent": "biz.pixelperfectstudios.personaspeak.data.harness.PersonaspeakAdapterHarnessActivity"
   },
   "modeA_offlineValidation": {
     "executionMechanism": "Seam-driven on-device test runner via MockAndroidHttpTransport",

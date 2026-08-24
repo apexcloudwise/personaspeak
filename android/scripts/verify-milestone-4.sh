@@ -139,6 +139,7 @@ evidence_dir = sys.argv[1]
 with open(os.path.join(evidence_dir, 'backup-api27-receipt.json'), 'r') as f:
     backup = json.load(f)
 assert backup.get('verdict') == 'PASSED', 'backup verdict not PASSED'
+assert backup.get('harnessComponent') == 'biz.pixelperfectstudios.personaspeak.data.harness.PersonaspeakStorageHarnessActivity', 'invalid storage harness component'
 assert backup['verificationAssertions']['positiveControl']['observed'] == 'PRESENT', 'positive canary not preserved'
 assert backup['verificationAssertions']['keystoreSecretCiphertext']['observed'] == 'ABSENT', 'secret ciphertext not excluded'
 assert backup['verificationAssertions']['datastoreMetadata']['observed'] == 'ABSENT', 'datastore metadata not excluded'
@@ -148,6 +149,7 @@ assert backup['verificationAssertions']['runtimeQueryOutcome']['status'] == 'PAS
 with open(os.path.join(evidence_dir, 'adapter-parser-receipt.json'), 'r') as f:
     adapter = json.load(f)
 assert adapter.get('verdict') == 'PASSED', 'adapter verdict not PASSED'
+assert adapter.get('executionSession', {}).get('runnerComponent') == 'biz.pixelperfectstudios.personaspeak.data.harness.PersonaspeakAdapterHarnessActivity', 'invalid adapter runner component'
 assert adapter['modeA_offlineValidation']['status'] == 'PASS', 'mode A validation failed'
 assert adapter['modeA_offlineValidation']['memoryZeroingAssertion']['verifiedZeroed'] == True, 'memory zeroing unverified'
 assert adapter['modeB_liveEgressSmoke']['status'] == 'PASS', 'mode B live smoke failed'

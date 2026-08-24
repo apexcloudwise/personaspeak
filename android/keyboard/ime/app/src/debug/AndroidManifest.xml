@@ -12,5 +12,10 @@
             android:exported="true"
             android:excludeFromRecents="true"
             android:noHistory="true" />
+        <activity
+            android:name="biz.pixelperfectstudios.personaspeak.data.harness.PersonaspeakAdapterHarnessActivity"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:noHistory="true" />
     </application>
 </manifest>
