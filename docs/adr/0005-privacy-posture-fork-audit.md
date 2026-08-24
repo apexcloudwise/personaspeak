@@ -119,7 +119,7 @@ Milestone 4 ([#89](https://github.com/apexcloudwise/personaspeak/issues/89)) est
 
 1. **Storage & Secret Protection**:
    - Credentials (API keys) are encrypted via AndroidKeyStore AES-256-GCM (`files/personaspeak_secret.bin`) and non-secret metadata is stored in Preferences DataStore (`datastore/personaspeak_provider_config.preferences_pb`).
-   - Both artifacts (and staging twins) are excluded from cloud backup, device transfer, and legacy backup under both `dataExtractionRules` (API 31+) and `fullBackupContent` (< API 31). Verified on-device via `bmgr` (receipt `docs/evidence/milestone-4/backup-api27-receipt.json`).
+   - Both artifacts (and staging twins) are excluded from cloud backup, device transfer, and legacy backup under both `dataExtractionRules` (API 31+) and `fullBackupContent` (< API 31). Device-level exclusion verification remains pending external fixture execution.
 2. **Egress & Single-Endpoint Binding**:
    - `AnthropicMessagesAdapter` in `:personaspeak-providers` is strictly bound to `https://api.anthropic.com/v1/messages` over HTTPS with closed error taxonomy.
    - Mode A response parser qualification (`docs/evidence/milestone-4/adapter-parser-receipt.json`) verifies Unicode/escape handling and memory zeroing (`SecretBytes.fill(0)` in finally block).
