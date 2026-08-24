@@ -19,7 +19,7 @@ import kotlinx.coroutines.launch
  *
  * Intents:
  *  - action MODE_A — executes AnthropicMessagesAdapter with MockAndroidHttpTransport and synthetic payload
- *  - action MODE_B (extra "key": String?) — executes AnthropicMessagesAdapter with DefaultHttpTransport
+ *  - action MODE_B — executes AnthropicMessagesAdapter with DefaultHttpTransport using store credentials
  */
 class PersonaspeakAdapterHarnessActivity : Activity() {
 
@@ -48,12 +48,22 @@ class PersonaspeakAdapterHarnessActivity : Activity() {
                         text = "draft text",
                         secret = secret,
                     )
-                    val extractedLen = (result as? AdapterResult.Success)?.rewritten?.length ?: 0
-                    android.util.Log.i(tag, "extractTextFromResponse extracted $extractedLen chars")
-                    if (secret.value.all { it == 0.toByte() }) {
-                        android.util.Log.i(tag, "SecretBytes.fill(0) verified executed")
+                    when (result) {
+                        is AdapterResult.Success -> {
+                            val extractedLen = result.rewritten.length
+                            android.util.Log.i(tag, "extractTextFromResponse extracted $extractedLen chars")
+                            if (secret.value.all { it == 0.toByte() }) {
+                                android.util.Log.i(tag, "SecretBytes.fill(0) verified executed")
+                            }
+                            android.util.Log.i(tag, "Mode A complete: SUCCESS")
+                        }
+                        is AdapterResult.NetworkFailure -> {
+                            android.util.Log.e(tag, "Mode A failed with NetworkFailure: ${result.code}")
+                        }
+                        is AdapterResult.AuthFailure -> {
+                            android.util.Log.e(tag, "Mode A failed with AuthFailure")
+                        }
                     }
-                    android.util.Log.i(tag, "Mode A complete: SUCCESS")
                     finish()
                 }
             }
@@ -62,18 +72,27 @@ class PersonaspeakAdapterHarnessActivity : Activity() {
                     android.util.Log.i(tag, "Starting Mode B live egress smoke test")
                     val store = DataStoreProviderConfigStore.create(this@PersonaspeakAdapterHarnessActivity, android.os.Build.VERSION.SDK_INT)
                     val snapshot = store.load()
-                    val keyBytes = snapshot.secret?.value ?: intent.getStringExtra("key")?.toByteArray() ?: ByteArray(32).also { java.security.SecureRandom().nextBytes(it) }
+                    val keyBytes = snapshot.secret?.value ?: ByteArray(32).also { java.security.SecureRandom().nextBytes(it) }
                     val secret = SecretBytes(keyBytes)
                     android.util.Log.i(tag, "Ephemeral key injected into execution context")
                     val adapter = AnthropicMessagesAdapter()
-                    android.util.Log.i(tag, "HTTP Connection established (TLS 1.3)")
                     val result = adapter.rewrite(
                         system = "Respond with ping only",
                         text = "ping",
                         secret = secret,
                     )
-                    android.util.Log.i(tag, "HTTP Status 200 OK received")
-                    android.util.Log.i(tag, "Response payload text extracted successfully")
+                    when (result) {
+                        is AdapterResult.Success -> {
+                            android.util.Log.i(tag, "HTTP Status 200 OK received: ${result.rewritten.length} chars")
+                            android.util.Log.i(tag, "Response payload text extracted successfully")
+                        }
+                        is AdapterResult.NetworkFailure -> {
+                            android.util.Log.i(tag, "HTTP Status outcome: NetworkFailure ${result.code}")
+                        }
+                        is AdapterResult.AuthFailure -> {
+                            android.util.Log.i(tag, "HTTP Status outcome: AuthFailure")
+                        }
+                    }
                     if (secret.value.all { it == 0.toByte() }) {
                         android.util.Log.i(tag, "SecretBytes.fill(0) executed")
                     }
