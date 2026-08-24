@@ -6,10 +6,11 @@
 **Plan precedent:** PR #91 (`be0e563`), PR #94 (`c54ad91`)  
 **Reviewer assignment:** Seraph (@seraph-pixelperfect), Cassie (@cassievale-pixelperfect), Sigrid (@sigrid-pixelperfect)  
 
-**Revision r5** — addressing full reviewer feedback (Seraph, Cassie, Sigrid):
+**Revision r6** — addressing Cassie's Mode B closeout prerequisite alignment:
+- **Cassie (Mode B mandatory closeout requirement in §3.2 & §10):** Explicitly stated that Mode B (live egress smoke) must execute at least once to produce the live network socket observations required for the §4.2 `storage-egress-audit-receipt.json` closeout artifact (routine re-verification may use Mode A).
 - **Sigrid & Cassie §4.2 (Deterministic concurrent socket capture protocol):** Specified the required concurrent socket sampling script (`sample-egress-sockets.sh` polling `/proc/net/tcp` at 100ms intervals during Mode-B execution), forward DNS IP snapshot matching, strict port 443 HTTPS assertions, fail-closed rule on any unapproved egress, and exact sanitized JSON schema for `storage-egress-audit-receipt.json`.
 - **Sigrid 1 & S1 (Harness SecureRandom seeding & ledger):** Planned update to `PersonaspeakStorageHarnessActivity` (`ime/app/src/debug`) to generate on-device random bytes via `SecureRandom` on `ACTION_SEED`, eliminating the hardcoded string literal; ledgered for `UPSTREAM-MODIFIED.md`.
-- **S2 & Sigrid 2 (Credential lifecycle & transport modes):** Defined exact two-mode execution for the parser journey: Mode A (injectable `HttpTransport` seam on-device for offline ART parser validation) and Mode B (optional live egress smoke with strict out-of-band host provisioning, ephemeral memory injection, immediate revocation, and sanitized receipt retention).
+- **S2 & Sigrid 2 (Credential lifecycle & transport modes):** Defined exact two-mode execution for the parser journey: Mode A (injectable `HttpTransport` seam on-device for offline ART parser validation) and Mode B (live egress smoke with strict out-of-band host provisioning, ephemeral memory injection, immediate revocation, and sanitized receipt retention).
 - **S3 (Header citation):** Fixed PR #94 approved plan head to `c54ad91`.
 - **Sigrid 3 & Seraph §10 (Enablement governance & durable destination):** Defined durable documentation destinations (`ROADMAP.md`, `docs/adr/0005-privacy-posture-fork-audit.md`, #89 closeout) and explicitly recorded structural default-disabled wiring.
 - **Minor (Token discovery):** Added `dumpsys backup` token discovery fallback for `bmgr restore`.
@@ -154,8 +155,9 @@ To maintain absolute data privacy and provide a reproducible testing setup, the 
 - **Fixture:** Pre-recorded structural synthetic Anthropic response payload (`{"id":"msg_1","type":"message","role":"assistant","content":[{"type":"text","text":"rewritten text"}]}`).
 - **Outcome:** Validates JSON string escaping, payload deserialization, `extractTextFromResponse` Unicode/escape handling, and `secret.value.fill(0)` zeroing on Android ART without network egress or real credentials.
 
-#### Mode B — Optional Live Egress Smoke Test (Strict Out-of-Band Lifecycle)
-- **Credential Authority & Provisioning:** If a live egress smoke is performed, a dedicated disposable, rate-limited test API key is provisioned out-of-band.
+#### Mode B — Live Egress Smoke Test (Mandatory M4 Closeout Prerequisite)
+- **Mandatory Closeout Requirement:** Mode B **must be executed at least once** on a disposable device to generate the real live socket traffic observed and verified by the §4.2 egress audit receipt (`storage-egress-audit-receipt.json`). Routine offline re-verification may subsequently use Mode A.
+- **Credential Authority & Provisioning:** A dedicated disposable, rate-limited test API key is provisioned out-of-band for this run.
 - **Ephemeral Injection:** The key is passed directly from host environment (`PERSONASPEAK_TEST_ANTHROPIC_KEY`) into the device runner memory scope. It is **never** committed to git, written to disk, passed via intent extra, or logged in shell history.
 - **Input Sanitization:** Minimal synthetic prompt token (`"ping"`) per ADR-0005.
 - **Immediate Revocation & Cleanup:** Upon request completion, `secret.value.fill(0)` wipes in-memory bytes; `ACTION_CLEAR` wipes storage; the test key is revoked out-of-band immediately.
@@ -189,7 +191,7 @@ Perform an exhaustive inspection of `/data/data/biz.pixelperfectstudios.personas
 
 ### 4.2 Egress & network transport behavioral audit
 
-To independently prove zero third-party egress and strict single-endpoint binding on the real device (beyond compile-time/unit assertions), the pass executes a deterministic concurrent socket sampling protocol:
+To independently prove zero third-party egress and strict single-endpoint binding on the real device (beyond compile-time/unit assertions), the pass executes a deterministic concurrent socket sampling protocol during Mode-B live execution:
 
 ```bash
 # 1. Resolve application UID and PID on the disposable device
@@ -331,8 +333,8 @@ Level 1: JVM Unit Tests (:personaspeak-providers, :personaspeak-data, :personasp
 - [ ] **M4 Slice 3 Implementation & Receipts:**
   - [ ] Debug harness `SecureRandom` seeding implemented & ledgered in `UPSTREAM-MODIFIED.md`.
   - [ ] API 26/27 legacy backup exclusion verified and receipt sealed (`backup-api27-receipt.json`).
-  - [ ] Disposable-device parser journey verified and receipt sealed (`adapter-parser-receipt.json`).
-  - [ ] Storage & egress audit completed and receipt sealed (`storage-egress-audit-receipt.json`).
+  - [ ] Disposable-device parser journey verified across Mode A (offline) and Mode B (mandatory live closeout prerequisite) with receipt sealed (`adapter-parser-receipt.json`).
+  - [ ] Storage & egress audit completed with Mode B live traffic observations and receipt sealed (`storage-egress-audit-receipt.json`).
   - [ ] Key-String §10 checklist note formally resolved and documented.
   - [ ] Provider structural default-disabled decision recorded in closeout, `docs/adr/0005-privacy-posture-fork-audit.md`, and `ROADMAP.md`.
   - [ ] Milestone 4 marked complete on #89.

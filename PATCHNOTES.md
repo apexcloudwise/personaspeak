@@ -16,9 +16,9 @@ Newest first, like all respectable patch notes.
   Milestone 4: behavioral API 26/27 legacy backup-exclusion pass via `bmgr` and the
   merged debug harness (`...data.harness.SEED/QUERY/CLEAR/CANARY`) upgraded to
   on-device `SecureRandom` byte generation, disposable-device Anthropic
-  response-parser journey across offline and live transport modes, package-private
-  storage and socket-level egress audit receipts, and the formal §10 key-String
-  checklist resolution.
+  response-parser journey across offline and live transport modes (with Mode B
+  mandatory for closeout egress evidence), package-private storage and socket-level
+  egress audit receipts, and the formal §10 key-String checklist resolution.
 - Anthropic adapter remains structurally disabled by default at merge; cloud egress is
   explicitly gated on user opt-in in Milestone 5.
 - Plan-only PR: no production code, no network calls, no keystore modifications. (#96)
