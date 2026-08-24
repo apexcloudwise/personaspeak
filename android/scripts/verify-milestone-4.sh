@@ -61,9 +61,12 @@ echo "android-root: $root"
 echo "repo-root:    $repo_root"
 echo ""
 
-# --- 1. No secret logging verifier -----------------------------------------
-echo "[1/4] verifying zero secret logging in :personaspeak-providers..."
+# --- 1. No secret logging verifier & Kotlin compilation --------------------
+echo "[1/4] verifying zero secret logging and debug compilation..."
 run_checked "no-secret-logging" bash "$script_dir/verify-no-secret-logging.sh" "$root"
+if [ -f "$root/gradlew" ]; then
+    run_checked "compileDebugKotlin" "$root/gradlew" -p "$root" :ime:app:compileDebugKotlin --console=plain --no-daemon
+fi
 echo "  OK"
 
 # --- 2. Upstream ASK closure & ledger ---------------------------------------

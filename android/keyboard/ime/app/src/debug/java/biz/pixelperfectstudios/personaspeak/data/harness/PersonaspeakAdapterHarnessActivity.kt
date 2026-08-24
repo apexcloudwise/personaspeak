@@ -41,11 +41,14 @@ class PersonaspeakAdapterHarnessActivity : Activity() {
                     android.util.Log.i(tag, "Injected MockAndroidHttpTransport synthetic payload (length=124)")
                     val secret = SecretBytes("test-dummy-key".toByteArray())
                     val adapter = AnthropicMessagesAdapter(
-                        secret = secret,
                         transport = mockTransport,
                     )
-                    val result = adapter.rewrite("system prompt", "draft text")
-                    val extractedLen = (result as? AdapterResult.Success)?.text?.length ?: 0
+                    val result = adapter.rewrite(
+                        system = "system prompt",
+                        text = "draft text",
+                        secret = secret,
+                    )
+                    val extractedLen = (result as? AdapterResult.Success)?.rewritten?.length ?: 0
                     android.util.Log.i(tag, "extractTextFromResponse extracted $extractedLen chars")
                     if (secret.value.all { it == 0.toByte() }) {
                         android.util.Log.i(tag, "SecretBytes.fill(0) verified executed")
@@ -62,9 +65,13 @@ class PersonaspeakAdapterHarnessActivity : Activity() {
                     val keyBytes = snapshot.secret?.value ?: intent.getStringExtra("key")?.toByteArray() ?: ByteArray(32).also { java.security.SecureRandom().nextBytes(it) }
                     val secret = SecretBytes(keyBytes)
                     android.util.Log.i(tag, "Ephemeral key injected into execution context")
-                    val adapter = AnthropicMessagesAdapter(secret = secret)
+                    val adapter = AnthropicMessagesAdapter()
                     android.util.Log.i(tag, "HTTP Connection established (TLS 1.3)")
-                    val result = adapter.rewrite("Respond with ping only", "ping")
+                    val result = adapter.rewrite(
+                        system = "Respond with ping only",
+                        text = "ping",
+                        secret = secret,
+                    )
                     android.util.Log.i(tag, "HTTP Status 200 OK received")
                     android.util.Log.i(tag, "Response payload text extracted successfully")
                     if (secret.value.all { it == 0.toByte() }) {
