@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  PersonaSpeak M4 slice 1 (issue #90): provider-configuration credentials and
+  their metadata never leave the device. Restored ciphertext is undecryptable
+  off-device anyway (the AndroidKeyStore key is non-exportable), so exclusion
+  is both the privacy story and the honest behavior.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="file" path="personaspeak_secret.bin" />
+        <exclude domain="file" path="personaspeak_secret.bin.staging" />
+        <exclude domain="file" path="datastore/personaspeak_provider_config.preferences_pb" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="file" path="personaspeak_secret.bin" />
+        <exclude domain="file" path="personaspeak_secret.bin.staging" />
+        <exclude domain="file" path="datastore/personaspeak_provider_config.preferences_pb" />
+    </device-transfer>
+</data-extraction-rules>
