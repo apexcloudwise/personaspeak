@@ -10,6 +10,21 @@ Newest first, like all respectable patch notes.
 
 ---
 
+## 2026-08-25 — The Brain prepares for graduation: Milestone 4 closeout plan lands
+
+- The M4 slice-3 plan establishes the verification protocol and closeout path for
+  Milestone 4: behavioral API 26/27 legacy backup-exclusion pass via `bmgr` and the
+  merged debug harness (`...data.harness.SEED/QUERY/CLEAR/CANARY`) upgraded to
+  on-device `SecureRandom` byte generation, disposable-device Anthropic
+  response-parser journey across offline and live transport modes (with Mode B
+  mandatory for closeout egress evidence), package-private storage and socket-level
+  egress audit receipts, and the formal §10 key-String checklist resolution.
+- Anthropic adapter remains structurally disabled by default at merge; cloud egress is
+  explicitly gated on user opt-in in Milestone 5.
+- Plan-only PR: no production code, no network calls, no keystore modifications. (#96)
+
+---
+
 ## 2026-08-25 — The Brain talks to Claude: Anthropic Messages API adapter lands
 
 - Shipped `:personaspeak-providers`, the M4 slice-2 provider adapter foundation:
