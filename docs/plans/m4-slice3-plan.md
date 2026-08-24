@@ -6,7 +6,8 @@
 **Plan precedent:** PR #91 (`be0e563`), PR #94 (`c54ad91`)  
 **Reviewer assignment:** Seraph (@seraph-pixelperfect), Cassie (@cassievale-pixelperfect), Sigrid (@sigrid-pixelperfect)  
 
-**Revision r2** — addressing plan-gate reviews (Seraph S1–S3, Sigrid 1–3):
+**Revision r3** — addressing reviewer seats (Seraph S1–S3, Sigrid 1–3, Cassie §4.2):
+- **Cassie §4.2 (Concrete behavioral network transport observation):** Added concrete `adb`/`proc/net`/`netstat` command sequence for observing real device sockets by app UID, DNS cross-checking against `api.anthropic.com`, and redacting proxy option for header name/SNI capture.
 - **S1 & Sigrid 1 (Harness & protocol correction):** Corrected package to `biz.pixelperfectstudios.personaspeak.data.harness.PersonaspeakStorageHarnessActivity`, matched intent action dispatch (`...harness.SEED/QUERY/CLEAR/CANARY`), updated positive-control canary to `personaspeak_backup_canary.txt`, and eliminated credential-carrying intent extras.
 - **S2 & Sigrid 2 (Credential lifecycle & transport modes):** Defined exact two-mode execution for the parser journey: Mode A (injectable `HttpTransport` seam on-device for offline ART parser validation) and Mode B (optional live egress smoke with strict out-of-band host provisioning, ephemeral memory injection, immediate revocation, and sanitized receipt retention).
 - **S3 (Header citation):** Fixed PR #94 approved plan head to `c54ad91`.
@@ -181,15 +182,37 @@ Perform an exhaustive inspection of `/data/data/biz.pixelperfectstudios.personas
 
 **Byte-Level Plaintext Scan:** Recursive scan across the app sandbox confirms 0 matches for test keys, prompt strings, or candidate text.
 
-### 4.2 Egress & network transport audit
+### 4.2 Egress & network transport behavioral audit
 
-- **Endpoint Binding:** Outgoing network traffic from `:personaspeak-providers` is TLS 1.2+ bound strictly to `https://api.anthropic.com/v1/messages`.
-- **Header Verification:** Redacted trace confirms headers sent are exactly:
-  - `x-api-key: [REDACTED]`
-  - `anthropic-version: 2023-06-01`
-  - `content-type: application/json; charset=utf-8`
-- **Zero Third-Party Egress:** Confirms zero analytics, crash-reporting, or background telemetry SDKs exist in the APK.
-- **Receipt Output:** Sealed in `docs/evidence/milestone-4/storage-egress-audit-receipt.json`.
+To independently prove zero third-party egress and strict single-endpoint binding on the real device (beyond compile-time/unit assertions), the pass uses active socket observation scoped to the application UID:
+
+```bash
+# 1. Resolve application UID on the disposable device
+APP_UID=$(adb shell "dumpsys package biz.pixelperfectstudios.personaspeak.debug | grep userId= | head -n 1" | awk -F= '{print $2}' | tr -d ' ')
+
+# 2. Sample kernel TCP connection tables before, during, and after request execution
+# Reads socket state filtered to the app UID:
+adb shell "grep -w $APP_UID /proc/net/tcp /proc/net/tcp6 || true"
+
+# 3. For any active socket connection during execution:
+# - Convert hex IP to dotted quad
+# - Assert remote destination port is strictly 443 (HTTPS)
+# - Assert remote IP resolves in reverse DNS / forward lookup to api.anthropic.com
+# - Assert zero connections exist to third-party domains (analytics, crashlytics, telemetry)
+# - Assert zero connections to unencrypted HTTP (port 80)
+
+# Optional Alternative: Local redacting proxy on host/AVD
+# - Configure AVD HTTP proxy to localhost redacting proxy
+# - Assert request SNI is strictly "api.anthropic.com"
+# - Assert request path is strictly "/v1/messages"
+# - Record sanitized header names present (x-api-key, anthropic-version, content-type) with values redacted
+```
+
+**Receipt Output:** Sealed in `docs/evidence/milestone-4/storage-egress-audit-receipt.json` containing:
+- Inspected UID and recorded socket addresses / hostnames
+- DNS verification mapping remote IP to `api.anthropic.com`
+- Assertion of zero non-approved connections
+- Redacted header-name trace confirmation
 
 ---
 
