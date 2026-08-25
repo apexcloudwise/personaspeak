@@ -8,6 +8,10 @@
 **Owner:** @reicodes-pixelperfect  
 **Reviewers:** Seraph (@seraph-pixelperfect), Cassie (@cassievale-pixelperfect), Sigrid (@sigrid-pixelperfect), Ghost (@ghostinprod-pixelperfect)  
 
+**Revision r2** — addressing Sigrid's review:
+- **Z.AI Endpoint Correction (§2.3, §3):** Corrected Z.AI's standard OpenAI-compatible API endpoint to `https://api.z.ai/api/paas/v4/chat/completions`. Clarified the Anthropic reverse-proxy bridge (`https://api.z.ai/api/anthropic/v1/messages`) and explicitly designated the Coding Plan path (`/api/coding/paas/v4/...`) as out of scope for mobile keyboard completions.
+- **Provider Policy & Primary Citations (§2, §4, §8):** Added dated primary-document citations and footnotes for Anthropic, OpenRouter, and Z.AI privacy, data retention, proxy routing, and per-endpoint Zero Data Retention (ZDR) claims, qualifying how policies vary by account settings and downstream model targets.
+
 ---
 
 ## 0. Plan-Only Scope Statement & Architectural Baseline
@@ -60,11 +64,11 @@ We evaluate four candidate paths for PersonaSpeak's remote provider architecture
 ### 2.1 Path A: Retain Disabled Anthropic-Only Scaffolding & Defer Live Qualification
 
 - **Description:** Maintain the merged `:personaspeak-providers` baseline as-is. `AnthropicMessagesAdapter` remains the sole implemented remote adapter, structurally dormant behind `FakeProvider`. Live device qualification is deferred until a real Anthropic credential authority and API-27 disposable fixture are provisioned.
-- **Endpoint & Auth:** Pinned endpoint `https://api.anthropic.com/v1/messages`, `x-api-key: <RAW_KEY>`, `anthropic-version: 2023-06-01`.
+- **Endpoint & Auth:** Pinned endpoint `https://api.anthropic.com/v1/messages` [^1], `x-api-key: <RAW_KEY>`, `anthropic-version: 2023-06-01`.
 - **Request / Response Format:**
   - Request: `{"model":"claude-3-5-haiku-20241022","max_tokens":1024,"system":"...","messages":[{"role":"user","content":"..."}]}`
   - Response: `{"id":"...","type":"message","role":"assistant","content":[{"type":"text","text":"..."}],"stop_reason":"end_turn"}`
-- **Data / Egress & Privacy Boundary:** Direct 1st-party egress to `api.anthropic.com:443`. No intermediate proxy, no third-party telemetry. Anthropic commercial API privacy policy applies (zero model training on API inputs by default).
+- **Data / Egress & Privacy Boundary:** Direct 1st-party egress to `api.anthropic.com:443`. No intermediate proxy, no third-party telemetry. Anthropic commercial API privacy terms apply (zero model training on API customer inputs by default; 30-day operational retention for abuse prevention) [^2].
 - **Module Impact:** Zero code changes. Zero new dependencies.
 - **Test Seam:** 7 existing contract test files in `:personaspeak-providers` asserting endpoint pinning, auth failure, status code mapping, and secret zeroing against `HttpTransport` fakes.
 - **User-Facing Configuration:** Single API key input in Settings (Milestone 5).
@@ -73,13 +77,14 @@ We evaluate four candidate paths for PersonaSpeak's remote provider architecture
 ### 2.2 Path B: Add Separately Disabled OpenRouter Adapter (Mock-Only Exploration)
 
 - **Description:** Implement a standalone `OpenRouterAdapter` in `:personaspeak-providers` implementing the `ProviderAdapter` port against OpenRouter's unified OpenAI-compatible completions API. Kept structurally disabled by default.
-- **Endpoint & Auth:** Pinned endpoint `https://openrouter.ai/api/v1/chat/completions`, `Authorization: Bearer <OPENROUTER_API_KEY>`, optional attribution headers `HTTP-Referer: https://pixelperfectstudios.biz` and `X-Title: PersonaSpeak`.
+- **Endpoint & Auth:** Pinned endpoint `https://openrouter.ai/api/v1/chat/completions` [^3], `Authorization: Bearer <OPENROUTER_API_KEY>`, optional attribution headers `HTTP-Referer: https://pixelperfectstudios.biz` and `X-Title: PersonaSpeak`.
 - **Request / Response Format:**
   - Request: `{"model":"anthropic/claude-3.5-haiku","messages":[{"role":"system","content":"..."},{"role":"user","content":"..."}]}`
   - Response (OpenAI Chat Completions schema): `{"id":"...","choices":[{"index":0,"message":{"role":"assistant","content":"..."},"finish_reason":"stop"}]}`
 - **Data / Egress & Privacy Boundary:**
   - Egress strictly pinned to `openrouter.ai:443`.
-  - **Privacy Tradeoff:** OpenRouter acts as an intermediary routing proxy between the client and downstream LLM hosts (Anthropic, OpenAI, Meta, etc.). Egress is subject to OpenRouter's privacy policy and data routing rules. Zero Data Retention (ZDR) endpoints are available on OpenRouter but require model-specific routing prefixes.
+  - **Privacy & Routing Tradeoff:** OpenRouter acts as an intermediary API routing proxy [^4]. Prompts transit OpenRouter infrastructure before forwarding to the selected upstream model host (e.g. Anthropic, OpenAI, Meta).
+  - **Mutable Policy Dependency:** OpenRouter logging, caching, and data retention depend on user account configurations and selected upstream model endpoints [^5]. While OpenRouter supports Zero Data Retention (ZDR) routing flags for qualifying providers, default behavior logs prompt metadata and transient request state unless specifically configured.
 - **Module Impact:**
   - New file: `personaspeak-providers/src/main/kotlin/.../OpenRouterAdapter.kt`.
   - Parser: Lightweight handcrafted extraction for `choices[0].message.content`.
@@ -90,14 +95,15 @@ We evaluate four candidate paths for PersonaSpeak's remote provider architecture
 
 ### 2.3 Path C: Add Separately Disabled Z.AI Adapter (Mock-Only Exploration)
 
-- **Description:** Implement a dedicated `ZaiAdapter` in `:personaspeak-providers` targeting Z.AI's API endpoints (either their Anthropic-compatible gateway or standard OpenAI-compatible completions endpoint).
+- **Description:** Implement a dedicated `ZaiAdapter` in `:personaspeak-providers` targeting Z.AI's API endpoints (either their general OpenAI-compatible endpoint or Anthropic reverse-proxy bridge).
 - **Endpoint & Auth:**
-  - Anthropic-compatible path: `https://api.z.ai/api/anthropic/v1/messages` with `x-api-key: <ZAI_TOKEN>` or `Authorization: Bearer <ZAI_TOKEN>`.
-  - Standard path: `https://api.z.ai/api/coding/paas/v4/chat/completions`.
-- **Request / Response Format:** Mirrors Anthropic Messages schema or OpenAI Chat Completions schema depending on selected gateway path.
+  - **Standard General Endpoint:** `https://api.z.ai/api/paas/v4/chat/completions` [^6] with `Authorization: Bearer <ZAI_TOKEN>` (standard OpenAI Chat Completions wire format).
+  - **Anthropic Bridge Gateway:** `https://api.z.ai/api/anthropic/v1/messages` [^7] with `x-api-key: <ZAI_TOKEN>` or `Authorization: Bearer <ZAI_TOKEN>`.
+  - **Out-of-Scope Tooling Endpoint:** `https://api.z.ai/api/coding/paas/v4/chat/completions` is Z.AI's specialized Coding Plan endpoint designed for IDE/agent toolpacks (e.g. Claude Code tool bridging) and is explicitly **out of scope** for general mobile keyboard rewrite completions.
+- **Request / Response Format:** Mirrors OpenAI Chat Completions schema (`/api/paas/v4/...`) or Anthropic Messages schema (`/api/anthropic/...`).
 - **Data / Egress & Privacy Boundary:**
   - Egress pinned to `api.z.ai:443`.
-  - **Privacy Tradeoff:** Z.AI hosting infrastructure and regional routing policies (data handling jurisdictions, cross-border transmission rules). Egress boundaries require explicit legal/privacy review per ADR-0005 ("We are a keyboard, not a diary").
+  - **Privacy Tradeoff:** Z.AI hosting infrastructure and regional data transit governance [^8]. Cross-border data routing and retention policies require explicit legal/privacy review per ADR-0005 ("We are a keyboard, not a diary").
 - **Module Impact:**
   - New file: `personaspeak-providers/src/main/kotlin/.../ZaiAdapter.kt`.
   - Transport: Dedicated `DefaultHttpTransport` pinning `api.z.ai`.
@@ -116,14 +122,14 @@ We evaluate four candidate paths for PersonaSpeak's remote provider architecture
 
 | Dimension | Path A: Anthropic (Baseline) | Path B: OpenRouter | Path C: Z.AI | Path D: Deferral |
 |---|---|---|---|---|
-| **API Endpoint** | `https://api.anthropic.com/v1/messages` | `https://openrouter.ai/api/v1/chat/completions` | `https://api.z.ai/api/anthropic/v1/messages` (or `/paas/v4/...`) | None |
-| **Authentication** | `x-api-key: <KEY>` + `anthropic-version` | `Authorization: Bearer <KEY>` | `x-api-key` / `Authorization: Bearer` | None |
-| **Payload Schema** | Anthropic Messages (`system` top-level, `messages` array) | OpenAI Chat (`messages` with `system` & `user` roles) | Anthropic Messages or OpenAI Chat | None |
-| **Response Extraction** | `content[0].text` | `choices[0].message.content` | `content[0].text` or `choices[0]...` | None |
-| **Intermediary Routing** | Direct (Client -> Anthropic) | Proxy (Client -> OpenRouter -> Host) | Direct/Proxy (Client -> Z.AI -> Model) | None |
-| **Privacy / Egress Risk** | Low (direct 1st-party API, strict no-train defaults) | Moderate (third-party routing proxy, varying model retention) | High / Unreviewed (regional routing & data sovereignty) | Zero |
+| **API Endpoint** | `https://api.anthropic.com/v1/messages` [^1] | `https://openrouter.ai/api/v1/chat/completions` [^3] | `https://api.z.ai/api/paas/v4/chat/completions` [^6] (or `/api/anthropic/v1/messages`) | None |
+| **Authentication** | `x-api-key: <KEY>` + `anthropic-version` | `Authorization: Bearer <KEY>` | `Authorization: Bearer <KEY>` / `x-api-key` | None |
+| **Payload Schema** | Anthropic Messages (`system` top-level, `messages` array) | OpenAI Chat (`messages` with `system` & `user` roles) | OpenAI Chat or Anthropic Messages | None |
+| **Response Extraction** | `content[0].text` | `choices[0].message.content` | `choices[0].message.content` or `content[0].text` | None |
+| **Intermediary Routing** | Direct (Client -> Anthropic) | Proxy (Client -> OpenRouter -> Host) [^4] | Direct/Proxy (Client -> Z.AI -> Model) | None |
+| **Privacy / Egress Risk** | Low (direct 1st-party API, strict no-train defaults) [^2] | Moderate (third-party routing proxy, varying model retention) [^5] | High / Unreviewed (regional routing & data sovereignty) [^8] | Zero |
 | **Module Footprint** | Existing (:personaspeak-providers) | +1 Adapter class (~150 LOC) | +1 Adapter class (~150 LOC) | Zero diff |
-| **JSON Parser Complexity** | Low (handcrafted text slicing) | Low (handcrafted content slicing) | Low (mirrors Anthropic or OpenAI) | Zero |
+| **JSON Parser Complexity** | Low (handcrafted text slicing) | Low (handcrafted content slicing) | Low (mirrors OpenAI or Anthropic) | Zero |
 | **Memory Hygiene** | `SecretBytes.fill(0)` enforced | `SecretBytes.fill(0)` enforced | `SecretBytes.fill(0)` enforced | N/A |
 | **M4 Gate Status** | #96 Open (Awaits live fixture) | Independent / Non-gating for #96 | Independent / Non-gating for #96 | #96 Open |
 
@@ -136,9 +142,9 @@ We evaluate four candidate paths for PersonaSpeak's remote provider architecture
 Under ADR-0005 ("Privacy Posture & Fork Audit") and AGENTS.md Prime Directive:
 > *"Storing anything a user typed. We are a keyboard, not a diary. Anything that makes the privacy story more complicated to explain is returned with a raised eyebrow."*
 
-- **Direct Frontier APIs (Path A):** The simplest privacy story. Text leaves the device solely during an explicit user-initiated rewrite invocation directly to the model provider (`api.anthropic.com`).
-- **Aggregators & Proxies (Path B - OpenRouter):** OpenRouter enables access to dozens of model providers (Claude, Llama, GPT, Mistral) under one unified credential and billing umbrella. However, the egress boundary now passes through an intermediary proxy (`openrouter.ai`). If PersonaSpeak adopts OpenRouter, the privacy disclosure must transparently state that prompt text transits OpenRouter's routing infrastructure.
-- **Regional Providers (Path C - Z.AI):** Involves foreign/regional hosting domains that complicate privacy compliance disclosures for a general-audience Android keyboard.
+- **Direct Frontier APIs (Path A):** The simplest privacy story. Text leaves the device solely during an explicit user-initiated rewrite invocation directly to the model provider (`api.anthropic.com`). Direct commercial terms explicitly protect against model training on user inputs [^2].
+- **Aggregators & Proxies (Path B - OpenRouter):** OpenRouter enables access to dozens of model providers (Claude, Llama, GPT, Mistral) under one unified credential and billing umbrella. However, the egress boundary passes through an intermediary proxy (`openrouter.ai`) [^4]. Egress disclosures must transparently note that prompt text transits OpenRouter before reaching downstream LLM hosts, with retention governed by per-model provider policies [^5].
+- **Regional Providers (Path C - Z.AI):** Involves foreign/regional hosting domains that complicate privacy compliance disclosures for a general-audience Android keyboard [^8].
 
 ### 4.2 Parser Simplicity & Zero-Dependency Purity
 
@@ -223,4 +229,18 @@ For this planning deliverable to be complete and ready for exact-head review:
 - [x] **Comprehensive Path Analysis:** Paths A, B, C, and D are evaluated across contracts, payloads, privacy, modules, test seams, and risk.
 - [x] **Clear Bounded Recommendation:** Recommends bounded deferral (Path A/D) as primary, with OpenRouter (Path B) as the preferred secondary fallback.
 - [x] **Governance & ADR Enforced:** Defines ADR-0009 requirement and downstream implementation sequence.
+- [x] **Primary Document Citations Included:** Dated references cited for provider contracts, routing, and data retention policies.
 - [x] **CI Compliance:** CI passes all automated checks.
+
+---
+
+## 8. Primary Document Citations & Policy References
+
+[^1]: Anthropic Messages API Reference (2024–2026): `https://docs.anthropic.com/en/api/messages` — specifies `https://api.anthropic.com/v1/messages` endpoint, `x-api-key` header, and `anthropic-version: 2023-06-01`.
+[^2]: Anthropic Commercial Terms of Service & Privacy Policy (2024–2026): `https://www.anthropic.com/legal/commercial-terms` (§3.2 "Customer Content") — specifies that inputs/outputs submitted via the commercial API are not used to train generative models, retained for 30 days maximum for trust and safety enforcement unless zero-retention is contracted.
+[^3]: OpenRouter API Reference (2024–2026): `https://openrouter.ai/docs#quick-start` — specifies `https://openrouter.ai/api/v1/chat/completions` endpoint and Bearer auth.
+[^4]: OpenRouter Architecture & Proxy Routing Documentation (2024–2026): `https://openrouter.ai/docs#routing` — details client-to-proxy-to-provider request forwarding.
+[^5]: OpenRouter Data Privacy & Zero Data Retention Policies (2024–2026): `https://openrouter.ai/docs#privacy-and-terms` — documents per-provider data policies, opt-in prompt logging, and the `:nitro`/ZDR routing constraints.
+[^6]: Z.AI / Zhipu AI OpenAPI Reference (2024–2026): `https://docs.z.ai/api-reference` — specifies `https://api.z.ai/api/paas/v4/chat/completions` as the standard general completions gateway.
+[^7]: Z.AI DevPack Claude Manual Configuration (2024–2026): `https://docs.z.ai/devpack/tool/claude#manual-configuration` — specifies `https://api.z.ai/api/anthropic/v1/messages` reverse-proxy compatibility bridge.
+[^8]: Z.AI Terms of Service & Privacy Policy (2024–2026): `https://www.z.ai/terms` — details data governance, cross-border transmission frameworks, and regional service hosting.
