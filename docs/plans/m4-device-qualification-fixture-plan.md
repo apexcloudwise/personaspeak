@@ -190,7 +190,7 @@ cat /tmp/mode_a_logcat.log
 ## 5. Protocol 3: Mode-B Live Egress Smoke Test, Socket Audit & Key-String Verification
 
 ### 5.1 Objective & Bounded Observation Claims
-Execute a live, single-request egress smoke test to `https://api.anthropic.com/v1/messages` using an ephemeral credential to verify end-to-end connectivity, response parsing under ART, memory zeroing, and key-String stack containment.
+Execute a live, single-request egress smoke test to `https://api.anthropic.com/v1/messages` using an ephemeral credential to verify end-to-end connectivity, response parsing under ART, memory zeroing, and key-String stack confinement.
 
 **Scope of Bounded Socket Audit Claims:**
 - The kernel socket sampler (`/proc/net/tcp`, `/proc/net/tcp6`) independently proves **transport-layer endpoint isolation**:
@@ -198,7 +198,7 @@ Execute a live, single-request egress smoke test to `https://api.anthropic.com/v
   2. All outbound connections target destination port `443` (standard HTTPS).
   3. Zero unencrypted outbound connections (port 80).
   4. Zero auxiliary, telemetry, or third-party connections.
-- *Application-layer / TLS protocol guarantees* (TLS 1.3 negotiation, SNI matching, `Host` header formatting) are enforced by the platform `HttpsURLConnection` stack and verified by unit test contracts, while the kernel `/proc/net/tcp` sampler validates host-level network boundary isolation.
+- *Application-layer / TLS protocol guarantees* (TLS 1.3 negotiation, SNI matching, `Host` header formatting) are enforced by the platform `HttpsURLConnection` stack and URL string pinning (`https://api.anthropic.com/v1/messages`), while unit test contracts assert endpoint pinning, header construction (`x-api-key`, `anthropic-version`), and memory zeroing.
 
 ### 5.2 Mode-B Ephemeral Credential Authority & Safe Injection Interface
 
@@ -264,15 +264,16 @@ s.close()
 "
 adb forward --remove tcp:4242
 
-# Step 5: Determine Application UID on device
-APP_UID=$(adb shell "dumpsys package biz.pixelperfectstudios.personaspeak.debug | grep userId= | head -n 1" | awk -F= '{print $2}' | tr -d ' ')
+# Step 5: Determine Application UID on device (anchored extraction)
+APP_UID=$(adb shell "dumpsys package biz.pixelperfectstudios.personaspeak.debug | grep -E '^\s*userId=' | head -n 1 | sed 's/.*userId=\([0-9]*\).*/\1/'")
 
 # Step 6: Snapshot host DNS resolution for IPv4 (A) and IPv6 (AAAA)
 dig +short A api.anthropic.com | grep -E '^[0-9.]+$' > /tmp/approved_ipv4.txt
 dig +short AAAA api.anthropic.com | grep -E '^[0-9a-fA-F:]+$' > /tmp/approved_ipv6.txt
 
 # Step 7: Launch concurrent background socket sampler polling kernel TCP tables every 100ms
-adb shell "while true; do grep -w $APP_UID /proc/net/tcp /proc/net/tcp6 2>/dev/null; sleep 0.1; done" > /tmp/raw_sockets.log &
+# -h flag suppresses filename prefix across multiple input files
+adb shell "while true; do grep -h -w $APP_UID /proc/net/tcp /proc/net/tcp6 2>/dev/null; sleep 0.1; done" > /tmp/raw_sockets.log &
 SAMPLER_PID=$!
 
 # Step 8: Clear logcat and stream PsRunner and PsStorageHarness
@@ -289,10 +290,11 @@ sleep 5
 kill $SAMPLER_PID 2>/dev/null || true
 kill $LOGCAT_PID 2>/dev/null || true
 
-# Step 11: Literal socket log decoder & validation script (IPv4 + IPv6 support)
+# Step 11: Literal socket log decoder & validation script (IPv4 + IPv6 support with UID column anchoring)
 python3 -c "
 import sys, socket, struct
 
+target_uid = '${APP_UID}'
 approved_v4 = set(line.strip() for line in open('/tmp/approved_ipv4.txt') if line.strip())
 approved_v6 = set()
 for line in open('/tmp/approved_ipv6.txt'):
@@ -309,7 +311,12 @@ observed_connections = []
 with open('/tmp/raw_sockets.log', 'r') as f:
     for line in f:
         parts = line.strip().split()
+        if parts and parts[0].startswith('/proc/'):
+            parts = parts[1:]
         if len(parts) < 8:
+            continue
+        # Anchor to UID column (index 7 in /proc/net/tcp{,6})
+        if parts[7] != target_uid:
             continue
         rem_addr = parts[2]
         if ':' not in rem_addr:
@@ -373,7 +380,7 @@ To satisfy the §10 security checklist item regarding the transient JVM `String`
 1. **Stack-Confinement Audit:** Static verification asserts `val apiKeyString = String(secret.value, StandardCharsets.UTF_8)` is confined solely as a local variable within the `withContext(Dispatchers.IO)` coroutine block in `rewrite()`; never assigned to object fields, global state, or cache.
 2. **Buffer Zeroing Proof:** On-device logcat outputs `PsRunner: SecretBytes.fill(0) executed` confirming that the underlying mutable `ByteArray` in `SecretBytes` is wiped across all exit paths in `finally`.
 3. **Storage & Log Sanitization Scan:** Automated scan of `/data/data/biz.pixelperfectstudios.personaspeak.debug/` and full logcat stream asserts 0 matches for test key bytes or key prefixes.
-4. **Closeout Sign-off:** Checkbox marked in `docs/evidence/milestone-4/README.md` under the §10 Security Review Checklist.
+4. **Checklist Sign-off:** Checkbox marked in `docs/evidence/milestone-4/README.md` under the §10 Security Review Checklist.
 
 ### 5.6 Abort Conditions
 - Sampler detects any connection to port 80 or unapproved IP.
