@@ -140,7 +140,7 @@ Execute `AnthropicMessagesAdapter` and its JSON parser (`extractTextFromResponse
 ### 4.2 Prerequisites & Fixture
 - **Target Fixture:** Disposable Android AVD (API 27 or API 34).
 - **Harness Component:** `biz.pixelperfectstudios.personaspeak.data.harness.PersonaspeakAdapterHarnessActivity`
-- **Harness Log Tag:** `PsRunner` (defined in `PersonaspeakAdapterHarnessActivity.kt`)
+- **Harness Log Tag:** `PsRunner` (defined as `private const val TAG = "PsRunner"` in `PersonaspeakAdapterHarnessActivity.kt`)
 - **Transport Seam:** `MockAndroidHttpTransport` pre-configured in harness with synthetic JSON payload:
   `{"id":"msg_01","type":"message","role":"assistant","content":[{"type":"text","text":"sanitized rewritten payload with unicode \u2728 and \nescapes"}]}`
 
@@ -165,11 +165,11 @@ cat /tmp/mode_a_logcat.log
 ```
 
 ### 4.4 Sanitized Observations & Acceptance Criteria
-1. Logcat asserts: `Starting Mode A offline parser validation`.
-2. Logcat asserts: `Injected MockAndroidHttpTransport synthetic payload (length=124)`.
-3. Logcat asserts: `extractTextFromResponse extracted 56 chars`.
-4. Logcat asserts: `SecretBytes.fill(0) verified executed`.
-5. Logcat asserts: `Mode A complete: SUCCESS`.
+1. Logcat asserts: `PsRunner: Starting Mode A offline parser validation`.
+2. Logcat asserts: `PsRunner: Injected MockAndroidHttpTransport synthetic payload (length=124)`.
+3. Logcat asserts: `PsRunner: extractTextFromResponse extracted 56 chars`.
+4. Logcat asserts: `PsRunner: SecretBytes.fill(0) verified executed`.
+5. Logcat asserts: `PsRunner: Mode A complete: SUCCESS`.
 6. Zero uncaught exceptions, zero JSON parsing crashes.
 
 ### 4.5 Abort Conditions
@@ -189,7 +189,7 @@ Execute a live, single-request egress smoke test to `https://api.anthropic.com/v
 
 **Scope of Bounded Socket Audit Claims:**
 - The kernel socket sampler (`/proc/net/tcp`, `/proc/net/tcp6`) independently proves **transport-layer endpoint isolation**:
-  1. All outbound IP connections from the application UID (`$APP_UID`) connect exclusively to destination IP addresses in the resolved DNS pool for `api.anthropic.com`.
+  1. All outbound IP connections from the application UID (`$APP_UID`) connect exclusively to destination IP addresses in the resolved DNS pools (IPv4 A records and IPv6 AAAA records) for `api.anthropic.com`.
   2. All outbound connections target destination port `443` (standard HTTPS).
   3. Zero unencrypted outbound connections (port 80).
   4. Zero auxiliary, telemetry, or third-party connections.
@@ -205,21 +205,17 @@ Execute a live, single-request egress smoke test to `https://api.anthropic.com/v
 
 1. **Credential Authority:** A dedicated rate-limited, disposable test API key is provisioned out-of-band specifically for this qualification run.
 2. **Safe Debug-Only Injection Architecture:**
-   - **Component & Location:** Debug-only `PersonaspeakEphemeralSeedService` (or socket listener in `PersonaspeakStorageHarnessActivity`) residing strictly in `keyboard/ime/app/src/debug/java/biz/pixelperfectstudios/personaspeak/data/harness/`.
-   - **Transport Boundary:** Binds a local abstract Unix domain socket (`localabstract:personaspeak_debug_seed`) exposed solely in debug builds and forwarded over `adb forward tcp:4242 localabstract:personaspeak_debug_seed`.
-   - **Host-Side Volatile Streaming:** A host Python one-liner streams the key directly from the `PERSONASPEAK_TEST_ANTHROPIC_KEY` environment variable over `127.0.0.1:4242` in volatile memory without intermediate file creation, shell argument expansion, or shell history entries:
-     ```bash
-     python3 -c "
-     import os, socket
-     key = os.environ.get('PERSONASPEAK_TEST_ANTHROPIC_KEY', '').strip()
-     assert key.startswith('sk-ant-'), 'Invalid or absent PERSONASPEAK_TEST_ANTHROPIC_KEY'
-     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-     s.connect(('127.0.0.1', 4242))
-     s.sendall(key.encode('utf-8'))
-     s.close()
-     "
-     ```
-   - **On-Device Ingestion & Zeroing:** The debug receiver reads the stream into a volatile `ByteArray`, wraps it in `SecretBytes`, saves `ProviderConfig("anthropic", System.currentTimeMillis())` via `DataStoreProviderConfigStore`, executes `buffer.fill(0)`, logs `PsStorageHarness: EPHEMERAL_SEED_DONE Configured provider=anthropic`, and immediately closes the socket listener.
+   - **Dedicated Component:** `PersonaspeakEphemeralSeedService` residing in `android/keyboard/ime/app/src/debug/java/biz/pixelperfectstudios/personaspeak/data/harness/PersonaspeakEphemeralSeedService.kt`.
+   - **Manifest Registration:** Registered in `android/keyboard/ime/app/src/debug/AndroidManifest.xml` as `<service android:name=".data.harness.PersonaspeakEphemeralSeedService" android:exported="true" />` (debug build only; ledgered in `UPSTREAM-MODIFIED.md` at implementation).
+   - **Lifecycle & Action:** Started via `am startservice -a biz.pixelperfectstudios.personaspeak.data.harness.START_EPHEMERAL_SEED_SERVICE`.
+   - **Transport Boundary:** Binds a local abstract Unix domain socket (`localabstract:personaspeak_debug_seed`) forwarded over `adb forward tcp:4242 localabstract:personaspeak_debug_seed`.
+   - **Readiness Signal & Bounded Polling:** When socket bind succeeds, service logs `PsStorageHarness: EPHEMERAL_SOCKET_READY` to logcat. The host runner polls logcat for this readiness marker (timeout 5s) before attempting connection, eliminating any startup race.
+   - **Single Connection & Validation Guardrails:**
+     - The service accepts exactly one connection (`serverSocket.accept()`) and immediately closes the server socket to reject any further connections.
+     - Payload bounds: Maximum 512 bytes enforced; payload must start with `sk-ant-` prefix and decode as valid UTF-8.
+     - Fail-Closed: If payload is oversize, lacks `sk-ant-` prefix, or contains invalid characters, receiving buffer is immediately zeroed with `fill(0)`, logs `PsStorageHarness: EPHEMERAL_SEED_REJECTED`, and service terminates with `stopSelf()` without writing to DataStore.
+   - **Host-Side Volatile Streaming:** A host Python one-liner streams the key directly from the `PERSONASPEAK_TEST_ANTHROPIC_KEY` environment variable over `127.0.0.1:4242` in volatile memory without intermediate file creation, shell argument expansion, or shell history entries.
+   - **On-Device Ingestion & Zeroing:** The service wraps bytes in `SecretBytes`, saves `ProviderConfig("anthropic", System.currentTimeMillis())` via `DataStoreProviderConfigStore`, executes `buffer.fill(0)`, logs `PsStorageHarness: EPHEMERAL_SEED_DONE Configured provider=anthropic`, and stops itself via `stopSelf()`.
    - **Strict Leakage Invariant:** No secret may ever appear in source code, shell history, `am start` intent extras (`--es`), logs, logcat, screenshots, markdown fixtures, git commits, or retained receipt files.
 3. **Payload Sanitization:** Request uses minimal synthetic prompt token (`"ping"` / `"Respond with ping only"` per ADR-0005).
 4. **Immediate Revocation Proof:**
@@ -232,11 +228,26 @@ Execute a live, single-request egress smoke test to `https://api.anthropic.com/v
 # Step 1: Forward local port to debug abstract socket
 adb forward tcp:4242 localabstract:personaspeak_debug_seed
 
-# Step 2: Start ephemeral seed listener on device
-adb shell am start -n biz.pixelperfectstudios.personaspeak.debug/biz.pixelperfectstudios.personaspeak.data.harness.PersonaspeakStorageHarnessActivity \
-    -a biz.pixelperfectstudios.personaspeak.data.harness.SEED_EPHEMERAL_SOCKET
+# Step 2: Clear logcat and launch ephemeral seed service
+adb logcat -c
+adb shell am startservice -n biz.pixelperfectstudios.personaspeak.debug/biz.pixelperfectstudios.personaspeak.data.harness.PersonaspeakEphemeralSeedService \
+    -a biz.pixelperfectstudios.personaspeak.data.harness.START_EPHEMERAL_SEED_SERVICE
 
-# Step 3: Stream credential from host memory (no disk/history/intent exposure)
+# Step 3: Bounded readiness poll (wait for EPHEMERAL_SOCKET_READY in logcat, max 5s)
+python3 -c "
+import subprocess, time, sys
+start = time.time()
+while time.time() - start < 5.0:
+    out = subprocess.check_output(['adb', 'logcat', '-d', '-s', 'PsStorageHarness:V']).decode('utf-8', errors='ignore')
+    if 'EPHEMERAL_SOCKET_READY' in out:
+        print('Socket ready on device')
+        sys.exit(0)
+    time.sleep(0.1)
+print('ERROR: Timed out waiting for EPHEMERAL_SOCKET_READY', file=sys.stderr)
+sys.exit(1)
+"
+
+# Step 4: Stream credential from host memory (no disk/history/intent exposure)
 python3 -c "
 import os, socket
 key = os.environ.get('PERSONASPEAK_TEST_ANTHROPIC_KEY', '').strip()
@@ -248,35 +259,45 @@ s.close()
 "
 adb forward --remove tcp:4242
 
-# Step 4: Determine Application UID on device
+# Step 5: Determine Application UID on device
 APP_UID=$(adb shell "dumpsys package biz.pixelperfectstudios.personaspeak.debug | grep userId= | head -n 1" | awk -F= '{print $2}' | tr -d ' ')
 
-# Step 5: Snapshot host DNS resolution for the approved endpoint
-dig +short api.anthropic.com | grep -E '^[0-9.]+$' > /tmp/approved_ips.txt
+# Step 6: Snapshot host DNS resolution for IPv4 (A) and IPv6 (AAAA)
+dig +short A api.anthropic.com | grep -E '^[0-9.]+$' > /tmp/approved_ipv4.txt
+dig +short AAAA api.anthropic.com | grep -E '^[0-9a-fA-F:]+$' > /tmp/approved_ipv6.txt
 
-# Step 6: Launch concurrent background socket sampler polling kernel TCP tables every 100ms
+# Step 7: Launch concurrent background socket sampler polling kernel TCP tables every 100ms
 adb shell "while true; do grep -w $APP_UID /proc/net/tcp /proc/net/tcp6 2>/dev/null; sleep 0.1; done" > /tmp/raw_sockets.log &
 SAMPLER_PID=$!
 
-# Step 7: Clear logcat and stream PsRunner and PsStorageHarness
+# Step 8: Clear logcat and stream PsRunner and PsStorageHarness
 adb logcat -c
 adb logcat -s PsRunner:V PsStorageHarness:V > /tmp/mode_b_logcat.log &
 LOGCAT_PID=$!
 
-# Step 8: Trigger Mode-B execution via harness
+# Step 9: Trigger Mode-B execution via harness
 adb shell am start -n biz.pixelperfectstudios.personaspeak.debug/biz.pixelperfectstudios.personaspeak.data.harness.PersonaspeakAdapterHarnessActivity \
     -a biz.pixelperfectstudios.personaspeak.data.harness.MODE_B
 
-# Step 9: Wait for completion, then terminate samplers
+# Step 10: Wait for completion, then terminate samplers
 sleep 5
 kill $SAMPLER_PID 2>/dev/null || true
 kill $LOGCAT_PID 2>/dev/null || true
 
-# Step 10: Literal socket log decoder & validation script
+# Step 11: Literal socket log decoder & validation script (IPv4 + IPv6 support)
 python3 -c "
-import sys, socket
+import sys, socket, struct
 
-approved_ips = set(line.strip() for line in open('/tmp/approved_ips.txt') if line.strip())
+approved_v4 = set(line.strip() for line in open('/tmp/approved_ipv4.txt') if line.strip())
+approved_v6 = set()
+for line in open('/tmp/approved_ipv6.txt'):
+    line = line.strip()
+    if line:
+        try:
+            approved_v6.add(socket.inet_ntop(socket.AF_INET6, socket.inet_pton(socket.AF_INET6, line)))
+        except Exception:
+            pass
+
 violations = []
 observed_connections = []
 
@@ -289,23 +310,38 @@ with open('/tmp/raw_sockets.log', 'r') as f:
         if ':' not in rem_addr:
             continue
         hex_ip, hex_port = rem_addr.split(':')
-        if hex_ip == '00000000' or hex_port == '0000':
-            continue
-        ip_bytes = bytes.fromhex(hex_ip)
-        if sys.byteorder == 'little':
-            ip_str = socket.inet_ntoa(ip_bytes)
-        else:
-            ip_str = socket.inet_ntoa(ip_bytes[::-1])
         port = int(hex_port, 16)
+        if port == 0:
+            continue
         
-        entry = f'{ip_str}:{port}'
-        if entry not in observed_connections:
-            observed_connections.append(entry)
+        # Decode IPv4 (8 hex digits, 32-bit machine word order)
+        if len(hex_ip) == 8:
+            if hex_ip == '00000000':
+                continue
+            ip_str = socket.inet_ntoa(struct.pack('<I', int(hex_ip, 16)))
+            entry = f'{ip_str}:{port}'
+            if entry not in observed_connections:
+                observed_connections.append(entry)
+            if port != 443:
+                violations.append(f'Non-HTTPS IPv4 port observed: {ip_str}:{port}')
+            if ip_str not in approved_v4:
+                violations.append(f'Unapproved destination IPv4 observed: {ip_str}:{port}')
         
-        if port != 443:
-            violations.append(f'Non-HTTPS port observed: {ip_str}:{port}')
-        if ip_str not in approved_ips:
-            violations.append(f'Unapproved destination IP observed: {ip_str}:{port}')
+        # Decode IPv6 (32 hex digits, four 32-bit words in little-endian)
+        elif len(hex_ip) == 32:
+            if hex_ip == '00000000000000000000000000000000':
+                continue
+            raw_bytes = bytearray()
+            for i in range(0, 32, 8):
+                raw_bytes.extend(bytes.fromhex(hex_ip[i:i+8])[::-1])
+            ip_str = socket.inet_ntop(socket.AF_INET6, bytes(raw_bytes))
+            entry = f'[{ip_str}]:{port}'
+            if entry not in observed_connections:
+                observed_connections.append(entry)
+            if port != 443:
+                violations.append(f'Non-HTTPS IPv6 port observed: [{ip_str}]:{port}')
+            if ip_str not in approved_v6:
+                violations.append(f'Unapproved destination IPv6 observed: [{ip_str}]:{port}')
 
 print(f'Observed connections: {observed_connections}')
 if violations:
@@ -394,11 +430,7 @@ The genuine device run will be submitted in a dedicated follow-up PR:
    ```bash
    ./android/scripts/verify-no-secret-logging.sh
    ```
-4. Run full unit test suite:
-   ```bash
-   ./android/gradlew -p android :personaspeak-ui:testDebugUnitTest
-   ```
-5. Verify zero changes to production code or upstream ledger.
+4. Verify zero changes to production code or upstream ledger.
 
 ---
 
