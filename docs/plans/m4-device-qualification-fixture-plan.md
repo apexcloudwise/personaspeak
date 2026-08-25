@@ -48,6 +48,7 @@ Every qualification run captures and seals a deterministic metadata record:
 
 ### 2.2 Custody, Retention, and Evidence Sealing Procedure
 - **Append-Only Evidence Repository / Branch:** Raw execution logs, socket sampling dumps, and structured transcripts are committed directly to the append-only `evidence` branch (as established in Milestone 2 qualification).
+- **Dual-Regime Retention Requirement:** The API 27 legacy backup-exclusion receipt is a mandatory companion to, not a replacement for, the already qualified API 31+ `dataExtractionRules` verification from Milestone 4 Slice 1 (PR #92). Both receipts (`backup-api31-receipt.json` and `backup-api27-receipt.json`) are retained side-by-side in the closeout evidence manifest.
 - **Compact Receipt Index:** The implementation PR in `main` commits only a compact, immutable receipt (`docs/evidence/milestone-4/receipt.json` and updated `README.md`) pointing to the specific evidence commit hash and artifact SHA-256 digests.
 - **Tamper-Evident Verification Rule:** Reviewers recompute artifact digests against the evidence branch commit; any discrepancy between published digests and raw artifacts causes an immediate rejection.
 - **Anti-Backfill Invariant:** Hand-authored, reconstructed, or relabelled receipts are strictly prohibited. Receipts may only be emitted directly by the automated runner at capture time.
@@ -56,8 +57,11 @@ Every qualification run captures and seals a deterministic metadata record:
 
 ## 3. Protocol 1: API-27 Legacy `fullBackupContent` Exclusion Pass
 
-### 3.1 Objective
+### 3.1 Objective & API 26/27 Regime Alignment
 Prove on a physical/AVD Android 8.1 (API 27) device that Android's legacy `fullBackupContent` backup engine (`personaspeak_full_backup_content.xml`) excludes all AES-GCM ciphertext, staging files, and DataStore metadata from backups, while preserving non-excluded positive control files.
+
+**Regime Justification (API 26 vs. API 27):**  
+Android 8.0 (API 26) and Android 8.1 (API 27) share the exact same `android:fullBackupContent` XML parsing engine and `bmgr` local transport implementation. Qualifying on an API 27 fixture directly proves the behavior of `personaspeak_full_backup_content.xml` across all legacy (`< API 31`) Android environments, fulfilling the dual-regime requirement of #90 and #96.
 
 ### 3.2 Prerequisites & Fixture
 - **Target Fixture:** Disposable Android 8.1 x86_64 AVD (`system-images;android-27;default;x86_64`) booted in a clean state.
@@ -118,6 +122,7 @@ adb shell am start -n biz.pixelperfectstudios.personaspeak.debug/biz.pixelperfec
 1. `files/personaspeak_backup_canary.txt` is restored and non-empty (positive control valid).
 2. `files/personaspeak_secret.bin`, `files/personaspeak_secret.bin.staging`, and `datastore/personaspeak_provider_config.preferences_pb` are completely absent.
 3. `ACTION_QUERY` returns `QUERY_OUTCOME Unconfigured secret_len=0` with zero decryption errors or KeyStore crashes.
+4. Receipt sealed at `docs/evidence/milestone-4/backup-api27-receipt.json` beside the retained `backup-api31-receipt.json`.
 
 ### 3.5 Abort Conditions
 - `bmgr backupnow` or `bmgr restore` fails with transport error.
@@ -182,10 +187,10 @@ cat /tmp/mode_a_logcat.log
 
 ---
 
-## 5. Protocol 3: Mode-B Live Egress Smoke Test & Socket Audit
+## 5. Protocol 3: Mode-B Live Egress Smoke Test, Socket Audit & Key-String Verification
 
 ### 5.1 Objective & Bounded Observation Claims
-Execute a live, single-request egress smoke test to `https://api.anthropic.com/v1/messages` using an ephemeral credential to verify end-to-end connectivity, response parsing under ART, and memory zeroing.
+Execute a live, single-request egress smoke test to `https://api.anthropic.com/v1/messages` using an ephemeral credential to verify end-to-end connectivity, response parsing under ART, memory zeroing, and key-String stack containment.
 
 **Scope of Bounded Socket Audit Claims:**
 - The kernel socket sampler (`/proc/net/tcp`, `/proc/net/tcp6`) independently proves **transport-layer endpoint isolation**:
@@ -363,13 +368,20 @@ print('SOCKET AUDIT PASSED: All outbound sockets strictly bound to approved IPs 
 8. Zero third-party, analytics, or unencrypted sockets observed.
 9. Logcat privacy scan confirms 0 occurrences of API key prefix, `x-api-key`, header values, or prompt text.
 
-### 5.5 Abort Conditions
+### 5.5 Key-String §10 Checklist Verification Procedure
+To satisfy the §10 security checklist item regarding the transient JVM `String` copy in `AnthropicMessagesAdapter.kt`:
+1. **Stack-Confinement Audit:** Static verification asserts `val apiKeyString = String(secret.value, StandardCharsets.UTF_8)` is confined solely as a local variable within the `withContext(Dispatchers.IO)` coroutine block in `rewrite()`; never assigned to object fields, global state, or cache.
+2. **Buffer Zeroing Proof:** On-device logcat outputs `PsRunner: SecretBytes.fill(0) executed` confirming that the underlying mutable `ByteArray` in `SecretBytes` is wiped across all exit paths in `finally`.
+3. **Storage & Log Sanitization Scan:** Automated scan of `/data/data/biz.pixelperfectstudios.personaspeak.debug/` and full logcat stream asserts 0 matches for test key bytes or key prefixes.
+4. **Closeout Sign-off:** Checkbox marked in `docs/evidence/milestone-4/README.md` under the §10 Security Review Checklist.
+
+### 5.6 Abort Conditions
 - Sampler detects any connection to port 80 or unapproved IP.
 - HTTP status != 200 or NetworkFailure/AuthFailure reported.
 - Memory zeroing fails or credential persists in storage.
 - Key prefix found in logcat scan.
 
-### 5.6 Cleanup & Revocation Proof
+### 5.7 Cleanup & Revocation Proof
 - `adb shell pm clear biz.pixelperfectstudios.personaspeak.debug` executed.
 - Storage reset verified via `am start -a ...QUERY` returning `Unconfigured`.
 - Cloud API key revoked out-of-band; revocation verification timestamp logged.
@@ -392,18 +404,28 @@ The genuine device run will be submitted in a dedicated follow-up PR:
 `feat(m4): device qualification receipts and milestone 4 closeout (#96)`
 
 ### 7.1 Follow-Up PR Artifacts
-1. `docs/evidence/milestone-4/README.md` — Updated to `Status: QUALIFIED` referencing the immutable run commit on the `evidence` branch.
+1. `docs/evidence/milestone-4/README.md` — Updated to `Status: QUALIFIED` referencing the immutable run commit on the `evidence` branch, dual-regime backup receipts, and ratified enablement decision.
 2. `docs/evidence/milestone-4/receipt.json` — Sealed machine-readable receipt containing artifact SHA-256 digests and verification verdicts.
-3. `ROADMAP.md` — Updated to mark Milestone 4 complete (`- [x]`).
+3. `ROADMAP.md` — Updated to mark Milestone 4 complete (`- [x]`) and record structural default-disabled baseline.
 4. `PATCHNOTES.md` — Updated with the final closeout entry.
+5. `docs/adr/0005-privacy-posture-fork-audit.md` — Security addendum recording provider persistence and egress governance.
 
 ### 7.2 Issue #96 Closeout Checklist (To be checked off ONLY after genuine run passes)
-- [ ] API 26/27 legacy backup exclusion proven on device via `bmgr` (`backup-api27-receipt.json`).
+- [ ] API 26/27 legacy backup exclusion proven on API 27 fixture via `bmgr` (`backup-api27-receipt.json`), retained as companion to API 31+ proof (`backup-api31-receipt.json`).
 - [ ] ART parser execution proven under Mode A (`adapter-parser-receipt.json`).
 - [ ] Live egress socket audit proven under Mode B with zero leakage (`storage-egress-audit-receipt.json`).
-- [ ] Key-String §10 checklist resolution verified against device runtime.
-- [ ] Durable structural default-disabled provider governance ratified.
+- [ ] Key-String §10 checklist resolution verified against device runtime and stack confinement rules.
+- [ ] Durable structural default-disabled provider enablement decision ratified and recorded.
 - [ ] Milestone 4 marked complete on parent issue #89.
+
+### 7.3 Formal Enablement Decision & Governance
+At Milestone 4 closeout, the formal enablement decision is ratified across all four required attributes:
+- **Decision:** The Anthropic provider adapter **REMAINS STRUCTURALLY DISABLED BY DEFAULT** in production builds at Milestone 4 closeout (`FakeProvider` active in rewrite coordinator; `AnthropicMessagesAdapter` registered in DI graph but unselected).
+- **Evidence Threshold:** Unanimous pass across all three device qualification gates (API 27 backup exclusion, Mode A ART parser, Mode B socket audit) with immutable provenance on the `evidence` branch and zero detected leaks.
+- **Rollback Procedure:** Calling `ProviderConfigStore.clear()` immediately purges encrypted Keystore/DataStore files and reverts the system to `StoreOutcome.Unconfigured` / `FakeProvider`.
+- **Owner:** Release & Security Overseer (@ghostinprod-pixelperfect).
+- **User-Visible Implication:** Clean, unconfigured installations perform zero network egress. Cloud egress is strictly gated on explicit user configuration and opt-in in the Milestone 5 Settings UI graph.
+- **Durable Recording Locations:** Recorded in `docs/evidence/milestone-4/README.md`, `ROADMAP.md`, and `docs/adr/0005-privacy-posture-fork-audit.md`.
 
 ---
 
