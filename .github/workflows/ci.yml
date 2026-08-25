@@ -134,7 +134,7 @@ jobs:
           for suite in verify-ask-closure-test verify-dictionary-licenses-test \
                        verify-upstream-ledger-test verify-single-apk-test \
                        verify-unified-build-flag-test verify-no-secret-logging-test \
-                       verify-milestone-2-test; do
+                       verify-milestone-2-test verify-milestone-4-test; do
             echo "::group::$suite"
             bash "android/scripts/tests/$suite.sh"
             echo "::endgroup::"
@@ -146,6 +146,9 @@ jobs:
       - name: Milestone 2 aggregate gate
         shell: bash
         run: bash android/scripts/verify-milestone-2.sh android
+      - name: Milestone 4 verification gate
+        shell: bash
+        run: bash android/scripts/verify-milestone-4.sh android
       - name: Canonical APK identity
         shell: bash
         run: |

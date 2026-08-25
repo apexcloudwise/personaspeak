@@ -16,7 +16,7 @@ import kotlinx.coroutines.launch
  * and write the backup canary via adb intents. Not a product surface; no UI.
  *
  * Intents:
- *  - action SEED  (extra "key": String)   — save config with the given credential
+ *  - action SEED                           — save config with on-device SecureRandom 32-byte credential
  *  - action QUERY                          — load and report outcome to logcat
  *  - action CLEAR                          — wipe artifacts
  *  - action CANARY                         — write files/personaspeak_backup_canary.txt
@@ -31,11 +31,11 @@ class PersonaspeakStorageHarnessActivity : Activity() {
         val tag = TAG
         when (intent?.action) {
             ACTION_SEED -> {
-                val key = intent.getStringExtra("key") ?: "harness-seeded-credential"
+                val randomBytes = ByteArray(32).also { java.security.SecureRandom().nextBytes(it) }
                 scope.launch {
                     val outcome = store.save(
                         ProviderConfig("gemini", System.currentTimeMillis()),
-                        SecretBytes(key.toByteArray()),
+                        SecretBytes(randomBytes),
                     )
                     android.util.Log.i(tag, "SEED_DONE $outcome")
                     finish()

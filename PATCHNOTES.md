@@ -10,6 +10,23 @@ Newest first, like all respectable patch notes.
 
 ---
 
+## 2026-08-25 — The Brain advances: source contracts and compile gates active
+
+- Shipped Milestone 4 slice 3 verification scaffolding, debug harnesses, and CI gates:
+  - Upgraded `PersonaspeakStorageHarnessActivity.ACTION_SEED` to generate 32 on-device
+    cryptographically secure random bytes via `SecureRandom`, removing literal seed strings
+    and ledgering the change in `android/keyboard/UPSTREAM-MODIFIED.md`.
+  - Configured API 26/27 legacy backup-exclusion rules under `fullBackupContent`
+    to exclude AES-GCM ciphertext and DataStore metadata (device qualification pending).
+  - Added debug-only `PersonaspeakAdapterHarnessActivity` with deterministic memory
+    zeroing assertions and wired `verify-milestone-4.sh` compile check into CI.
+  - Refined §10 key-String security checklist and source documentation.
+  - Recorded structural default-disabled governance in ROADMAP.md and ADR-0005: `FakeProvider`
+    remains active in rewrite coordinator; cloud egress strictly gated on Milestone 5
+    settings opt-in. Mode B live cloud egress qualification remains pending external fixture execution. (#96)
+
+---
+
 ## 2026-08-25 — The Brain prepares for graduation: Milestone 4 closeout plan lands
 
 - The M4 slice-3 plan establishes the verification protocol and closeout path for

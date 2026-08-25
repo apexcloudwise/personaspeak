@@ -112,3 +112,19 @@ we inherited and have not yet audited.
   notifications) raise the stakes; the same default-private, audit-gated posture
   applies, and the ROADMAP already commits to a Phase 2 privacy page. This ADR is
   the general rule that page will cite.
+
+## Addendum: Milestone 4 Provider Configuration & Persistence Baseline (2026-08-25)
+
+Milestone 4 ([#89](https://github.com/apexcloudwise/personaspeak/issues/89)) establishes the secure provider-configuration persistence and egress foundation under the ADR-0005 privacy posture:
+
+1. **Storage & Secret Protection**:
+   - Credentials (API keys) are encrypted via AndroidKeyStore AES-256-GCM (`files/personaspeak_secret.bin`) and non-secret metadata is stored in Preferences DataStore (`datastore/personaspeak_provider_config.preferences_pb`).
+   - Both artifacts (and staging twins) are excluded from cloud backup, device transfer, and legacy backup under both `dataExtractionRules` (API 31+) and `fullBackupContent` (< API 31). Device-level exclusion verification remains pending external fixture execution.
+2. **Egress & Single-Endpoint Binding**:
+   - `AnthropicMessagesAdapter` in `:personaspeak-providers` is strictly bound to `https://api.anthropic.com/v1/messages` over HTTPS with closed error taxonomy.
+   - Code-level assertions verify Unicode/escape handling and memory zeroing (`SecretBytes.fill(0)` in finally block).
+   - Live cloud egress qualification remains pending external device fixture execution.
+
+3. **Structural Default-Disabled Baseline**:
+   - Cloud providers remain **structurally disabled by default** at Milestone 4 closeout. `FakeProvider` is the active default in the rewrite coordinator; real adapters are unselected in the DI graph.
+   - Live cloud egress is strictly gated on explicit user opt-in and credential configuration in Milestone 5 (Settings & Onboarding UI graph).

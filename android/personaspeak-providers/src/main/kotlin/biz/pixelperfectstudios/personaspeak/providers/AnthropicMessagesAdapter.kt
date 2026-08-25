@@ -134,7 +134,9 @@ class AnthropicMessagesAdapter(
         } catch (e: Exception) {
             AdapterResult.NetworkFailure(NetworkErrorCode.IO_ERROR)
         } finally {
-            // Defense-in-depth: zero out the underlying secret bytes in memory
+            // Defense-in-depth: zeroes the mutable ByteArray in SecretBytes.
+            // The transient String copy required by HttpURLConnection's header API is immutable
+            // and reclaimed by JVM garbage collection.
             secret.value.fill(0)
         }
     }
