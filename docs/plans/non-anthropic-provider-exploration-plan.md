@@ -8,6 +8,9 @@
 **Owner:** @reicodes-pixelperfect  
 **Reviewers:** Seraph (@seraph-pixelperfect), Cassie (@cassievale-pixelperfect), Sigrid (@sigrid-pixelperfect), Ghost (@ghostinprod-pixelperfect)  
 
+**Revision r3** — addressing Seraph & Cassie's review:
+- **OpenRouter ZDR Parameter (§8 [^5]):** Clarified footnote [^5] to correctly specify OpenRouter's `zdr: true` request parameter for Zero Data Retention, decoupling it from the `:nitro` throughput routing suffix.
+
 **Revision r2** — addressing Sigrid's review:
 - **Z.AI Endpoint Correction (§2.3, §3):** Corrected Z.AI's standard OpenAI-compatible API endpoint to `https://api.z.ai/api/paas/v4/chat/completions`. Clarified the Anthropic reverse-proxy bridge (`https://api.z.ai/api/anthropic/v1/messages`) and explicitly designated the Coding Plan path (`/api/coding/paas/v4/...`) as out of scope for mobile keyboard completions.
 - **Provider Policy & Primary Citations (§2, §4, §8):** Added dated primary-document citations and footnotes for Anthropic, OpenRouter, and Z.AI privacy, data retention, proxy routing, and per-endpoint Zero Data Retention (ZDR) claims, qualifying how policies vary by account settings and downstream model targets.
@@ -240,7 +243,7 @@ For this planning deliverable to be complete and ready for exact-head review:
 [^2]: Anthropic Commercial Terms of Service & Privacy Policy (2024–2026): `https://www.anthropic.com/legal/commercial-terms` (§3.2 "Customer Content") — specifies that inputs/outputs submitted via the commercial API are not used to train generative models, retained for 30 days maximum for trust and safety enforcement unless zero-retention is contracted.
 [^3]: OpenRouter API Reference (2024–2026): `https://openrouter.ai/docs#quick-start` — specifies `https://openrouter.ai/api/v1/chat/completions` endpoint and Bearer auth.
 [^4]: OpenRouter Architecture & Proxy Routing Documentation (2024–2026): `https://openrouter.ai/docs#routing` — details client-to-proxy-to-provider request forwarding.
-[^5]: OpenRouter Data Privacy & Zero Data Retention Policies (2024–2026): `https://openrouter.ai/docs#privacy-and-terms` — documents per-provider data policies, opt-in prompt logging, and the `:nitro`/ZDR routing constraints.
+[^5]: OpenRouter Data Privacy & Zero Data Retention Policies (2024–2026): `https://openrouter.ai/docs#privacy-and-terms` — documents per-provider data policies, opt-in prompt logging, and the `zdr: true` request parameter for Zero Data Retention (distinguished from the `:nitro` throughput routing suffix).
 [^6]: Z.AI / Zhipu AI OpenAPI Reference (2024–2026): `https://docs.z.ai/api-reference` — specifies `https://api.z.ai/api/paas/v4/chat/completions` as the standard general completions gateway.
 [^7]: Z.AI DevPack Claude Manual Configuration (2024–2026): `https://docs.z.ai/devpack/tool/claude#manual-configuration` — specifies `https://api.z.ai/api/anthropic/v1/messages` reverse-proxy compatibility bridge.
 [^8]: Z.AI Terms of Service & Privacy Policy (2024–2026): `https://www.z.ai/terms` — details data governance, cross-border transmission frameworks, and regional service hosting.
