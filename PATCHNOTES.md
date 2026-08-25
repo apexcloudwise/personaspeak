@@ -10,6 +10,16 @@ Newest first, like all respectable patch notes.
 
 ---
 
+## 2026-08-25 — The Provider Exploration: non-Anthropic options scouted on paper
+
+- Shipped the plan-only feasibility assessment and contract comparison for non-Anthropic provider options (OpenRouter, Z.AI) alongside the existing Anthropic scaffolding:
+  - Evaluated four paths: retaining disabled Anthropic scaffolding (with live qualification deferred), adding a separately disabled OpenRouter adapter, adding a separately disabled Z.AI adapter, and bounded deferral to Milestone 5.
+  - Formulated the bounded recommendation: stay with the disabled Anthropic baseline for Milestone 4; prioritize OpenRouter as the secondary candidate if multi-model access is mandated, routed behind a dedicated ADR (ADR-0009).
+  - Enforced the mock-only human constraint: zero real credentials, zero live network egress, and strict preservation of Milestone 4 closeout issues #96 and #89.
+- Plan-only PR: zero production code, zero network calls, zero keystore modifications. (#101)
+
+---
+
 ## 2026-08-25 — The Fixture Blueprint: immutable-provenance device plan lands
 
 - The M4 device qualification fixture plan establishes the tamper-evident execution
