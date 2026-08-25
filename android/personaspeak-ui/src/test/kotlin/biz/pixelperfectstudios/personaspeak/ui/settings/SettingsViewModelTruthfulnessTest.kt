@@ -11,13 +11,31 @@ import biz.pixelperfectstudios.personaspeak.ui.brain.StoreOutcome
 import biz.pixelperfectstudios.personaspeak.personas.ValidatedPersona
 import biz.pixelperfectstudios.personaspeak.ui.personas.PersonaRepository
 import biz.pixelperfectstudios.personaspeak.ui.personas.PersonaSummary
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Before
 import org.junit.Test
 import java.nio.charset.StandardCharsets
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class SettingsViewModelTruthfulnessTest {
+
+    @Before
+    fun setUp() {
+        Dispatchers.setMain(UnconfinedTestDispatcher())
+    }
+
+    @After
+    fun tearDown() {
+        Dispatchers.resetMain()
+    }
 
     private val emptyRepo = object : PersonaRepository {
         override fun list(): Result<List<PersonaSummary>> = Result.success(emptyList())
