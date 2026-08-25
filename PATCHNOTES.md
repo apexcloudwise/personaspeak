@@ -10,6 +10,28 @@ Newest first, like all respectable patch notes.
 
 ---
 
+## 2026-08-25 — The Fixture Blueprint: immutable-provenance device plan lands
+
+- The M4 device qualification fixture plan establishes the tamper-evident execution
+  protocol for closing out Milestone 4 on a dedicated external fixture:
+  - Literal verification procedures for API-27 legacy `fullBackupContent` exclusion
+    via `bmgr` (with restore token discovery), Mode-A offline ART response-parser
+    validation on `PersonaspeakAdapterHarnessActivity`, and Mode-B live egress
+    smoke testing with concurrent socket sampling of `/proc/net/tcp` against
+    `api.anthropic.com:443`.
+  - Capture-time immutable provenance requirements: host toolchain versions, device
+    fingerprints, application and APK SHA-256 digests, and unredacted command streams
+    committed to the append-only `evidence` branch.
+  - Ephemeral Mode-B credential authority and strict injection boundaries: no secret
+    in source, shell history, intents, logs, screenshots, or retained evidence; immediate
+    memory zeroing and cloud revocation verification.
+  - Unconditional fail-closed governance: unverified runs leave the provider structurally
+    disabled (`FakeProvider` default).
+- Plan-only PR: no device execution, no receipts created, no provider enablement,
+  no changes to deterministic CI gate verifiers. (#99)
+
+---
+
 ## 2026-08-25 — The Brain advances: source contracts and compile gates active
 
 - Shipped Milestone 4 slice 3 verification scaffolding, debug harnesses, and CI gates:
