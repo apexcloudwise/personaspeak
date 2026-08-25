@@ -264,8 +264,12 @@ s.close()
 "
 adb forward --remove tcp:4242
 
-# Step 5: Determine Application UID on device (anchored extraction)
-APP_UID=$(adb shell "dumpsys package biz.pixelperfectstudios.personaspeak.debug | grep -E '^\s*userId=' | head -n 1 | sed 's/.*userId=\([0-9]*\).*/\1/'")
+# Step 5: Determine Application UID on device (anchored, POSIX-portable extraction with fail-closed assertion)
+APP_UID=$(adb shell "dumpsys package biz.pixelperfectstudios.personaspeak.debug | grep -E '^[[:space:]]*userId=' | head -n 1 | sed 's/.*userId=\([0-9]*\).*/\1/'" | tr -d '[:space:]')
+if [[ -z "$APP_UID" || ! "$APP_UID" =~ ^[0-9]+$ ]]; then
+    echo "ERROR: Failed to extract valid numeric APP_UID from dumpsys (got '$APP_UID')" >&2
+    exit 1
+fi
 
 # Step 6: Snapshot host DNS resolution for IPv4 (A) and IPv6 (AAAA)
 dig +short A api.anthropic.com | grep -E '^[0-9.]+$' > /tmp/approved_ipv4.txt
@@ -290,7 +294,7 @@ sleep 5
 kill $SAMPLER_PID 2>/dev/null || true
 kill $LOGCAT_PID 2>/dev/null || true
 
-# Step 11: Literal socket log decoder & validation script (IPv4 + IPv6 support with UID column anchoring)
+# Step 11: Literal socket log decoder & validation script (IPv4 + IPv6 support with UID column anchoring & fail-closed non-empty assertion)
 python3 -c "
 import sys, socket, struct
 
@@ -356,6 +360,9 @@ with open('/tmp/raw_sockets.log', 'r') as f:
                 violations.append(f'Unapproved destination IPv6 observed: [{ip_str}]:{port}')
 
 print(f'Observed connections: {observed_connections}')
+if not observed_connections:
+    print('VIOLATION: Zero outbound socket connections observed for target UID. Fail-closed on empty capture.', file=sys.stderr)
+    sys.exit(1)
 if violations:
     for v in violations:
         print(f'VIOLATION: {v}', file=sys.stderr)
@@ -371,7 +378,7 @@ print('SOCKET AUDIT PASSED: All outbound sockets strictly bound to approved IPs 
 4. Logcat asserts: `PsRunner: HTTP Status 200 OK received: 4 chars`.
 5. Logcat asserts: `PsRunner: SecretBytes.fill(0) executed`.
 6. Logcat asserts: `PsStorageHarness: CLEAR_DONE` and `PsRunner: Mode B complete: SUCCESS`.
-7. Socket evaluation script confirms 100% of outbound connections from `$APP_UID` were to approved `api.anthropic.com` IPs on destination port 443.
+7. Socket evaluation script confirms at least one outbound connection occurred (fail-closed on empty capture) and 100% of outbound connections from `$APP_UID` were to approved `api.anthropic.com` IPs on destination port 443.
 8. Zero third-party, analytics, or unencrypted sockets observed.
 9. Logcat privacy scan confirms 0 occurrences of API key prefix, `x-api-key`, header values, or prompt text.
 
