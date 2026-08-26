@@ -12,7 +12,7 @@ import biz.pixelperfectstudios.personaspeak.personas.PersonaId
 /**
  * Top-level container for PersonaSpeak Settings.
  *
- * Routes dynamically across Home, Persona Browser, and Persona Detail destinations.
+ * Routes dynamically across Home, Persona Browser, Persona Detail, and Provider Setup destinations.
  */
 @Composable
 fun SettingsScreen(
@@ -22,6 +22,10 @@ fun SettingsScreen(
     onSelectPersona: (PersonaId) -> Unit,
     onSelectDefaultMood: (Mood) -> Unit,
     onOpenAskSettings: () -> Unit,
+    onOpenEnableIme: () -> Unit = {},
+    onSaveProvider: (providerId: String, apiKey: String, model: String?, customBaseUrl: String?, onDone: () -> Unit) -> Unit = { _, _, _, _, done -> done() },
+    onClearProvider: (onDone: () -> Unit) -> Unit = { done -> done() },
+    onFetchModels: (suspend () -> Result<List<ModelInfo>>)? = null,
     onClearNotice: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
@@ -35,8 +39,10 @@ fun SettingsScreen(
                 SettingsHomeScreen(
                     state = state,
                     onNavigateToPersonas = { onNavigate(SettingsDestination.Personas) },
+                    onNavigateToProviderSetup = { onNavigate(SettingsDestination.ProviderSetup) },
                     onSelectDefaultMood = onSelectDefaultMood,
                     onOpenAskSettings = onOpenAskSettings,
+                    onOpenEnableIme = onOpenEnableIme,
                     onClearNotice = onClearNotice,
                 )
             }
@@ -69,6 +75,15 @@ fun SettingsScreen(
                         },
                     )
                 }
+            }
+            is SettingsDestination.ProviderSetup -> {
+                ProviderSetupScreen(
+                    state = state,
+                    onBack = onBack,
+                    onSave = onSaveProvider,
+                    onClear = onClearProvider,
+                    onFetchModels = onFetchModels,
+                )
             }
         }
     }

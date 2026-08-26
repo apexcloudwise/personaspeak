@@ -56,6 +56,7 @@ class SettingsScreenTest {
     @Test
     fun `SettingsHomeScreen renders all required groups with 48dp touch floors`() {
         var navigatedToPersonas = false
+        var navigatedToProviderSetup = false
         var askSettingsOpened = false
 
         val state = SettingsState(
@@ -63,12 +64,14 @@ class SettingsScreenTest {
             activePersonaId = jeeves.id,
             personas = listOf(jeeves, bachchan),
             defaultMood = Mood.Polite,
+            providerStatus = ProviderStatusSummary.Configured("openrouter", 1000L),
         )
 
         composeRule.setContent {
             SettingsHomeScreen(
                 state = state,
                 onNavigateToPersonas = { navigatedToPersonas = true },
+                onNavigateToProviderSetup = { navigatedToProviderSetup = true },
                 onSelectDefaultMood = {},
                 onOpenAskSettings = { askSettingsOpened = true },
                 onClearNotice = {},
@@ -100,9 +103,6 @@ class SettingsScreenTest {
         composeRule.onNodeWithTag("personaspeak_settings_provider_row")
             .assertExists()
             .assertHeightIsAtLeast(48.dp)
-        composeRule.onNodeWithTag("personaspeak_settings_cloud_provider_row")
-            .assertExists()
-            .assertHeightIsAtLeast(48.dp)
 
         // TYPING group
         composeRule.onNodeWithText("TYPING").assertExists()
@@ -114,8 +114,34 @@ class SettingsScreenTest {
         composeRule.onNodeWithTag("personaspeak_settings_characters_row").performClick()
         assertTrue(navigatedToPersonas)
 
+        composeRule.onNodeWithTag("personaspeak_settings_provider_row").performScrollTo().performClick()
+        assertTrue(navigatedToProviderSetup)
+
         composeRule.onNodeWithTag("personaspeak_settings_typing_row").performScrollTo().performClick()
         assertTrue(askSettingsOpened)
+    }
+
+    @Test
+    fun `SettingsHomeScreen renders onboarding card when unconfigured`() {
+        var setupClicked = false
+        val state = SettingsState(
+            destination = SettingsDestination.Home,
+            providerStatus = ProviderStatusSummary.Unconfigured,
+        )
+
+        composeRule.setContent {
+            SettingsHomeScreen(
+                state = state,
+                onNavigateToPersonas = {},
+                onNavigateToProviderSetup = { setupClicked = true },
+                onSelectDefaultMood = {},
+                onOpenAskSettings = {},
+            )
+        }
+
+        composeRule.onNodeWithTag("personaspeak_settings_onboarding_card").assertExists()
+        composeRule.onNodeWithText("Connect a brain").performScrollTo().performClick()
+        assertTrue(setupClicked)
     }
 
     @Test
@@ -133,6 +159,7 @@ class SettingsScreenTest {
             SettingsHomeScreen(
                 state = state,
                 onNavigateToPersonas = {},
+                onNavigateToProviderSetup = {},
                 onSelectDefaultMood = { selectedMood = it },
                 onOpenAskSettings = {},
                 onClearNotice = {},
@@ -140,12 +167,68 @@ class SettingsScreenTest {
         }
 
         // Open mood dialog
-        composeRule.onNodeWithTag("personaspeak_settings_mood_row").performClick()
+        composeRule.onNodeWithTag("personaspeak_settings_mood_row").performScrollTo().performClick()
         composeRule.onNodeWithTag("personaspeak_settings_mood_dialog").assertIsDisplayed()
 
         // Select Witty
         composeRule.onNodeWithText("Witty").performClick()
         assertEquals(Mood.Witty, selectedMood)
+    }
+
+    @Test
+    fun `ProviderSetupScreen renders provider options and inputs with 48dp touch floors`() {
+        var savedProviderId: String? = null
+        var savedKey: String? = null
+        var backed = false
+
+        val state = SettingsState(
+            destination = SettingsDestination.ProviderSetup,
+            providerStatus = ProviderStatusSummary.Unconfigured,
+        )
+
+        composeRule.setContent {
+            ProviderSetupScreen(
+                state = state,
+                onBack = { backed = true },
+                onSave = { pid, key, _, _, done ->
+                    savedProviderId = pid
+                    savedKey = key
+                    done()
+                },
+                onClear = { it() },
+            )
+        }
+
+        composeRule.onNodeWithTag("personaspeak_provider_setup_topbar").assertExists()
+        composeRule.onNodeWithTag("personaspeak_provider_setup_back")
+            .assertExists()
+            .assertHeightIsAtLeast(48.dp)
+
+        composeRule.onNodeWithTag("personaspeak_provider_status_card").assertExists()
+        composeRule.onNodeWithTag("personaspeak_provider_option_openrouter")
+            .assertExists()
+            .assertHeightIsAtLeast(48.dp)
+        composeRule.onNodeWithTag("personaspeak_provider_option_anthropic")
+            .assertExists()
+            .assertHeightIsAtLeast(48.dp)
+        composeRule.onNodeWithTag("personaspeak_provider_option_openai-compat")
+            .assertExists()
+            .assertHeightIsAtLeast(48.dp)
+
+        composeRule.onNodeWithTag("personaspeak_provider_key_input").assertExists()
+        composeRule.onNodeWithTag("personaspeak_provider_model_input").assertExists()
+        composeRule.onNodeWithTag("personaspeak_provider_browse_models")
+            .assertExists()
+            .assertHeightIsAtLeast(48.dp)
+
+        composeRule.onNodeWithTag("personaspeak_provider_privacy_notice").assertExists()
+
+        // Switch to OpenAI-compat and check Base URL input appears
+        composeRule.onNodeWithTag("personaspeak_provider_option_openai-compat").performScrollTo().performClick()
+        composeRule.onNodeWithTag("personaspeak_provider_base_url_input").assertExists()
+
+        composeRule.onNodeWithTag("personaspeak_provider_setup_back").performClick()
+        assertTrue(backed)
     }
 
     @Test

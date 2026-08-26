@@ -3,13 +3,17 @@ package biz.pixelperfectstudios.personaspeak.ui.settings
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import biz.pixelperfectstudios.personaspeak.ime.PersonaSpeakBrain
 import biz.pixelperfectstudios.personaspeak.personas.PersonaId
+import biz.pixelperfectstudios.personaspeak.providers.OpenRouterModels
 import biz.pixelperfectstudios.personaspeak.ui.personas.AssetPersonaDocumentSource
 import biz.pixelperfectstudios.personaspeak.ui.personas.BundledPersonaRepository
 import com.anysoftkeyboard.ui.settings.MainSettingsActivity
@@ -30,6 +34,7 @@ class PersonaSpeakSettingsActivity : ComponentActivity() {
 
         val initialDestination: SettingsDestination = when (destinationExtra) {
             DESTINATION_PERSONAS -> SettingsDestination.Personas
+            DESTINATION_PROVIDERS -> SettingsDestination.ProviderSetup
             DESTINATION_PERSONA_DETAIL -> {
                 if (personaIdExtra != null) {
                     SettingsDestination.PersonaDetail(PersonaId(personaIdExtra))
@@ -43,18 +48,27 @@ class PersonaSpeakSettingsActivity : ComponentActivity() {
         val personaRepo = BundledPersonaRepository(AssetPersonaDocumentSource(assets))
 
         setContent {
+            val providerStore = remember {
+                PersonaSpeakBrain.createStore(applicationContext)
+            }
             val viewModel = remember {
                 SettingsViewModel(
                     personasRepo = personaRepo,
                     initialDestination = initialDestination,
+                    providerConfigStore = providerStore,
                 )
             }
             val state by viewModel.state.collectAsState()
+
+            LaunchedEffect(Unit) {
+                viewModel.refreshProviderStatus()
+            }
 
             BackHandler(enabled = state.destination !is SettingsDestination.Home) {
                 when (state.destination) {
                     is SettingsDestination.PersonaDetail -> viewModel.navigateTo(SettingsDestination.Personas)
                     is SettingsDestination.Personas -> viewModel.navigateTo(SettingsDestination.Home)
+                    is SettingsDestination.ProviderSetup -> viewModel.navigateTo(SettingsDestination.Home)
                     else -> finish()
                 }
             }
@@ -66,6 +80,7 @@ class PersonaSpeakSettingsActivity : ComponentActivity() {
                     when (state.destination) {
                         is SettingsDestination.PersonaDetail -> viewModel.navigateTo(SettingsDestination.Personas)
                         is SettingsDestination.Personas -> viewModel.navigateTo(SettingsDestination.Home)
+                        is SettingsDestination.ProviderSetup -> viewModel.navigateTo(SettingsDestination.Home)
                         else -> finish()
                     }
                 },
@@ -76,6 +91,19 @@ class PersonaSpeakSettingsActivity : ComponentActivity() {
                         flags = Intent.FLAG_ACTIVITY_NEW_TASK
                     }
                     startActivity(askIntent)
+                },
+                onOpenEnableIme = {
+                    val imeIntent = Intent(Settings.ACTION_INPUT_METHOD_SETTINGS).apply {
+                        flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                    }
+                    startActivity(imeIntent)
+                },
+                onSaveProvider = viewModel::saveProvider,
+                onClearProvider = viewModel::clearProvider,
+                onFetchModels = {
+                    OpenRouterModels.fetch().map { models ->
+                        models.map { ModelInfo(it.id, it.name, it.isFree) }
+                    }
                 },
                 onClearNotice = viewModel::clearNotice,
             )

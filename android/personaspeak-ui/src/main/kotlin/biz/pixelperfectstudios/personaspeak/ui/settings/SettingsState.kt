@@ -19,6 +19,7 @@ data class SettingsState(
     val providerOutcome: StoreOutcome = StoreOutcome.Unconfigured,
     val lastRewriteResult: AdapterResult? = null,
     val isSavingProvider: Boolean = false,
+    val providerStatus: ProviderStatusSummary = ProviderStatusSummary.Unconfigured,
 ) {
 
     /**

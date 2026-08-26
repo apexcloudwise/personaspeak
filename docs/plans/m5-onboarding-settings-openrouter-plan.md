@@ -1,62 +1,53 @@
-# Milestone 5 Plan — Stitch Onboarding & Settings, Provider Opt-In, and OpenRouter Adapter
+# Milestone 5 Plan: Onboarding, Settings UI, and OpenRouter Multi-Provider Integration
 
-**Issue:** #103  
-**Parent Milestone:** #38 (Milestone 5)  
-**Authority:** #102 / PR #102 (`5a35853`), ADR-0009 (`docs/adr/0009-pluggable-multi-provider-and-openrouter.md`), owner speed authorization (2026-08-27)  
-**Baseline Commit:** `5a35853` (head of `main`)  
-**Owner:** @reicodes-pixelperfect  
-**Reviewers:** Seraph (@seraph-pixelperfect), Sigrid (@sigrid-pixelperfect), Cassie (@cassievale-pixelperfect)  
-
----
-
-## 0. Executive Summary & Strategy
-
-Milestone 5 delivers the user onboarding experience, first-party settings configuration ("The Brain"), and user-driven provider opt-in, establishing OpenRouter as the sanctioned secondary remote provider alongside Anthropic and the offline `FakeProvider` baseline.
-
-Following the speed authorization granted by the product owner on 2026-08-27, Milestone 5 is structured into **two accelerated work slices**, with the plan and ADR riding directly with the implementation:
-
-```
-+----------------------------------------------------------------------------------------------------+
-|                                    MILESTONE 5 EXECUTION SLICES                                    |
-+----------------------------------------------------------------------------------------------------+
-|  SLICE A (Current Slice):                                                                          |
-|  - ADR-0009: Pluggable Multi-Provider Architecture & OpenRouter Evaluation                         |
-|  - Milestone Plan (this document)                                                                  |
-|  - OpenRouterAdapter & OpenRouterModels in :personaspeak-providers (Pure Kotlin, mock-only)        |
-|  - Zero-dependency MiniJson parser contract-pinned against real payloads                           |
-|  - Comprehensive unit contract tests (200 OK, 401/403 AuthFailure, 429/5xx, timeouts, zeroing)     |
-|  - Manifest INTERNET permission + UPSTREAM-MODIFIED.md rent ledger entry                           |
-+----------------------------------------------------------------------------------------------------+
-|  SLICE B (Next Slice):                                                                             |
-|  - Settings UI: "The Brain" configuration screen (provider radio picker, key field, model field)   |
-|  - OpenRouter Model Browser: searchable live/catalog model dialog with free-first badges           |
-|  - Onboarding Card & On-Ramp guidance (unconfigured setup guide + deep links)                      |
-|  - Provider Opt-In Composition wiring (ResolvingProvider in PersonaSpeakComposition)               |
-|  - UI tests & integration validation                                                               |
-+----------------------------------------------------------------------------------------------------+
-```
+**Parent Issue:** [#38](https://github.com/apexcloudwise/personaspeak/issues/38) (Milestone 5)  
+**Tracking Issue:** [#103](https://github.com/apexcloudwise/personaspeak/issues/103) (Kickoff)  
+**Related ADR:** [ADR-0009: Pluggable Multi-Provider Architecture and OpenRouter Evaluation](../adr/0009-pluggable-multi-provider-and-openrouter.md)  
+**Author:** Rei (Pixel Perfect Studios)  
+**Date:** 2026-08-27  
 
 ---
 
-## 1. Architectural Invariants & Non-Negotiables
+## 1. Goal & Architecture Overview
 
-1. **`m4-proto` is a Port-Source, Not a Merge-Base:**
-   - The exploratory prototype branch `m4-proto` (0316dbd) is used solely as a verified behavioral reference.
-   - Code is ported onto main's slice-2 interfaces (`ProviderAdapter`, `HttpTransport`) and tested with fresh, rigorous unit tests.
-2. **Mock-Only for Merged Code:**
-   - No real credentials, API tokens, or live network egress in source code, automated tests, or repository fixtures.
-   - Live BYOK testing on physical hardware is performed outside the repository boundary.
-3. **Default-Disabled Invariant:**
-   - `FakeProvider` remains the active default provider upon app launch.
-   - Remote provider adapters execute only after deliberate user opt-in in Settings.
-4. **Pure Kotlin Seams:**
-   - `:personaspeak-providers` contains zero Android platform imports (`android.*`).
-   - Transport is abstracted via `HttpTransport`, allowing hermetic, offline test runs.
-5. **Privacy & Zero Secret Leakage:**
-   - Raw credentials (`SecretBytes`) are zeroed in memory immediately upon request completion (`finally { secret.value.fill(0) }`).
-   - No drafts, user inputs, rewrite prompts, or API keys are logged, persisted in plaintext, or transmitted outside the designated endpoint.
-6. **Independence from Milestone 4 Gates:**
-   - Milestone 4 gates (#96/#89 — Mode A ART, Mode B live egress, API-27 backup exclusion) remain parked on human credential provisioning. Milestone 5 does not disturb or substitute for these gates.
+Milestone 5 delivers end-user configuration and connectivity for remote AI provider backends, expanding beyond the default offline `FakeProvider` baseline to support live models via **OpenRouter** (and OpenAI-compatible proxies) while preserving complete privacy, zero secret logging, and deterministic offline fallbacks.
+
+To accelerate delivery safely without regressions, Milestone 5 is partitioned into two focused slices:
+- **Slice A (Foundation):** Architecture record (ADR-0009), dependency-free pure Kotlin `OpenRouterAdapter` & `OpenRouterModels` catalog parser in `:personaspeak-providers`, exhaustive contract tests, manifest network permission, and upstream rent ledgering.
+- **Slice B (UI & Runtime Binding):** "The Brain" settings screen (`ProviderSetupScreen`), searchable model catalog browser dialog, "Get Started" onboarding card on Settings Home, and runtime provider resolution in `PersonaSpeakComposition` bound to Keystore storage.
+
+```mermaid
+graph TD
+    subgraph UI Layer [personaspeak-ui]
+        PSS[ProviderSetupScreen] --> Dialog[OpenRouterModelPickerDialog]
+        SHS[SettingsHomeScreen] --> Card[Get Started Onboarding Card]
+    end
+
+    subgraph Storage Layer [personaspeak-data]
+        DS[DataStoreMetaStore]
+        KS[KeystoreSecretCipher]
+        PCS[DataStoreProviderConfigStore]
+        PCS --> DS
+        PCS --> KS
+    end
+
+    subgraph Providers Layer [personaspeak-providers]
+        ORA[OpenRouterAdapter]
+        ORM[OpenRouterModels]
+        MJ[MiniJson Parser]
+        AMA[AnthropicMessagesAdapter]
+    end
+
+    subgraph Runtime Composition [ime:app]
+        RP[ResolvingProvider] --> PCS
+        RP --> ORA
+        RP --> AMA
+        RP --> FP[FakeProvider Fallback]
+        PSC[PersonaSpeakComposition] --> RP
+    end
+
+    PSS --> PCS
+```
 
 ---
 
@@ -100,21 +91,27 @@ Following the speed authorization granted by the product owner on 2026-08-27, Mi
 
 ---
 
-## 3. Slice B: Settings UI, Model Browser & Provider Opt-In (Upcoming)
+## 3. Slice B: Settings UI, Model Browser & Provider Opt-In
 
 ### 3.1 Components & UX Flow
 
 1. **"The Brain" Settings Screen (`ProviderSetupScreen.kt`):**
-   - Provider radio group (`Fake / Offline`, `OpenRouter`, `Anthropic`).
-   - Obfuscated API key password field with Save/Clear actions bound to Keystore.
-   - Model selection text field with validation.
-   - "Browse models…" dialog button (for OpenRouter) querying public catalog.
+   - Provider radio group (`OpenRouter`, `Claude (Anthropic)`, `OpenAI-compatible`).
+   - Obfuscated API key password field with Save/Clear actions bound to Keystore via `ProviderConfigStore`.
+   - Model selection text field with custom override support.
+   - "Browse models…" dialog button (for OpenRouter) querying public catalog via `OpenRouterModels.fetch()`.
+   - Searchable `OpenRouterModelPickerDialog` with search filter, free-first sorting, and "FREE" badges.
+   - Custom base-URL classification: Non-secret DataStore metadata (stored in `ProviderMeta`), validated to `https://`.
 2. **Settings Home & Onboarding Cards (`SettingsHomeScreen.kt`):**
    - "AI Brain" row reflecting active provider and configuration status.
    - "Get Started" onboarding card shown when unconfigured, linking to System IME settings and Brain configuration.
-3. **Runtime Composition Binding (`PersonaSpeakComposition.kt`):**
-   - Resolves active provider from `ProviderConfigStore` on input view start.
-   - Falls back safely to `FakeProvider` if unconfigured.
+3. **Runtime Composition Binding (`PersonaSpeakComposition.kt` / `ResolvingProvider`):**
+   - Resolves active provider from `ProviderConfigStore` on input view start (`onStartInputView`).
+   - Falls back safely to `FakeProvider` if unconfigured or on storage failures.
+   - Updates `SettingsState.lastRewriteResult: AdapterResult?` truthfully on rewrites (A4 invariant).
+4. **Dependency & Build Wiring:**
+   - Promoted `personaspeak-data` from `debugImplementation` to `implementation` in `:ime:app/build.gradle` so runtime IME composition can read the Keystore store.
+   - Ledgered in `android/keyboard/UPSTREAM-MODIFIED.md`.
 
 ---
 
@@ -136,3 +133,16 @@ Following the speed authorization granted by the product owner on 2026-08-27, Mi
 - [x] **Zero Secret Logging:** Verified by `NoSecretLoggingTest` and `verify-no-secret-logging.sh`.
 - [x] **Upstream Rent Ledgered:** Manifest permission recorded in `UPSTREAM-MODIFIED.md`.
 - [x] **Build & CI Clean:** `:personaspeak-providers:testDebugUnitTest`, `:ime:app:compileDebugKotlin`, and `verify-milestone-4.sh` pass.
+
+### 4.2 Slice B Acceptance Criteria
+
+- [x] **The Brain Settings Screen:** `ProviderSetupScreen.kt` implements radio selector, key field, model field, clear action, and privacy notice with 48dp touch floors.
+- [x] **Searchable Model Browser:** `OpenRouterModelPickerDialog` dynamically browses public `/models` catalog with free badges and search filtering.
+- [x] **Onboarding Guidance:** "Get started" card rendered on `SettingsHomeScreen` when unconfigured, with links to system keyboard settings and provider setup.
+- [x] **Runtime Provider Resolution:** `ResolvingProvider` resolves configured brain on input start and delegates to `OpenRouterAdapter`/`AnthropicMessagesAdapter` or falls back to `FakeProvider`.
+- [x] **Upstream Rent Ledgered:** `personaspeak-data` dependency promotion recorded in `UPSTREAM-MODIFIED.md`.
+- [x] **Complete Quality Verification:**
+  - All unit tests across `:personaspeak-ui`, `:personaspeak-data`, `:personaspeak-providers`, and `:ime:app` pass.
+  - `verify-milestone-4.sh` passes (`PASS: milestone 4 gate`).
+  - All 8 verifier fixture suites pass.
+  - Clean debug APK assembly (`:ime:app:assembleDebug`).

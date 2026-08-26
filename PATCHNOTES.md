@@ -8,6 +8,16 @@ while the context is hot.
 
 Newest first, like all respectable patch notes.
 
+## 2026-08-27 — The Thinking Keyboard: The Brain settings, model browser, and runtime wiring
+
+- Shipped Milestone 5 Slice B (The Brain Settings, Searchable Model Catalog, Onboarding, & Runtime Provider Resolution):
+  - Built "The Brain" settings screen (`ProviderSetupScreen.kt`) with provider radio selector (OpenRouter, Claude, OpenAI-compatible), obfuscated API key entry, model selection, custom base-URL support, and clear Key URL links.
+  - Added searchable `OpenRouterModelPickerDialog` querying OpenRouter's live public catalog via `OpenRouterModels.fetch()` with search filter and "FREE" badges.
+  - Landed the "Get started" onboarding card on Settings Home guiding users through enabling PersonaBoard in system settings, persona selection, and brain connection.
+  - Implemented `ResolvingProvider` in `:ime:app` resolving active provider credentials from Keystore/DataStore on input view start with clean fallback to `FakeProvider` when unconfigured or broken.
+  - Promoted `:personaspeak-data` to `implementation` in `:ime:app/build.gradle` and ledgered in `UPSTREAM-MODIFIED.md`.
+  - Maintained zero-leak memory invariants and 48dp minimum touch target floor across all newly added UI surfaces. (#103)
+
 ---
 
 ## 2026-08-27 — The Multi-Brain Bridge: ADR-0009 & OpenRouter adapter foundation lands
