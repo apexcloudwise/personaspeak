@@ -119,6 +119,7 @@ class DataStoreProviderConfigStore(
             configuredAtEpochMs = config.configuredAtEpochMs,
             schemaVersion = config.schemaVersion,
             generation = generation,
+            model = config.model,
         )
         try {
             metaStore.write(meta)
@@ -138,6 +139,7 @@ class DataStoreProviderConfigStore(
                 providerId = meta.providerId,
                 configuredAtEpochMs = meta.configuredAtEpochMs,
                 generation = meta.generation,
+                model = meta.model,
             )
         }
         logger.event(StoreEvent.SAVE_SWAPPED)
@@ -145,6 +147,7 @@ class DataStoreProviderConfigStore(
             providerId = meta.providerId,
             configuredAtEpochMs = meta.configuredAtEpochMs,
             generation = meta.generation,
+            model = meta.model,
         )
     }
 
@@ -196,6 +199,7 @@ class DataStoreProviderConfigStore(
                 providerId = meta.providerId,
                 configuredAtEpochMs = meta.configuredAtEpochMs,
                 generation = meta.generation,
+                model = meta.model,
             ),
             secret = secret,
         )

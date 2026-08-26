@@ -18,7 +18,6 @@ import biz.pixelperfectstudios.personaspeak.ime.editor.InputConnectionEditorPort
 import biz.pixelperfectstudios.personaspeak.ime.host.ImeViewTreeOwners
 import biz.pixelperfectstudios.personaspeak.ime.host.PersonaSpeakRowProvider
 import biz.pixelperfectstudios.personaspeak.personas.PersonaId
-import biz.pixelperfectstudios.personaspeak.providers.FakeProvider
 import biz.pixelperfectstudios.personaspeak.ui.personas.AssetPersonaDocumentSource
 import biz.pixelperfectstudios.personaspeak.ui.personas.BundledPersonaRepository
 import biz.pixelperfectstudios.personaspeak.ui.rewrite.RewriteCoordinator
@@ -42,7 +41,7 @@ class PersonaSpeakComposition @JvmOverloads constructor(
         connectionSupplier = inputConnectionSupplier,
         editorInfoSupplier = editorInfoSupplier,
     )
-    private val provider = FakeProvider()
+    private val provider = PersonaSpeakBrain.provider(context)
     private val personaRepo = BundledPersonaRepository(
         AssetPersonaDocumentSource(context.assets),
     )
@@ -75,6 +74,7 @@ class PersonaSpeakComposition @JvmOverloads constructor(
     }
 
     fun onStartInputView() {
+        PersonaSpeakBrain.invalidate()
         owners.startInput()
         val c = container ?: return
         if (isAdded) return

@@ -14,4 +14,7 @@ sealed interface SettingsDestination {
 
     /** Detailed persona dossier for a single character. */
     data class PersonaDetail(val personaId: PersonaId) : SettingsDestination
+
+    /** Brain setup: provider picker, API key entry, and connection status. */
+    data object ProviderSetup : SettingsDestination
 }

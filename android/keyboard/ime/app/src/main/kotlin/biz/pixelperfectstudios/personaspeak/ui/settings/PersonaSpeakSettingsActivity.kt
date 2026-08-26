@@ -6,9 +6,12 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import biz.pixelperfectstudios.personaspeak.data.DataStoreProviderConfigStore
+import biz.pixelperfectstudios.personaspeak.ime.PersonaSpeakBrain
 import biz.pixelperfectstudios.personaspeak.personas.PersonaId
 import biz.pixelperfectstudios.personaspeak.ui.personas.AssetPersonaDocumentSource
 import biz.pixelperfectstudios.personaspeak.ui.personas.BundledPersonaRepository
@@ -30,6 +33,7 @@ class PersonaSpeakSettingsActivity : ComponentActivity() {
 
         val initialDestination: SettingsDestination = when (destinationExtra) {
             DESTINATION_PERSONAS -> SettingsDestination.Personas
+            DESTINATION_PROVIDERS -> SettingsDestination.ProviderSetup
             DESTINATION_PERSONA_DETAIL -> {
                 if (personaIdExtra != null) {
                     SettingsDestination.PersonaDetail(PersonaId(personaIdExtra))
@@ -41,34 +45,43 @@ class PersonaSpeakSettingsActivity : ComponentActivity() {
         }
 
         val personaRepo = BundledPersonaRepository(AssetPersonaDocumentSource(assets))
+        val providerStore = DataStoreProviderConfigStore.create(this, android.os.Build.VERSION.SDK_INT)
 
         setContent {
             val viewModel = remember {
                 SettingsViewModel(
                     personasRepo = personaRepo,
                     initialDestination = initialDestination,
+                    providerStore = providerStore,
                 )
             }
             val state by viewModel.state.collectAsState()
 
-            BackHandler(enabled = state.destination !is SettingsDestination.Home) {
+            LaunchedEffect(state.destination) {
+                if (state.destination is SettingsDestination.Home ||
+                    state.destination is SettingsDestination.ProviderSetup
+                ) {
+                    viewModel.refreshProviderStatus()
+                }
+            }
+
+            val navigateBack: () -> Unit = {
                 when (state.destination) {
                     is SettingsDestination.PersonaDetail -> viewModel.navigateTo(SettingsDestination.Personas)
                     is SettingsDestination.Personas -> viewModel.navigateTo(SettingsDestination.Home)
+                    is SettingsDestination.ProviderSetup -> viewModel.navigateTo(SettingsDestination.Home)
                     else -> finish()
                 }
+            }
+
+            BackHandler(enabled = state.destination !is SettingsDestination.Home) {
+                navigateBack()
             }
 
             SettingsScreen(
                 state = state,
                 onNavigate = viewModel::navigateTo,
-                onBack = {
-                    when (state.destination) {
-                        is SettingsDestination.PersonaDetail -> viewModel.navigateTo(SettingsDestination.Personas)
-                        is SettingsDestination.Personas -> viewModel.navigateTo(SettingsDestination.Home)
-                        else -> finish()
-                    }
-                },
+                onBack = navigateBack,
                 onSelectPersona = viewModel::selectPersona,
                 onSelectDefaultMood = viewModel::selectDefaultMood,
                 onOpenAskSettings = {
@@ -76,6 +89,24 @@ class PersonaSpeakSettingsActivity : ComponentActivity() {
                         flags = Intent.FLAG_ACTIVITY_NEW_TASK
                     }
                     startActivity(askIntent)
+                },
+                onSaveProvider = { providerId, apiKey, model, onDone ->
+                    viewModel.saveProvider(providerId, apiKey, model) {
+                        PersonaSpeakBrain.invalidate()
+                        onDone()
+                    }
+                },
+                onClearProvider = { onDone ->
+                    viewModel.clearProvider {
+                        PersonaSpeakBrain.invalidate()
+                        onDone()
+                    }
+                },
+                onNavigateToProviderSetup = {
+                    viewModel.navigateTo(SettingsDestination.ProviderSetup)
+                },
+                onOpenEnableIme = {
+                    startActivity(Intent(android.provider.Settings.ACTION_INPUT_METHOD_SETTINGS))
                 },
                 onClearNotice = viewModel::clearNotice,
             )

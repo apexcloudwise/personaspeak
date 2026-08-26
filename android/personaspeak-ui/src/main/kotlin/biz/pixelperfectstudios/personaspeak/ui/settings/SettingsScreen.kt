@@ -12,7 +12,8 @@ import biz.pixelperfectstudios.personaspeak.personas.PersonaId
 /**
  * Top-level container for PersonaSpeak Settings.
  *
- * Routes dynamically across Home, Persona Browser, and Persona Detail destinations.
+ * Routes dynamically across Home, Persona Browser, Persona Detail, and
+ * Provider Setup destinations.
  */
 @Composable
 fun SettingsScreen(
@@ -22,6 +23,10 @@ fun SettingsScreen(
     onSelectPersona: (PersonaId) -> Unit,
     onSelectDefaultMood: (Mood) -> Unit,
     onOpenAskSettings: () -> Unit,
+    onSaveProvider: (providerId: String, apiKey: String, model: String?, onDone: () -> Unit) -> Unit = { _, _, _, _ -> },
+    onClearProvider: (onDone: () -> Unit) -> Unit = {},
+    onNavigateToProviderSetup: () -> Unit = {},
+    onOpenEnableIme: () -> Unit = {},
     onClearNotice: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
@@ -38,6 +43,8 @@ fun SettingsScreen(
                     onSelectDefaultMood = onSelectDefaultMood,
                     onOpenAskSettings = onOpenAskSettings,
                     onClearNotice = onClearNotice,
+                    onNavigateToProviderSetup = onNavigateToProviderSetup,
+                    onOpenEnableIme = onOpenEnableIme,
                 )
             }
             is SettingsDestination.Personas -> {
@@ -69,6 +76,14 @@ fun SettingsScreen(
                         },
                     )
                 }
+            }
+            is SettingsDestination.ProviderSetup -> {
+                ProviderSetupScreen(
+                    state = state,
+                    onBack = onBack,
+                    onSave = onSaveProvider,
+                    onClear = onClearProvider,
+                )
             }
         }
     }

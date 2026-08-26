@@ -11,6 +11,8 @@
     <!-- http://d.android.com/guide/practices/screens_support.html read about legacy. -->
 
     <uses-permission android:name="android.permission.VIBRATE" />
+    <!-- required for cloud provider rewrites (M4): BYOK HTTPS calls only -->
+    <uses-permission android:name="android.permission.INTERNET" />
     <!-- required for the user dictionary (long press a word in the suggestions bar) -->
     <uses-permission android:name="android.permission.READ_USER_DICTIONARY" />
     <uses-permission android:name="android.permission.WRITE_USER_DICTIONARY" />

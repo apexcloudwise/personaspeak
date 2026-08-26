@@ -14,6 +14,8 @@ data class SettingsState(
     val defaultMood: Mood = Mood.DEFAULT,
     val selectedDetailPersona: ValidatedPersona? = null,
     val notice: String? = null,
+    val providerStatus: ProviderStatusSummary = ProviderStatusSummary.Unconfigured,
+    val isSavingProvider: Boolean = false,
 ) {
     /**
      * Resolves the active [ValidatedPersona] instance from the loaded list if present.

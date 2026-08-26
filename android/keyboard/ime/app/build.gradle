@@ -121,7 +121,7 @@ dependencies {
     implementation project(':personaspeak-ui')
     implementation project(':core-personas')
     implementation project(':core-providers')
-    debugImplementation project(':personaspeak-data')
+    implementation project(':personaspeak-data')
     implementation platform(libs.compose.bom)
     implementation libs.compose.ui
     implementation libs.compose.material3

@@ -34,6 +34,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import biz.pixelperfectstudios.personaspeak.personas.Mood
+import biz.pixelperfectstudios.personaspeak.providers.ProviderCatalog
 import biz.pixelperfectstudios.personaspeak.ui.personas.emoji
 
 private val MinInteractiveHeight = 48.dp
@@ -46,9 +47,12 @@ fun SettingsHomeScreen(
     onSelectDefaultMood: (Mood) -> Unit,
     onOpenAskSettings: () -> Unit,
     onClearNotice: () -> Unit,
+    onNavigateToProviderSetup: () -> Unit = {},
+    onOpenEnableIme: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     var showMoodDialog by remember { mutableStateOf(false) }
+    var onboardingDismissed by remember { mutableStateOf(false) }
 
     Column(
         modifier = modifier
@@ -105,6 +109,66 @@ fun SettingsHomeScreen(
             }
         }
 
+        // Onboarding Card (only while no brain is connected)
+        if (state.providerStatus is ProviderStatusSummary.Unconfigured && !onboardingDismissed) {
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("personaspeak_settings_onboarding_card"),
+                shape = RoundedCornerShape(12.dp),
+                color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.4f),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)),
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                    ) {
+                        Text(
+                            text = "Get started",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                        TextButton(
+                            onClick = { onboardingDismissed = true },
+                            modifier = Modifier
+                                .heightIn(min = MinInteractiveHeight)
+                                .testTag("personaspeak_settings_onboarding_dismiss"),
+                        ) {
+                            Text("✕")
+                        }
+                    }
+                    OnboardingStep(
+                        number = "1.",
+                        label = "Enable PersonaBoard in system keyboards",
+                        onClick = onOpenEnableIme,
+                    )
+                    OnboardingStep(
+                        number = "2.",
+                        label = "Set it as your keyboard",
+                        onClick = null,
+                    )
+                    OnboardingStep(
+                        number = "3.",
+                        label = "Pick your character",
+                        onClick = onNavigateToPersonas,
+                    )
+                    OnboardingStep(
+                        number = "4.",
+                        label = "Connect a brain",
+                        onClick = onNavigateToProviderSetup,
+                    )
+                }
+            }
+        }
+
         // CHARACTERS Group
         SettingsSection(title = "CHARACTERS") {
             // Characters / Personas Row
@@ -147,20 +211,18 @@ fun SettingsHomeScreen(
 
         // THE BRAIN Group
         SettingsSection(title = "THE BRAIN") {
-            // AI Provider
-            SettingsInfoRow(
-                title = "AI Provider",
-                subtitle = "FakeProvider (In-Memory Baseline)",
-                explanation = "Fast local mocked responses for Milestone 3 development & testing.",
+            SettingsRow(
+                title = "AI Brain",
+                subtitle = when (val status = state.providerStatus) {
+                    ProviderStatusSummary.Unconfigured -> "Not connected — tap to connect"
+                    is ProviderStatusSummary.Configured ->
+                        "${ProviderCatalog.byId(status.providerId)?.displayName ?: status.providerId} · tap to manage"
+                    ProviderStatusSummary.Unavailable -> "Secure storage unavailable · tap to retry"
+                    ProviderStatusSummary.InvalidCredentials -> "Key needs re-entering · tap to manage"
+                },
+                actionLabel = "Manage →",
+                onClick = onNavigateToProviderSetup,
                 modifier = Modifier.testTag("personaspeak_settings_provider_row"),
-            )
-
-            // Cloud Providers & API Keys (Disabled-but-honest)
-            SettingsInfoRow(
-                title = "Cloud Providers & API Keys",
-                subtitle = "Not configurable yet (Milestone 4)",
-                explanation = "Live cloud providers (Gemini, Claude, OpenAI, OpenRouter) and secure Android Keystore key management arrive in Milestone 4.",
-                modifier = Modifier.testTag("personaspeak_settings_cloud_provider_row"),
             )
 
             // Privacy Posture Disclosure
@@ -331,6 +393,41 @@ private fun SettingsRow(
                 color = MaterialTheme.colorScheme.primary,
             )
         }
+    }
+}
+
+@Composable
+private fun OnboardingStep(
+    number: String,
+    label: String,
+    onClick: (() -> Unit)?,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .heightIn(min = MinInteractiveHeight)
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
+            .padding(horizontal = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Text(
+            text = number,
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.primary,
+        )
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = if (onClick != null) FontWeight.SemiBold else FontWeight.Normal,
+            color = if (onClick != null) {
+                MaterialTheme.colorScheme.primary
+            } else {
+                MaterialTheme.colorScheme.onSurface
+            },
+        )
     }
 }
 

@@ -100,9 +100,6 @@ class SettingsScreenTest {
         composeRule.onNodeWithTag("personaspeak_settings_provider_row")
             .assertExists()
             .assertHeightIsAtLeast(48.dp)
-        composeRule.onNodeWithTag("personaspeak_settings_cloud_provider_row")
-            .assertExists()
-            .assertHeightIsAtLeast(48.dp)
 
         // TYPING group
         composeRule.onNodeWithText("TYPING").assertExists()
