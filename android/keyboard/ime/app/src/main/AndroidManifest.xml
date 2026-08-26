@@ -16,6 +16,8 @@
     <uses-permission android:name="android.permission.WRITE_USER_DICTIONARY" />
     <!-- REQUIRED FOR THE CONTACTS DICTIONARY -->
     <uses-permission android:name="android.permission.READ_CONTACTS" />
+    <!-- required for remote AI provider API calls (Anthropic, OpenRouter) upon user opt-in -->
+    <uses-permission android:name="android.permission.INTERNET" />
     <!-- currently, only support touch and fake-touch devices -->
     <uses-feature android:name="android.hardware.faketouch" />
     <uses-feature

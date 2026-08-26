@@ -10,6 +10,18 @@ Newest first, like all respectable patch notes.
 
 ---
 
+## 2026-08-27 — The Multi-Brain Bridge: ADR-0009 & OpenRouter adapter foundation lands
+
+- Shipped Milestone 5 Slice A (Kickoff & Provider Adapter Foundation):
+  - Authored ADR-0009 ("Pluggable Multi-Provider Architecture and OpenRouter Evaluation") establishing the multi-provider interface standard, configuration schema in DataStore/Keystore, custom base-URL data classification, proxy egress boundaries, and default-disabled invariants.
+  - Landed the Milestone 5 plan (`docs/plans/m5-onboarding-settings-openrouter-plan.md`) structuring M5 into two accelerated slices (adapter foundation, followed by Settings UI and onboarding).
+  - Implemented `OpenRouterAdapter` and `OpenRouterModels` in `:personaspeak-providers` with pure Kotlin, zero-dependency `MiniJson` payload extraction, and immediate memory zeroing (`SecretBytes.value.fill(0)`).
+  - Added comprehensive contract tests for OpenRouter verifying 200 OK text extraction, 401/403 `AuthFailure` mapping, 429 client error mapping, 500/502/503 server error mapping, timeouts, and pinned HTTPS egress.
+  - Added `<uses-permission android:name="android.permission.INTERNET" />` to `AndroidManifest.xml` and ledgered the modification in `android/keyboard/UPSTREAM-MODIFIED.md`.
+  - Default-disabled baseline preserved: `FakeProvider` remains the active default in composition; remote egress strictly gated on Milestone 5 Settings opt-in. (#103)
+
+---
+
 ## 2026-08-25 — The Provider Exploration: non-Anthropic options scouted on paper
 
 - Shipped the plan-only feasibility assessment and contract comparison for non-Anthropic provider options (OpenRouter, Z.AI) alongside the existing Anthropic scaffolding:
