@@ -14,4 +14,7 @@ sealed interface SettingsDestination {
 
     /** Detailed persona dossier for a single character. */
     data class PersonaDetail(val personaId: PersonaId) : SettingsDestination
+
+    /** Provider setup screen for configuring AI brain provider credentials and model. */
+    data object ProviderSetup : SettingsDestination
 }

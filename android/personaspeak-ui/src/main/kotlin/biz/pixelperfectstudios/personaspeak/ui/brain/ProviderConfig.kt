@@ -18,6 +18,10 @@ value class SecretBytes(val value: ByteArray)
 data class ProviderConfig(
     val providerId: String,
     val configuredAtEpochMs: Long,
+    /** Optional non-secret model override; null means the catalog default. */
+    val model: String? = null,
+    /** Optional non-secret custom base URL override; null means the catalog default. */
+    val customBaseUrl: String? = null,
     val schemaVersion: Int = SCHEMA_VERSION,
 ) {
     companion object {
@@ -39,6 +43,8 @@ sealed interface StoreOutcome {
         val providerId: String,
         val configuredAtEpochMs: Long,
         val generation: String,
+        val model: String? = null,
+        val customBaseUrl: String? = null,
     ) : StoreOutcome
 
     /** Storage or Keystore is broken; nothing was mutated by the failed read. */
@@ -82,4 +88,3 @@ sealed interface AdapterResult {
     data class NetworkFailure(val code: NetworkErrorCode) : AdapterResult
     data object AuthFailure : AdapterResult
 }
-

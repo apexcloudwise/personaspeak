@@ -15,6 +15,8 @@ data class ProviderMeta(
     val configuredAtEpochMs: Long,
     val schemaVersion: Int,
     val generation: String,
+    val model: String? = null,
+    val customBaseUrl: String? = null,
 )
 
 /** Seam over the DataStore half so the recovery matrix is testable on the JVM. */
@@ -38,6 +40,8 @@ class DataStoreMetaStore(private val context: Context) : MetaStore {
             configuredAtEpochMs = prefs[KEY_CONFIGURED_AT] ?: return null,
             schemaVersion = prefs[KEY_SCHEMA_VERSION] ?: ProviderConfig.SCHEMA_VERSION,
             generation = generation,
+            model = prefs[KEY_MODEL],
+            customBaseUrl = prefs[KEY_CUSTOM_BASE_URL],
         )
     }
 
@@ -47,6 +51,10 @@ class DataStoreMetaStore(private val context: Context) : MetaStore {
             prefs[KEY_CONFIGURED_AT] = meta.configuredAtEpochMs
             prefs[KEY_SCHEMA_VERSION] = meta.schemaVersion
             prefs[KEY_GENERATION] = meta.generation
+            val model = meta.model
+            if (model == null) prefs.remove(KEY_MODEL) else prefs[KEY_MODEL] = model
+            val customBaseUrl = meta.customBaseUrl
+            if (customBaseUrl == null) prefs.remove(KEY_CUSTOM_BASE_URL) else prefs[KEY_CUSTOM_BASE_URL] = customBaseUrl
         }
     }
 
@@ -59,5 +67,7 @@ class DataStoreMetaStore(private val context: Context) : MetaStore {
         val KEY_CONFIGURED_AT = longPreferencesKey("configured_at_epoch_ms")
         val KEY_SCHEMA_VERSION = intPreferencesKey("schema_version")
         val KEY_GENERATION = stringPreferencesKey("generation")
+        val KEY_MODEL = stringPreferencesKey("model")
+        val KEY_CUSTOM_BASE_URL = stringPreferencesKey("custom_base_url")
     }
 }

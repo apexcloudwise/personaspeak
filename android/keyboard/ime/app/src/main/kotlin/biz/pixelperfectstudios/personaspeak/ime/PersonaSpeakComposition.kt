@@ -42,14 +42,17 @@ class PersonaSpeakComposition @JvmOverloads constructor(
         connectionSupplier = inputConnectionSupplier,
         editorInfoSupplier = editorInfoSupplier,
     )
-    private val provider = FakeProvider()
+    private val resolvingProvider = ResolvingProvider(
+        store = PersonaSpeakBrain.createStore(context),
+        fallback = FakeProvider(),
+    )
     private val personaRepo = BundledPersonaRepository(
         AssetPersonaDocumentSource(context.assets),
     )
     private val coordinator = RewriteCoordinator(
         personas = personaRepo,
         editor = editorPort,
-        provider = provider,
+        provider = resolvingProvider,
     )
 
     val owners = ImeViewTreeOwners()
@@ -75,6 +78,7 @@ class PersonaSpeakComposition @JvmOverloads constructor(
     }
 
     fun onStartInputView() {
+        resolvingProvider.invalidate()
         owners.startInput()
         val c = container ?: return
         if (isAdded) return

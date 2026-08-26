@@ -119,6 +119,8 @@ class DataStoreProviderConfigStore(
             configuredAtEpochMs = config.configuredAtEpochMs,
             schemaVersion = config.schemaVersion,
             generation = generation,
+            model = config.model,
+            customBaseUrl = config.customBaseUrl,
         )
         try {
             metaStore.write(meta)
@@ -138,6 +140,8 @@ class DataStoreProviderConfigStore(
                 providerId = meta.providerId,
                 configuredAtEpochMs = meta.configuredAtEpochMs,
                 generation = meta.generation,
+                model = meta.model,
+                customBaseUrl = meta.customBaseUrl,
             )
         }
         logger.event(StoreEvent.SAVE_SWAPPED)
@@ -145,6 +149,8 @@ class DataStoreProviderConfigStore(
             providerId = meta.providerId,
             configuredAtEpochMs = meta.configuredAtEpochMs,
             generation = meta.generation,
+            model = meta.model,
+            customBaseUrl = meta.customBaseUrl,
         )
     }
 
@@ -196,6 +202,8 @@ class DataStoreProviderConfigStore(
                 providerId = meta.providerId,
                 configuredAtEpochMs = meta.configuredAtEpochMs,
                 generation = meta.generation,
+                model = meta.model,
+                customBaseUrl = meta.customBaseUrl,
             ),
             secret = secret,
         )

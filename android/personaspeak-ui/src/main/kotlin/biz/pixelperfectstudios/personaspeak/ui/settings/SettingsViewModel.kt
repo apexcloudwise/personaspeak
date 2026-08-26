@@ -9,6 +9,7 @@ import biz.pixelperfectstudios.personaspeak.ui.brain.ProviderConfig
 import biz.pixelperfectstudios.personaspeak.ui.brain.ProviderConfigSnapshot
 import biz.pixelperfectstudios.personaspeak.ui.brain.ProviderConfigStore
 import biz.pixelperfectstudios.personaspeak.ui.brain.SecretBytes
+import biz.pixelperfectstudios.personaspeak.ui.brain.StoreFailure
 import biz.pixelperfectstudios.personaspeak.ui.brain.StoreOutcome
 import biz.pixelperfectstudios.personaspeak.ui.personas.PersonaRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -42,11 +43,10 @@ class SettingsViewModel(
         loadPersonas()
         if (providerConfigStore != null) {
             viewModelScope.launch {
-                loadProviderConfig()
+                refreshProviderStatus()
             }
         }
     }
-
 
     fun loadPersonas() {
         val loaded = personasRepo.loadAll().getOrDefault(emptyList())
@@ -98,25 +98,56 @@ class SettingsViewModel(
         _state.update { it.copy(notice = null) }
     }
 
-    suspend fun loadProviderConfig() {
-        val snapshot = providerConfigStore?.load() ?: ProviderConfigSnapshot(StoreOutcome.Unconfigured)
+    /**
+     * Re-reads the provider-config store outcome into [ProviderStatusSummary] and [StoreOutcome].
+     * Never touches or retains the secret.
+     */
+    suspend fun refreshProviderStatus() {
+        val store = providerConfigStore ?: return
+        val snapshot = try {
+            store.load()
+        } catch (_: Throwable) {
+            ProviderConfigSnapshot(StoreOutcome.Unavailable(StoreFailure.IO_ERROR))
+        }
+        val summary = when (val outcome = snapshot.outcome) {
+            is StoreOutcome.Configured ->
+                ProviderStatusSummary.Configured(outcome.providerId, outcome.configuredAtEpochMs)
+            StoreOutcome.Unconfigured -> ProviderStatusSummary.Unconfigured
+            is StoreOutcome.Unavailable -> ProviderStatusSummary.Unavailable
+            StoreOutcome.InvalidCredentials -> ProviderStatusSummary.InvalidCredentials
+        }
         _state.update { current ->
             current.copy(
                 providerOutcome = snapshot.outcome,
+                providerStatus = summary,
                 lastRewriteResult = null,
             )
         }
     }
 
+    /** Alias for [refreshProviderStatus] for compatibility. */
+    suspend fun loadProviderConfig() {
+        refreshProviderStatus()
+    }
+
+    /**
+     * Suspend version of saving provider key bytes.
+     */
     suspend fun saveProviderKey(
         providerId: String,
         keyBytes: ByteArray,
         epochMs: Long = System.currentTimeMillis(),
+        model: String? = null,
     ): StoreOutcome {
         _state.update { it.copy(isSavingProvider = true) }
-        val config = ProviderConfig(providerId = providerId, configuredAtEpochMs = epochMs)
+        val config = ProviderConfig(
+            providerId = providerId,
+            configuredAtEpochMs = epochMs,
+            model = model?.trim()?.takeIf { it.isNotEmpty() },
+        )
         val outcome = providerConfigStore?.save(config, SecretBytes(keyBytes))
             ?: StoreOutcome.Unconfigured
+        refreshProviderStatus()
         _state.update { current ->
             current.copy(
                 isSavingProvider = false,
@@ -127,13 +158,83 @@ class SettingsViewModel(
         return outcome
     }
 
+    /**
+     * UI version of save provider with callback.
+     */
+    fun saveProvider(
+        providerId: String,
+        apiKey: String,
+        model: String? = null,
+        onDone: () -> Unit = {},
+    ) {
+        val store = providerConfigStore
+        if (store == null) {
+            onDone()
+            return
+        }
+        viewModelScope.launch {
+            _state.update { it.copy(isSavingProvider = true) }
+            val outcome = try {
+                store.save(
+                    ProviderConfig(
+                        providerId = providerId,
+                        configuredAtEpochMs = System.currentTimeMillis(),
+                        model = model?.trim()?.takeIf { it.isNotEmpty() },
+                    ),
+                    SecretBytes(apiKey.toByteArray()),
+                )
+            } catch (_: Throwable) {
+                null
+            }
+            refreshProviderStatus()
+            _state.update { it.copy(isSavingProvider = false) }
+            val displayName = ProviderCatalog.byId(providerId)?.displayName
+            _state.update {
+                it.copy(
+                    notice = if (outcome is StoreOutcome.Configured && displayName != null) {
+                        "Brain connected: $displayName."
+                    } else {
+                        "Could not save the key. Check storage and try again."
+                    },
+                )
+            }
+            onDone()
+        }
+    }
+
+    /** Suspend version of clearing the provider configuration. */
     suspend fun clearProvider() {
         providerConfigStore?.clear()
         _state.update { current ->
             current.copy(
                 providerOutcome = StoreOutcome.Unconfigured,
+                providerStatus = ProviderStatusSummary.Unconfigured,
                 lastRewriteResult = null,
             )
+        }
+    }
+
+    /** UI version of clearing provider configuration with callback. */
+    fun clearProvider(onDone: () -> Unit) {
+        val store = providerConfigStore
+        if (store == null) {
+            onDone()
+            return
+        }
+        viewModelScope.launch {
+            _state.update { it.copy(isSavingProvider = true) }
+            try {
+                store.clear()
+            } catch (_: Throwable) {
+            }
+            refreshProviderStatus()
+            _state.update {
+                it.copy(
+                    isSavingProvider = false,
+                    notice = "Brain key removed. The offline understudy takes over.",
+                )
+            }
+            onDone()
         }
     }
 
@@ -145,4 +246,3 @@ class SettingsViewModel(
         }
     }
 }
-
