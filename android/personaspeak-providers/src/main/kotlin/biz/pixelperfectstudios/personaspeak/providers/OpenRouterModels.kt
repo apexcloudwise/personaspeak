@@ -18,11 +18,55 @@ data class ModelInfo(
 )
 
 /**
+ * Default HTTPS transport for OpenRouter model catalog endpoint.
+ */
+class DefaultOpenRouterModelsHttpTransport(
+    private val connectTimeoutMs: Int = 15_000,
+    private val readTimeoutMs: Int = 30_000,
+) : HttpTransport {
+    override fun post(
+        endpointUrl: String,
+        headers: Map<String, String>,
+        bodyUtf8: ByteArray,
+    ): HttpResponse {
+        require(endpointUrl == OpenRouterModels.ENDPOINT_URL) {
+            "Egress violation: endpoint must be strictly ${OpenRouterModels.ENDPOINT_URL}"
+        }
+
+        val url = URL(endpointUrl)
+        val connection = (url.openConnection() as? HttpsURLConnection)
+            ?: error("HTTPS required")
+
+        connection.requestMethod = "GET"
+        connection.connectTimeout = connectTimeoutMs
+        connection.readTimeout = readTimeoutMs
+        connection.instanceFollowRedirects = false
+
+        for ((key, value) in headers) {
+            connection.setRequestProperty(key, value)
+        }
+
+        val statusCode = connection.responseCode
+        val stream = if (statusCode in 200..299) {
+            connection.inputStream
+        } else {
+            connection.errorStream ?: connection.inputStream
+        }
+
+        val body = stream?.use { s ->
+            BufferedReader(InputStreamReader(s, StandardCharsets.UTF_8)).readText()
+        } ?: ""
+
+        return HttpResponse(statusCode, body)
+    }
+}
+
+/**
  * Parser and fetcher for OpenRouter's public model catalog.
  */
 object OpenRouterModels {
 
-    const val DEFAULT_BASE_URL = "https://openrouter.ai/api/v1"
+    const val ENDPOINT_URL = "https://openrouter.ai/api/v1/models"
 
     /**
      * Parses a `/models` JSON response body into a list of [ModelInfo] sorted free-first.
@@ -42,49 +86,26 @@ object OpenRouterModels {
     }
 
     /**
-     * Fetches public models list via [transport] or HTTPS connection.
+     * Fetches public models list via [transport] over [endpointUrl].
      */
     suspend fun fetch(
-        baseUrl: String = DEFAULT_BASE_URL,
-        transport: HttpTransport? = null,
+        transport: HttpTransport = DefaultOpenRouterModelsHttpTransport(),
+        endpointUrl: String = ENDPOINT_URL,
     ): Result<List<ModelInfo>> = withContext(Dispatchers.IO) {
-        val endpointUrl = baseUrl.trimEnd('/') + "/models"
         try {
-            val json = if (transport != null) {
-                val response = transport.post(
-                    endpointUrl = endpointUrl,
-                    headers = mapOf("Accept" to "application/json"),
-                    bodyUtf8 = ByteArray(0),
+            val response = transport.post(
+                endpointUrl = endpointUrl,
+                headers = mapOf("Accept" to "application/json"),
+                bodyUtf8 = ByteArray(0),
+            )
+            if (response.statusCode !in 200..299) {
+                return@withContext Result.failure(
+                    IllegalStateException("OpenRouter returned HTTP ${response.statusCode}"),
                 )
-                if (response.statusCode !in 200..299) {
-                    return@withContext Result.failure(
-                        IllegalStateException("OpenRouter returned HTTP ${response.statusCode}"),
-                    )
-                }
-                response.body
-            } else {
-                fetchHttps(endpointUrl)
             }
-            Result.success(parse(json))
+            Result.success(parse(response.body))
         } catch (e: Exception) {
             Result.failure(e)
-        }
-    }
-
-    private fun fetchHttps(urlStr: String): String {
-        val url = URL(urlStr)
-        val connection = (url.openConnection() as? HttpsURLConnection)
-            ?: error("HTTPS required")
-        connection.requestMethod = "GET"
-        connection.connectTimeout = 15_000
-        connection.readTimeout = 30_000
-        val code = connection.responseCode
-        if (code !in 200..299) {
-            throw IllegalStateException("OpenRouter returned HTTP $code")
-        }
-        val stream = connection.inputStream
-        return stream.use { s ->
-            BufferedReader(InputStreamReader(s, StandardCharsets.UTF_8)).readText()
         }
     }
 }
