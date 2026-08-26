@@ -8,6 +8,17 @@ while the context is hot.
 
 Newest first, like all respectable patch notes.
 
+## 2026-08-27 — The Paper Trail: Asset rights, font licenses, and portrait provenance cleared
+
+- Shipped Milestone 6 Slice A (Asset Rights & Licensing):
+  - Authored the Milestone 6 plan (`docs/plans/m6-visual-fidelity-and-asset-rights-plan.md`) covering asset rights (Slice A) and visual/reach fidelity across dark mode, landscape, accessibility, and RTL (Slice B).
+  - Established the authoritative Asset Rights & Provenance Manifest (`docs/design/ASSET-RIGHTS.md`) fulfilling legal gates for Milestone 6 of #38.
+  - Documented font licensing under SIL Open Font License 1.1 for Outfit and Inter typography specifications, recording explicit system font fallback behavior when unbundled.
+  - Formally cleared persona portrait representations across all four bundled characters (`jeeves`, `sir-humphrey`, `dr-schultz`, `amitabh-bachchan`) under the rights-cleared Unicode emoji standard ("🎩", "🏛️", "🎯", "🎬"), recording explicit exclusion of un-cleared third-party broadcast/film stills and living actor likenesses.
+  - Implemented fail-closed automated verification (`android/scripts/verify-asset-rights.sh`) and contract test suite (`android/scripts/tests/verify-asset-rights-test.sh`) enforcing 100% manifest coverage, zero unauthorized first-party raster assets, and complete license notices. (#106)
+
+---
+
 ## 2026-08-27 — The Thinking Keyboard: The Brain settings, model browser, and runtime wiring
 
 - Shipped Milestone 5 Slice B (The Brain Settings, Searchable Model Catalog, Onboarding, & Runtime Provider Resolution):
