@@ -57,7 +57,7 @@ private val MinInteractiveHeight = 48.dp
 fun ProviderSetupScreen(
     state: SettingsState,
     onBack: () -> Unit,
-    onSave: (providerId: String, apiKey: String, model: String?, onDone: () -> Unit) -> Unit,
+    onSave: (providerId: String, apiKey: String, model: String?, customBaseUrl: String?, onDone: () -> Unit) -> Unit,
     onClear: (onDone: () -> Unit) -> Unit,
     onFetchModels: (suspend () -> Result<List<ModelInfo>>)? = null,
     modifier: Modifier = Modifier,
@@ -75,6 +75,12 @@ fun ProviderSetupScreen(
         )
     }
 
+    var baseUrlTexts by remember {
+        mutableStateOf(
+            ProviderCatalog.all.associate { it.id to it.defaultBaseUrl }
+        )
+    }
+
     var isFetchingModels by remember { mutableStateOf(false) }
     var models by remember { mutableStateOf<List<ModelInfo>>(emptyList()) }
     var modelsError by remember { mutableStateOf<String?>(null) }
@@ -82,6 +88,11 @@ fun ProviderSetupScreen(
 
     val selectedDef = ProviderCatalog.byId(selectedProviderId)
     val modelText = modelTexts[selectedProviderId] ?: selectedDef?.defaultModel ?: ""
+    val baseUrlText = baseUrlTexts[selectedProviderId] ?: selectedDef?.defaultBaseUrl ?: ""
+
+    val isBaseUrlValid = !selectedDef?.needsBaseUrl.orFalse() ||
+        baseUrlText.isBlank() ||
+        baseUrlText.trim().startsWith("https://")
 
     Column(
         modifier = modifier
@@ -191,7 +202,7 @@ fun ProviderSetupScreen(
             placeholder = {
                 Text(
                     if (state.providerStatus is ProviderStatusSummary.Configured) {
-                        "•••••••••••••••• (leave blank to keep)"
+                        "Enter new API key"
                     } else {
                         "Paste provider API key"
                     }
@@ -211,6 +222,26 @@ fun ProviderSetupScreen(
                 .fillMaxWidth()
                 .testTag("personaspeak_provider_key_input"),
         )
+
+        // Custom Base URL field (shown for providers requiring configurable endpoints like OpenAI-compat)
+        if (selectedDef?.needsBaseUrl == true) {
+            OutlinedTextField(
+                value = baseUrlText,
+                onValueChange = { updated ->
+                    baseUrlTexts = baseUrlTexts + (selectedProviderId to updated)
+                },
+                label = { Text("Base URL (HTTPS only)") },
+                placeholder = { Text(selectedDef.defaultBaseUrl) },
+                singleLine = true,
+                isError = !isBaseUrlValid,
+                supportingText = if (!isBaseUrlValid) {
+                    { Text("Base URL must start with https://", color = MaterialTheme.colorScheme.error) }
+                } else null,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("personaspeak_provider_base_url_input"),
+            )
+        }
 
         // Model field & picker
         Column(
@@ -302,8 +333,11 @@ fun ProviderSetupScreen(
 
         // Save Button
         Button(
-            onClick = { onSave(selectedProviderId, apiKey, modelText) { apiKey = "" } },
-            enabled = apiKey.isNotBlank() && selectedProviderId.isNotBlank() && !state.isSavingProvider,
+            onClick = {
+                val customUrl = if (selectedDef?.needsBaseUrl == true) baseUrlText.trim().takeIf { it.isNotEmpty() } else null
+                onSave(selectedProviderId, apiKey, modelText, customUrl) { apiKey = "" }
+            },
+            enabled = apiKey.isNotBlank() && selectedProviderId.isNotBlank() && isBaseUrlValid && !state.isSavingProvider,
             modifier = Modifier
                 .fillMaxWidth()
                 .heightIn(min = MinInteractiveHeight)
@@ -329,7 +363,7 @@ fun ProviderSetupScreen(
 
         // Privacy note
         Text(
-            text = "🔒 Privacy: Prompts are sent directly from your device to the selected provider. No drafts or credentials are ever stored off-device.",
+            text = "🔒 Privacy: Prompts and model catalog requests are sent directly from your device to the selected provider. No drafts or credentials are ever stored off-device.",
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier
@@ -352,6 +386,8 @@ fun ProviderSetupScreen(
         )
     }
 }
+
+private fun Boolean?.orFalse(): Boolean = this ?: false
 
 /** Searchable OpenRouter model picker shown after a successful catalog fetch. */
 @Composable

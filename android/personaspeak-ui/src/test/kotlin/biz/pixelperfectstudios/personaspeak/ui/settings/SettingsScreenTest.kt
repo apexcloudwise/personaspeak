@@ -190,7 +190,7 @@ class SettingsScreenTest {
             ProviderSetupScreen(
                 state = state,
                 onBack = { backed = true },
-                onSave = { pid, key, _, done ->
+                onSave = { pid, key, _, _, done ->
                     savedProviderId = pid
                     savedKey = key
                     done()
@@ -211,6 +211,9 @@ class SettingsScreenTest {
         composeRule.onNodeWithTag("personaspeak_provider_option_anthropic")
             .assertExists()
             .assertHeightIsAtLeast(48.dp)
+        composeRule.onNodeWithTag("personaspeak_provider_option_openai-compat")
+            .assertExists()
+            .assertHeightIsAtLeast(48.dp)
 
         composeRule.onNodeWithTag("personaspeak_provider_key_input").assertExists()
         composeRule.onNodeWithTag("personaspeak_provider_model_input").assertExists()
@@ -219,6 +222,10 @@ class SettingsScreenTest {
             .assertHeightIsAtLeast(48.dp)
 
         composeRule.onNodeWithTag("personaspeak_provider_privacy_notice").assertExists()
+
+        // Switch to OpenAI-compat and check Base URL input appears
+        composeRule.onNodeWithTag("personaspeak_provider_option_openai-compat").performScrollTo().performClick()
+        composeRule.onNodeWithTag("personaspeak_provider_base_url_input").assertExists()
 
         composeRule.onNodeWithTag("personaspeak_provider_setup_back").performClick()
         assertTrue(backed)

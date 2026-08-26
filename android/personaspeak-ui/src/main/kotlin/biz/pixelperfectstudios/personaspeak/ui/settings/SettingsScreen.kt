@@ -23,7 +23,7 @@ fun SettingsScreen(
     onSelectDefaultMood: (Mood) -> Unit,
     onOpenAskSettings: () -> Unit,
     onOpenEnableIme: () -> Unit = {},
-    onSaveProvider: (providerId: String, apiKey: String, model: String?, onDone: () -> Unit) -> Unit = { _, _, _, done -> done() },
+    onSaveProvider: (providerId: String, apiKey: String, model: String?, customBaseUrl: String?, onDone: () -> Unit) -> Unit = { _, _, _, _, done -> done() },
     onClearProvider: (onDone: () -> Unit) -> Unit = { done -> done() },
     onFetchModels: (suspend () -> Result<List<ModelInfo>>)? = null,
     onClearNotice: () -> Unit = {},

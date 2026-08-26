@@ -138,12 +138,14 @@ class SettingsViewModel(
         keyBytes: ByteArray,
         epochMs: Long = System.currentTimeMillis(),
         model: String? = null,
+        customBaseUrl: String? = null,
     ): StoreOutcome {
         _state.update { it.copy(isSavingProvider = true) }
         val config = ProviderConfig(
             providerId = providerId,
             configuredAtEpochMs = epochMs,
             model = model?.trim()?.takeIf { it.isNotEmpty() },
+            customBaseUrl = customBaseUrl?.trim()?.takeIf { it.isNotEmpty() },
         )
         val outcome = providerConfigStore?.save(config, SecretBytes(keyBytes))
             ?: StoreOutcome.Unconfigured
@@ -165,6 +167,7 @@ class SettingsViewModel(
         providerId: String,
         apiKey: String,
         model: String? = null,
+        customBaseUrl: String? = null,
         onDone: () -> Unit = {},
     ) {
         val store = providerConfigStore
@@ -180,6 +183,7 @@ class SettingsViewModel(
                         providerId = providerId,
                         configuredAtEpochMs = System.currentTimeMillis(),
                         model = model?.trim()?.takeIf { it.isNotEmpty() },
+                        customBaseUrl = customBaseUrl?.trim()?.takeIf { it.isNotEmpty() },
                     ),
                     SecretBytes(apiKey.toByteArray()),
                 )
