@@ -8,6 +8,22 @@ while the context is hot.
 
 Newest first, like all respectable patch notes.
 
+## 2026-08-27 — The Fresh Start: Fresh-install journey recording, RTL layout pass, and machine receipts
+
+- Shipped Milestone 7 Slice A (Fresh-Install Journey Recording & RTL / Visual Fidelity):
+  - Authored the Milestone 7 plan (`docs/plans/m7-fresh-install-journey-and-release-audit-plan.md`) structuring M7 into fresh-install journey proof (Slice A) and release privacy/network/backup audit (Slice B).
+  - Implemented `FreshInstallJourneyIntegrationTest` in `:ime:app` exercising the full end-to-end user lifecycle on a pristine fresh install:
+    - Step 1: Pristine baseline with empty DataStore, zero disk persistence, default Jeeves (🎩), and unconfigured fallback to `FakeProvider`.
+    - Step 2-3: Onboarding presentation, character picking (Dr. King Schultz 🎯 + Witty mood), and Brain provider setup (`openrouter` model configuration saved to DataStore and Keystore).
+    - Step 4-5: Full keyboard InputView start on host app editor (`"Tea at six."`), rewrite evaluation, candidate review, and guarded `Use this` commit with exactly 1 verified text mutation.
+    - Step 6: `Dismiss` review action leaving editor text unmodified with exactly 0 mutations.
+    - Step 7: Carried-forward RTL locale layout pass verifying `LayoutDirection.Rtl`, `start`/`end` alignment, and back button mirroring.
+    - Step 8: Visual theme contrast token verification in `PersonaSpeakTheme` across light and dark palettes.
+  - Published Milestone 7 evidence documentation (`docs/evidence/milestone-7/README.md`) and machine-derived receipt (`docs/evidence/milestone-7/journey-receipt.json`).
+  - Added automated verifier `android/scripts/verify-milestone-7.sh` and contract test suite `android/scripts/tests/verify-milestone-7-test.sh`. (#109)
+
+---
+
 ## 2026-08-27 — The Polish & Reach: Dark mode, landscape, accessibility, and RTL fidelity
 
 - Shipped Milestone 6 Slice B (Visual Fidelity, Theme, Accessibility, Landscape, & RTL Readiness):
