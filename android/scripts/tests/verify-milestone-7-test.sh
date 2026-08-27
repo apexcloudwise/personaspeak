@@ -53,8 +53,8 @@ export ASK_CLOSURE_DEPS_OUTPUT="$deps_good"
 
 # Test 2: Tampered receipt with unverified verdict fails with exit code 1
 receipt_file="$fixture_repo/docs/evidence/milestone-7/journey-receipt.json"
-sed -i '' 's/"rtl_locale_pass": "verified"/"rtl_locale_pass": "unverified"/' "$receipt_file" 2>/dev/null || \
-sed -i 's/"rtl_locale_pass": "verified"/"rtl_locale_pass": "unverified"/' "$receipt_file"
+sed -i '' 's/"rtl_locale_pass": "harness_verified"/"rtl_locale_pass": "unverified"/' "$receipt_file" 2>/dev/null || \
+sed -i 's/"rtl_locale_pass": "harness_verified"/"rtl_locale_pass": "unverified"/' "$receipt_file"
 
 tamper_rc=0
 "$verifier" "$fixture_repo/android" > /dev/null 2>&1 || tamper_rc=$?

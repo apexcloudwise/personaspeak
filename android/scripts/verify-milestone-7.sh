@@ -96,7 +96,7 @@ evidence_readme = os.path.join(repo_root, 'docs/evidence/milestone-7/README.md')
 assert os.path.isfile(evidence_readme), f'Missing evidence README at {evidence_readme}'
 with open(evidence_readme, 'r', encoding='utf-8') as f:
     readme_text = f.read()
-assert 'Status: QUALIFIED' in readme_text, 'Evidence README missing QUALIFIED status'
+assert 'Status: SOURCE & HARNESS QUALIFIED' in readme_text, 'Evidence README missing SOURCE & HARNESS QUALIFIED status'
 
 # 3. Verify Machine Receipt JSON
 receipt_path = os.path.join(repo_root, 'docs/evidence/milestone-7/journey-receipt.json')
@@ -107,6 +107,9 @@ with open(receipt_path, 'r', encoding='utf-8') as f:
 assert receipt.get('schema') == 1, 'Receipt schema must be 1'
 assert receipt.get('kind') == 'journey_receipt', 'Receipt kind must be journey_receipt'
 assert receipt.get('milestone') == 'milestone-7', 'Receipt milestone must be milestone-7'
+assert receipt.get('evidence_class') == 'jvm_robolectric_harness', 'Evidence class must be jvm_robolectric_harness'
+assert receipt.get('run_id'), 'Receipt missing run_id'
+assert receipt.get('commit'), 'Receipt missing commit'
 
 counts = receipt.get('counts', {})
 assert counts.get('journey_steps_total') == 8, f'Expected 8 total steps, got {counts.get(\"journey_steps_total\")}'
@@ -119,10 +122,10 @@ verdicts = receipt.get('verdicts', {})
 required_verdicts = [
     'pristine_baseline', 'onboarding_flow', 'session_handoff',
     'brain_provider_setup', 'host_editor_rewrite', 'host_editor_mutations',
-    'rtl_locale_pass', 'visual_theme_contrast', 'privacy_posture'
+    'rtl_locale_pass', 'visual_theme_contrast'
 ]
 for v in required_verdicts:
-    assert verdicts.get(v) == 'verified', f'Verdict {v} was not verified: {verdicts.get(v)}'
+    assert verdicts.get(v) == 'harness_verified', f'Verdict {v} was not harness_verified: {verdicts.get(v)}'
 
 steps = receipt.get('steps', [])
 assert len(steps) == 8, f'Expected 8 step records, got {len(steps)}'

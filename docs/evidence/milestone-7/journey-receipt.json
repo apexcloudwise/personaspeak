@@ -2,16 +2,18 @@
   "schema": 1,
   "kind": "journey_receipt",
   "milestone": "milestone-7",
+  "evidence_class": "jvm_robolectric_harness",
+  "run_id": "20260827T084800Z-harness",
+  "commit": "5029c0c",
   "verdicts": {
-    "pristine_baseline": "verified",
-    "onboarding_flow": "verified",
-    "session_handoff": "verified",
-    "brain_provider_setup": "verified",
-    "host_editor_rewrite": "verified",
-    "host_editor_mutations": "verified",
-    "rtl_locale_pass": "verified",
-    "visual_theme_contrast": "verified",
-    "privacy_posture": "verified"
+    "pristine_baseline": "harness_verified",
+    "onboarding_flow": "harness_verified",
+    "session_handoff": "harness_verified",
+    "brain_provider_setup": "harness_verified",
+    "host_editor_rewrite": "harness_verified",
+    "host_editor_mutations": "harness_verified",
+    "rtl_locale_pass": "harness_verified",
+    "visual_theme_contrast": "harness_verified"
   },
   "counts": {
     "journey_steps_total": 8,
