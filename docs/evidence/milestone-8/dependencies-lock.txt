@@ -1,3 +1,6 @@
+# Dependency lock snapshot for PersonaSpeak v0.1.0 release reproducibility
+# Regenerate with: (cd android && ./gradlew :ime:app:dependencies --configuration debugRuntimeClasspath --console=plain > ../docs/evidence/milestone-8/dependencies-lock.txt)
+
 > Task :buildSrc:checkKotlinGradlePluginConfigurationErrors SKIPPED
 > Task :buildSrc:compileKotlin UP-TO-DATE
 > Task :buildSrc:compileJava UP-TO-DATE
@@ -1172,5 +1175,5 @@ You can use '--warning-mode all' to show the individual deprecation warnings and
 
 For more on this, please refer to https://docs.gradle.org/9.2.1/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
 
-BUILD SUCCESSFUL in 734ms
+BUILD SUCCESSFUL in 960ms
 7 actionable tasks: 1 executed, 6 up-to-date

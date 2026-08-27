@@ -56,7 +56,6 @@ android {
                 storePassword System.getenv("PERSONASPEAK_RELEASE_KEYSTORE_PASSWORD") ?: System.getenv("KEY_STORE_FILE_PASSWORD")
                 keyAlias System.getenv("PERSONASPEAK_RELEASE_KEY_ALIAS") ?: getExtValue(project, 'override_release_key_alias', 'personaspeak')
                 keyPassword System.getenv("PERSONASPEAK_RELEASE_KEY_PASSWORD") ?: System.getenv("KEY_STORE_FILE_DEFAULT_ALIAS_PASSWORD")
-                println "Using '${storeFile.absolutePath}' to release APK ${path} (with alias '${keyAlias}')."
             }
         }
     }
