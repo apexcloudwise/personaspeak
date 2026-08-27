@@ -25,6 +25,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import biz.pixelperfectstudios.personaspeak.personas.PersonaId
@@ -59,6 +61,7 @@ fun PersonaBrowserScreen(
                 onClick = onBack,
                 modifier = Modifier
                     .size(MinInteractiveHeight)
+                    .semantics { contentDescription = "Navigate back" }
                     .testTag("personaspeak_browser_back"),
             ) {
                 Text(
@@ -109,7 +112,10 @@ private fun PersonaBrowserCard(
         modifier = modifier
             .fillMaxWidth()
             .heightIn(min = MinInteractiveHeight)
-            .clickable(onClick = onClick),
+            .clickable(onClick = onClick)
+            .semantics {
+                contentDescription = "${persona.content.name}, ${persona.descriptor}${if (isActive) ", currently active" else ""}"
+            },
         shape = RoundedCornerShape(12.dp),
         color = if (isActive) {
             MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)
@@ -117,7 +123,7 @@ private fun PersonaBrowserCard(
             MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
         },
         border = BorderStroke(
-            width = if (isActive) 1.5.dp else 1.dp,
+            width = if (isActive) 2.dp else 1.dp,
             color = if (isActive) {
                 MaterialTheme.colorScheme.primary
             } else {

@@ -5,6 +5,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.dp
@@ -46,6 +47,16 @@ class RewritePanelTest {
             name = "Jeeves",
             context = " (the valet)",
             speechPatterns = listOf("Formal"),
+        ),
+    )
+
+    private val longNamePersona = ValidatedPersona(
+        id = PersonaId.bundled("sir-humphrey"),
+        provenance = PersonaProvenance.bundled,
+        content = Persona(
+            name = "Sir Humphrey Appleby",
+            context = "Permanent Secretary to the Department of Administrative Affairs",
+            speechPatterns = listOf("Circumlocutory bureaucratic evasiveness"),
         ),
     )
 
@@ -105,10 +116,28 @@ class RewritePanelTest {
     }
 
     @Test
+    fun `resting handles long persona names and retains rewrite button visibility`() {
+        setPanel(RewritePanelState.Resting(longNamePersona, Mood.Polite))
+
+        composeRule.onNodeWithTag("personaspeak_persona_chip")
+            .assertIsDisplayed()
+            .assertHeightIsAtLeast(48.dp)
+        composeRule.onNodeWithTag("personaspeak_mood_chip")
+            .assertIsDisplayed()
+            .assertHeightIsAtLeast(48.dp)
+        composeRule.onNodeWithTag("personaspeak_rewrite")
+            .assertIsDisplayed()
+            .assertHeightIsAtLeast(48.dp)
+        composeRule.onNodeWithTag("personaspeak_settings")
+            .assertIsDisplayed()
+            .assertHeightIsAtLeast(48.dp)
+    }
+
+    @Test
     fun `persona picker displays character tiles and 48dp targets`() {
         setPanel(
             RewritePanelState.PersonaPicker(
-                personas = listOf(testPersona),
+                personas = listOf(testPersona, longNamePersona),
                 selectedId = testPersona.id,
                 currentMood = Mood.Polite,
             ),
@@ -116,6 +145,9 @@ class RewritePanelTest {
 
         composeRule.onNodeWithTag("personaspeak_persona_picker").assertIsDisplayed()
         composeRule.onNodeWithTag("personaspeak_persona_tile_jeeves")
+            .assertIsDisplayed()
+            .assertHeightIsAtLeast(48.dp)
+        composeRule.onNodeWithTag("personaspeak_persona_tile_sir-humphrey")
             .assertIsDisplayed()
             .assertHeightIsAtLeast(48.dp)
         composeRule.onNodeWithTag("personaspeak_picker_close")
@@ -295,6 +327,20 @@ class RewritePanelTest {
         assertTrue(
             "review body $height exceeds the 120dp cap",
             height <= 120.dp,
+        )
+    }
+
+    @Test
+    fun `landscape pre-expansion height constraints bound review body height without overflow`() {
+        // Landscape IME height sample: 200px -> 40% cap is 80px (approx 30-50dp depending on density)
+        setPanel(RewritePanelState.Review(testPersona, Mood.Polite, longCandidate), preExpansionImeHeightPx = 200)
+
+        composeRule.onNodeWithTag("personaspeak_candidate_body").assertIsDisplayed()
+        val height = composeRule.onNodeWithTag("personaspeak_candidate_body")
+            .getUnclippedBoundsInRoot().height
+        assertTrue(
+            "landscape review body $height should be bounded by 80dp",
+            height <= 80.dp,
         )
     }
 }
