@@ -53,6 +53,17 @@ class SettingsScreenTest {
         ),
     )
 
+    private val sirHumphrey = ValidatedPersona(
+        id = PersonaId.bundled("sir-humphrey"),
+        provenance = PersonaProvenance.bundled,
+        content = Persona(
+            name = "Sir Humphrey Appleby",
+            context = "Permanent Secretary to the Department of Administrative Affairs",
+            speechPatterns = listOf("Circumlocutory bureaucratic evasiveness"),
+            sampleLines = listOf("Yes, Minister."),
+        ),
+    )
+
     @Test
     fun `SettingsHomeScreen renders all required groups with 48dp touch floors`() {
         var navigatedToPersonas = false
@@ -62,7 +73,7 @@ class SettingsScreenTest {
         val state = SettingsState(
             destination = SettingsDestination.Home,
             activePersonaId = jeeves.id,
-            personas = listOf(jeeves, bachchan),
+            personas = listOf(jeeves, bachchan, sirHumphrey),
             defaultMood = Mood.Polite,
             providerStatus = ProviderStatusSummary.Configured("openrouter", 1000L),
         )
@@ -239,7 +250,7 @@ class SettingsScreenTest {
         val state = SettingsState(
             destination = SettingsDestination.Personas,
             activePersonaId = jeeves.id,
-            personas = listOf(jeeves, bachchan),
+            personas = listOf(jeeves, bachchan, sirHumphrey),
         )
 
         composeRule.setContent {
@@ -262,6 +273,10 @@ class SettingsScreenTest {
             .assertExists()
 
         composeRule.onNodeWithTag("personaspeak_character_item_bundled:amitabh-bachchan")
+            .assertExists()
+            .assertHeightIsAtLeast(48.dp)
+
+        composeRule.onNodeWithTag("personaspeak_character_item_bundled:sir-humphrey")
             .assertExists()
             .assertHeightIsAtLeast(48.dp)
 
@@ -318,6 +333,26 @@ class SettingsScreenTest {
     }
 
     @Test
+    fun `PersonaDetailScreen renders long persona names without clipping`() {
+        composeRule.setContent {
+            PersonaDetailScreen(
+                persona = sirHumphrey,
+                isActive = true,
+                notice = null,
+                onBack = {},
+                onSetActive = {},
+            )
+        }
+
+        composeRule.onNodeWithTag("personaspeak_detail_back")
+            .assertExists()
+            .assertHeightIsAtLeast(48.dp)
+        composeRule.onAllNodesWithText("Sir Humphrey Appleby").assertCountEquals(2)
+        composeRule.onNodeWithTag("personaspeak_detail_active_indicator", useUnmergedTree = true)
+            .assertExists()
+    }
+
+    @Test
     fun `SettingsScreen full routing integration`() {
         var currentDest: SettingsDestination = SettingsDestination.Home
         var activeId = jeeves.id
@@ -326,7 +361,7 @@ class SettingsScreenTest {
         val state = SettingsState(
             destination = currentDest,
             activePersonaId = activeId,
-            personas = listOf(jeeves, bachchan),
+            personas = listOf(jeeves, bachchan, sirHumphrey),
             defaultMood = mood,
         )
 

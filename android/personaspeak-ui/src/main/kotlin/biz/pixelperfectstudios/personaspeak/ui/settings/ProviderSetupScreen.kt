@@ -41,6 +41,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -112,9 +114,14 @@ fun ProviderSetupScreen(
                 onClick = onBack,
                 modifier = Modifier
                     .size(MinInteractiveHeight)
+                    .semantics { contentDescription = "Navigate back" }
                     .testTag("personaspeak_provider_setup_back"),
             ) {
-                Text("←", style = MaterialTheme.typography.titleLarge)
+                Text(
+                    text = "←",
+                    style = MaterialTheme.typography.titleLarge,
+                    color = MaterialTheme.colorScheme.onBackground,
+                )
             }
             Spacer(modifier = Modifier.width(8.dp))
             Text(
@@ -213,7 +220,9 @@ fun ProviderSetupScreen(
             trailingIcon = {
                 TextButton(
                     onClick = { showApiKey = !showApiKey },
-                    modifier = Modifier.heightIn(min = MinInteractiveHeight),
+                    modifier = Modifier
+                        .heightIn(min = MinInteractiveHeight)
+                        .semantics { contentDescription = if (showApiKey) "Hide API key" else "Show API key" },
                 ) {
                     Text(if (showApiKey) "Hide" else "Show")
                 }
@@ -408,7 +417,13 @@ private fun OpenRouterModelPickerDialog(
     }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Pick a model") },
+        title = {
+            Text(
+                text = "Pick a model",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+            )
+        },
         text = {
             Column {
                 OutlinedTextField(
@@ -439,7 +454,9 @@ private fun OpenRouterModelPickerDialog(
         confirmButton = {
             TextButton(
                 onClick = onDismiss,
-                modifier = Modifier.heightIn(min = MinInteractiveHeight),
+                modifier = Modifier
+                    .heightIn(min = MinInteractiveHeight)
+                    .semantics { contentDescription = "Close model picker" },
             ) {
                 Text("Close")
             }
@@ -455,9 +472,12 @@ private fun ModelRow(
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick),
+            .heightIn(min = MinInteractiveHeight)
+            .clickable(onClick = onClick)
+            .semantics { contentDescription = "${model.name}, ${model.id}${if (model.isFree) ", free model" else ""}" },
         shape = RoundedCornerShape(8.dp),
         color = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
     ) {
         Row(
             modifier = Modifier
@@ -508,13 +528,22 @@ private fun ProviderOptionRow(
         modifier = modifier
             .fillMaxWidth()
             .heightIn(min = MinInteractiveHeight)
-            .clickable(onClick = onClick),
+            .clickable(onClick = onClick)
+            .semantics { contentDescription = "${def.displayName}, ${def.defaultModel}" },
         shape = RoundedCornerShape(8.dp),
         color = if (isSelected) {
             MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)
         } else {
             MaterialTheme.colorScheme.surface
         },
+        border = BorderStroke(
+            width = if (isSelected) 2.dp else 1.dp,
+            color = if (isSelected) {
+                MaterialTheme.colorScheme.primary
+            } else {
+                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
+            },
+        ),
     ) {
         Row(
             modifier = Modifier

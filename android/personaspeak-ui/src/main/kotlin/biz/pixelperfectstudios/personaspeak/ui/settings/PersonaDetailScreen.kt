@@ -26,6 +26,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -63,6 +65,7 @@ fun PersonaDetailScreen(
                 onClick = onBack,
                 modifier = Modifier
                     .size(MinInteractiveHeight)
+                    .semantics { contentDescription = "Navigate back" }
                     .testTag("personaspeak_detail_back"),
             ) {
                 Text(
@@ -172,6 +175,7 @@ fun PersonaDetailScreen(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(8.dp),
                         color = MaterialTheme.colorScheme.surface,
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
                     ) {
                         Text(
                             text = "\"$line\"",

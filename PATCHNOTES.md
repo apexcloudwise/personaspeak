@@ -8,6 +8,18 @@ while the context is hot.
 
 Newest first, like all respectable patch notes.
 
+## 2026-08-27 — The Polish & Reach: Dark mode, landscape, accessibility, and RTL fidelity
+
+- Shipped Milestone 6 Slice B (Visual Fidelity, Theme, Accessibility, Landscape, & RTL Readiness):
+  - Created Material 3 `PersonaSpeakTheme` with high-contrast dark and light palettes (`Color.kt`, `Theme.kt`) satisfying Stitch tokens.
+  - Implemented high-contrast borders and elevated surfaces on persona chips, mood chips, picker tiles, and result cards to resolve dark-mode contrast.
+  - Hardened accessibility across all interactive components: enforced Android's 48dp minimum touch target floor and added semantic `contentDescription` attributes to close buttons, back buttons, chips, radio buttons, and action icons.
+  - Enhanced layout flexibility and resilience: resting persona chips now gracefully truncate long names ("Sir Humphrey Appleby", "Amitabh Bachchan") without squeezing action buttons; candidate review body obeys landscape pre-expansion height constraints and scrolls smoothly.
+  - Added RTL layout support (`android:supportsRtl="true"`) to `AndroidManifest.xml` and ledgered in `UPSTREAM-MODIFIED.md`.
+  - Expanded unit test coverage across `RewritePanelTest` and `SettingsScreenTest` covering landscape geometries, long name truncation, 48dp touch floors, and accessibility semantics. (#106)
+
+---
+
 ## 2026-08-27 — The Paper Trail: Asset rights, font licenses, and portrait provenance cleared
 
 - Shipped Milestone 6 Slice A (Asset Rights & Licensing):

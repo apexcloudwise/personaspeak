@@ -8,6 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import biz.pixelperfectstudios.personaspeak.personas.Mood
 import biz.pixelperfectstudios.personaspeak.personas.PersonaId
+import biz.pixelperfectstudios.personaspeak.ui.theme.PersonaSpeakTheme
 
 /**
  * Top-level container for PersonaSpeak Settings.
@@ -29,44 +30,25 @@ fun SettingsScreen(
     onClearNotice: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
-    Box(
-        modifier = modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-    ) {
-        when (val dest = state.destination) {
-            is SettingsDestination.Home -> {
-                SettingsHomeScreen(
-                    state = state,
-                    onNavigateToPersonas = { onNavigate(SettingsDestination.Personas) },
-                    onNavigateToProviderSetup = { onNavigate(SettingsDestination.ProviderSetup) },
-                    onSelectDefaultMood = onSelectDefaultMood,
-                    onOpenAskSettings = onOpenAskSettings,
-                    onOpenEnableIme = onOpenEnableIme,
-                    onClearNotice = onClearNotice,
-                )
-            }
-            is SettingsDestination.Personas -> {
-                PersonaBrowserScreen(
-                    state = state,
-                    onBack = onBack,
-                    onSelectPersonaDetail = { personaId ->
-                        onNavigate(SettingsDestination.PersonaDetail(personaId))
-                    },
-                )
-            }
-            is SettingsDestination.PersonaDetail -> {
-                val detailPersona = state.selectedDetailPersona
-                    ?: state.personas.find { it.id == dest.personaId }
-                if (detailPersona != null) {
-                    PersonaDetailScreen(
-                        persona = detailPersona,
-                        isActive = detailPersona.id == state.activePersonaId,
-                        notice = state.notice,
-                        onBack = onBack,
-                        onSetActive = onSelectPersona,
+    PersonaSpeakTheme {
+        Box(
+            modifier = modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
+        ) {
+            when (val dest = state.destination) {
+                is SettingsDestination.Home -> {
+                    SettingsHomeScreen(
+                        state = state,
+                        onNavigateToPersonas = { onNavigate(SettingsDestination.Personas) },
+                        onNavigateToProviderSetup = { onNavigate(SettingsDestination.ProviderSetup) },
+                        onSelectDefaultMood = onSelectDefaultMood,
+                        onOpenAskSettings = onOpenAskSettings,
+                        onOpenEnableIme = onOpenEnableIme,
+                        onClearNotice = onClearNotice,
                     )
-                } else {
+                }
+                is SettingsDestination.Personas -> {
                     PersonaBrowserScreen(
                         state = state,
                         onBack = onBack,
@@ -75,15 +57,36 @@ fun SettingsScreen(
                         },
                     )
                 }
-            }
-            is SettingsDestination.ProviderSetup -> {
-                ProviderSetupScreen(
-                    state = state,
-                    onBack = onBack,
-                    onSave = onSaveProvider,
-                    onClear = onClearProvider,
-                    onFetchModels = onFetchModels,
-                )
+                is SettingsDestination.PersonaDetail -> {
+                    val detailPersona = state.selectedDetailPersona
+                        ?: state.personas.find { it.id == dest.personaId }
+                    if (detailPersona != null) {
+                        PersonaDetailScreen(
+                            persona = detailPersona,
+                            isActive = detailPersona.id == state.activePersonaId,
+                            notice = state.notice,
+                            onBack = onBack,
+                            onSetActive = onSelectPersona,
+                        )
+                    } else {
+                        PersonaBrowserScreen(
+                            state = state,
+                            onBack = onBack,
+                            onSelectPersonaDetail = { personaId ->
+                                onNavigate(SettingsDestination.PersonaDetail(personaId))
+                            },
+                        )
+                    }
+                }
+                is SettingsDestination.ProviderSetup -> {
+                    ProviderSetupScreen(
+                        state = state,
+                        onBack = onBack,
+                        onSave = onSaveProvider,
+                        onClear = onClearProvider,
+                        onFetchModels = onFetchModels,
+                    )
+                }
             }
         }
     }

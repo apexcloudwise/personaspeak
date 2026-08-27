@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -28,6 +29,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -36,6 +39,7 @@ import biz.pixelperfectstudios.personaspeak.personas.PersonaId
 import biz.pixelperfectstudios.personaspeak.personas.ValidatedPersona
 import biz.pixelperfectstudios.personaspeak.ui.personas.descriptor
 import biz.pixelperfectstudios.personaspeak.ui.personas.emoji
+import biz.pixelperfectstudios.personaspeak.ui.theme.PersonaSpeakTheme
 
 /** Android's touch-target floor. Every interactive control here clears it. */
 private val MinInteractiveHeight = 48.dp
@@ -91,78 +95,80 @@ fun RewritePanel(
         else -> 0
     }
 
-    Surface(
-        modifier = modifier.fillMaxWidth(),
-        tonalElevation = 2.dp,
-    ) {
-        when (state) {
-            is RewritePanelState.Resting -> {
-                RestingLayout(
-                    state = state,
-                    onRewrite = onRewrite,
-                    onOpenPersonaPicker = onOpenPersonaPicker,
-                    onOpenMoodPicker = onOpenMoodPicker,
-                    onSettings = onSettings,
-                )
-            }
+    PersonaSpeakTheme {
+        Surface(
+            modifier = modifier.fillMaxWidth(),
+            tonalElevation = 2.dp,
+        ) {
+            when (state) {
+                is RewritePanelState.Resting -> {
+                    RestingLayout(
+                        state = state,
+                        onRewrite = onRewrite,
+                        onOpenPersonaPicker = onOpenPersonaPicker,
+                        onOpenMoodPicker = onOpenMoodPicker,
+                        onSettings = onSettings,
+                    )
+                }
 
-            is RewritePanelState.PersonaPicker -> {
-                PersonaPickerLayout(
-                    state = state,
-                    onSelectPersona = onSelectPersona,
-                    onDismiss = onDismiss,
-                    onOpenPersonaBrowser = onOpenPersonaBrowser,
-                )
-            }
+                is RewritePanelState.PersonaPicker -> {
+                    PersonaPickerLayout(
+                        state = state,
+                        onSelectPersona = onSelectPersona,
+                        onDismiss = onDismiss,
+                        onOpenPersonaBrowser = onOpenPersonaBrowser,
+                    )
+                }
 
-            is RewritePanelState.MoodPicker -> {
-                MoodPickerLayout(
-                    state = state,
-                    onSelectMood = onSelectMood,
-                    onDismiss = onDismiss,
-                )
-            }
+                is RewritePanelState.MoodPicker -> {
+                    MoodPickerLayout(
+                        state = state,
+                        onSelectMood = onSelectMood,
+                        onDismiss = onDismiss,
+                    )
+                }
 
-            is RewritePanelState.Loading -> {
-                LoadingLayout(
-                    state = state,
-                    onDismiss = onDismiss,
-                    onSettings = onSettings,
-                )
-            }
+                is RewritePanelState.Loading -> {
+                    LoadingLayout(
+                        state = state,
+                        onDismiss = onDismiss,
+                        onSettings = onSettings,
+                    )
+                }
 
-            is RewritePanelState.Review -> {
-                ReviewLayout(
-                    state = state,
-                    maxBodyHeightPx = reviewBodyMaxHeightPx,
-                    onAgain = onRewrite,
-                    onApply = onApply,
-                    onDismiss = onDismiss,
-                    onSettings = onSettings,
-                )
-            }
+                is RewritePanelState.Review -> {
+                    ReviewLayout(
+                        state = state,
+                        maxBodyHeightPx = reviewBodyMaxHeightPx,
+                        onAgain = onRewrite,
+                        onApply = onApply,
+                        onDismiss = onDismiss,
+                        onSettings = onSettings,
+                    )
+                }
 
-            is RewritePanelState.Applying -> {
-                ApplyingLayout(
-                    state = state,
-                    maxBodyHeightPx = reviewBodyMaxHeightPx,
-                )
-            }
+                is RewritePanelState.Applying -> {
+                    ApplyingLayout(
+                        state = state,
+                        maxBodyHeightPx = reviewBodyMaxHeightPx,
+                    )
+                }
 
-            is RewritePanelState.AppliedVerified -> {
-                AppliedVerifiedLayout(
-                    state = state,
-                    onDismiss = onDismiss,
-                )
-            }
+                is RewritePanelState.AppliedVerified -> {
+                    AppliedVerifiedLayout(
+                        state = state,
+                        onDismiss = onDismiss,
+                    )
+                }
 
-            is RewritePanelState.Error -> {
-                ErrorLayout(
-                    state = state,
-                    onRetry = onRewrite,
-                    onDismiss = onDismiss,
-                    onSettings = onSettings,
-                )
+                is RewritePanelState.Error -> {
+                    ErrorLayout(
+                        state = state,
+                        onRetry = onRewrite,
+                        onDismiss = onDismiss,
+                        onSettings = onSettings,
+                    )
+                }
             }
         }
     }
@@ -185,11 +191,15 @@ private fun RestingLayout(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        // Persona chip
+        // Persona chip with flex constraint so long names truncate and don't squeeze action buttons
         Surface(
             modifier = Modifier
                 .heightIn(min = MinInteractiveHeight)
+                .weight(1f, fill = false)
                 .clickable(onClick = onOpenPersonaPicker)
+                .semantics {
+                    contentDescription = "Active character ${state.persona.content.name}. Tap to change character."
+                }
                 .testTag("personaspeak_persona_chip"),
             shape = RoundedCornerShape(24.dp),
             color = MaterialTheme.colorScheme.secondaryContainer,
@@ -217,6 +227,9 @@ private fun RestingLayout(
             modifier = Modifier
                 .heightIn(min = MinInteractiveHeight)
                 .clickable(onClick = onOpenMoodPicker)
+                .semantics {
+                    contentDescription = "Active mood ${state.mood.label}. Tap to change mood."
+                }
                 .testTag("personaspeak_mood_chip"),
             shape = RoundedCornerShape(24.dp),
             color = MaterialTheme.colorScheme.surfaceVariant,
@@ -230,6 +243,7 @@ private fun RestingLayout(
                 Text(
                     text = state.mood.label,
                     style = MaterialTheme.typography.labelMedium,
+                    maxLines = 1,
                 )
                 Text(text = "⌄", style = MaterialTheme.typography.labelSmall)
             }
@@ -250,7 +264,7 @@ private fun RestingLayout(
     }
 }
 
-/** Persona picker: 2x2 grid of character tiles. */
+/** Persona picker: 2x2 grid of character tiles with 48dp floor and high-contrast dark selection. */
 @Composable
 private fun PersonaPickerLayout(
     state: RewritePanelState.PersonaPicker,
@@ -281,6 +295,7 @@ private fun PersonaPickerLayout(
                 onClick = onDismiss,
                 modifier = Modifier
                     .size(MinInteractiveHeight)
+                    .semantics { contentDescription = "Close character picker" }
                     .testTag("personaspeak_picker_close"),
             ) {
                 Text("✕", style = MaterialTheme.typography.bodyLarge)
@@ -302,10 +317,21 @@ private fun PersonaPickerLayout(
                             .weight(1f)
                             .heightIn(min = MinInteractiveHeight)
                             .clickable { onSelectPersona(persona.id) }
+                            .semantics {
+                                contentDescription = "${persona.content.name}, ${persona.descriptor}${if (isSelected) ", selected" else ""}"
+                            }
                             .testTag("personaspeak_persona_tile_${persona.id.value.substringAfter(':')}"),
                         shape = RoundedCornerShape(8.dp),
-                        color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
-                        border = if (isSelected) BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary) else null,
+                        color = if (isSelected) {
+                            MaterialTheme.colorScheme.primaryContainer
+                        } else {
+                            MaterialTheme.colorScheme.surfaceVariant
+                        },
+                        border = if (isSelected) {
+                            BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
+                        } else {
+                            BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                        },
                     ) {
                         Row(
                             modifier = Modifier.padding(8.dp),
@@ -324,7 +350,7 @@ private fun PersonaPickerLayout(
                                 Text(
                                     text = persona.descriptor,
                                     style = MaterialTheme.typography.bodySmall,
-                                    maxLines = 1,
+                                    maxLines = 2,
                                     overflow = TextOverflow.Ellipsis,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
@@ -357,7 +383,7 @@ private fun PersonaPickerLayout(
     }
 }
 
-/** Mood picker: list of supported mood options. */
+/** Mood picker: list of supported mood options with 48dp floor and high-contrast dark selection. */
 @Composable
 private fun MoodPickerLayout(
     state: RewritePanelState.MoodPicker,
@@ -387,6 +413,7 @@ private fun MoodPickerLayout(
                 onClick = onDismiss,
                 modifier = Modifier
                     .size(MinInteractiveHeight)
+                    .semantics { contentDescription = "Close mood picker" }
                     .testTag("personaspeak_mood_picker_close"),
             ) {
                 Text("✕", style = MaterialTheme.typography.bodyLarge)
@@ -404,10 +431,21 @@ private fun MoodPickerLayout(
                         .weight(1f)
                         .heightIn(min = MinInteractiveHeight)
                         .clickable { onSelectMood(mood) }
+                        .semantics {
+                            contentDescription = "Mood ${mood.label}${if (isSelected) ", selected" else ""}"
+                        }
                         .testTag("personaspeak_mood_tile_${mood.id.value}"),
                     shape = RoundedCornerShape(8.dp),
-                    color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
-                    border = if (isSelected) BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary) else null,
+                    color = if (isSelected) {
+                        MaterialTheme.colorScheme.primaryContainer
+                    } else {
+                        MaterialTheme.colorScheme.surfaceVariant
+                    },
+                    border = if (isSelected) {
+                        BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
+                    } else {
+                        BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                    },
                 ) {
                     Box(
                         modifier = Modifier.padding(horizontal = 4.dp, vertical = 8.dp),
@@ -444,6 +482,7 @@ private fun LoadingLayout(
         CircularProgressIndicator(
             modifier = Modifier
                 .size(20.dp)
+                .semantics { contentDescription = "Composing rewrite…" }
                 .testTag("personaspeak_loading"),
             strokeWidth = 2.dp,
         )
@@ -452,6 +491,8 @@ private fun LoadingLayout(
             text = "${state.persona.emoji} ${state.persona.content.name} · ${state.mood.label}",
             style = MaterialTheme.typography.bodySmall,
             modifier = Modifier.weight(1f),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
         )
 
         TextButton(
@@ -501,21 +542,31 @@ private fun ReviewLayout(
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.primary,
                 fontWeight = FontWeight.Medium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
         }
 
-        // Candidate body
-        Column(
-            modifier = bodyModifier
-                .fillMaxWidth()
-                .verticalScroll(rememberScrollState())
-                .testTag("personaspeak_candidate_body"),
+        // Candidate body inside surface for contrast
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(8.dp),
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)),
         ) {
-            Text(
-                text = state.candidate.replacement,
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.testTag("personaspeak_candidate"),
-            )
+            Column(
+                modifier = bodyModifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
+                    .padding(8.dp)
+                    .testTag("personaspeak_candidate_body"),
+            ) {
+                Text(
+                    text = state.candidate.replacement,
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.testTag("personaspeak_candidate"),
+                )
+            }
         }
 
         // Action row
@@ -576,16 +627,24 @@ private fun ApplyingLayout(
             .padding(horizontal = 8.dp, vertical = 4.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        Column(
-            modifier = bodyModifier
-                .fillMaxWidth()
-                .testTag("personaspeak_candidate_body"),
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(8.dp),
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)),
         ) {
-            Text(
-                text = state.candidate.replacement,
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.testTag("personaspeak_candidate"),
-            )
+            Column(
+                modifier = bodyModifier
+                    .fillMaxWidth()
+                    .padding(8.dp)
+                    .testTag("personaspeak_candidate_body"),
+            ) {
+                Text(
+                    text = state.candidate.replacement,
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.testTag("personaspeak_candidate"),
+                )
+            }
         }
 
         Row(
@@ -596,7 +655,9 @@ private fun ApplyingLayout(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             CircularProgressIndicator(
-                modifier = Modifier.size(18.dp),
+                modifier = Modifier
+                    .size(18.dp)
+                    .semantics { contentDescription = "Applying rewrite to editor…" },
                 strokeWidth = 2.dp,
             )
             Text(
@@ -647,75 +708,84 @@ private fun ErrorLayout(
     onDismiss: () -> Unit,
     onSettings: () -> Unit,
 ) {
-    Column(
+    Surface(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 8.dp, vertical = 6.dp)
             .testTag("personaspeak_error_card"),
-        verticalArrangement = Arrangement.spacedBy(4.dp),
+        shape = RoundedCornerShape(10.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            Text(
-                text = "⚠️ ${state.error.title}",
-                style = MaterialTheme.typography.labelMedium,
-                fontWeight = FontWeight.Bold,
-            )
-        }
-
-        Text(
-            text = state.error.explanation,
-            style = MaterialTheme.typography.bodySmall,
-            modifier = Modifier.testTag("personaspeak_message"),
-        )
-
-        if (state.error.editorUntouched) {
-            Text(
-                text = "Your text in the editor was not modified.",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(min = MinInteractiveHeight),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                .padding(10.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
-            if (state.error.canRetry) {
-                TextButton(
-                    onClick = onRetry,
-                    modifier = Modifier
-                        .heightIn(min = MinInteractiveHeight)
-                        .testTag("personaspeak_retry"),
-                ) {
-                    Text("Try again")
-                }
-            }
-
-            if (state.error.opensSettings) {
-                TextButton(
-                    onClick = onSettings,
-                    modifier = Modifier
-                        .heightIn(min = MinInteractiveHeight)
-                        .testTag("personaspeak_settings"),
-                ) {
-                    Text("Open settings")
-                }
-            }
-
-            TextButton(
-                onClick = onDismiss,
-                modifier = Modifier
-                    .heightIn(min = MinInteractiveHeight)
-                    .testTag("personaspeak_dismiss"),
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                Text("Dismiss")
+                Text(
+                    text = "⚠️ ${state.error.title}",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold,
+                )
+            }
+
+            Text(
+                text = state.error.explanation,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.testTag("personaspeak_message"),
+            )
+
+            if (state.error.editorUntouched) {
+                Text(
+                    text = "Your text in the editor was not modified.",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = MinInteractiveHeight),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                if (state.error.canRetry) {
+                    TextButton(
+                        onClick = onRetry,
+                        modifier = Modifier
+                            .heightIn(min = MinInteractiveHeight)
+                            .testTag("personaspeak_retry"),
+                    ) {
+                        Text("Try again")
+                    }
+                }
+
+                if (state.error.opensSettings) {
+                    TextButton(
+                        onClick = onSettings,
+                        modifier = Modifier
+                            .heightIn(min = MinInteractiveHeight)
+                            .testTag("personaspeak_settings"),
+                    ) {
+                        Text("Open settings")
+                    }
+                }
+
+                TextButton(
+                    onClick = onDismiss,
+                    modifier = Modifier
+                        .heightIn(min = MinInteractiveHeight)
+                        .testTag("personaspeak_dismiss"),
+                ) {
+                    Text("Dismiss")
+                }
             }
         }
     }
@@ -726,7 +796,7 @@ private fun SettingsButton(onSettings: () -> Unit) {
     IconButton(
         onClick = onSettings,
         modifier = Modifier
-            .heightIn(min = MinInteractiveHeight)
+            .size(MinInteractiveHeight)
             .testTag("personaspeak_settings"),
     ) {
         Icon(
