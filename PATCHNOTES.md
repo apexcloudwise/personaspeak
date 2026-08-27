@@ -8,6 +8,16 @@ while the context is hot.
 
 Newest first, like all respectable patch notes.
 
+## 2026-08-27 — The Final Ship: Production usefulness proof, CI required-checks & v0.1.0 release packaging
+
+- Shipped Milestone 8 Slice B (Production Usefulness Proof, Sanitized Error Surfacing, CI Required Checks & Release Packaging):
+  - Published production usefulness proof (`docs/evidence/milestone-8/usefulness-proof.md`) and machine receipt (`docs/evidence/milestone-8/usefulness-receipt.json`) demonstrating deterministic production-path rewrites and closed error taxonomy across OpenRouter, Anthropic, and offline understudy (`FakeProvider`).
+  - Implemented `ReleaseUsefulnessReceiptTest` in `:ime:app` verifying production rewrite execution, single-mutation editor commit, and sanitized UI error transformations (401 auth failures, 429 rate limits, IO/network timeouts) with zero raw stack trace or credential leakage.
+  - Audited CI hygiene and branch protection policy (`docs/evidence/milestone-8/ci-required-checks.md`) resolving #15 and #16, and updated `.github/workflows/ci.yml` with consolidated M2, M4, M7, and M8 verification gates.
+  - Updated `android/scripts/verify-milestone-8.sh` and contract test `verify-milestone-8-test.sh` to enforce Slice B usefulness and CI invariants. (#114)
+
+---
+
 ## 2026-08-27 — The Final Seal: Release signing, version identity, fail-closed active-composition gate & R8 pass
 
 - Shipped Milestone 8 Slice A (Build, Sign, Fail-Closed Active-Composition Gate, R8 Review & Dependency Lock):

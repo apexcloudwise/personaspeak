@@ -1,0 +1,58 @@
+{
+  "schema": 1,
+  "kind": "usefulness_receipt",
+  "milestone": "milestone-8",
+  "slice": "slice-b",
+  "evidence_classes": [
+    "composition_and_ui_harness",
+    "ui_error_sanitization_harness",
+    "mock_transport_adapter_harness"
+  ],
+  "run_id": "20260827T063500Z-usefulness",
+  "commit": "dbeb736",
+  "verdicts": {
+    "composition_fake_provider_rewrite": "harness_verified",
+    "ui_provider_failure_sanitized_surfacing": "harness_verified",
+    "openrouter_mock_adapter_rewrite": "harness_verified",
+    "anthropic_mock_adapter_rewrite": "harness_verified",
+    "auth_failure_adapter_mapping": "harness_verified",
+    "rate_limit_adapter_mapping": "harness_verified",
+    "network_error_adapter_mapping": "harness_verified",
+    "phase1_exit_demo_satisfied": "harness_verified"
+  },
+  "receipts": [
+    {
+      "pipeline": "composition_fake_provider",
+      "evidence_class": "composition_and_ui_harness",
+      "status": "PASS",
+      "sample_input": "running late",
+      "sample_output": "running late (Polite)",
+      "host_editor_mutations": 1
+    },
+    {
+      "pipeline": "ui_provider_failure_surfacing",
+      "evidence_class": "ui_error_sanitization_harness",
+      "status": "PASS",
+      "sample_input": "Tea at six.",
+      "ui_error_card": "Service unavailable",
+      "ui_error_explanation": "Rewriting service is unavailable.",
+      "host_editor_mutations": 0
+    },
+    {
+      "pipeline": "openrouter_adapter",
+      "evidence_class": "mock_transport_adapter_harness",
+      "status": "PASS",
+      "sample_input": "Tea at six.",
+      "sample_output": "I am cordially obliged to inform you that I shall attend tea at six.",
+      "memory_zeroing": "verified"
+    },
+    {
+      "pipeline": "anthropic_adapter",
+      "evidence_class": "mock_transport_adapter_harness",
+      "status": "PASS",
+      "sample_input": "Tea at six.",
+      "sample_output": "Splendid. I will join you for tea at six sharp.",
+      "memory_zeroing": "verified"
+    }
+  ]
+}
