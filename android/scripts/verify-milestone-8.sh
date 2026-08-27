@@ -145,16 +145,18 @@ assert u_receipt.get('schema') == 1, 'Usefulness receipt schema must be 1'
 assert u_receipt.get('kind') == 'usefulness_receipt', 'Usefulness receipt kind must be usefulness_receipt'
 assert u_receipt.get('milestone') == 'milestone-8', 'Usefulness receipt milestone must be milestone-8'
 assert u_receipt.get('slice') == 'slice-b', 'Usefulness receipt slice must be slice-b'
+assert u_receipt.get('run_id'), 'Missing run_id in usefulness receipt'
+assert u_receipt.get('commit'), 'Missing commit in usefulness receipt'
 
 u_verdicts = u_receipt.get('verdicts', {})
 required_u_verdicts = [
-    'openrouter_production_rewrite', 'anthropic_production_rewrite',
-    'offline_fake_provider_rewrite', 'auth_failure_sanitized_surfacing',
+    'composition_fake_provider_rewrite', 'openrouter_mock_adapter_rewrite',
+    'anthropic_mock_adapter_rewrite', 'auth_failure_sanitized_surfacing',
     'rate_limit_sanitized_surfacing', 'network_error_sanitized_surfacing',
     'phase1_exit_demo_satisfied'
 ]
 for uv in required_u_verdicts:
-    assert u_verdicts.get(uv) == 'verified', f'Usefulness verdict {uv} was not verified'
+    assert u_verdicts.get(uv) == 'harness_verified', f'Usefulness verdict {uv} was not harness_verified'
 
 # 8. Verify CI Required Checks Doc (Slice B)
 ci_doc = os.path.join(repo_root, 'docs/evidence/milestone-8/ci-required-checks.md')

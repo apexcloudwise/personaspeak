@@ -58,8 +58,8 @@ export ASK_CLOSURE_DEPS_OUTPUT="$deps_good"
 
 # Test 2: Tampered usefulness receipt with unverified verdict fails with exit code 1
 u_receipt_file="$fixture_repo/docs/evidence/milestone-8/usefulness-receipt.json"
-sed -i '' 's/"phase1_exit_demo_satisfied": "verified"/"phase1_exit_demo_satisfied": "unverified"/' "$u_receipt_file" 2>/dev/null || \
-sed -i 's/"phase1_exit_demo_satisfied": "verified"/"phase1_exit_demo_satisfied": "unverified"/' "$u_receipt_file"
+sed -i '' 's/"phase1_exit_demo_satisfied": "harness_verified"/"phase1_exit_demo_satisfied": "unverified"/' "$u_receipt_file" 2>/dev/null || \
+sed -i 's/"phase1_exit_demo_satisfied": "harness_verified"/"phase1_exit_demo_satisfied": "unverified"/' "$u_receipt_file"
 
 u_tamper_rc=0
 "$verifier" "$fixture_repo/android" > /dev/null 2>&1 || u_tamper_rc=$?
