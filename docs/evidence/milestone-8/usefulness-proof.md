@@ -3,8 +3,8 @@
 **Document Status: QUALIFIED (Usefulness & Error Sanitization Verified).**  
 **Milestone:** Milestone 8 Slice B ([#114](https://github.com/apexcloudwise/personaspeak/issues/114))  
 **Evidence Classes:** `composition_and_ui_harness`, `ui_error_sanitization_harness`, `mock_transport_adapter_harness`  
-**Run ID:** `20260827T114000Z-usefulness`  
-**Commit:** `91b3cb6`  
+**Run ID:** `20260827T063500Z-usefulness`  
+**Commit:** `dbeb736`  
 
 ---
 

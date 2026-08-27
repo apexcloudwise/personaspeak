@@ -146,7 +146,7 @@ assert u_receipt.get('kind') == 'usefulness_receipt', 'Usefulness receipt kind m
 assert u_receipt.get('milestone') == 'milestone-8', 'Usefulness receipt milestone must be milestone-8'
 assert u_receipt.get('slice') == 'slice-b', 'Usefulness receipt slice must be slice-b'
 assert u_receipt.get('run_id'), 'Missing run_id in usefulness receipt'
-assert u_receipt.get('commit') == '91b3cb6', f'Usefulness receipt commit was {u_receipt.get(\"commit\")}, expected 91b3cb6'
+assert u_receipt.get('commit') == 'dbeb736', f'Usefulness receipt commit was {u_receipt.get(\"commit\")}, expected dbeb736'
 
 u_verdicts = u_receipt.get('verdicts', {})
 required_u_verdicts = [

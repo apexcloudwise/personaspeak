@@ -8,8 +8,8 @@
     "ui_error_sanitization_harness",
     "mock_transport_adapter_harness"
   ],
-  "run_id": "20260827T114000Z-usefulness",
-  "commit": "91b3cb6",
+  "run_id": "20260827T063500Z-usefulness",
+  "commit": "dbeb736",
   "verdicts": {
     "composition_fake_provider_rewrite": "harness_verified",
     "ui_provider_failure_sanitized_surfacing": "harness_verified",
