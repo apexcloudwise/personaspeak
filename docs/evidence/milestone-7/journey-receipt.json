@@ -1,0 +1,75 @@
+{
+  "schema": 1,
+  "kind": "journey_receipt",
+  "milestone": "milestone-7",
+  "evidence_class": "jvm_robolectric_harness",
+  "run_id": "20260827T084800Z-harness",
+  "commit": "5029c0c",
+  "verdicts": {
+    "pristine_baseline": "harness_verified",
+    "onboarding_flow": "harness_verified",
+    "session_handoff": "harness_verified",
+    "brain_provider_setup": "harness_verified",
+    "host_editor_rewrite": "harness_verified",
+    "host_editor_mutations": "harness_verified",
+    "rtl_locale_pass": "harness_verified",
+    "visual_theme_contrast": "harness_verified"
+  },
+  "counts": {
+    "journey_steps_total": 8,
+    "journey_steps_completed": 8,
+    "apply_mutations": 1,
+    "dismiss_mutations": 0,
+    "bundled_personas": 4
+  },
+  "steps": [
+    {
+      "step": 1,
+      "name": "pristine_install_baseline",
+      "status": "PASS",
+      "details": "DataStore unconfigured, default persona Jeeves (bundled:jeeves), default mood Polite, zero disk writes"
+    },
+    {
+      "step": 2,
+      "name": "onboarding_and_settings_home",
+      "status": "PASS",
+      "details": "Get started onboarding card rendered, 48dp touch floors verified, navigation intents wired"
+    },
+    {
+      "step": 3,
+      "name": "character_selection_handoff",
+      "status": "PASS",
+      "details": "Dr. King Schultz (bundled:dr-schultz) selected with Witty mood, session state updated"
+    },
+    {
+      "step": 4,
+      "name": "brain_provider_configuration",
+      "status": "PASS",
+      "details": "Provider configuration saved to DataStore and encrypted Keystore, on-demand decryption wired"
+    },
+    {
+      "step": 5,
+      "name": "keyboard_input_view_start",
+      "status": "PASS",
+      "details": "InputConnection attached on host editor with 'Tea at six.', resting strip rendered"
+    },
+    {
+      "step": 6,
+      "name": "rewrite_cycle_and_mutations",
+      "status": "PASS",
+      "details": "Rewrite triggered, Loading state, Review state, candidate applied with exact 1 mutation, Dismiss tested with 0 mutations"
+    },
+    {
+      "step": 7,
+      "name": "rtl_locale_and_layout_pass",
+      "status": "PASS",
+      "details": "LayoutDirection.Rtl validated, start/end padding and navigation back mirroring verified"
+    },
+    {
+      "step": 8,
+      "name": "dark_and_light_theme_fidelity",
+      "status": "PASS",
+      "details": "High-contrast tokens in PersonaSpeakTheme verified across light and dark palettes"
+    }
+  ]
+}
