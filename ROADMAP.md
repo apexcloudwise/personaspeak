@@ -62,20 +62,24 @@ persona strip above the keys that rewrites what you've typed.
       snapshot fixture — 145/145 steps, exact mutation counts, verified
       restoration (run 20260823T122133Z, receipt PR #84, evidence on the
       protected `evidence` branch).
-- [ ] Persona strip grafted onto the chosen base as its own row above ASK's
+- [x] Persona strip grafted onto the chosen base as its own row above ASK's
       untouched suggestions and keys: persona chip + mood chip + transform,
-      reading the draft and replacing it in place
-- [ ] **Milestone 4 — Secure provider configuration & persistence** (issue #89):
+      reading the draft and replacing it in place (PR #87/#88).
+- [x] **Milestone 4 — Secure provider configuration & persistence** (issue #89,
+      closed with deferred live gates):
       `ProviderConfigStore` port, Preferences DataStore metadata + AndroidKeyStore
       AES-GCM ciphertext persistence, backup exclusion configured for API 26/27
       and API 31+, `AnthropicMessagesAdapter` in `:personaspeak-providers` with closed error taxonomy
       over HTTPS, and memory zeroing assertions. Shipped **structurally disabled by default** (`FakeProvider` active default in rewrite
-      coordinator; real adapters unselected in DI; live cloud egress gated on Milestone 5 user opt-in).
-      Device qualification (API 27 backup, ART runner, & Mode B live egress) pending external fixture execution.
-- [ ] app: onboarding (enable → set default → pick provider → try it),
-      persona browser, settings (Milestone 5)
-- [ ] CI: assembleDebug + unit tests per PR; APK artifact on tags
-- [ ] **Installable M8 (Release Readiness)**: signing, cert-fingerprint pinning, version `v0.1.0`/`versionCode=1000`/immutable tag, fail-closed release build (rejected if active provider is fake/stub — test active composition, not ban class), usefulness receipt (one deterministic rewrite through production path + one failure as user-presentable message), R8/minification risk (release-only first-party reachability with no keep policy), dependency-lock state as reproducibility input.
+       coordinator; real adapters unselected in DI; live cloud egress gated on Milestone 5 user opt-in).
+       The API 27 backup, ART runner, and Mode B live-egress gates were formally deferred by owner decision; they are not qualified.
+- [x] app: onboarding (enable → set default → pick provider → try it),
+      persona browser, settings (Milestone 5, PR #104/#105)
+- [x] CI: assembleDebug + unit tests per PR; strict required checks on `main`
+      (M8, ruleset `main required CI`).
+- [ ] Release APK artifact on tags — deferred pending official release signing material.
+- [ ] **Installable M8 (Release Readiness)**: code, CI, signing configuration,
+      fail-closed composition gate, usefulness receipt, R8 release build, and dependency snapshot landed in PR #116/#117. The immutable `v0.1.0` tag and signed APK are deferred until an official keystore is provisioned; see [handoff.md](handoff.md).
 
 **Exit demo:** in WhatsApp, type "running late" on your normal keyboard —
 which is now ours — tap 🎩, send something Wodehouse would sign off on. No

@@ -8,6 +8,13 @@ while the context is hot.
 
 Newest first, like all respectable patch notes.
 
+## 2026-08-27 — The Ship Is Packed, But the Key Is Still at Reception
+
+- Deferred the public `v0.1.0` release after M8 landed: code, evidence, and required CI checks are ready; no official signing keystore means no signed APK, immutable tag, or GitHub release yet.
+- Added `handoff.md` with the exact resume path. The release key stays outside git, chat, and anyone's bright ideas.
+
+---
+
 ## 2026-08-27 — The Final Ship: Production usefulness proof, CI required-checks & v0.1.0 release packaging
 
 - Shipped Milestone 8 Slice B (Production Usefulness Proof, Sanitized Error Surfacing, CI Required Checks & Release Packaging):
