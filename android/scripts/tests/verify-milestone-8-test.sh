@@ -29,6 +29,9 @@ cp "$repo_root/docs/evidence/milestone-8/README.md" "$fixture_repo/docs/evidence
 cp "$repo_root/docs/evidence/milestone-8/slice-a-receipt.json" "$fixture_repo/docs/evidence/milestone-8/"
 cp "$repo_root/docs/evidence/milestone-8/r8-minification-pass.md" "$fixture_repo/docs/evidence/milestone-8/"
 cp "$repo_root/docs/evidence/milestone-8/dependencies-lock.txt" "$fixture_repo/docs/evidence/milestone-8/"
+cp "$repo_root/docs/evidence/milestone-8/usefulness-proof.md" "$fixture_repo/docs/evidence/milestone-8/"
+cp "$repo_root/docs/evidence/milestone-8/usefulness-receipt.json" "$fixture_repo/docs/evidence/milestone-8/"
+cp "$repo_root/docs/evidence/milestone-8/ci-required-checks.md" "$fixture_repo/docs/evidence/milestone-8/"
 git -C "$fixture_repo" init -q
 
 # Pre-captured ASK closure seam outputs
@@ -53,19 +56,19 @@ deps_good="$tmp/deps.txt"
 export ASK_CLOSURE_PROJECTS_OUTPUT="$projects_good"
 export ASK_CLOSURE_DEPS_OUTPUT="$deps_good"
 
-# Test 2: Tampered receipt with unverified verdict fails with exit code 1
-receipt_file="$fixture_repo/docs/evidence/milestone-8/slice-a-receipt.json"
-sed -i '' 's/"fail_closed_active_composition": "verified"/"fail_closed_active_composition": "unverified"/' "$receipt_file" 2>/dev/null || \
-sed -i 's/"fail_closed_active_composition": "verified"/"fail_closed_active_composition": "unverified"/' "$receipt_file"
+# Test 2: Tampered usefulness receipt with unverified verdict fails with exit code 1
+u_receipt_file="$fixture_repo/docs/evidence/milestone-8/usefulness-receipt.json"
+sed -i '' 's/"phase1_exit_demo_satisfied": "verified"/"phase1_exit_demo_satisfied": "unverified"/' "$u_receipt_file" 2>/dev/null || \
+sed -i 's/"phase1_exit_demo_satisfied": "verified"/"phase1_exit_demo_satisfied": "unverified"/' "$u_receipt_file"
 
-tamper_rc=0
-"$verifier" "$fixture_repo/android" > /dev/null 2>&1 || tamper_rc=$?
-if [ "$tamper_rc" -ne 1 ]; then
-    echo "FAIL: expected exit code 1 on unverified receipt verdict, got $tamper_rc" >&2
+u_tamper_rc=0
+"$verifier" "$fixture_repo/android" > /dev/null 2>&1 || u_tamper_rc=$?
+if [ "$u_tamper_rc" -ne 1 ]; then
+    echo "FAIL: expected exit code 1 on unverified usefulness receipt verdict, got $u_tamper_rc" >&2
     exit 1
 fi
 # Restore
-cp "$repo_root/docs/evidence/milestone-8/slice-a-receipt.json" "$receipt_file"
+cp "$repo_root/docs/evidence/milestone-8/usefulness-receipt.json" "$u_receipt_file"
 
 # Test 3: Missing R8 report fails with exit code 1
 r8_file="$fixture_repo/docs/evidence/milestone-8/r8-minification-pass.md"
@@ -89,5 +92,5 @@ if [ "$missing_rc" -ne 1 ]; then
 fi
 cp "$repo_root/docs/plans/m8-release-readiness-plan.md" "$plan_file"
 
-echo "PASS: verify-milestone-8 contract verified (positive, tampered-verdict, missing-r8, and missing-plan cases)"
+echo "PASS: verify-milestone-8 contract verified (positive, tampered-usefulness, missing-r8, and missing-plan cases)"
 exit 0
