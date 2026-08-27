@@ -1,0 +1,39 @@
+{
+  "schema": 1,
+  "kind": "journey_receipt",
+  "milestone": "milestone-7",
+  "issue": 111,
+  "evidence_class": "emulator_device",
+  "run_id": "20260827T041731Z-device",
+  "commit": "de797ba",
+  "apk_sha256": "db1f000f2a3b47c3d9fcfba89e2fc9a6ea3ad255a68a511a8c6fe5c58dc8f666",
+  "fixture": {
+    "avd": "M2_Qual_Fixture",
+    "snapshot": "m2_pristine",
+    "image": "google/sdk_gphone64_arm64/emu64a:14",
+    "boot_flags": "-no-snapshot-save -gpu swiftshader_indirect -no-window"
+  },
+  "verdicts": {
+    "pristine_baseline": "verified",
+    "fresh_install": "verified",
+    "ime_enablement_and_default": "verified",
+    "onboarding_settings_surface": "device_verified",
+    "character_selection_schultz": "device_verified",
+    "mood_selection_witty": "device_verified",
+    "brain_mock_only_no_credentials": "verified",
+    "rewrite_cycle_apply": "device_verified",
+    "apply_mutations": 1,
+    "dismiss_cycle": "device_verified",
+    "dismiss_mutations": 0,
+    "rtl_locale_pass": "device_verified",
+    "dark_light_theme_pair": "device_verified",
+    "physical_key_tap_journey": "not_claimed_m2_scope"
+  },
+  "deviations": [
+    "headless boot (-no-window) per owner directive in chat; windowed boots wedged twice on host",
+    "text entry via adb input text, not per-key taps; per-key journey remains M2 scope",
+    "debug.force_rtl=1 did not mirror this build; RTL proven via app locale ar (cmd locale set-app-locales)"
+  ],
+  "artifacts_manifest": "device-run-20260827T041731Z-README.md",
+  "status": "COMPLETE_WITH_DEVIATIONS_AS_NOTED"
+}

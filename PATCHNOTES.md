@@ -22,6 +22,13 @@ Newest first, like all respectable patch notes.
 
 ---
 
+## 2026-08-27 — The Receipt Gets a Body: live emulator fresh-install journey (#111)
+
+- Ran the #111 device-class qualification the harness receipt was waiting for: fresh install on the pinned `M2_Qual_Fixture` (m2_pristine snapshot, APK at `de797ba`), IME enablement and set-default through real system settings, Schultz + Witty picked through the actual persona and mood sheets, Brain confirmed mock-only with no credential.
+- Rewrites behave on glass: review card up, `Use this` commits exactly 1 host-editor mutation, `Dismiss` commits 0. RTL layout fully mirrors under an Arabic app locale — and the run documents that `debug.force_rtl=1` alone does not mirror this build, which is now a fact instead of an assumption.
+- Dark/light theme pair captured. Deviations stated plainly in the receipt: headless boot per owner directive, letter input via `adb input text` — physical key-tap fidelity remains M2 scope and this run does not claim it.
+
+
 ## 2026-08-27 — The Air-Gap & Vault: Release privacy, network egress, and backup-exclusion audit
 
 - Shipped Milestone 7 Slice B (Release Privacy, Network Egress & Backup-Exclusion Audit + Non-Author Verdict):
