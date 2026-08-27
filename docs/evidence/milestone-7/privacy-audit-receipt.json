@@ -1,0 +1,49 @@
+{
+  "schema": 1,
+  "kind": "privacy_audit_receipt",
+  "milestone": "milestone-7",
+  "slice": "slice-b",
+  "evidence_class": "static_audit_and_jvm_harness",
+  "run_id": "20260827T091500Z-audit",
+  "verdicts": {
+    "network_egress_typing": "audit_verified",
+    "network_egress_opt_in": "audit_verified",
+    "transport_isolation_https": "audit_verified",
+    "backup_rules_exclusion": "audit_verified",
+    "memory_hygiene_zeroing": "audit_verified",
+    "privacy_copy_alignment": "audit_verified",
+    "m8_unblock_verdict": "approved"
+  },
+  "exclusions": [
+    "personaspeak_secret.bin",
+    "personaspeak_secret.bin.staging",
+    "datastore/personaspeak_provider_config.preferences_pb"
+  ],
+  "audit_sections": [
+    {
+      "section": "network_egress",
+      "status": "PASS",
+      "details": "Zero keystroke egress; network calls gated strictly behind user rewrite trigger or browse models catalog"
+    },
+    {
+      "section": "transport_isolation",
+      "status": "PASS",
+      "details": "Cleartext HTTP rejected; HTTPS connection required; pinned endpoints for OpenRouter and Anthropic"
+    },
+    {
+      "section": "backup_exclusions",
+      "status": "PASS",
+      "details": "Dual backup configuration files exclude secret blob, staging blob, and provider DataStore metadata"
+    },
+    {
+      "section": "memory_hygiene",
+      "status": "PASS",
+      "details": "SecretBytes zeroed immediately in finally block across all provider adapter paths"
+    },
+    {
+      "section": "privacy_copy",
+      "status": "PASS",
+      "details": "User-facing notices in Settings, Onboarding, and Readme match runtime implementation per ADR-0005/0009"
+    }
+  ]
+}

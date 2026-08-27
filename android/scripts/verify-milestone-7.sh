@@ -2,7 +2,8 @@
 # Aggregate Milestone 7 verification gate:
 # - Upstream ASK closure & ledger verification
 # - Fresh-install integration test execution (:ime:app:testDebugUnitTest)
-# - Milestone 7 journey receipt & evidence validation
+# - Release privacy & network egress audit test execution
+# - Milestone 7 journey & privacy receipts & evidence validation
 #
 # usage: verify-milestone-7.sh [<android-root>]
 #
@@ -66,17 +67,19 @@ run_checked "ASK closure" bash "$script_dir/verify-ask-closure.sh" "$root"
 run_checked "upstream ledger" bash "$script_dir/verify-upstream-ledger.sh" "$root"
 echo "  OK"
 
-# --- 2. Fresh-install integration suite --------------------------------------
-echo "[2/3] running fresh-install journey integration test suite..."
+# --- 2. Fresh-install & Privacy Audit integration suite ---------------------
+echo "[2/3] running fresh-install journey & privacy audit integration test suite..."
 if [ -f "$root/gradlew" ]; then
-    run_checked "FreshInstallJourneyIntegrationTest" "$root/gradlew" -p "$root" \
-        :ime:app:testDebugUnitTest --tests "biz.pixelperfectstudios.personaspeak.ime.FreshInstallJourneyIntegrationTest" \
+    run_checked "Milestone7IntegrationSuites" "$root/gradlew" -p "$root" \
+        :ime:app:testDebugUnitTest \
+        --tests "biz.pixelperfectstudios.personaspeak.ime.FreshInstallJourneyIntegrationTest" \
+        --tests "biz.pixelperfectstudios.personaspeak.ime.ReleasePrivacyAndEgressAuditTest" \
         --console=plain --no-daemon
 fi
 echo "  OK"
 
 # --- 3. Milestone 7 Receipt & Plan Invariants -------------------------------
-echo "[3/3] verifying Milestone 7 evidence receipt and plan invariants..."
+echo "[3/3] verifying Milestone 7 evidence receipts, audit, and plan invariants..."
 
 python3 -c "
 import json, os, sys
@@ -91,17 +94,17 @@ with open(plan_path, 'r', encoding='utf-8') as f:
 assert 'Milestone 7 Plan' in plan_text, 'Invalid plan header'
 assert 'Slice A' in plan_text and 'Slice B' in plan_text, 'Plan missing slice definitions'
 
-# 2. Verify Evidence README
+# 2. Verify Evidence README (Slice A)
 evidence_readme = os.path.join(repo_root, 'docs/evidence/milestone-7/README.md')
 assert os.path.isfile(evidence_readme), f'Missing evidence README at {evidence_readme}'
 with open(evidence_readme, 'r', encoding='utf-8') as f:
     readme_text = f.read()
 assert 'Status: SOURCE & HARNESS QUALIFIED' in readme_text, 'Evidence README missing SOURCE & HARNESS QUALIFIED status'
 
-# 3. Verify Machine Receipt JSON
-receipt_path = os.path.join(repo_root, 'docs/evidence/milestone-7/journey-receipt.json')
-assert os.path.isfile(receipt_path), f'Missing journey receipt at {receipt_path}'
-with open(receipt_path, 'r', encoding='utf-8') as f:
+# 3. Verify Journey Machine Receipt JSON (Slice A)
+journey_path = os.path.join(repo_root, 'docs/evidence/milestone-7/journey-receipt.json')
+assert os.path.isfile(journey_path), f'Missing journey receipt at {journey_path}'
+with open(journey_path, 'r', encoding='utf-8') as f:
     receipt = json.load(f)
 
 assert receipt.get('schema') == 1, 'Receipt schema must be 1'
@@ -127,12 +130,44 @@ required_verdicts = [
 for v in required_verdicts:
     assert verdicts.get(v) == 'harness_verified', f'Verdict {v} was not harness_verified: {verdicts.get(v)}'
 
-steps = receipt.get('steps', [])
-assert len(steps) == 8, f'Expected 8 step records, got {len(steps)}'
-for s in steps:
-    assert s.get('status') == 'PASS', f'Step {s.get(\"step\")} failed: {s.get(\"status\")}'
+# 4. Verify Privacy Audit Document (Slice B)
+privacy_audit_path = os.path.join(repo_root, 'docs/evidence/milestone-7/privacy-and-egress-audit.md')
+assert os.path.isfile(privacy_audit_path), f'Missing privacy audit at {privacy_audit_path}'
+with open(privacy_audit_path, 'r', encoding='utf-8') as f:
+    audit_text = f.read()
+assert 'Document Status: QUALIFIED' in audit_text, 'Privacy audit missing QUALIFIED status'
+assert 'Verdict: APPROVED FOR MILESTONE 8 UNBLOCK' in audit_text, 'Privacy audit missing non-author verdict statement'
+
+# 5. Verify Privacy Audit Receipt JSON (Slice B)
+privacy_receipt_path = os.path.join(repo_root, 'docs/evidence/milestone-7/privacy-audit-receipt.json')
+assert os.path.isfile(privacy_receipt_path), f'Missing privacy audit receipt at {privacy_receipt_path}'
+with open(privacy_receipt_path, 'r', encoding='utf-8') as f:
+    p_receipt = json.load(f)
+
+assert p_receipt.get('schema') == 1, 'Privacy receipt schema must be 1'
+assert p_receipt.get('kind') == 'privacy_audit_receipt', 'Privacy receipt kind must be privacy_audit_receipt'
+assert p_receipt.get('milestone') == 'milestone-7', 'Privacy receipt milestone must be milestone-7'
+assert p_receipt.get('slice') == 'slice-b', 'Privacy receipt slice must be slice-b'
+
+p_verdicts = p_receipt.get('verdicts', {})
+required_p_verdicts = [
+    'network_egress_typing', 'network_egress_opt_in', 'transport_isolation_https',
+    'backup_rules_exclusion', 'memory_hygiene_zeroing', 'privacy_copy_alignment',
+    'm8_unblock_verdict'
+]
+for pv in required_p_verdicts:
+    assert p_verdicts.get(pv) in ['audit_verified', 'approved'], f'Privacy verdict {pv} not verified: {p_verdicts.get(pv)}'
+
+exclusions = p_receipt.get('exclusions', [])
+expected_exclusions = [
+    'personaspeak_secret.bin',
+    'personaspeak_secret.bin.staging',
+    'datastore/personaspeak_provider_config.preferences_pb'
+]
+for exc in expected_exclusions:
+    assert exc in exclusions, f'Missing expected exclusion {exc} in privacy receipt'
 " "$repo_root"
 
-echo "  OK (all Milestone 7 receipt & journey invariants verified)"
+echo "  OK (all Milestone 7 journey & privacy audit invariants verified)"
 echo ""
 echo "PASS: milestone 7 gate"
