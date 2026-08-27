@@ -8,6 +8,20 @@ while the context is hot.
 
 Newest first, like all respectable patch notes.
 
+## 2026-08-27 — The Air-Gap & Vault: Release privacy, network egress, and backup-exclusion audit
+
+- Shipped Milestone 7 Slice B (Release Privacy, Network Egress & Backup-Exclusion Audit + Non-Author Verdict):
+  - Published comprehensive privacy & egress audit document (`docs/evidence/milestone-7/privacy-and-egress-audit.md`) and machine receipt (`docs/evidence/milestone-7/privacy-audit-receipt.json`).
+  - Implemented `ReleasePrivacyAndEgressAuditTest` in `:ime:app` verifying critical privacy invariants:
+    - Zero Keystroke / Typing Egress: Standard typing, dictionary lookups, persona selection, and session operations execute with 0 network operations.
+    - Opt-in Network Egress Boundaries: Network egress occurs strictly upon explicit user rewrite or "Browse models" catalog fetch over pinned HTTPS endpoints (`https://openrouter.ai/api/v1/chat/completions`, `https://api.anthropic.com/v1/messages`, `https://openrouter.ai/api/v1/models`).
+    - Storage & Backup Exclusions: Verified that `personaspeak_data_extraction_rules.xml` and `personaspeak_full_backup_content.xml` explicitly exclude `personaspeak_secret.bin`, `personaspeak_secret.bin.staging`, and `datastore/personaspeak_provider_config.preferences_pb`.
+    - Memory Hygiene: Verified `SecretBytes` zeroing (`secret.value.fill(0)`) inside `finally` blocks across all adapter paths on both success and failure outcomes.
+    - Privacy Copy Alignment: Verified that user-facing privacy notices in Settings, Onboarding, and Readme match runtime implementation per ADR-0005/ADR-0009.
+  - Updated `android/scripts/verify-milestone-7.sh` and `verify-milestone-7-test.sh` to enforce Slice B audit invariants and unblock Milestone 8. (#112)
+
+---
+
 ## 2026-08-27 — The Fresh Start: Fresh-install harness suite, RTL layout pass, and machine receipts
 
 - Shipped Milestone 7 Slice A (Fresh-Install JVM Integration Harness & RTL / Visual Fidelity):

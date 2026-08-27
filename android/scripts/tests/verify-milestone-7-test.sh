@@ -27,6 +27,8 @@ mkdir -p "$fixture_repo/docs/evidence/milestone-7"
 cp "$repo_root/docs/plans/m7-fresh-install-journey-and-release-audit-plan.md" "$fixture_repo/docs/plans/"
 cp "$repo_root/docs/evidence/milestone-7/README.md" "$fixture_repo/docs/evidence/milestone-7/"
 cp "$repo_root/docs/evidence/milestone-7/journey-receipt.json" "$fixture_repo/docs/evidence/milestone-7/"
+cp "$repo_root/docs/evidence/milestone-7/privacy-and-egress-audit.md" "$fixture_repo/docs/evidence/milestone-7/"
+cp "$repo_root/docs/evidence/milestone-7/privacy-audit-receipt.json" "$fixture_repo/docs/evidence/milestone-7/"
 git -C "$fixture_repo" init -q
 
 # Pre-captured ASK closure seam outputs
@@ -65,7 +67,21 @@ fi
 # Restore
 cp "$repo_root/docs/evidence/milestone-7/journey-receipt.json" "$receipt_file"
 
-# Test 3: Missing plan file fails with exit code 1
+# Test 3: Tampered privacy receipt fails with exit code 1
+p_receipt_file="$fixture_repo/docs/evidence/milestone-7/privacy-audit-receipt.json"
+sed -i '' 's/"backup_rules_exclusion": "audit_verified"/"backup_rules_exclusion": "unverified"/' "$p_receipt_file" 2>/dev/null || \
+sed -i 's/"backup_rules_exclusion": "audit_verified"/"backup_rules_exclusion": "unverified"/' "$p_receipt_file"
+
+p_tamper_rc=0
+"$verifier" "$fixture_repo/android" > /dev/null 2>&1 || p_tamper_rc=$?
+if [ "$p_tamper_rc" -ne 1 ]; then
+    echo "FAIL: expected exit code 1 on unverified privacy receipt verdict, got $p_tamper_rc" >&2
+    exit 1
+fi
+# Restore
+cp "$repo_root/docs/evidence/milestone-7/privacy-audit-receipt.json" "$p_receipt_file"
+
+# Test 4: Missing plan file fails with exit code 1
 plan_file="$fixture_repo/docs/plans/m7-fresh-install-journey-and-release-audit-plan.md"
 rm "$plan_file"
 missing_rc=0
@@ -76,5 +92,5 @@ if [ "$missing_rc" -ne 1 ]; then
 fi
 cp "$repo_root/docs/plans/m7-fresh-install-journey-and-release-audit-plan.md" "$plan_file"
 
-echo "PASS: verify-milestone-7 contract verified (positive, tampered-verdict, and missing-plan cases)"
+echo "PASS: verify-milestone-7 contract verified (positive, tampered-journey, tampered-privacy, and missing-plan cases)"
 exit 0
