@@ -1,6 +1,6 @@
 # Milestone 8 — Release Readiness Evidence
 
-**Status: QUALIFIED (Slice A Build & Signing Baseline).**  
+**Status: QUALIFIED (code and signing baseline; public release deferred).**
 **Milestone:** Milestone 8 ([#114](https://github.com/apexcloudwise/personaspeak/issues/114))  
 **Evidence Class:** `build_and_signing_harness`  
 **Run ID:** `20260827T093000Z-m8-slice-a`  
@@ -20,6 +20,8 @@ Milestone 8 Slice A establishes the complete release packaging, signing configur
 
 ---
 
-## 2. Slice B Gating
+## 2. Release Deferral
 
-Slice B (final ship proof, usefulness receipt, CI required-checks transition, and `v0.1.0` immutable annotated git tag) is gated on PR #115 (the #111 live emulator journey run by `opencode-glm-flash`) merging into `main`.
+The emulator journey (PR #115), usefulness receipt, and strict required-checks ruleset all landed. The public `v0.1.0` tag and GitHub release are deferred because no official release keystore is provisioned. Local builds without `PERSONASPEAK_RELEASE_KEYSTORE` produce an unsigned APK; the developer keystore generator is not a production signing identity.
+
+The remaining steps are in [`handoff.md`](../../../handoff.md): provision the key outside git, build and verify the signed artifact, attach it to the GitHub release, then cut the immutable tag at a green `main` head.

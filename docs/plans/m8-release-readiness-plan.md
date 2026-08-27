@@ -15,7 +15,7 @@ Milestone 8 is the final code milestone for PersonaSpeak. It transitions Persona
 ### Decisions of Record
 - **M4 Formally Deferred**: As decided by repository owner `zaphodis42` on 2026-08-27 (agentchattr msg 1839), no real Anthropic API key will be provisioned in CI/repo. The mock-only ruling stands permanently. The credential-dependent device gates (#96/#89) remain deferred, not satisfied.
 - **#111 Emulator Journey**: The live AVD emulator journey (Milestone 7 live receipt) is assigned separately to `opencode-glm-flash` under issue [#111](https://github.com/apexcloudwise/personaspeak/issues/111) and draft PR [#115](https://github.com/apexcloudwise/personaspeak/pull/115), building against `de797ba`.
-- **Milestone 8 Final Gate**: The `v0.1.0` immutable annotated git tag cut in Slice B is strictly gated on #111 merging into `main`.
+- **Milestone 8 Final Gate**: The `v0.1.0` immutable annotated git tag cut in Slice B is strictly gated on #111 merging into `main`, an active required-checks ruleset, and an officially provisioned release keystore. The first two landed; official signing material is deferred. See `handoff.md`.
 
 ---
 

@@ -16,7 +16,7 @@ go to be misunderstood.
 | `personas/*.yaml` | ✅ Works | The persona library. One YAML per character: speech patterns, vocabulary, sample lines. This is the single source of truth for everything below. |
 | `desktop/personaspeak.py` | ✅ Works | CLI. `personaspeak.py --as jeeves "grab me a coffee"` → butler-grade coffee request. Brings your own API key. |
 | `.claude/skills/personaspeak/` | ✅ Works | Claude Code skill — same trick, in your editor session, on your subscription, no API bill. |
-| `android/` | 🚧 Phase 1 | The keyboard. A full daily driver — autocorrect, glide, layouts, the lot — forked from an established open-source keyboard, with a persona strip above the keys. Type as normal; tap a character when the reply needs *style*. |
+| `android/` | 🚧 Release candidate | The keyboard. A full daily driver — autocorrect, glide, layouts, the lot — forked from an established open-source keyboard, with a persona strip above the keys. Feature work and release checks landed; the public APK waits on official signing material. |
 
 ## The cast
 
@@ -43,8 +43,9 @@ export ANTHROPIC_API_KEY=sk-ant-...
 The full roadmap lives in [ROADMAP.md](ROADMAP.md). The short version:
 
 1. **Phase 0** *(you are here)* — repo goes public, docs get funny, CI gets serious.
-2. **Phase 1** — PersonaBoard MVP: the keyboard itself, pluggable AI providers
-   (bring your own key, use a free tier, or — later — run a model on your phone).
+2. **Phase 1** — PersonaBoard MVP: feature-complete and release-ready in code.
+   The public `v0.1.0` APK is deferred pending official release signing material;
+   see [handoff.md](handoff.md).
 3. **Phase 2** — Suggested replies: opt in, and the keyboard reads the message
    you're replying to (from the notification, on-device, forgotten immediately)
    and drafts three responses before you've typed a word.
@@ -52,14 +53,15 @@ The full roadmap lives in [ROADMAP.md](ROADMAP.md). The short version:
 
 ## Privacy, briefly
 
-The Android keyboard is still in development. The accepted design encrypts
+The Android keyboard is a release candidate, not a published APK. The accepted design encrypts
 provider credentials with a key held by Android Keystore and sends a draft only
 when the user explicitly requests a rewrite, to the provider they selected.
 ASK also keeps normal keyboard data such as learned words on the device; that
 data must remain user-clearable and excluded from backup and device transfer
 before release. Drafts, prompts, and provider results are not product history.
-Public privacy claims remain gated on release-APK and on-device verification;
-the current evidence and open gates are recorded in
+On-device and static audit evidence is recorded, but public release claims remain
+gated on an officially signed release APK. The current release deferral and
+resume steps are in [handoff.md](handoff.md); privacy design remains in
 [ADR-0005](docs/adr/0005-privacy-posture-fork-audit.md).
 
 ## Maintained by robots (supervised)
