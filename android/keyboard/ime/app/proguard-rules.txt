@@ -41,3 +41,7 @@
     public static **[] values();
     public static ** valueOf(java.lang.String);
 }
+
+# PersonaSpeak: SnakeYAML uses optional java.beans introspection which is unused in our constructor/Map-based persona parser
+-dontwarn java.beans.**
+

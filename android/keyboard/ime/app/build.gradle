@@ -25,6 +25,9 @@ android {
         compose = true
     }
     defaultConfig {
+        // PersonaSpeak v0.1.0 release identity per Milestone 8
+        versionCode 1000
+        versionName "0.1.0"
         // PersonaSpeak floor; overrides the ASK-wide sdkMinimumVersion (23)
         // set by android_general.gradle.
         minSdkVersion 26
@@ -45,8 +48,23 @@ android {
         multiDexEnabled true
     }
 
+    signingConfigs {
+        release {
+            def keystorePath = System.getenv("PERSONASPEAK_RELEASE_KEYSTORE") ?: System.getenv("KEY_STORE_FILE")
+            if (keystorePath && file(keystorePath).exists()) {
+                storeFile file(keystorePath)
+                storePassword System.getenv("PERSONASPEAK_RELEASE_KEYSTORE_PASSWORD") ?: System.getenv("KEY_STORE_FILE_PASSWORD")
+                keyAlias System.getenv("PERSONASPEAK_RELEASE_KEY_ALIAS") ?: getExtValue(project, 'override_release_key_alias', 'personaspeak')
+                keyPassword System.getenv("PERSONASPEAK_RELEASE_KEY_PASSWORD") ?: System.getenv("KEY_STORE_FILE_DEFAULT_ALIAS_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         release {
+            if (signingConfigs.release.storeFile != null && signingConfigs.release.storeFile.exists()) {
+                signingConfig signingConfigs.release
+            }
             minifyEnabled true
             proguardFiles 'proguard-android-optimize.txt', 'proguard-rules.txt', 'proguard-anysoftkeyboard.txt', 'proguard-dont-obs.txt'
         }

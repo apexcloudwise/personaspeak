@@ -1,0 +1,56 @@
+{
+  "schema": 1,
+  "kind": "release_readiness_receipt",
+  "milestone": "milestone-8",
+  "slice": "slice-a",
+  "evidence_class": "r8_full_mode_build_and_signing_harness",
+  "run_id": "20260827T094500Z-m8-slice-a",
+  "version_info": {
+    "application_id": "biz.pixelperfectstudios.personaspeak",
+    "version_code": 1000,
+    "version_name": "0.1.0",
+    "min_sdk": 26
+  },
+  "build_evidence": {
+    "assemble_release_task": "SUCCESS",
+    "r8_minify_task": "SUCCESS",
+    "unsigned_apk": "keyboard/ime/app/build/outputs/apk/release/app-release-unsigned.apk",
+    "signed_apk": "keyboard/ime/app/build/outputs/apk/release/app-release.apk",
+    "signer_sha256": "936805a86e6d5b7cf6f1b58aaaefb6b4b918d65bc353f9934d578229b97836be"
+  },
+  "verdicts": {
+    "version_identity": "verified",
+    "signing_configuration": "verified",
+    "fail_closed_active_composition": "verified",
+    "r8_minification_pass": "verified",
+    "dependency_lock_reproducibility": "verified",
+    "slice_b_gating_bound": "verified"
+  },
+  "invariants": [
+    {
+      "name": "version_code_and_name",
+      "status": "PASS",
+      "details": "versionCode=1000 and versionName=0.1.0 configured in :ime:app"
+    },
+    {
+      "name": "zero_repo_secrets_signing",
+      "status": "PASS",
+      "details": "Signing configuration reads environment variables; zero keystores or credentials checked into repo"
+    },
+    {
+      "name": "fail_closed_active_composition",
+      "status": "PASS",
+      "details": "Release composition rejects default-active fake/stub providers and offers only real catalog entries"
+    },
+    {
+      "name": "r8_rules_and_reachability",
+      "status": "PASS",
+      "details": "assembleRelease executed under R8 full-mode; missing-class warning for SnakeYAML java.beans resolved with -dontwarn"
+    },
+    {
+      "name": "dependency_lock_baseline",
+      "status": "PASS",
+      "details": "Full runtime classpath recorded in dependencies-lock.txt with documented regen command"
+    }
+  ]
+}
