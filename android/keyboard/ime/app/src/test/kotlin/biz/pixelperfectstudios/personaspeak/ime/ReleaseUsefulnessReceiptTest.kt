@@ -14,9 +14,9 @@ import biz.pixelperfectstudios.personaspeak.providers.OpenRouterAdapter
 import biz.pixelperfectstudios.personaspeak.ui.brain.AdapterResult
 import biz.pixelperfectstudios.personaspeak.ui.brain.NetworkErrorCode
 import biz.pixelperfectstudios.personaspeak.ui.brain.SecretBytes
+import biz.pixelperfectstudios.personaspeak.ime.editor.EditorSessionState
 import biz.pixelperfectstudios.personaspeak.ime.editor.FakeInputConnection
 import biz.pixelperfectstudios.personaspeak.ime.editor.InputConnectionEditorPort
-import biz.pixelperfectstudios.personaspeak.ime.editor.EditorSessionState
 import biz.pixelperfectstudios.personaspeak.ui.personas.AssetPersonaDocumentSource
 import biz.pixelperfectstudios.personaspeak.ui.personas.BundledPersonaRepository
 import biz.pixelperfectstudios.personaspeak.ui.rewrite.ApplyResult
@@ -36,6 +36,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import org.robolectric.shadows.ShadowLooper
 import java.io.IOException
 import java.nio.charset.StandardCharsets
 
@@ -45,21 +46,22 @@ import java.nio.charset.StandardCharsets
  * Evidence classes exercised:
  * 1. `mock_transport_adapter_harness`: Verifies OpenRouter and Anthropic HTTP payload contracts and memory zeroing.
  * 2. `composition_and_ui_harness`: Verifies full end-to-end rewrite cycle (FakeProvider offline understudy)
- *    through RewriteCoordinator -> Review Candidate -> Apply with exactly 1 host editor mutation.
- * 3. `ui_error_sanitization_harness`: Verifies provider failures surface strictly as user-presentable StitchError cards
- *    without exposing raw exceptions, stack traces, or credentials.
+ *    through RewriteCoordinator -> RewritePanelViewModel -> Review Candidate -> Apply with exactly 1 host editor mutation.
+ * 3. `ui_error_sanitization_harness`: Verifies provider failures surface through RewritePanelViewModel strictly
+ *    as user-presentable RewritePanelState.Error(StitchError) cards without exposing raw exceptions, stack traces, or credentials.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34])
 class ReleaseUsefulnessReceiptTest {
 
     private val context get() = ApplicationProvider.getApplicationContext<Application>()
+    private val sessionState = PersonaSpeakSessionState.instance
     private lateinit var personaRepo: BundledPersonaRepository
 
     @Before
     fun setUp() {
         personaRepo = BundledPersonaRepository(AssetPersonaDocumentSource(context.assets))
-        PersonaSpeakSessionState.instance.reset()
+        sessionState.reset()
     }
 
     private class MockHttpTransport(
@@ -83,26 +85,40 @@ class ReleaseUsefulnessReceiptTest {
         )
         val fakeProvider = FakeProvider()
         val coordinator = RewriteCoordinator(personaRepo, editorPort, fakeProvider)
-        val jeevesId = PersonaId.bundled("jeeves")
+        val viewModel = RewritePanelViewModel(coordinator, personaRepo, sessionState)
 
-        // 1. Request rewrite through coordinator (understudy pipeline)
-        val requestResult = coordinator.request(jeevesId, Mood.Polite)
-        assertTrue("Expected Ready result, got $requestResult", requestResult is RewriteRequestResult.Ready)
-        val ready = requestResult as RewriteRequestResult.Ready
-        val candidate = ready.candidate
-        assertTrue("Candidate must contain polite rewrite", candidate.replacement.contains("running late"))
+        // 1. Initial state is Resting
+        assertTrue(viewModel.state.value is RewritePanelState.Resting)
 
-        // 2. Apply candidate
-        val applyResult = coordinator.apply(candidate)
-        assertTrue("Expected AppliedVerified, got $applyResult", applyResult is ApplyResult.AppliedVerified)
+        // 2. Request rewrite through ViewModel
+        viewModel.request()
+        while (viewModel.state.value is RewritePanelState.Loading) {
+            ShadowLooper.runUiThreadTasksIncludingDelayedTasks()
+            ShadowLooper.idleMainLooper()
+        }
 
-        // 3. Verify exactly 1 text replacement on host editor
+        // 3. State transitions to Review with candidate preview
+        val stateAfterRequest = viewModel.state.value
+        assertTrue("State must be Review, was $stateAfterRequest", stateAfterRequest is RewritePanelState.Review)
+        val reviewState = stateAfterRequest as RewritePanelState.Review
+        val candidateText = reviewState.candidate.replacement
+        assertTrue("Candidate must contain original text with tone", candidateText.contains("running late"))
+
+        // 4. Apply candidate through ViewModel
+        viewModel.apply()
+        while (viewModel.state.value is RewritePanelState.Applying) {
+            ShadowLooper.runUiThreadTasksIncludingDelayedTasks()
+            ShadowLooper.idleMainLooper()
+        }
+
+        // 5. State transitions to AppliedVerified and editor text is mutated exactly once
+        assertTrue(viewModel.state.value is RewritePanelState.AppliedVerified)
+        assertEquals(candidateText, fakeConnection.text)
         assertEquals(1, fakeConnection.replaceTextCalls)
-        assertEquals(candidate.replacement, fakeConnection.text)
     }
 
     @Test
-    fun `provider failure surfaces as sanitized user-presentable UI card without leaking exceptions`() = runBlocking {
+    fun `provider failure surfaces through ViewModel as sanitized user-presentable UI card without leaking exceptions`() = runBlocking {
         val fakeConnection = FakeInputConnection(text = "Tea at six.", selectionStart = 0, selectionEnd = 11)
         val editorSession = EditorSessionState()
         val editorPort = InputConnectionEditorPort(
@@ -113,18 +129,27 @@ class ReleaseUsefulnessReceiptTest {
         val failingProvider = object : CompletionProvider {
             override val id: String = "failing_mock"
             override val displayName: String = "Failing Mock"
-            override suspend fun rewrite(systemPrompt: String, userText: String): Result<String> {
+            override suspend fun rewrite(system: String, text: String): Result<String> {
                 return Result.failure(IOException("Fatal connection reset to api.provider.internal/secret_token_12345"))
             }
         }
         val coordinator = RewriteCoordinator(personaRepo, editorPort, failingProvider)
-        val jeevesId = PersonaId.bundled("jeeves")
+        val viewModel = RewritePanelViewModel(coordinator, personaRepo, sessionState)
 
-        val result = coordinator.request(jeevesId, Mood.Polite)
-        assertTrue("Expected ProviderFailure, got $result", result is RewriteRequestResult.ProviderFailure)
+        // Request via ViewModel
+        viewModel.request()
+        while (viewModel.state.value is RewritePanelState.Loading) {
+            ShadowLooper.runUiThreadTasksIncludingDelayedTasks()
+            ShadowLooper.idleMainLooper()
+        }
 
-        // Verify StitchError card presentation
-        val error = StitchError.ProviderFailure
+        // State must transition to RewritePanelState.Error containing StitchError.ProviderFailure
+        val state = viewModel.state.value
+        assertTrue("State must be Error, was $state", state is RewritePanelState.Error)
+        val errorState = state as RewritePanelState.Error
+        val error = errorState.error
+
+        assertEquals(StitchError.ProviderFailure, error)
         assertEquals("Service unavailable", error.title)
         assertEquals("Rewriting service is unavailable.", error.explanation)
         assertTrue("Editor text must remain untouched on failure", error.editorUntouched)

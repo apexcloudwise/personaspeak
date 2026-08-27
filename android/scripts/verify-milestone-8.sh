@@ -146,14 +146,14 @@ assert u_receipt.get('kind') == 'usefulness_receipt', 'Usefulness receipt kind m
 assert u_receipt.get('milestone') == 'milestone-8', 'Usefulness receipt milestone must be milestone-8'
 assert u_receipt.get('slice') == 'slice-b', 'Usefulness receipt slice must be slice-b'
 assert u_receipt.get('run_id'), 'Missing run_id in usefulness receipt'
-assert u_receipt.get('commit'), 'Missing commit in usefulness receipt'
+assert u_receipt.get('commit') == '91b3cb6', f'Usefulness receipt commit was {u_receipt.get(\"commit\")}, expected 91b3cb6'
 
 u_verdicts = u_receipt.get('verdicts', {})
 required_u_verdicts = [
-    'composition_fake_provider_rewrite', 'openrouter_mock_adapter_rewrite',
-    'anthropic_mock_adapter_rewrite', 'auth_failure_sanitized_surfacing',
-    'rate_limit_sanitized_surfacing', 'network_error_sanitized_surfacing',
-    'phase1_exit_demo_satisfied'
+    'composition_fake_provider_rewrite', 'ui_provider_failure_sanitized_surfacing',
+    'openrouter_mock_adapter_rewrite', 'anthropic_mock_adapter_rewrite',
+    'auth_failure_adapter_mapping', 'rate_limit_adapter_mapping',
+    'network_error_adapter_mapping', 'phase1_exit_demo_satisfied'
 ]
 for uv in required_u_verdicts:
     assert u_verdicts.get(uv) == 'harness_verified', f'Usefulness verdict {uv} was not harness_verified'
