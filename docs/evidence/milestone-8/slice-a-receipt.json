@@ -1,0 +1,49 @@
+{
+  "schema": 1,
+  "kind": "release_readiness_receipt",
+  "milestone": "milestone-8",
+  "slice": "slice-a",
+  "evidence_class": "build_and_signing_harness",
+  "run_id": "20260827T093000Z-m8-slice-a",
+  "version_info": {
+    "application_id": "biz.pixelperfectstudios.personaspeak",
+    "version_code": 1000,
+    "version_name": "0.1.0",
+    "min_sdk": 26
+  },
+  "verdicts": {
+    "version_identity": "verified",
+    "signing_configuration": "verified",
+    "fail_closed_active_composition": "verified",
+    "r8_minification_pass": "verified",
+    "dependency_lock_reproducibility": "verified",
+    "slice_b_gating_bound": "verified"
+  },
+  "invariants": [
+    {
+      "name": "version_code_and_name",
+      "status": "PASS",
+      "details": "versionCode=1000 and versionName=0.1.0 configured in :ime:app"
+    },
+    {
+      "name": "zero_repo_secrets_signing",
+      "status": "PASS",
+      "details": "Signing configuration reads environment variables; zero keystores or credentials checked into repo"
+    },
+    {
+      "name": "fail_closed_active_composition",
+      "status": "PASS",
+      "details": "Release composition rejects default-active fake/stub providers and offers only real catalog entries"
+    },
+    {
+      "name": "r8_rules_and_reachability",
+      "status": "PASS",
+      "details": "ProGuard configuration verified against SnakeYAML, Compose, and DataStore reflection/reachability"
+    },
+    {
+      "name": "dependency_lock_baseline",
+      "status": "PASS",
+      "details": "Full runtime classpath recorded in dependencies-lock.txt for build reproducibility"
+    }
+  ]
+}

@@ -8,6 +8,20 @@ while the context is hot.
 
 Newest first, like all respectable patch notes.
 
+## 2026-08-27 — The Final Seal: Release signing, version identity, fail-closed active-composition gate & R8 pass
+
+- Shipped Milestone 8 Slice A (Build, Sign, Fail-Closed Active-Composition Gate, R8 Review & Dependency Lock):
+  - Authored the Milestone 8 plan (`docs/plans/m8-release-readiness-plan.md`) setting versioning (`v0.1.0` / `versionCode 1000`), zero-repo-secret release signing, and gating Slice B on #111.
+  - Configured `versionCode 1000`, `versionName "0.1.0"`, and `signingConfigs.release` reading environment keystore credentials in `android/keyboard/ime/app/build.gradle` (rent logged in `android/keyboard/UPSTREAM-MODIFIED.md`).
+  - Added reproducible developer release keystore generator `android/scripts/generate-release-keystore.sh`.
+  - Implemented `ReleaseActiveCompositionTest` in `:ime:app` enforcing the fail-closed active-composition gate (rejects default-active fake/stub composition; allows explicit offline `FakeProvider`; verifies `v0.1.0` / 1000 identity).
+  - Conducted and documented R8 / ProGuard minification risk pass (`docs/evidence/milestone-8/r8-minification-pass.md`) verifying zero reflection or obfuscation hazards across Compose, SnakeYAML, and DataStore.
+  - Pinned runtime classpath dependency lock snapshot (`docs/evidence/milestone-8/dependencies-lock.txt`) for build reproducibility.
+  - Published Milestone 8 evidence summary (`docs/evidence/milestone-8/README.md`) and machine receipt (`docs/evidence/milestone-8/slice-a-receipt.json`).
+  - Added automated verifier `android/scripts/verify-milestone-8.sh` and contract test `android/scripts/tests/verify-milestone-8-test.sh`. (#114)
+
+---
+
 ## 2026-08-27 — The Air-Gap & Vault: Release privacy, network egress, and backup-exclusion audit
 
 - Shipped Milestone 7 Slice B (Release Privacy, Network Egress & Backup-Exclusion Audit + Non-Author Verdict):
