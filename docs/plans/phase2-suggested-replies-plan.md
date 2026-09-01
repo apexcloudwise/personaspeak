@@ -2,7 +2,7 @@
 
 **Tracking Issue:** [#120](https://github.com/apexcloudwise/personaspeak/issues/120)
 **Roadmap:** `ROADMAP.md` Phase 2 (Suggested replies)
-**Related ADRs:** [ADR-0002](../adr/0002-pluggable-provider-registry.md), [ADR-0005](../adr/0005-privacy-posture-fork-audit.md), [ADR-0009](../adr/0009-pluggable-multi-provider-and-openrouter.md) — extended by ADR-0010 in Slice A
+**Related ADRs:** [ADR-0002](../adr/0002-pluggable-provider-registry.md), [ADR-0005](../adr/0005-privacy-posture-fork-audit.md), [ADR-0009](../adr/0009-pluggable-multi-provider-and-openrouter.md) — extended by ADR-0011 in Slice A
 **Author:** Seraph (Pixel Perfect Studios)
 **Date:** 2026-09-01
 
@@ -14,7 +14,7 @@ Phase 2 ships the wow feature: the keyboard drafts replies to the message you ju
 
 Per owner direction (2026-09-01, tracking issue), implementation lands as **one PR with slice-shaped commits**. Slices must leave the tree green at every commit boundary.
 
-- **Slice A — Prompt + port:** ADR-0010, `buildSuggestionPrompt` + goldens, `CompletionProvider.suggest`, FakeProvider + ResolvingProvider, `desktop/personaspeak.py --suggest` parity.
+- **Slice A — Prompt + port:** ADR-0011, `buildSuggestionPrompt` + goldens, `CompletionProvider.suggest`, FakeProvider + ResolvingProvider, `desktop/personaspeak.py --suggest` parity.
 - **Slice B — Listener + store + settings:** `ReplyNotificationListener`, manifest + rent ledger, `IncomingMessageStore`, settings destination + privacy copy + README.
 - **Slice C — Strip UX:** `Suggesting`/`Suggestions` states, chip, three cards, regenerate, apply-through-EditorPort, forget-on-apply; dark/RTL/a11y floors.
 - **Slice D — Evidence + patch note:** fresh-install emulator journey + device-class receipt + PATCHNOTES entry.
@@ -45,13 +45,13 @@ graph TD
 
 ---
 
-## 2. Slice A: ADR-0010, Suggestion Prompt & Provider Port
+## 2. Slice A: ADR-0011, Suggestion Prompt & Provider Port
 
 ### 2.1 Component Specifications
 
 | Component | Target Location | Responsibilities |
 |---|---|---|
-| `ADR-0010` | `docs/adr/0010-opt-in-suggested-replies.md` | Records the privacy posture: opt-in notification access; RAM-only content, forgotten on reply; egress only via the user's configured provider on an explicit generate tap (ADR-0009 disclosure retained); the no-auto-send line; the `attemptInsert` contract extension. |
+| `ADR-0011` | `docs/adr/0011-opt-in-suggested-replies.md` | Records the privacy posture: opt-in notification access; RAM-only content, forgotten on reply; egress only via the user's configured provider on an explicit generate tap (ADR-0009 disclosure retained); the no-auto-send line; the `attemptInsert` contract extension. |
 | `IncomingMessageContext` | `android/core-personas/src/main/kotlin/biz/pixelperfectstudios/personaspeak/personas/IncomingMessageContext.kt` | Pure data class: `sender: String?`, `appLabel: String`, `text: String`. No Android imports. |
 | `PromptBuilder.buildSuggestionPrompt` | `android/core-personas/.../personas/PromptBuilder.kt` | Deterministic suggestion system prompt from persona + mood + `IncomingMessageContext` + count. Instructs N short numbered replies; same plain-prompt style as `build`. |
 | Golden fixtures | `tests/golden/<persona>.suggest.txt` | Byte-identical goldens for the suggestion prompt (one per existing golden persona), regenerated via the Python reference. |
@@ -65,7 +65,7 @@ graph TD
 
 ### 2.2 Slice A Acceptance Criteria
 
-- [ ] ADR-0010 landed in ADR-0009's format; scope matches the tracking issue's pre-ruled decisions.
+- [ ] ADR-0011 landed in ADR-0009's format; scope matches the tracking issue's pre-ruled decisions.
 - [ ] `:core-personas` and `:core-providers` additions contain zero `android.*` imports.
 - [ ] Golden fixtures added, none deleted; `PromptBuilderGoldenTest` extended; Python parity verified via `--suggest`.
 - [ ] Contract tests: FakeProvider determinism/count/latency; `NumberedSuggestions` parser (clean, malformed, empty, N≠lines); ResolvingProvider fallback + delegation.
@@ -83,7 +83,7 @@ graph TD
 | Manifest declaration | `android/keyboard/ime/app/src/main/AndroidManifest.xml` | `<service android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">` with intent filter. Rent-ledgered. |
 | Rent ledger entry | `android/keyboard/UPSTREAM-MODIFIED.md` | One bullet for the manifest service declaration. |
 | `IncomingMessageStore` | `android/personaspeak-ui/src/main/kotlin/biz/pixelperfectstudios/personaspeak/ui/reply/IncomingMessageStore.kt` | Pure in-memory, process-wide singleton (same pattern as `PersonaSpeakSessionState`): conversation-keyed map, latest-wins, LRU cap 5, `forget(key)`, `clearAll()`, `StateFlow` for strip reactivity. |
-| Settings destination | `android/personaspeak-ui/.../ui/settings/` — `SettingsDestination.SuggestedReplies` + `SuggestedRepliesScreen.kt` | Access status (`NotificationManagerCompat.getEnabledListenerPackages`), deep link to `ACTION_NOTIFICATION_LISTENER_SETTINGS`, privacy copy block, "what we never do" lines. |
+| Settings destination | `android/personaspeak-ui/.../ui/settings/` — `SettingsDestination.SuggestedReplies` + `SuggestedRepliesScreen.kt` | Access status (`NotificationManagerCompat.getEnabledListenerPackages`), an in-app prominent-disclosure + consent gate shown BEFORE the deep link to `ACTION_NOTIFICATION_LISTENER_SETTINGS` (Play User Data policy: the disclosure lives in the feature's flow, not the listing or privacy policy), privacy copy block, "what we never do" lines. |
 | Settings home card | `android/personaspeak-ui/.../ui/settings/SettingsHomeScreen.kt` | Row card surfacing the feature and its status. |
 | README privacy section | `README.md` | "Suggested replies & your notifications": what's read, what's kept (RAM-only, forgotten on reply), when anything leaves the device (never, except the explicit generate call to the user's configured provider — ADR-0009 disclosure intact). |
 | Audit test update | `ReleasePrivacyAndEgressAuditTest` (`:ime:app`) | Extended to pin the new claims to the code. |
@@ -131,7 +131,7 @@ suspend fun insertDraft(text: String): ReplaceResult
 - Exactly one verified mutation (read-back confirmed), same `ReplaceResult` typing (`AppliedVerified` / `WriteRejected` / `WriteUnconfirmed`).
 - If the editor is not empty, `insertDraft` returns `WriteRejected` — the UI routes non-empty editors through the existing snapshot-guarded `attemptReplace` path (a suggestion replaces the user's draft, exactly like rewrite).
 - `EditorPortContractTest` and all fakes updated; `InputConnectionEditorPort` implements it against the ASK editor bridge.
-- ADR-0010 records why: staleness guards are meaningless with no prior content, but mutation-count honesty is not.
+- ADR-0011 records why: staleness guards are meaningless with no prior content, but mutation-count honesty is not.
 
 ### 4.3 Slice C Acceptance Criteria
 
