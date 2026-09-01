@@ -8,6 +8,15 @@ while the context is hot.
 
 Newest first, like all respectable patch notes.
 
+## 2026-09-01 — The Butler Offers to Answer Your Mail (Opt-In, Obviously)
+
+- The Phase 2 suggested-replies plan (`docs/plans/phase2-suggested-replies-plan.md`) establishes the opt-in pipeline: a notification listener holds the latest message per conversation in RAM (LRU 5, nothing on disk, forgotten on reply), and the persona strip drafts three replies in the active persona and mood, applied to the editor as an editable draft — one verified mutation, nothing ever sent on the user's behalf.
+- Contracts decided before code: `CompletionProvider.suggest` (single completion, N numbered lines — no adapter interface churn) and `EditorPort.insertDraft` for the empty-editor reply case (ADR-recorded, contract-tested); ADR-0010 rides with Slice A.
+- Demo standard unchanged: the whole journey runs offline on `FakeProvider` — zero credentials in code or evidence — with a device-class receipt at `docs/evidence/phase2-suggested-replies/` per the M7 pattern.
+- Plan-only PR: no code, no listener, no receipts minted, no schema or upstream edits. (#120)
+
+---
+
 ## 2026-08-27 — The Ship Is Packed, But the Key Is Still at Reception
 
 - Deferred the public `v0.1.0` release after M8 landed: code, evidence, and required CI checks are ready; no official signing keystore means no signed APK, immutable tag, or GitHub release yet.
