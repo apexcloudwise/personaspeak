@@ -10,6 +10,7 @@
         <item name="keyTextColor">#FF1B1F27</item>
         <item name="hintTextColor">#FF8A93A2</item>
         <item name="labelTextSize">@dimen/ps_key_label_text_size</item>
+        <item name="hintTextSize">0px</item>
 
         <item name="shadowColor">#00000000</item>
         <item name="shadowRadius">0px</item>
@@ -58,6 +59,7 @@
         <item name="keyTextColor">#FFE7EAF0</item>
         <item name="hintTextColor">#FF77808F</item>
         <item name="labelTextSize">@dimen/ps_key_label_text_size</item>
+        <item name="hintTextSize">0px</item>
 
         <item name="shadowColor">#00000000</item>
         <item name="shadowRadius">0px</item>
