@@ -439,6 +439,12 @@ private open class FakeCompletionProvider(
         return result
     }
 
+    override suspend fun suggest(system: String, text: String, count: Int): Result<List<String>> {
+        recordCall(system, text)
+        throwOnCall?.let { throw it }
+        return result.map { listOf(it) }
+    }
+
     protected fun recordCall(system: String, text: String) {
         calls += system to text
     }

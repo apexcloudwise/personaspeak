@@ -3,6 +3,7 @@ package biz.pixelperfectstudios.personaspeak.ime
 import biz.pixelperfectstudios.personaspeak.providers.AnthropicMessagesAdapter
 import biz.pixelperfectstudios.personaspeak.providers.CompletionProvider
 import biz.pixelperfectstudios.personaspeak.providers.FakeProvider
+import biz.pixelperfectstudios.personaspeak.providers.NumberedSuggestions
 import biz.pixelperfectstudios.personaspeak.providers.OpenRouterAdapter
 import biz.pixelperfectstudios.personaspeak.providers.ProviderAdapter
 import biz.pixelperfectstudios.personaspeak.ui.brain.AdapterResult
@@ -75,5 +76,34 @@ class ResolvingProvider(
         }
 
         return fallback.rewrite(system, text)
+    }
+
+    override suspend fun suggest(system: String, text: String, count: Int): Result<List<String>> {
+        val snapshot = try {
+            store.load()
+        } catch (ce: CancellationException) {
+            throw ce
+        } catch (_: Throwable) {
+            null
+        }
+
+        val outcome = snapshot?.outcome
+        val secret = snapshot?.secret
+
+        if (outcome is StoreOutcome.Configured && secret != null) {
+            val def = ProviderCatalog.byId(outcome.providerId)
+            if (def != null) {
+                // Zero adapter churn (ADR-0011 §6): the N-replies contract rides
+                // inside the prompt; one completion comes back and is parsed here.
+                val adapter = adapterFactory(def, outcome.model, outcome.customBaseUrl)
+                return when (val res = adapter.rewrite(system, text, secret)) {
+                    is AdapterResult.Success -> NumberedSuggestions.parse(res.rewritten, count)
+                    is AdapterResult.AuthFailure -> Result.failure(IllegalStateException("Authentication failure"))
+                    is AdapterResult.NetworkFailure -> Result.failure(IllegalStateException("Network failure: ${res.code}"))
+                }
+            }
+        }
+
+        return fallback.suggest(system, text, count)
     }
 }

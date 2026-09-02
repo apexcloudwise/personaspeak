@@ -6,7 +6,6 @@ import os
 import sys
 from pathlib import Path
 
-import anthropic
 import yaml
 
 PERSONAS_DIR = Path(__file__).parent.parent / "personas"
@@ -66,7 +65,69 @@ def build_system_prompt(persona: dict) -> str:
     return "\n".join(lines)
 
 
+def build_suggestion_prompt(
+    persona: dict,
+    sender: str | None,
+    app_label: str,
+    count: int,
+    mood_modifier: str | None = None,
+) -> str:
+    """Mirror of PromptBuilder.buildSuggestionPrompt (android/core-personas).
+
+    Byte-parity is pinned by tests/golden/<persona>.suggest.txt. The message
+    text is deliberately absent — it travels as the provider's user turn.
+    """
+    if count < 1:
+        raise ValueError("suggestion count must be at least 1")
+
+    lines = [
+        "You are a text style-transfer engine. Draft "
+        f"{count} short chat replies to the "
+        "user's most recent incoming message, each sounding like it was spoken by "
+        f"{persona['name']}{persona.get('context', '')}.",
+        "",
+        "Voice characteristics:",
+    ]
+    for trait in persona.get("speech_patterns", []):
+        lines.append(f"- {trait}")
+
+    if persona.get("vocabulary"):
+        lines.append("")
+        lines.append("Characteristic vocabulary/phrases to draw on: " + ", ".join(persona["vocabulary"]))
+
+    if persona.get("sample_lines"):
+        lines.append("")
+        lines.append("Example lines in this voice (for tone/rhythm reference, don't copy them verbatim):")
+        for sample in persona["sample_lines"]:
+            lines.append(f'- "{sample}"')
+
+    if persona.get("notes"):
+        lines.append("")
+        lines.append(f"Notes: {persona['notes'].strip()}")
+
+    if mood_modifier:
+        lines.append("")
+        lines.append(mood_modifier)
+
+    lines.append("")
+    if sender is not None:
+        lines.append(f"The message you are replying to arrived from {sender} via {app_label}.")
+    else:
+        lines.append(f"The message you are replying to arrived via {app_label}.")
+
+    lines.append("")
+    lines.append(
+        f'Draft exactly {count} distinct short replies in this voice, numbered "1." through '
+        f'"{count}." — one reply per line, no blank lines between them. Each reply stands '
+        "alone, stays under 200 characters, and is ready to send as-is. Output only the "
+        "numbered replies — no preamble, no explanation, no quotation marks around them."
+    )
+    return "\n".join(lines)
+
+
 def rewrite(text: str, persona: dict, model: str) -> str:
+    import anthropic  # only the API path needs the SDK; --list/--suggest stay dependency-free
+
     client = anthropic.Anthropic()  # reads ANTHROPIC_API_KEY from env
     system_prompt = build_system_prompt(persona)
 
@@ -98,6 +159,15 @@ def main() -> None:
         help=f"Model alias (haiku/sonnet/opus) or full model ID. Default: {DEFAULT_MODEL}",
     )
     parser.add_argument("--list", action="store_true", help="List available personas and exit.")
+    parser.add_argument(
+        "--suggest",
+        action="store_true",
+        help="Print the suggestion system prompt (no API call) — generates tests/golden/*.suggest.txt.",
+    )
+    parser.add_argument("--sender", default="Sam", help="Suggestion mode: sender display name ('' for unknown).")
+    parser.add_argument("--app", default="Messages", help="Suggestion mode: app label the message arrived in.")
+    parser.add_argument("--count", type=int, default=3, help="Suggestion mode: number of replies to request.")
+    parser.add_argument("--mood-modifier", default=None, help="Suggestion mode: optional tone-modifier line.")
     args = parser.parse_args()
 
     if args.list:
@@ -107,12 +177,18 @@ def main() -> None:
     if not args.persona:
         parser.error("--as/--persona is required (use --list to see options)")
 
+    persona = load_persona(args.persona)
+
+    if args.suggest:
+        sender = args.sender if args.sender != "" else None
+        print(build_suggestion_prompt(persona, sender, args.app, args.count, args.mood_modifier))
+        return
+
     text = " ".join(args.text) if args.text else sys.stdin.read().strip()
     if not text:
         parser.error("no input text provided")
 
     model = MODEL_ALIASES.get(args.model, args.model)
-    persona = load_persona(args.persona)
     print(rewrite(text, persona, model))
 
 

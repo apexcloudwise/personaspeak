@@ -18,4 +18,13 @@ interface CompletionProvider {
      * (in-voice, per AGENTS.md) — never a raw stack trace.
      */
     suspend fun rewrite(system: String, text: String): Result<String>
+
+    /**
+     * Produce up to [count] short suggested replies to [text] (the incoming
+     * message) under the persona/tone [system] prompt, as numbered lines in one
+     * completion. The N-replies contract rides inside the prompt; parsing is
+     * the caller's job (see [NumberedSuggestions]). No default implementation —
+     * every provider answers honestly (ADR-0011).
+     */
+    suspend fun suggest(system: String, text: String, count: Int): Result<List<String>>
 }

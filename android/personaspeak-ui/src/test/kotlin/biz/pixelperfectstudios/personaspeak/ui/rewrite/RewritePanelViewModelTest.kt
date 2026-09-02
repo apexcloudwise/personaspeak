@@ -500,5 +500,10 @@ class RewritePanelViewModelTest {
             if (failWith != null) return Result.failure(failWith!!)
             return result
         }
+
+        override suspend fun suggest(system: String, text: String, count: Int): Result<List<String>> {
+            if (failWith != null) return Result.failure(failWith!!)
+            return Result.success(List(minOf(count, 3)) { "suggestion $it" })
+        }
     }
 }
