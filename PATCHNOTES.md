@@ -8,6 +8,16 @@ while the context is hot.
 
 Newest first, like all respectable patch notes.
 
+## 2026-09-02 — The Keyboard Reads the Room (Only If You Say Yes)
+
+- Phase 2 suggested replies shipped: an opt-in `ReplyNotificationListener` holds the latest incoming message per conversation in RAM (LRU 5, no disk, no logs, forgotten on reply), and the persona strip grows a "Replying to: …" chip that drafts three replies in the active persona and mood — applied to the editor as an editable draft, exactly one verified mutation, nothing ever sent on your behalf.
+- Notification access is the whole feature's single switch: nothing is read until you grant it in system settings, there is no hidden in-app toggle behind it, and a prominent-disclosure consent gate precedes the deep link. Revoking access wipes the store; so does killing the process — the data lives in RAM and nowhere else, which is now provable by absence of any storage surface in the code.
+- The contract work landed where it was cheap: `CompletionProvider.suggest` carries the N-replies contract inside the prompt (zero adapter interface churn, `NumberedSuggestions` parses), and `EditorPort.insertDraft` covers the empty-editor reply case with the same verified-mutation honesty as rewrite (both ADR-recorded in ADR-0011).
+- Demo runs fully offline on `FakeProvider` — the Understudy drafts deterministic, message-specific replies in three registers; the emulator journey (real `adb emu sms send` → MessagingStyle parse → chip → apply → forget) is receipted at `docs/evidence/phase2-suggested-replies/` with one honest deviation: per-app RTL locale does not mirror the IME strip on API 34, same finding as M7.
+- Found on-device and fixed in the same PR: the in-app access status went stale when you returned from the system screen; it now re-probes on resume.
+
+---
+
 ## 2026-09-01 — The Butler Offers to Answer Your Mail (Opt-In, Obviously)
 
 - The Phase 2 suggested-replies plan (`docs/plans/phase2-suggested-replies-plan.md`) establishes the opt-in pipeline: a notification listener holds the latest message per conversation in RAM (LRU 5, nothing on disk, forgotten on reply), and the persona strip drafts three replies in the active persona and mood, applied to the editor as an editable draft — one verified mutation, nothing ever sent on the user's behalf.
