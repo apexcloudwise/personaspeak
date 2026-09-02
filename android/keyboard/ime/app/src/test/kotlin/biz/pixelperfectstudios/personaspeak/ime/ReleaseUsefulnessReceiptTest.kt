@@ -15,7 +15,7 @@ import biz.pixelperfectstudios.personaspeak.ui.brain.AdapterResult
 import biz.pixelperfectstudios.personaspeak.ui.brain.NetworkErrorCode
 import biz.pixelperfectstudios.personaspeak.ui.brain.SecretBytes
 import biz.pixelperfectstudios.personaspeak.ime.editor.EditorSessionState
-import biz.pixelperfectstudios.personaspeak.ime.editor.FakeInputConnection
+import biz.pixelperfectstudios.personaspeak.ime.testing.FakeInputConnection
 import biz.pixelperfectstudios.personaspeak.ime.editor.InputConnectionEditorPort
 import biz.pixelperfectstudios.personaspeak.ui.personas.AssetPersonaDocumentSource
 import biz.pixelperfectstudios.personaspeak.ui.personas.BundledPersonaRepository

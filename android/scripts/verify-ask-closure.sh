@@ -6,7 +6,7 @@
 # Exit 0 only when:
 #   1. the Gradle graph contains exactly the projects listed in
 #      expected-ask-projects.txt (29 approved ASK logical paths plus the
-#      four first-party libraries) — every extra project is reported as
+#      five first-party libraries) — every extra project is reported as
 #      "unexpected ASK project <path>", every absent one as
 #      "missing ASK project <path>";
 #   2. the :ime:app debugRuntimeClasspath resolves no :addons:*:apk project;
@@ -117,7 +117,7 @@ while IFS= read -r p; do
   rel="${p#:}"
   rel="${rel//://}"
   case "$p" in
-    :core-personas | :core-providers | :personaspeak-ui | :personaspeak-data | :personaspeak-providers) dir="$root/$rel" ;;
+    :core-personas | :core-providers | :personaspeak-ui | :personaspeak-data | :personaspeak-providers | :personaspeak-ime) dir="$root/$rel" ;;
     *) dir="$root/keyboard/$rel" ;;
   esac
   for build_file in "$dir/build.gradle" "$dir/build.gradle.kts"; do

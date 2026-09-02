@@ -5,7 +5,7 @@ import android.view.inputmethod.EditorInfo
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.test.core.app.ApplicationProvider
 import biz.pixelperfectstudios.personaspeak.ime.editor.EditorSessionState
-import biz.pixelperfectstudios.personaspeak.ime.editor.FakeInputConnection
+import biz.pixelperfectstudios.personaspeak.ime.testing.FakeInputConnection
 import biz.pixelperfectstudios.personaspeak.ime.editor.InputConnectionEditorPort
 import biz.pixelperfectstudios.personaspeak.personas.Mood
 import biz.pixelperfectstudios.personaspeak.personas.PersonaId

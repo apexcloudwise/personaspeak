@@ -8,6 +8,14 @@ while the context is hot.
 
 Newest first, like all respectable patch notes.
 
+## 2026-09-01 — The Other Keyboard Moved In (Guest Wing, Not Master Bedroom)
+
+- Vendored FlorisBoard v0.5.2 as a second, evaluation IME host under `android/florisboard/` (ADR-0010): its own Gradle root, its own rent ledger, one `./gradlew` away from an installable APK. The ASK host remains the default and the only release path — suggestions still live only on one of the two.
+- Extracted the host-neutral IME layer into `:personaspeak-ime` (editor port with race guard, resolving provider, view-tree owners); both hosts now consume the same graph, and the ASK suite stays green (1269 tests, APK build, closure/ledger/single-APK gates).
+- Proved the FlorisBoard host end-to-end on the emulator: dedicated PersonaSpeak row above FlorisBoard's Smartbar, rewrite → review → apply verified in the app's own accessibility dump, settings surface rendering with all four characters. Gboard was restored to default afterward; no keyboard was left behind.
+
+---
+
 ## 2026-09-02 — The Strip Moved, the Pins Followed
 
 - The M2 device journey's four tap pins still pointed at the pre-redesign panel row: since the #87/#88 strip restyle (one day after the last green run), a "Rewrite" tap at the old coordinates landed on the persona chip, opened the picker, and failed the first window check. All four pins recalibrated on the M2_Qual_Fixture with effect verification (rewrite→loading, cancel→resting with no review, apply→editor mutated to the candidate, dismiss→resting). The fake toolchain now dispatches taps by panel state, because Rewrite and Cancel share the compact row's right-end slot — one pixel apart in the new pins. 361/361 suite green.
