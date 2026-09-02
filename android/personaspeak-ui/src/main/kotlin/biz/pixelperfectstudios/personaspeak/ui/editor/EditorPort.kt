@@ -109,6 +109,23 @@ sealed interface ReplaceResult {
 }
 
 /**
+ * Outcome of attempting to insert a draft into an editor observed empty
+ * (ADR-0011 §5). Same typing as [ReplaceResult]: [AppliedVerified] is a
+ * post-write read-back confirmed insertion; [WriteRejected] covers every
+ * pre-mutation refusal (non-empty text, sensitive or unsupported editor,
+ * unreadable editor) — no mutation is emitted on it; [WriteUnconfirmed] means
+ * the mutation was accepted but the post-write verification could not prove
+ * the final text. [Stale] is never returned: staleness guards protect prior
+ * content, and an empty editor has none — mutation-count honesty still holds
+ * (exactly one mutation, read-back verified).
+ */
+sealed interface InsertResult {
+    data object AppliedVerified : InsertResult
+    data object WriteRejected : InsertResult
+    data object WriteUnconfirmed : InsertResult
+}
+
+/**
  * The accepted editor boundary: a pure Kotlin contract for reading a bounded
  * draft out of the editor and attempting a replacement.
  *
@@ -124,4 +141,13 @@ interface EditorPort {
         snapshot: EditorSnapshot,
         replacement: String,
     ): ReplaceResult
+
+    /**
+     * Insert [text] into the editor as an editable draft. Contract: the
+     * caller has just observed [CaptureResult.EmptyInput] for this editor.
+     * Exactly one mutation, post-write verified; [InsertResult.WriteRejected]
+     * if the editor is no longer empty (or is sensitive/unsupported) — the
+     * caller re-routes through [captureSnapshot] + [attemptReplace].
+     */
+    suspend fun insertDraft(text: String): InsertResult
 }

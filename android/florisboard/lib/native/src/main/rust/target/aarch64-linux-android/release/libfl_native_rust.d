@@ -1,0 +1,1 @@
+/Users/seraph/workspace/personaspeak/android/florisboard/lib/native/src/main/rust/target/aarch64-linux-android/release/libfl_native_rust.a: /Users/seraph/workspace/personaspeak/android/florisboard/lib/native/src/main/rust/src/lib.rs /Users/seraph/workspace/personaspeak/android/florisboard/libnative/dummy/src/lib.rs

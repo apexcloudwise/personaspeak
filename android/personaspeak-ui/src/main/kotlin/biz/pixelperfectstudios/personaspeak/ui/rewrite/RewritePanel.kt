@@ -34,6 +34,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import biz.pixelperfectstudios.personaspeak.personas.IncomingMessageContext
 import biz.pixelperfectstudios.personaspeak.personas.Mood
 import biz.pixelperfectstudios.personaspeak.personas.PersonaId
 import biz.pixelperfectstudios.personaspeak.personas.ValidatedPersona
@@ -48,7 +49,8 @@ private val MinInteractiveHeight = 48.dp
  * PersonaSpeak's dedicated keyboard row.
  *
  * Hosts the full state machine for PersonaSpeak:
- * Resting, PersonaPicker, MoodPicker, Loading, Review, Applying, AppliedVerified, and Error.
+ * Resting, PersonaPicker, MoodPicker, Loading, Review, Applying, AppliedVerified,
+ * Suggesting, Suggestions, and Error.
  */
 @Composable
 fun RewritePanel(
@@ -59,11 +61,15 @@ fun RewritePanel(
     onSettings: () -> Unit,
     preExpansionImeHeightPx: () -> Int,
     modifier: Modifier = Modifier,
+    replyContext: IncomingMessageContext? = null,
     onOpenPersonaPicker: () -> Unit = {},
     onSelectPersona: (PersonaId) -> Unit = {},
     onOpenMoodPicker: () -> Unit = {},
     onSelectMood: (Mood) -> Unit = {},
     onOpenPersonaBrowser: () -> Unit = onSettings,
+    onRequestSuggestions: () -> Unit = {},
+    onRegenerateSuggestions: () -> Unit = {},
+    onApplySuggestion: (Int) -> Unit = {},
 ) {
     val density = LocalDensity.current
 
@@ -104,10 +110,12 @@ fun RewritePanel(
                 is RewritePanelState.Resting -> {
                     RestingLayout(
                         state = state,
+                        replyContext = replyContext,
                         onRewrite = onRewrite,
                         onOpenPersonaPicker = onOpenPersonaPicker,
                         onOpenMoodPicker = onOpenMoodPicker,
                         onSettings = onSettings,
+                        onRequestSuggestions = onRequestSuggestions,
                     )
                 }
 
@@ -161,6 +169,22 @@ fun RewritePanel(
                     )
                 }
 
+                is RewritePanelState.Suggesting -> {
+                    SuggestingLayout(
+                        state = state,
+                        onDismiss = onDismiss,
+                    )
+                }
+
+                is RewritePanelState.Suggestions -> {
+                    SuggestionsLayout(
+                        state = state,
+                        onApplySuggestion = onApplySuggestion,
+                        onRegenerate = onRegenerateSuggestions,
+                        onDismiss = onDismiss,
+                    )
+                }
+
                 is RewritePanelState.Error -> {
                     ErrorLayout(
                         state = state,
@@ -174,53 +198,110 @@ fun RewritePanel(
     }
 }
 
-/** Resting state: Persona chip, Mood chip, Rewrite button, Settings button. */
+/** Resting state: optional reply chip, Persona chip, Mood chip, Rewrite button, Settings button. */
 @Composable
 private fun RestingLayout(
     state: RewritePanelState.Resting,
+    replyContext: IncomingMessageContext?,
     onRewrite: () -> Unit,
     onOpenPersonaPicker: () -> Unit,
     onOpenMoodPicker: () -> Unit,
     onSettings: () -> Unit,
+    onRequestSuggestions: () -> Unit,
 ) {
-    Row(
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .heightIn(min = MinInteractiveHeight)
-            .padding(horizontal = 8.dp, vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
+            .padding(vertical = 4.dp),
     ) {
-        // Persona chip with flex constraint so long names truncate and don't squeeze action buttons
-        Surface(
-            modifier = Modifier
-                .heightIn(min = MinInteractiveHeight)
-                .weight(1f, fill = false)
-                .clickable(onClick = onOpenPersonaPicker)
-                .semantics {
-                    contentDescription = "Active character ${state.persona.content.name}. Tap to change character."
-                }
-                .testTag("personaspeak_persona_chip"),
-            shape = RoundedCornerShape(24.dp),
-            color = MaterialTheme.colorScheme.secondaryContainer,
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-        ) {
-            Row(
-                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
+        if (replyContext != null) {
+            // "Replying to: <sender · app>" chip (ADR-0011). Tap drafts three
+            // suggestions in the active persona + mood.
+            val chipLabel = buildString {
+                append(replyContext.sender ?: "Unknown sender")
+                append(" · ")
+                append(replyContext.appLabel)
+            }
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp)
+                    .heightIn(min = MinInteractiveHeight)
+                    .clickable(onClick = onRequestSuggestions)
+                    .semantics {
+                        contentDescription =
+                            "Replying to $chipLabel. Tap to draft suggested replies."
+                    }
+                    .testTag("personaspeak_reply_chip"),
+                shape = RoundedCornerShape(10.dp),
+                color = MaterialTheme.colorScheme.primaryContainer,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
             ) {
-                Text(text = state.persona.emoji, style = MaterialTheme.typography.bodyMedium)
-                Text(
-                    text = state.persona.content.name,
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.Medium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                Text(text = "⌄", style = MaterialTheme.typography.labelSmall)
+                Row(
+                    modifier = Modifier.padding(horizontal = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    Text(
+                        text = "💬 Replying to:",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Text(
+                        text = chipLabel,
+                        style = MaterialTheme.typography.labelMedium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f),
+                    )
+                    Text(
+                        text = "Draft →",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
             }
         }
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = MinInteractiveHeight)
+                .padding(horizontal = 8.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            // Persona chip with flex constraint so long names truncate and don't squeeze action buttons
+            Surface(
+                modifier = Modifier
+                    .heightIn(min = MinInteractiveHeight)
+                    .weight(1f, fill = false)
+                    .clickable(onClick = onOpenPersonaPicker)
+                    .semantics {
+                        contentDescription = "Active character ${state.persona.content.name}. Tap to change character."
+                    }
+                    .testTag("personaspeak_persona_chip"),
+                shape = RoundedCornerShape(24.dp),
+                color = MaterialTheme.colorScheme.secondaryContainer,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    Text(text = state.persona.emoji, style = MaterialTheme.typography.bodyMedium)
+                    Text(
+                        text = state.persona.content.name,
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Medium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Text(text = "⌄", style = MaterialTheme.typography.labelSmall)
+                }
+            }
 
         // Mood chip
         Surface(
@@ -261,6 +342,140 @@ private fun RestingLayout(
         }
 
         SettingsButton(onSettings)
+        }
+    }
+}
+
+/** Suggesting state: progress indicator and cancel; the message is kept. */
+@Composable
+private fun SuggestingLayout(
+    state: RewritePanelState.Suggesting,
+    onDismiss: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = MinInteractiveHeight)
+            .padding(horizontal = 8.dp, vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        CircularProgressIndicator(
+            modifier = Modifier
+                .size(20.dp)
+                .semantics { contentDescription = "Drafting replies…" }
+                .testTag("personaspeak_suggesting"),
+            strokeWidth = 2.dp,
+        )
+
+        Text(
+            text = "Drafting replies · ${state.persona.emoji} ${state.persona.content.name} · ${state.mood.label}",
+            style = MaterialTheme.typography.bodySmall,
+            modifier = Modifier.weight(1f),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+
+        TextButton(
+            onClick = onDismiss,
+            modifier = Modifier
+                .heightIn(min = MinInteractiveHeight)
+                .testTag("personaspeak_suggest_cancel"),
+        ) {
+            Text("Cancel")
+        }
+    }
+}
+
+/** Suggestions state: reply context header, three suggestion cards, regenerate, dismiss. */
+@Composable
+private fun SuggestionsLayout(
+    state: RewritePanelState.Suggestions,
+    onApplySuggestion: (Int) -> Unit,
+    onRegenerate: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 8.dp, vertical = 4.dp)
+            .testTag("personaspeak_suggestions"),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Text(
+            text = "Replying to: ${state.context.sender ?: "Unknown sender"} · ${state.context.appLabel}",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.primary,
+            fontWeight = FontWeight.Medium,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.testTag("personaspeak_suggestions_context"),
+        )
+
+        state.replies.forEachIndexed { index, reply ->
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = MinInteractiveHeight)
+                    .clickable { onApplySuggestion(index) }
+                    .semantics {
+                        contentDescription = "Suggested reply ${index + 1}: $reply. Tap to insert as draft."
+                    }
+                    .testTag("personaspeak_suggestion_$index"),
+                shape = RoundedCornerShape(8.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)),
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Text(
+                        text = "${state.persona.emoji} ${index + 1}.",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Text(
+                        text = reply,
+                        style = MaterialTheme.typography.bodyMedium,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+            }
+        }
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = MinInteractiveHeight),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            TextButton(
+                onClick = onRegenerate,
+                modifier = Modifier
+                    .heightIn(min = MinInteractiveHeight)
+                    .testTag("personaspeak_suggestion_regenerate"),
+            ) {
+                Text("↻ Regenerate")
+            }
+            TextButton(
+                onClick = onDismiss,
+                modifier = Modifier
+                    .heightIn(min = MinInteractiveHeight)
+                    .testTag("personaspeak_suggestion_dismiss"),
+            ) {
+                Text("Dismiss")
+            }
+            Spacer(modifier = Modifier.weight(1f))
+            Text(
+                text = "Tap a reply to insert it as a draft",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
     }
 }
 

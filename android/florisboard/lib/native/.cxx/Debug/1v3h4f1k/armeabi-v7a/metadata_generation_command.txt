@@ -1,0 +1,19 @@
+                        -H/Users/seraph/workspace/personaspeak/android/florisboard/lib/native/src/main/rust
+-DCMAKE_SYSTEM_NAME=Android
+-DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+-DCMAKE_SYSTEM_VERSION=26
+-DANDROID_PLATFORM=android-26
+-DANDROID_ABI=armeabi-v7a
+-DCMAKE_ANDROID_ARCH_ABI=armeabi-v7a
+-DANDROID_NDK=/opt/homebrew/share/android-commandlinetools/ndk/26.1.10909125
+-DCMAKE_ANDROID_NDK=/opt/homebrew/share/android-commandlinetools/ndk/26.1.10909125
+-DCMAKE_TOOLCHAIN_FILE=/opt/homebrew/share/android-commandlinetools/ndk/26.1.10909125/build/cmake/android.toolchain.cmake
+-DCMAKE_MAKE_PROGRAM=/opt/homebrew/share/android-commandlinetools/cmake/4.0.2/bin/ninja
+-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=/Users/seraph/workspace/personaspeak/android/florisboard/lib/native/build/intermediates/cxx/Debug/1v3h4f1k/obj/armeabi-v7a
+-DCMAKE_RUNTIME_OUTPUT_DIRECTORY=/Users/seraph/workspace/personaspeak/android/florisboard/lib/native/build/intermediates/cxx/Debug/1v3h4f1k/obj/armeabi-v7a
+-DCMAKE_BUILD_TYPE=Debug
+-B/Users/seraph/workspace/personaspeak/android/florisboard/lib/native/.cxx/Debug/1v3h4f1k/armeabi-v7a
+-GNinja
+-DCMAKE_ANDROID_API=26
+                        Build command args: []
+                        Version: 2

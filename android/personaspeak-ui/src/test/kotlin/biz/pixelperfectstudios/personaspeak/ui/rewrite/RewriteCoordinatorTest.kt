@@ -1,5 +1,6 @@
 package biz.pixelperfectstudios.personaspeak.ui.rewrite
 
+import biz.pixelperfectstudios.personaspeak.personas.Mood
 import biz.pixelperfectstudios.personaspeak.personas.Persona
 import biz.pixelperfectstudios.personaspeak.personas.PersonaId
 import biz.pixelperfectstudios.personaspeak.personas.PersonaProvenance
@@ -10,6 +11,7 @@ import biz.pixelperfectstudios.personaspeak.ui.editor.CaptureResult
 import biz.pixelperfectstudios.personaspeak.ui.editor.EditorPort
 import biz.pixelperfectstudios.personaspeak.ui.editor.EditorSessionToken
 import biz.pixelperfectstudios.personaspeak.ui.editor.EditorSnapshot
+import biz.pixelperfectstudios.personaspeak.ui.editor.InsertResult
 import biz.pixelperfectstudios.personaspeak.ui.editor.ReplaceResult
 import biz.pixelperfectstudios.personaspeak.ui.editor.RequestGeneration
 import biz.pixelperfectstudios.personaspeak.ui.editor.StaleReason
@@ -352,6 +354,138 @@ class RewriteCoordinatorTest {
         assertEquals(1, editor.replaceCalls.size, "apply must attempt replacement exactly once — no retry")
     }
 
+    // -----------------------------------------------------------------
+    // Suggested replies (Phase 2, ADR-0011)
+    // -----------------------------------------------------------------
+
+    @Test
+    fun `requestSuggestions builds the suggestion prompt and returns Ready`() {
+        val editor = FakeEditorPort()
+        val provider = FakeCompletionProvider()
+
+        val result = runBlocking {
+            coordinator(editor, provider).requestSuggestions(
+                PERSONA_ID,
+                Mood.Polite,
+                aContext("Running late, start the tea without me"),
+            )
+        }
+
+        assertTrue(result is SuggestResult.Ready)
+        assertEquals(
+            listOf("Right away", "On it", "Consider it done"),
+            (result as SuggestResult.Ready).suggestions.replies,
+        )
+        assertEquals(1, provider.calls.size)
+        val (system, text) = provider.calls.single()
+        assertTrue(system.contains("Draft 3 short chat replies"), system)
+        assertTrue(system.contains("Jeeves"), system)
+        assertTrue(system.contains("arrived from Sam via Messages"), system)
+        assertEquals("Running late, start the tea without me", text)
+        assertTrue(editor.replaceCalls.isEmpty() && editor.insertCalls.isEmpty(), "suggesting must not mutate the editor")
+    }
+
+    @Test
+    fun `requestSuggestions with no persona returns NoPersona and never calls the provider`() {
+        val editor = FakeEditorPort()
+        val provider = FakeCompletionProvider()
+
+        val result = runBlocking {
+            coordinator(
+                FakePersonaRepository(persona = null),
+                editor,
+                provider,
+            ).requestSuggestions(PERSONA_ID, null, aContext("hi"))
+        }
+
+        assertEquals(SuggestResult.NoPersona, result)
+        assertTrue(provider.calls.isEmpty())
+    }
+
+    @Test
+    fun `requestSuggestions maps provider failure without leaking the body`() {
+        val provider = FakeCompletionProvider(
+            result = Result.failure(IllegalStateException("raw provider body: sk-secret")),
+        )
+
+        val result = runBlocking {
+            coordinator(provider = provider).requestSuggestions(PERSONA_ID, null, aContext("hi"))
+        }
+
+        assertEquals(SuggestResult.ProviderFailure, result)
+    }
+
+    @Test
+    fun `requestSuggestions maps an unparseable completion to MalformedResponse`() {
+        val provider = FakeCompletionProvider()
+        provider.suggestResult = Result.success(listOf("   "))
+
+        val result = runBlocking {
+            coordinator(provider = provider).requestSuggestions(PERSONA_ID, null, aContext("hi"))
+        }
+
+        assertEquals(SuggestResult.MalformedResponse, result)
+    }
+
+    @Test
+    fun `applySuggestion on an empty editor goes through insertDraft exactly once`() {
+        val editor = FakeEditorPort(capture = CaptureResult.EmptyInput)
+
+        val result = runBlocking { coordinator(editor).applySuggestion("On my way, sir.") }
+
+        assertEquals(ApplySuggestionResult.AppliedVerified, result)
+        assertEquals(1, editor.insertCalls.size, "the reply case is exactly one editor mutation")
+        assertEquals(listOf("On my way, sir."), editor.insertCalls)
+        assertTrue(editor.replaceCalls.isEmpty(), "empty editors must not route through attemptReplace")
+    }
+
+    @Test
+    fun `applySuggestion on a non-empty editor routes through the guarded replace path`() {
+        val editor = FakeEditorPort(capture = CaptureResult.Captured(aSnapshot()))
+
+        val result = runBlocking { coordinator(editor).applySuggestion("A user's draft gets replaced.") }
+
+        assertEquals(ApplySuggestionResult.AppliedVerified, result)
+        assertEquals(1, editor.replaceCalls.size)
+        assertTrue(editor.insertCalls.isEmpty())
+    }
+
+    @Test
+    fun `applySuggestion maps insert rejection to WriteRejected with no retry`() {
+        val editor = FakeEditorPort(capture = CaptureResult.EmptyInput)
+        editor.insert = InsertResult.WriteRejected
+
+        val result = runBlocking { coordinator(editor).applySuggestion("text") }
+
+        assertEquals(ApplySuggestionResult.WriteRejected, result)
+        assertEquals(1, editor.insertCalls.size, "insertDraft must be attempted exactly once — no retry")
+    }
+
+    @Test
+    fun `applySuggestion maps a sensitive editor without any mutation`() {
+        val editor = FakeEditorPort(capture = CaptureResult.SensitiveEditor)
+
+        val result = runBlocking { coordinator(editor).applySuggestion("text") }
+
+        assertEquals(ApplySuggestionResult.SensitiveEditor, result)
+        assertTrue(editor.insertCalls.isEmpty() && editor.replaceCalls.isEmpty())
+    }
+
+    @Test
+    fun `applySuggestion maps stale replace results`() {
+        val editor = FakeEditorPort(capture = CaptureResult.Captured(aSnapshot()), replace = ReplaceResult.Stale(StaleReason.TextChanged))
+
+        val result = runBlocking { coordinator(editor).applySuggestion("text") }
+
+        assertEquals(ApplySuggestionResult.Stale(StaleReason.TextChanged), result)
+    }
+
+    private fun aContext(text: String) = biz.pixelperfectstudios.personaspeak.personas.IncomingMessageContext(
+        sender = "Sam",
+        appLabel = "Messages",
+        text = text,
+    )
+
     private fun coordinator(
         editor: FakeEditorPort = FakeEditorPort(),
         provider: FakeCompletionProvider = FakeCompletionProvider(),
@@ -412,6 +546,8 @@ private class FakeEditorPort(
     var captureCalls: Int = 0
         private set
     val replaceCalls: MutableList<Pair<EditorSnapshot, String>> = mutableListOf()
+    val insertCalls: MutableList<String> = mutableListOf()
+    var insert: InsertResult = InsertResult.AppliedVerified
 
     override suspend fun captureSnapshot(): CaptureResult {
         captureCalls += 1
@@ -421,6 +557,11 @@ private class FakeEditorPort(
     override suspend fun attemptReplace(snapshot: EditorSnapshot, replacement: String): ReplaceResult {
         replaceCalls += snapshot to replacement
         return replace
+    }
+
+    override suspend fun insertDraft(text: String): InsertResult {
+        insertCalls += text
+        return insert
     }
 }
 
@@ -439,10 +580,13 @@ private open class FakeCompletionProvider(
         return result
     }
 
+    var suggestResult: Result<List<String>>? = null
+
     override suspend fun suggest(system: String, text: String, count: Int): Result<List<String>> {
         recordCall(system, text)
         throwOnCall?.let { throw it }
-        return result.map { listOf(it) }
+        suggestResult?.let { return it }
+        return result.map { listOf("Right away", "On it", "Consider it done") }
     }
 
     protected fun recordCall(system: String, text: String) {

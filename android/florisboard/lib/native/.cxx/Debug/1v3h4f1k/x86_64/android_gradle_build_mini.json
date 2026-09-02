@@ -1,0 +1,37 @@
+{
+  "buildFiles": [
+    "/Users/seraph/workspace/personaspeak/android/florisboard/lib/native/src/main/rust/CMakeLists.txt"
+  ],
+  "cleanCommandsComponents": [
+    [
+      "/opt/homebrew/share/android-commandlinetools/cmake/4.0.2/bin/ninja",
+      "-C",
+      "/Users/seraph/workspace/personaspeak/android/florisboard/lib/native/.cxx/Debug/1v3h4f1k/x86_64",
+      "clean"
+    ]
+  ],
+  "buildTargetsCommandComponents": [
+    "/opt/homebrew/share/android-commandlinetools/cmake/4.0.2/bin/ninja",
+    "-C",
+    "/Users/seraph/workspace/personaspeak/android/florisboard/lib/native/.cxx/Debug/1v3h4f1k/x86_64",
+    "{LIST_OF_TARGETS_TO_BUILD}"
+  ],
+  "libraries": {
+    "fl_native_rust_build::@6890427a1f51a3e7e1df": {
+      "artifactName": "fl_native_rust_build",
+      "abi": "x86_64",
+      "runtimeFiles": []
+    },
+    "fl_native::@6890427a1f51a3e7e1df": {
+      "artifactName": "fl_native",
+      "abi": "x86_64",
+      "output": "/Users/seraph/workspace/personaspeak/android/florisboard/lib/native/build/intermediates/cxx/Debug/1v3h4f1k/obj/x86_64/libfl_native.so",
+      "runtimeFiles": []
+    },
+    "setup_rust_target::@6890427a1f51a3e7e1df": {
+      "artifactName": "setup_rust_target",
+      "abi": "x86_64",
+      "runtimeFiles": []
+    }
+  }
+}

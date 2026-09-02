@@ -1,5 +1,6 @@
 package biz.pixelperfectstudios.personaspeak.ui.rewrite
 
+import biz.pixelperfectstudios.personaspeak.personas.IncomingMessageContext
 import biz.pixelperfectstudios.personaspeak.personas.Mood
 import biz.pixelperfectstudios.personaspeak.personas.PersonaId
 import biz.pixelperfectstudios.personaspeak.personas.ValidatedPersona
@@ -43,6 +44,23 @@ sealed interface RewritePanelState {
         val persona: ValidatedPersona,
         val mood: Mood,
         val candidate: RewriteCandidate,
+    ) : RewritePanelState
+
+    /** Drafting suggestions for the incoming message (ADR-0011). Cancellable like [Loading]. */
+    data class Suggesting(
+        val persona: ValidatedPersona,
+        val mood: Mood,
+        val context: IncomingMessageContext,
+        val conversationKey: String,
+    ) : RewritePanelState
+
+    /** Suggestions ready: three cards, a regenerate action, and a dismiss that keeps the context. */
+    data class Suggestions(
+        val persona: ValidatedPersona,
+        val mood: Mood,
+        val context: IncomingMessageContext,
+        val conversationKey: String,
+        val replies: List<String>,
     ) : RewritePanelState
 
     data class Error(
@@ -182,6 +200,16 @@ sealed interface StitchError {
     data object OversizedInput : StitchError {
         override val title = "Text too long"
         override val explanation = "Text is too long to rewrite (exceeds 8,000 code points)."
+        override val canRetry = false
+        override val opensSettings = false
+        override val editorUntouched = true
+        override fun toString() = explanation
+    }
+
+    /** The incoming message vanished mid-flow (access revoked or store wiped) — ADR-0011. */
+    data object ReplyContextGone : StitchError {
+        override val title = "Reply context gone"
+        override val explanation = "The message being replied to is no longer available."
         override val canRetry = false
         override val opensSettings = false
         override val editorUntouched = true

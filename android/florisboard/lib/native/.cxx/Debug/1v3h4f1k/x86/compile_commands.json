@@ -1,0 +1,8 @@
+[
+{
+  "directory": "/Users/seraph/workspace/personaspeak/android/florisboard/lib/native/.cxx/Debug/1v3h4f1k/x86",
+  "command": "/opt/homebrew/share/android-commandlinetools/ndk/26.1.10909125/toolchains/llvm/prebuilt/darwin-x86_64/bin/clang --target=i686-none-linux-android26 --sysroot=/opt/homebrew/share/android-commandlinetools/ndk/26.1.10909125/toolchains/llvm/prebuilt/darwin-x86_64/sysroot -Dfl_native_EXPORTS -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security  -fno-limit-debug-info  -fPIC -o CMakeFiles/fl_native.dir/src/lib.c.o -c /Users/seraph/workspace/personaspeak/android/florisboard/lib/native/src/main/rust/src/lib.c",
+  "file": "/Users/seraph/workspace/personaspeak/android/florisboard/lib/native/src/main/rust/src/lib.c",
+  "output": "CMakeFiles/fl_native.dir/src/lib.c.o"
+}
+]
