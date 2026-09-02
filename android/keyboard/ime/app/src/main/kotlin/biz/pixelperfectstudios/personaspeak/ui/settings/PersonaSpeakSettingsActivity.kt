@@ -71,12 +71,17 @@ class PersonaSpeakSettingsActivity : ComponentActivity() {
                 viewModel.refreshSuggestedRepliesStatus()
             }
 
-            // Returning from the system notification-access screen must
-            // refresh the live status on the Suggested replies screen.
-            LaunchedEffect(state.destination) {
-                if (state.destination is SettingsDestination.SuggestedReplies) {
-                    viewModel.refreshSuggestedRepliesStatus()
+            // Returning from the system notification-access screen (onResume,
+            // destination unchanged) must refresh the live status too.
+            val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+            androidx.compose.runtime.DisposableEffect(lifecycleOwner) {
+                val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+                    if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+                        viewModel.refreshSuggestedRepliesStatus()
+                    }
                 }
+                lifecycleOwner.lifecycle.addObserver(observer)
+                onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
             }
 
             BackHandler(enabled = state.destination !is SettingsDestination.Home) {
