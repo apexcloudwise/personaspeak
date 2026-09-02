@@ -8,6 +8,10 @@ while the context is hot.
 
 Newest first, like all respectable patch notes.
 
+## 2026-09-02 — The Journey Harness Meets the New Name on the Door
+
+- The M2 device-journey harness still expected the vendored keyboard's versionName 1.13.1 (and a versionCode of 1 that passed only as a substring of 1000); every qualification run since the Milestone 8 v0.1.0/1000 identity failed at install. Pins updated to 0.1.0/1000 — the harness now checks the package the app actually ships as. 74/74 harness unit tests green.
+
 ## 2026-08-27 — The Name on the Door: App and IME rebranded to PersonaSpeak
 
 - Rebranded the application label and system IME display name from AnySoftKeyboard defaults to PersonaSpeak:
