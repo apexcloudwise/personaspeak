@@ -74,6 +74,7 @@ include ':addons:themes'
 include ':addons:themes:classic_pc:pack', ':addons:themes:classic_pc:apk'
 include ':addons:themes:ics:pack', ':addons:themes:ics:apk'
 include ':addons:themes:israel64:pack', ':addons:themes:israel64:apk'
+include ':addons:themes:personaspeak:pack', ':addons:themes:personaspeak:apk'
 include ':addons:themes:three_d:pack', ':addons:themes:three_d:apk'
 
 //list of quick-text should be alphabetized-ordered
