@@ -134,6 +134,7 @@ jobs:
           for suite in verify-ask-closure-test verify-dictionary-licenses-test \
                        verify-upstream-ledger-test verify-single-apk-test \
                        verify-unified-build-flag-test verify-no-secret-logging-test \
+                       verify-floris-host-test \
                        verify-milestone-2-test verify-milestone-4-test \
                        verify-milestone-7-test verify-milestone-8-test; do
             echo "::group::$suite"
