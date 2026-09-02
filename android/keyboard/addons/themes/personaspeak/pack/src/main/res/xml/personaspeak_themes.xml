@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<KeyboardThemes>
+    <KeyboardTheme
+        id="d20ce4e4-f4a1-4f74-8446-3372f3fe0953"
+        nameResId="@string/personaspeak_light_theme_name"
+        themeRes="@style/PersonaSpeakLightAnyKeyboardTheme"
+        popupThemeRes="@style/PersonaSpeakLightPopupTheme"
+        description="@string/personaspeak_light_theme_description"
+        index="1"/>
+    <KeyboardTheme
+        id="36a138ae-e739-40eb-947f-782945c4bebb"
+        nameResId="@string/personaspeak_dark_theme_name"
+        themeRes="@style/PersonaSpeakDarkAnyKeyboardTheme"
+        popupThemeRes="@style/PersonaSpeakDarkPopupTheme"
+        description="@string/personaspeak_dark_theme_description"
+        index="2"/>
+</KeyboardThemes>

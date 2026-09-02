@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="ps_key_height">52dip</dimen>
+    <dimen name="ps_key_half_height">34dip</dimen>
+    <dimen name="ps_key_tall_height">62dip</dimen>
+    <dimen name="ps_key_vertical_gap">6dp</dimen>
+    <dimen name="ps_key_horizontal_gap">3dp</dimen>
+    <dimen name="ps_key_text_size">22sp</dimen>
+    <dimen name="ps_key_label_text_size">13sp</dimen>
+    <dimen name="ps_key_corner_radius">8dp</dimen>
+    <dimen name="ps_popup_corner_radius">12dp</dimen>
+    <dimen name="ps_suggestion_strip_height">48dip</dimen>
+</resources>

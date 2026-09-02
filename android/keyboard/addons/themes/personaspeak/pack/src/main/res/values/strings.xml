@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="personaspeak_light_theme_name">PersonaSpeak Light</string>
+    <string name="personaspeak_light_theme_description">Modern flat PersonaSpeak theme, light surfaces with a blue accent.</string>
+    <string name="personaspeak_dark_theme_name">PersonaSpeak Dark</string>
+    <string name="personaspeak_dark_theme_description">Modern flat PersonaSpeak theme, dark surfaces with a blue accent.</string>
+</resources>

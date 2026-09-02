@@ -8,6 +8,15 @@ while the context is hot.
 
 Newest first, like all respectable patch notes.
 
+## 2026-09-02 — The Keyboard Gets Out of 2012
+
+- Added the PersonaSpeak theme pack: Light and Dark keyboard themes built entirely on ASK's addon theme system — no inherited files edited, no engine touched.
+- Flat surfaces, 8dp-corner keys, one blue accent, no drop shadows. The 2012 gloss was not invited.
+- Shipped as a standalone installable theme APK (`android/keyboard/addons/themes/personaspeak/`); the IME app is untouched. One include line added to the standalone `settings.gradle`, ledgered.
+- Before/after screenshots in `addons/themes/personaspeak/screenshots/`, taken on the M2 qualification fixture.
+
+---
+
 ## 2026-08-27 — The Name on the Door: App and IME rebranded to PersonaSpeak
 
 - Rebranded the application label and system IME display name from AnySoftKeyboard defaults to PersonaSpeak:
