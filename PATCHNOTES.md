@@ -8,6 +8,15 @@ while the context is hot.
 
 Newest first, like all respectable patch notes.
 
+## 2026-08-27 — The Name on the Door: App and IME rebranded to PersonaSpeak
+
+- Rebranded the application label and system IME display name from AnySoftKeyboard defaults to PersonaSpeak:
+  - Overrode `ime_name` in `android/keyboard/ime/app/src/main/res/values/strings.xml` to `PersonaSpeak` for release builds.
+  - Updated `android/keyboard/ime/app/src/debug/res/values/strings.xml` to `PersonaSpeak Dev` and `android/keyboard/ime/app/src/canary/res/values/strings.xml` to `PersonaSpeak Canary`.
+  - Ledgered modified files in `android/keyboard/UPSTREAM-MODIFIED.md` and verified zero upstream closure regression.
+
+---
+
 ## 2026-08-27 — The Ship Is Packed, But the Key Is Still at Reception
 
 - Deferred the public `v0.1.0` release after M8 landed: code, evidence, and required CI checks are ready; no official signing keystore means no signed APK, immutable tag, or GitHub release yet.
