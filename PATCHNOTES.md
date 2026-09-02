@@ -8,6 +8,10 @@ while the context is hot.
 
 Newest first, like all respectable patch notes.
 
+## 2026-09-03 — ADR-0010: Accepted
+
+- The FlorisBoard second-host decision is now Accepted (was Proposed): PR #122 merged with all five CI gates green — including the new `floris-host-build` job, which compiles four ABIs of Rust on every ready PR — the ASK-host device journey re-run 145/145 green on the branch head, and the structural gate (`verify-floris-host.sh`) following in the stack. The evaluation itself (promote, keep, or delete by 2026-12-01) remains governed by the addendum; the furniture is just no longer provisional.
+
 ## 2026-09-01 — The Other Keyboard Moved In (Guest Wing, Not Master Bedroom)
 
 - Vendored FlorisBoard v0.5.2 as a second, evaluation IME host under `android/florisboard/` (ADR-0010): its own Gradle root, its own rent ledger, one `./gradlew` away from an installable APK. The ASK host remains the default and the only release path — suggestions still live only on one of the two.

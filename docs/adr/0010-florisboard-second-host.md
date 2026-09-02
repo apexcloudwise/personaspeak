@@ -1,8 +1,9 @@
 # ADR-0010: FlorisBoard as a second, evaluation IME host
 
-**Status:** Proposed (2026-09-01) — this ADR ships with the draft PR that
-builds it. Promoting FlorisBoard to the default host, or deleting this tree,
-both remain open decisions gated on the evidence below.
+**Status:** Accepted (2026-09-02, PR #122 merge) — the second-host
+option itself is decided and landed; the addendum below governs the
+evaluation. Promoting FlorisBoard to the default host, or deleting this
+tree, both remain open decisions gated on the evidence below.
 
 ## Context
 
