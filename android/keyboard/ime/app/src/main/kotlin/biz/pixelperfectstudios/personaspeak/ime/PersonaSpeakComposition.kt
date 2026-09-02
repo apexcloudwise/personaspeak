@@ -107,6 +107,7 @@ class PersonaSpeakComposition @JvmOverloads constructor(
         )[RewritePanelViewModel::class.java]
         contentInstaller(composeView) {
             val state by vm.state.collectAsState()
+            val replyContext by vm.replyContext.collectAsState()
             RewritePanel(
                 state = state,
                 onRewrite = vm::request,
@@ -119,11 +120,15 @@ class PersonaSpeakComposition @JvmOverloads constructor(
                 preExpansionImeHeightPx = {
                     (composeView.parent as? View)?.height ?: 0
                 },
+                replyContext = replyContext,
                 onOpenPersonaPicker = vm::openPersonaPicker,
                 onSelectPersona = vm::selectPersona,
                 onOpenMoodPicker = vm::openMoodPicker,
                 onSelectMood = vm::selectMood,
                 onOpenPersonaBrowser = { launchSettings(PersonaSpeakSettingsActivity.DESTINATION_PERSONAS) },
+                onRequestSuggestions = vm::requestSuggestions,
+                onRegenerateSuggestions = vm::regenerateSuggestions,
+                onApplySuggestion = vm::applySuggestion,
             )
         }
     }

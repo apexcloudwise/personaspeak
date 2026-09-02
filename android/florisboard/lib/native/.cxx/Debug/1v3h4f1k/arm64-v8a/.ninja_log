@@ -1,0 +1,18 @@
+# ninja log v6
+1	65	1788240475562124473	CMakeFiles/setup_rust_target	dbedeff8928df11a
+1	65	1788240475562124473	/Users/seraph/workspace/personaspeak/android/florisboard/lib/native/.cxx/Debug/1v3h4f1k/arm64-v8a/CMakeFiles/setup_rust_target	dbedeff8928df11a
+65	5314	1788240475626443362	CMakeFiles/fl_native_rust_build	721e33fe40f4da23
+65	5314	1788240475626443362	/Users/seraph/workspace/personaspeak/android/florisboard/lib/native/src/main/rust/target/aarch64-linux-android/release/libfl_native_rust.a	721e33fe40f4da23
+65	5314	1788240475626443362	/Users/seraph/workspace/personaspeak/android/florisboard/lib/native/.cxx/Debug/1v3h4f1k/arm64-v8a/CMakeFiles/fl_native_rust_build	721e33fe40f4da23
+5314	5339	1788240480875951682	CMakeFiles/fl_native.dir/src/lib.c.o	82c510d759ec4297
+5339	5429	1788240480900318786	/Users/seraph/workspace/personaspeak/android/florisboard/lib/native/build/intermediates/cxx/Debug/1v3h4f1k/obj/arm64-v8a/libfl_native.so	3cbf6ce12681c576
+1	50	1788240540058703040	CMakeFiles/setup_rust_target	dbedeff8928df11a
+1	50	1788240540058703040	/Users/seraph/workspace/personaspeak/android/florisboard/lib/native/.cxx/Debug/1v3h4f1k/arm64-v8a/CMakeFiles/setup_rust_target	dbedeff8928df11a
+51	150	1788240540108309459	CMakeFiles/fl_native_rust_build	721e33fe40f4da23
+51	150	1788240540108309459	/Users/seraph/workspace/personaspeak/android/florisboard/lib/native/src/main/rust/target/aarch64-linux-android/release/libfl_native_rust.a	721e33fe40f4da23
+51	150	1788240540108309459	/Users/seraph/workspace/personaspeak/android/florisboard/lib/native/.cxx/Debug/1v3h4f1k/arm64-v8a/CMakeFiles/fl_native_rust_build	721e33fe40f4da23
+1	48	1788240705016794905	CMakeFiles/setup_rust_target	dbedeff8928df11a
+1	48	1788240705016794905	/Users/seraph/workspace/personaspeak/android/florisboard/lib/native/.cxx/Debug/1v3h4f1k/arm64-v8a/CMakeFiles/setup_rust_target	dbedeff8928df11a
+48	143	1788240705063481029	CMakeFiles/fl_native_rust_build	721e33fe40f4da23
+48	143	1788240705063481029	/Users/seraph/workspace/personaspeak/android/florisboard/lib/native/src/main/rust/target/aarch64-linux-android/release/libfl_native_rust.a	721e33fe40f4da23
+48	143	1788240705063481029	/Users/seraph/workspace/personaspeak/android/florisboard/lib/native/.cxx/Debug/1v3h4f1k/arm64-v8a/CMakeFiles/fl_native_rust_build	721e33fe40f4da23

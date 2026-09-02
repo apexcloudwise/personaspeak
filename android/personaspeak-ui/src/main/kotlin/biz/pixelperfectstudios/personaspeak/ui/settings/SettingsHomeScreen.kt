@@ -53,6 +53,7 @@ fun SettingsHomeScreen(
     onOpenAskSettings: () -> Unit,
     onOpenEnableIme: () -> Unit = {},
     onClearNotice: () -> Unit = {},
+    onNavigateToSuggestedReplies: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     var showMoodDialog by remember { mutableStateOf(false) }
@@ -245,6 +246,21 @@ fun SettingsHomeScreen(
                 actionLabel = "Open →",
                 onClick = onOpenAskSettings,
                 modifier = Modifier.testTag("personaspeak_settings_typing_row"),
+            )
+        }
+
+        // SUGGESTED REPLIES Group (Phase 2, ADR-0011)
+        SettingsSection(title = "SUGGESTED REPLIES") {
+            SettingsRow(
+                title = "Suggested replies",
+                subtitle = if (state.suggestedRepliesEnabled) {
+                    "On — incoming messages are drafted for reply in the keyboard"
+                } else {
+                    "Off — nothing is read until you grant notification access"
+                },
+                actionLabel = if (state.suggestedRepliesEnabled) "Manage →" else "Enable →",
+                onClick = onNavigateToSuggestedReplies,
+                modifier = Modifier.testTag("personaspeak_settings_suggested_replies_row"),
             )
         }
     }

@@ -43,4 +43,36 @@ class PromptBuilderGoldenTest {
             )
         }
     }
+
+    @Test
+    fun `kotlin suggestion prompts are byte-identical to the python reference`() {
+        val personaFiles = personasDir.listDirectoryEntries("*.yaml").sortedBy { it.fileName }
+        assertTrue(personaFiles.isNotEmpty(), "no personas found at $personasDir")
+
+        for (file in personaFiles) {
+            val golden = goldenDir.resolve("${file.nameWithoutExtension}.suggest.txt")
+            assertTrue(
+                Files.exists(golden),
+                "missing suggestion golden for ${file.fileName} — regenerate with " +
+                    "`python3 desktop/personaspeak.py --suggest --as ${file.nameWithoutExtension} " +
+                    "| perl -pe 'chomp if eof'` (store without the CLI's trailing newline)",
+            )
+            val persona = file.inputStream().use { Persona.fromYaml(it) }
+            // Canonical inputs shared with the CLI defaults: sender "Sam", app
+            // "Messages", count 3, no mood — keep both sides in lockstep.
+            assertEquals(
+                golden.readText(),
+                PromptBuilder.buildSuggestionPrompt(
+                    persona = persona,
+                    incoming = IncomingMessageContext(
+                        sender = "Sam",
+                        appLabel = "Messages",
+                        text = "unused by the prompt — travels as the user turn",
+                    ),
+                    count = 3,
+                ),
+                "suggestion prompt drift for ${file.fileName}",
+            )
+        }
+    }
 }

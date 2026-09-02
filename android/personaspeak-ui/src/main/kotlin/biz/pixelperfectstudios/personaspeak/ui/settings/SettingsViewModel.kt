@@ -28,6 +28,7 @@ class SettingsViewModel(
     initialPersonaId: PersonaId = sessionState.activePersonaId,
     initialMood: Mood = sessionState.defaultMood,
     private val providerConfigStore: ProviderConfigStore? = null,
+    private val notificationAccessProbe: (() -> Boolean)? = null,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(
@@ -128,6 +129,23 @@ class SettingsViewModel(
     /** Alias for [refreshProviderStatus] for compatibility. */
     suspend fun loadProviderConfig() {
         refreshProviderStatus()
+    }
+
+    /**
+     * Re-reads whether the system currently grants this app notification-listener
+     * access, via the [notificationAccessProbe] seam (null in unit tests → false).
+     * System notification access is the single switch for suggested replies
+     * (ADR-0011 §1) — there is deliberately no stored preference behind it.
+     */
+    fun refreshSuggestedRepliesStatus() {
+        val enabled = try {
+            notificationAccessProbe?.invoke() ?: false
+        } catch (_: Throwable) {
+            false
+        }
+        _state.update { current ->
+            current.copy(suggestedRepliesEnabled = enabled)
+        }
     }
 
     /**

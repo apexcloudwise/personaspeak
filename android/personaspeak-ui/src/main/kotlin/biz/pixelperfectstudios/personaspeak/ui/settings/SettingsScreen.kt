@@ -24,6 +24,7 @@ fun SettingsScreen(
     onSelectDefaultMood: (Mood) -> Unit,
     onOpenAskSettings: () -> Unit,
     onOpenEnableIme: () -> Unit = {},
+    onOpenNotificationAccessSettings: () -> Unit = {},
     onSaveProvider: (providerId: String, apiKey: String, model: String?, customBaseUrl: String?, onDone: () -> Unit) -> Unit = { _, _, _, _, done -> done() },
     onClearProvider: (onDone: () -> Unit) -> Unit = { done -> done() },
     onFetchModels: (suspend () -> Result<List<ModelInfo>>)? = null,
@@ -46,6 +47,7 @@ fun SettingsScreen(
                         onOpenAskSettings = onOpenAskSettings,
                         onOpenEnableIme = onOpenEnableIme,
                         onClearNotice = onClearNotice,
+                        onNavigateToSuggestedReplies = { onNavigate(SettingsDestination.SuggestedReplies) },
                     )
                 }
                 is SettingsDestination.Personas -> {
@@ -85,6 +87,13 @@ fun SettingsScreen(
                         onSave = onSaveProvider,
                         onClear = onClearProvider,
                         onFetchModels = onFetchModels,
+                    )
+                }
+                is SettingsDestination.SuggestedReplies -> {
+                    SuggestedRepliesScreen(
+                        enabled = state.suggestedRepliesEnabled,
+                        onBack = onBack,
+                        onGrantNotificationAccess = onOpenNotificationAccessSettings,
                     )
                 }
             }

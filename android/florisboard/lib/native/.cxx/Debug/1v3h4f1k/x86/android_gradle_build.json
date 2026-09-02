@@ -1,0 +1,48 @@
+{
+  "buildFiles": [
+    "/Users/seraph/workspace/personaspeak/android/florisboard/lib/native/src/main/rust/CMakeLists.txt"
+  ],
+  "cleanCommandsComponents": [
+    [
+      "/opt/homebrew/share/android-commandlinetools/cmake/4.0.2/bin/ninja",
+      "-C",
+      "/Users/seraph/workspace/personaspeak/android/florisboard/lib/native/.cxx/Debug/1v3h4f1k/x86",
+      "clean"
+    ]
+  ],
+  "buildTargetsCommandComponents": [
+    "/opt/homebrew/share/android-commandlinetools/cmake/4.0.2/bin/ninja",
+    "-C",
+    "/Users/seraph/workspace/personaspeak/android/florisboard/lib/native/.cxx/Debug/1v3h4f1k/x86",
+    "{LIST_OF_TARGETS_TO_BUILD}"
+  ],
+  "libraries": {
+    "fl_native::@6890427a1f51a3e7e1df": {
+      "toolchain": "toolchain",
+      "abi": "x86",
+      "artifactName": "fl_native",
+      "output": "/Users/seraph/workspace/personaspeak/android/florisboard/lib/native/build/intermediates/cxx/Debug/1v3h4f1k/obj/x86/libfl_native.so",
+      "runtimeFiles": []
+    },
+    "fl_native_rust_build::@6890427a1f51a3e7e1df": {
+      "toolchain": "toolchain",
+      "abi": "x86",
+      "artifactName": "fl_native_rust_build"
+    },
+    "setup_rust_target::@6890427a1f51a3e7e1df": {
+      "toolchain": "toolchain",
+      "abi": "x86",
+      "artifactName": "setup_rust_target"
+    }
+  },
+  "toolchains": {
+    "toolchain": {
+      "cCompilerExecutable": "/opt/homebrew/share/android-commandlinetools/ndk/26.1.10909125/toolchains/llvm/prebuilt/darwin-x86_64/bin/clang.lld",
+      "cppCompilerExecutable": "/opt/homebrew/share/android-commandlinetools/ndk/26.1.10909125/toolchains/llvm/prebuilt/darwin-x86_64/bin/clang++.lld"
+    }
+  },
+  "cFileExtensions": [
+    "c"
+  ],
+  "cppFileExtensions": []
+}

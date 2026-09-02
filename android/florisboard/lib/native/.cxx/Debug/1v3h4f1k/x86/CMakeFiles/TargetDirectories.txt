@@ -1,0 +1,5 @@
+/Users/seraph/workspace/personaspeak/android/florisboard/lib/native/.cxx/Debug/1v3h4f1k/x86/CMakeFiles/fl_native.dir
+/Users/seraph/workspace/personaspeak/android/florisboard/lib/native/.cxx/Debug/1v3h4f1k/x86/CMakeFiles/setup_rust_target.dir
+/Users/seraph/workspace/personaspeak/android/florisboard/lib/native/.cxx/Debug/1v3h4f1k/x86/CMakeFiles/fl_native_rust_build.dir
+/Users/seraph/workspace/personaspeak/android/florisboard/lib/native/.cxx/Debug/1v3h4f1k/x86/CMakeFiles/edit_cache.dir
+/Users/seraph/workspace/personaspeak/android/florisboard/lib/native/.cxx/Debug/1v3h4f1k/x86/CMakeFiles/rebuild_cache.dir

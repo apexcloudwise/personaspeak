@@ -132,6 +132,10 @@ class ReleaseUsefulnessReceiptTest {
             override suspend fun rewrite(system: String, text: String): Result<String> {
                 return Result.failure(IOException("Fatal connection reset to api.provider.internal/secret_token_12345"))
             }
+
+            override suspend fun suggest(system: String, text: String, count: Int): Result<List<String>> {
+                return Result.failure(IOException("Fatal connection reset to api.provider.internal/secret_token_12345"))
+            }
         }
         val coordinator = RewriteCoordinator(personaRepo, editorPort, failingProvider)
         val viewModel = RewritePanelViewModel(coordinator, personaRepo, sessionState)

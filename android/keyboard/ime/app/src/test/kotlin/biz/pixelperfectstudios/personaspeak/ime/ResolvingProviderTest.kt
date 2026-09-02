@@ -57,9 +57,16 @@ class ResolvingProviderTest {
         override val displayName: String = "Stub Fallback",
     ) : CompletionProvider {
         var calledWithText: String? = null
+        var suggestCalls: Int = 0
         override suspend fun rewrite(system: String, text: String): Result<String> {
             calledWithText = text
             return Result.success("fallback: $text")
+        }
+
+        override suspend fun suggest(system: String, text: String, count: Int): Result<List<String>> {
+            suggestCalls += 1
+            calledWithText = text
+            return Result.success(List(minOf(count, 3)) { "fallback suggestion $it" })
         }
     }
 
@@ -169,6 +176,91 @@ class ResolvingProviderTest {
 
         returnFailure = AdapterResult.NetworkFailure(NetworkErrorCode.TIMEOUT)
         val timeoutResult = resolving.rewrite("sys", "test")
+        assertTrue(timeoutResult.isFailure)
+        assertEquals("Network failure: TIMEOUT", timeoutResult.exceptionOrNull()?.message)
+    }
+
+    @Test
+    fun suggestsViaFallbackWhenUnconfigured() = runBlocking {
+        val store = TestStore(ProviderConfigSnapshot(StoreOutcome.Unconfigured))
+        val fallback = StubFallback()
+        val resolving = ResolvingProvider(store = store, fallback = fallback)
+
+        val result = resolving.suggest("sys", "Running late", count = 3)
+        assertTrue(result.isSuccess)
+        assertEquals(listOf("fallback suggestion 0", "fallback suggestion 1", "fallback suggestion 2"), result.getOrNull())
+        assertEquals("Running late", fallback.calledWithText)
+        assertEquals(1, fallback.suggestCalls)
+    }
+
+    @Test
+    fun configuredProviderSuggestsParsedNumberedLines() = runBlocking {
+        val store = TestStore()
+        store.save(
+            ProviderConfig(
+                providerId = "openrouter",
+                configuredAtEpochMs = 12345L,
+                model = "nvidia/nemotron-3-super-120b-a12b:free",
+            ),
+            SecretBytes("sk-or-real-api-key".toByteArray(StandardCharsets.UTF_8)),
+        )
+
+        val resolving = ResolvingProvider(
+            store = store,
+            adapterFactory = { _, _, _ ->
+                object : ProviderAdapter {
+                    override val providerId = "openrouter"
+                    override val displayName = "OpenRouter"
+                    override suspend fun rewrite(system: String, text: String, secret: SecretBytes): AdapterResult {
+                        secret.value.fill(0)
+                        // One completion carrying the N-replies contract inside
+                        // the numbered lines (ADR-0011 §6) — with decoration a
+                        // real model might add.
+                        return AdapterResult.Success(
+                            "1. On my way!\n\n2) Shall I bring dessert?\n* See you at six."
+                        )
+                    }
+                }
+            },
+        )
+
+        val result = resolving.suggest("sys", "Running late, start the tea without me", count = 3)
+        assertTrue(result.isSuccess)
+        assertEquals(
+            listOf("On my way!", "Shall I bring dessert?", "See you at six."),
+            result.getOrNull(),
+        )
+    }
+
+    @Test
+    fun suggestMapsAdapterFailuresCorrectly() = runBlocking {
+        val store = TestStore()
+        store.save(
+            ProviderConfig(providerId = "openrouter", configuredAtEpochMs = 12345L),
+            SecretBytes("sk-key".toByteArray(StandardCharsets.UTF_8)),
+        )
+
+        var returnFailure: AdapterResult = AdapterResult.AuthFailure
+        val resolving = ResolvingProvider(
+            store = store,
+            adapterFactory = { _, _, _ ->
+                object : ProviderAdapter {
+                    override val providerId = "openrouter"
+                    override val displayName = "OpenRouter"
+                    override suspend fun rewrite(system: String, text: String, secret: SecretBytes): AdapterResult {
+                        secret.value.fill(0)
+                        return returnFailure
+                    }
+                }
+            },
+        )
+
+        val authResult = resolving.suggest("sys", "test", count = 3)
+        assertTrue(authResult.isFailure)
+        assertEquals("Authentication failure", authResult.exceptionOrNull()?.message)
+
+        returnFailure = AdapterResult.NetworkFailure(NetworkErrorCode.TIMEOUT)
+        val timeoutResult = resolving.suggest("sys", "test", count = 3)
         assertTrue(timeoutResult.isFailure)
         assertEquals("Network failure: TIMEOUT", timeoutResult.exceptionOrNull()?.message)
     }

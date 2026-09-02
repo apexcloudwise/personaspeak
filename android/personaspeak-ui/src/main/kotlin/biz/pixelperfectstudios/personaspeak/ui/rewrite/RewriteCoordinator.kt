@@ -1,5 +1,6 @@
 package biz.pixelperfectstudios.personaspeak.ui.rewrite
 
+import biz.pixelperfectstudios.personaspeak.personas.IncomingMessageContext
 import biz.pixelperfectstudios.personaspeak.personas.Mood
 import biz.pixelperfectstudios.personaspeak.personas.PersonaId
 import biz.pixelperfectstudios.personaspeak.personas.PromptBuilder
@@ -7,6 +8,7 @@ import biz.pixelperfectstudios.personaspeak.providers.CompletionProvider
 import biz.pixelperfectstudios.personaspeak.ui.editor.CaptureResult
 import biz.pixelperfectstudios.personaspeak.ui.editor.EditorPort
 import biz.pixelperfectstudios.personaspeak.ui.editor.EditorSnapshot
+import biz.pixelperfectstudios.personaspeak.ui.editor.InsertResult
 import biz.pixelperfectstudios.personaspeak.ui.editor.ReplaceResult
 import biz.pixelperfectstudios.personaspeak.ui.editor.StaleReason
 import biz.pixelperfectstudios.personaspeak.ui.personas.PersonaRepository
@@ -112,4 +114,91 @@ class RewriteCoordinator(
             is ReplaceResult.WriteRejected -> ApplyResult.WriteRejected
             is ReplaceResult.WriteUnconfirmed -> ApplyResult.WriteUnconfirmed
         }
+
+    /**
+     * Drafts [count] suggested replies to [context] with the persona's voice
+     * (ADR-0011). The provider is free to fail: results are typed, sanitized,
+     * and carry no provider body.
+     */
+    suspend fun requestSuggestions(
+        personaId: PersonaId,
+        mood: Mood?,
+        context: IncomingMessageContext,
+        count: Int = PromptBuilder.DEFAULT_SUGGESTION_COUNT,
+    ): SuggestResult {
+        val persona = personas.load(personaId).getOrNull()
+            ?: return SuggestResult.NoPersona
+
+        val system = PromptBuilder.buildSuggestionPrompt(persona.content, mood, context, count)
+
+        val result = try {
+            provider.suggest(system, context.text, count)
+        } catch (ce: CancellationException) {
+            throw ce
+        } catch (_: Throwable) {
+            return SuggestResult.ProviderFailure
+        }
+
+        val replies = result.getOrElse { e ->
+            if (e is CancellationException) throw e
+            return SuggestResult.ProviderFailure
+        }
+        if (replies.isEmpty() || replies.any { it.isBlank() }) {
+            return SuggestResult.MalformedResponse
+        }
+
+        return SuggestResult.Ready(SuggestionSet(context, replies))
+    }
+
+    /**
+     * Applies one suggestion as exactly one editor mutation. Empty editors go
+     * through [EditorPort.insertDraft]; non-empty ones through the
+     * snapshot-guarded replace path, so a suggestion replaces the user's draft
+     * exactly like a rewrite.
+     */
+    suspend fun applySuggestion(text: String): ApplySuggestionResult {
+        return when (val capture = editor.captureSnapshot()) {
+            is CaptureResult.Captured ->
+                when (val outcome = editor.attemptReplace(capture.snapshot, text)) {
+                    is ReplaceResult.AppliedVerified -> ApplySuggestionResult.AppliedVerified
+                    is ReplaceResult.Stale -> ApplySuggestionResult.Stale(outcome.reason)
+                    is ReplaceResult.WriteRejected -> ApplySuggestionResult.WriteRejected
+                    is ReplaceResult.WriteUnconfirmed -> ApplySuggestionResult.WriteUnconfirmed
+                }
+            CaptureResult.EmptyInput ->
+                when (editor.insertDraft(text)) {
+                    is InsertResult.AppliedVerified -> ApplySuggestionResult.AppliedVerified
+                    is InsertResult.WriteRejected -> ApplySuggestionResult.WriteRejected
+                    is InsertResult.WriteUnconfirmed -> ApplySuggestionResult.WriteUnconfirmed
+                }
+            CaptureResult.SensitiveEditor -> ApplySuggestionResult.SensitiveEditor
+            CaptureResult.UnsupportedEditor -> ApplySuggestionResult.UnsupportedEditor
+            CaptureResult.IncompleteRead -> ApplySuggestionResult.IncompleteRead
+            CaptureResult.OversizedInput -> ApplySuggestionResult.OversizedInput
+        }
+    }
+}
+
+/** The generated suggestions plus the context they reply to. */
+data class SuggestionSet(
+    val context: IncomingMessageContext,
+    val replies: List<String>,
+)
+
+sealed interface SuggestResult {
+    data class Ready(val suggestions: SuggestionSet) : SuggestResult
+    data object NoPersona : SuggestResult
+    data object ProviderFailure : SuggestResult
+    data object MalformedResponse : SuggestResult
+}
+
+sealed interface ApplySuggestionResult {
+    data object AppliedVerified : ApplySuggestionResult
+    data class Stale(val reason: StaleReason) : ApplySuggestionResult
+    data object WriteRejected : ApplySuggestionResult
+    data object WriteUnconfirmed : ApplySuggestionResult
+    data object SensitiveEditor : ApplySuggestionResult
+    data object UnsupportedEditor : ApplySuggestionResult
+    data object IncompleteRead : ApplySuggestionResult
+    data object OversizedInput : ApplySuggestionResult
 }

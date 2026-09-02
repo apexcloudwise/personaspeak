@@ -11,6 +11,7 @@ import biz.pixelperfectstudios.personaspeak.providers.CompletionProvider
 import biz.pixelperfectstudios.personaspeak.ui.editor.CaptureResult
 import biz.pixelperfectstudios.personaspeak.ui.editor.EditorPort
 import biz.pixelperfectstudios.personaspeak.ui.editor.EditorSnapshot
+import biz.pixelperfectstudios.personaspeak.ui.editor.InsertResult
 import biz.pixelperfectstudios.personaspeak.ui.editor.EditorSessionToken
 import biz.pixelperfectstudios.personaspeak.ui.editor.ReplaceResult
 import biz.pixelperfectstudios.personaspeak.ui.editor.RequestGeneration
@@ -480,6 +481,9 @@ class RewritePanelViewModelTest {
     class FakeEditorPort : EditorPort {
         var captureResult: CaptureResult = CaptureResult.EmptyInput
         var applyResult: ReplaceResult = ReplaceResult.AppliedVerified
+        var insertResult: InsertResult = InsertResult.AppliedVerified
+        var insertCalls: Int = 0
+            private set
 
         override suspend fun captureSnapshot(): CaptureResult = captureResult
 
@@ -487,6 +491,11 @@ class RewritePanelViewModelTest {
             snapshot: EditorSnapshot,
             replacement: String,
         ): ReplaceResult = applyResult
+
+        override suspend fun insertDraft(text: String): InsertResult {
+            insertCalls += 1
+            return insertResult
+        }
     }
 
     class FakeProvider : CompletionProvider {
@@ -499,6 +508,11 @@ class RewritePanelViewModelTest {
         override suspend fun rewrite(system: String, text: String): Result<String> {
             if (failWith != null) return Result.failure(failWith!!)
             return result
+        }
+
+        override suspend fun suggest(system: String, text: String, count: Int): Result<List<String>> {
+            if (failWith != null) return Result.failure(failWith!!)
+            return Result.success(List(minOf(count, 3)) { "suggestion $it" })
         }
     }
 }

@@ -1,0 +1,69 @@
+{
+  "schema": 1,
+  "kind": "journey_receipt",
+  "feature": "phase-2-suggested-replies",
+  "issue": 120,
+  "evidence_class": "emulator_device",
+  "run_id": "20260902T071700Z-phase2-reply-journey",
+  "commit": "c0de572",
+  "commit_note": "APK built from c0de572 (settings resume-refresh fix, HEAD at journey time); the receipt and evidence land as the following docs-only commit.",
+  "apk_sha256": "fcfd038476e2f014adbb42399191940ed7ae4a83ef45db90cfe46bd94dea04e7",
+  "apk_variant": "debug (release signing still blocked on the owner keystore per handoff.md — unchanged by this work)",
+  "fixture": {
+    "avd": "M2_Qual_Fixture",
+    "snapshot": "m2_pristine (-no-snapshot-save)",
+    "image": "google/sdk_gphone64_arm64/emu64a:14 (API 34)",
+    "boot": "headless -no-window -gpu swiftshader_indirect",
+    "install": "clean streamed install, then ime enable + ime set of biz.pixelperfectstudios.personaspeak/com.menny.android.anysoftkeyboard.SoftKeyboard"
+  },
+  "verdicts": {
+    "listener_opt_in": {
+      "status": "pass",
+      "notes": "Granted through the product's own flow: settings home card -> Suggested replies screen (Off) -> prominent-disclosure consent gate -> system 'Device & app notifications' screen -> 'Allow notification access for AnySoftKeyboard Dev?' -> Allow. dumpsys notification lists biz.pixelperfectstudios.personaspeak/biz.pixelperfectstudios.personaspeak.ime.reply.ReplyNotificationListener in Allowed notification listeners (component string matches the manifest). The command path (adb shell cmd notification allow_listener <component>) was also verified, rc=0."
+    },
+    "message_ingest": {
+      "status": "pass",
+      "notes": "adb emu sms send injected a real SMS through Google Messages; the platform posted a MessagingStyle notification (EXTRA_MESSAGES with sender_person + text, verified via dumpsys --noredact). The listener parsed it and the chip appeared — no synthetic post fallback needed."
+    },
+    "chip_surface": {
+      "status": "pass",
+      "notes": "'Replying to: (555) 123-4567 · Messages' chip with 'Draft →' affordance renders in the strip while Resting (10_keyboard_chip_replying_to.png)."
+    },
+    "suggest_offline_fake": {
+      "status": "pass",
+      "notes": "Three persona-flavored suggestions from FakeProvider (offline, no credentials configured or used) in the active persona (Jeeves) + mood (Polite); replies interpolate the actual message topic and vary across messages (11 vs 14/16)."
+    },
+    "regenerate": {
+      "status": "pass",
+      "notes": "Regenerate issues a fresh suggest call (15b). Same-message output is identical by design — FakeProvider is deterministic per topic; ViewModel re-invocation is pinned by ReplySuggestionsViewModelTest."
+    },
+    "apply_one_mutation": {
+      "status": "pass",
+      "notes": "Tapping suggestion 1 on an empty editor inserted exactly the chosen draft ('Right away — consider “Running late, start the tea without me” handled.' — visible with the app's 63-char counter) via EditorPort.insertDraft; exactly-one-mutation and the empty/non-empty routing are pinned by EditorPortContractTest, RewriteCoordinatorTest, and ReplySuggestionsViewModelTest."
+    },
+    "forget_on_apply": {
+      "status": "pass",
+      "notes": "Chip disappeared immediately after apply (12); it returned only when a new message arrived (13). Dismiss, by contrast, keeps the context (15)."
+    },
+    "rtl_locale_pass": {
+      "status": "deviation",
+      "notes": "Per-app locale set to [ar] (verified via cmd locale get-app-locales) and the journey re-run with a fresh message; the IME strip did not mirror. Consistent with the M7 finding: per-app locales apply to activities, while the IME window renders with the system locale on API 34. The strip uses start/end padding throughout, and the settings screens' RTL behavior is unchanged from the M6 pass; a mirrored-device pass remains open as follow-up work."
+    },
+    "dark_light_pair": {
+      "status": "pass",
+      "notes": "Light strip (10/11) and dark strip (16, via cmd uimode night yes) both render with correct surfaces and legibility."
+    }
+  },
+  "journey_paths": {
+    "opt_in": ["01_settings_home_suggested_replies_row.png", "02_suggested_replies_screen_off.png", "03_consent_disclosure_dialog.png", "04_system_notification_access_screen.png", "05_allow_notification_access_subscreen.png", "06_system_consent_dialog.png", "07_listener_enabled.png", "08_suggested_replies_enabled.png"],
+    "message_to_draft": ["09_message_notification.png", "10_keyboard_chip_replying_to.png", "11_suggestions_cards.png", "12_apply_inserts_draft_chip_gone.png"],
+    "dismiss_and_regen": ["13_second_message_chip_returns.png", "14_suggestions_second_message.png", "15_dismiss_keeps_context.png", "15b_regenerate_reroll.png"],
+    "appearance": ["16_dark_mode_suggestions.png", "17_rtl_locale_strip.png"]
+  },
+  "sanitization": "All message text in evidence is synthetic (injected via adb emu sms send); no real person's content and no credentials appear anywhere in the receipts, screenshots, or uidumps.",
+  "deviations": [
+    "rtl_locale_pass: IME strip does not mirror under per-app ar locale on API 34 (M7 finding reproduced); recorded rather than faked.",
+    "The app was reinstalled mid-journey to ship the settings resume-refresh fix discovered on-device; the notification-access grant survived (install -r), and the opt-in flow evidence was captured on the pre-fix build with identical UI (the fix only adds the ON_RESUME re-probe)."
+  ],
+  "status": "complete_with_deviations"
+}

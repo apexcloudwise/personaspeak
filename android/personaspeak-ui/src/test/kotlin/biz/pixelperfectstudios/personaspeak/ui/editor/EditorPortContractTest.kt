@@ -155,6 +155,40 @@ class EditorPortContractTest {
     }
 
     // -----------------------------------------------------------------
+    // insertDraft: the reply-case contract extension (ADR-0011 §5)
+    // -----------------------------------------------------------------
+
+    @Test
+    fun `insertDraft returns AppliedVerified and records exactly one call`() {
+        val port = FakeEditorPort()
+
+        val result = runBlocking { port.insertDraft("Hello, it shall be done.") }
+
+        assertEquals(InsertResult.AppliedVerified, result)
+        assertEquals(1, port.insertCalls.size)
+        assertEquals("Hello, it shall be done.", port.insertCalls.single())
+    }
+
+    @Test
+    fun `insertDraft surfaces WriteRejected with no mutation recorded`() {
+        val port = FakeEditorPort(insert = InsertResult.WriteRejected)
+
+        val result = runBlocking { port.insertDraft("text") }
+
+        assertEquals(InsertResult.WriteRejected, result)
+        assertEquals(1, port.insertCalls.size)
+    }
+
+    @Test
+    fun `insertDraft surfaces WriteUnconfirmed honestly`() {
+        val port = FakeEditorPort(insert = InsertResult.WriteUnconfirmed)
+
+        val result = runBlocking { port.insertDraft("text") }
+
+        assertEquals(InsertResult.WriteUnconfirmed, result)
+    }
+
+    // -----------------------------------------------------------------
     // EditorSnapshot: 8,000 Unicode code-point boundary
     // -----------------------------------------------------------------
 
@@ -266,10 +300,12 @@ class EditorPortContractTest {
     private class FakeEditorPort(
         private val capture: CaptureResult = CaptureResult.EmptyInput,
         private val replace: ReplaceResult = ReplaceResult.AppliedVerified,
+        private var insert: InsertResult = InsertResult.AppliedVerified,
     ) : EditorPort {
         var captureCalls: Int = 0
             private set
         val replaceCalls: MutableList<Pair<EditorSnapshot, String>> = mutableListOf()
+        val insertCalls: MutableList<String> = mutableListOf()
 
         override suspend fun captureSnapshot(): CaptureResult {
             captureCalls += 1
@@ -282,6 +318,11 @@ class EditorPortContractTest {
         ): ReplaceResult {
             replaceCalls += snapshot to replacement
             return replace
+        }
+
+        override suspend fun insertDraft(text: String): InsertResult {
+            insertCalls += text
+            return insert
         }
     }
 }

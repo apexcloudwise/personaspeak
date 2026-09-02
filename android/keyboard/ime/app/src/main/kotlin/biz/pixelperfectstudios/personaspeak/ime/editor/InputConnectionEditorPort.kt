@@ -8,6 +8,7 @@ import android.view.inputmethod.InputConnection
 import biz.pixelperfectstudios.personaspeak.ui.editor.CaptureResult
 import biz.pixelperfectstudios.personaspeak.ui.editor.EditorPort
 import biz.pixelperfectstudios.personaspeak.ui.editor.EditorSnapshot
+import biz.pixelperfectstudios.personaspeak.ui.editor.InsertResult
 import biz.pixelperfectstudios.personaspeak.ui.editor.ReplaceResult
 import biz.pixelperfectstudios.personaspeak.ui.editor.StaleReason
 import biz.pixelperfectstudios.personaspeak.ui.editor.Utf16Selection
@@ -148,6 +149,57 @@ class InputConnectionEditorPort(
             ReplaceResult.AppliedVerified
         } else {
             ReplaceResult.WriteUnconfirmed
+        }
+    }
+
+    override suspend fun insertDraft(text: String): InsertResult {
+        // Contract (ADR-0011 §5): the caller just observed EmptyInput. The
+        // read here re-verifies that immediately before the one mutation.
+        val connection = connectionSupplier() ?: return InsertResult.WriteRejected
+        val editorInfo = editorInfoSupplier() ?: return InsertResult.WriteRejected
+
+        val inputClass = editorInfo.inputType and InputType.TYPE_MASK_CLASS
+        val variation = editorInfo.inputType and InputType.TYPE_MASK_VARIATION
+        val isSensitive = (inputClass == InputType.TYPE_CLASS_TEXT && (
+            variation == InputType.TYPE_TEXT_VARIATION_PASSWORD ||
+                variation == InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD ||
+                variation == InputType.TYPE_TEXT_VARIATION_WEB_PASSWORD
+            )) ||
+            (inputClass == InputType.TYPE_CLASS_NUMBER &&
+                variation == InputType.TYPE_NUMBER_VARIATION_PASSWORD)
+        if (isSensitive) {
+            // A persona draft never lands in a credential field.
+            return InsertResult.WriteRejected
+        }
+
+        val extractedText = connection.getExtractedText(ExtractedTextRequest(), 0)
+            ?: return InsertResult.WriteRejected
+        val currentText = extractedText.text?.toString() ?: return InsertResult.WriteRejected
+        if (currentText.isNotEmpty()) {
+            // The editor filled up between capture and insert — no blind
+            // mutation; the caller re-routes through the guarded replace path.
+            return InsertResult.WriteRejected
+        }
+
+        val success: Boolean
+        if (sdkIntSupplier() >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            success = connection.replaceText(0, 0, text, 1, null)
+        } else {
+            connection.finishComposingText()
+            success = connection.commitText(text, 1)
+        }
+        if (!success) {
+            return InsertResult.WriteRejected
+        }
+
+        val postExtracted = connection.getExtractedText(ExtractedTextRequest(), 0)
+            ?: return InsertResult.WriteUnconfirmed
+        val postText = postExtracted.text?.toString() ?: return InsertResult.WriteUnconfirmed
+
+        return if (postText == text) {
+            InsertResult.AppliedVerified
+        } else {
+            InsertResult.WriteUnconfirmed
         }
     }
 }

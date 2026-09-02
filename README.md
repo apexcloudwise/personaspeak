@@ -64,6 +64,24 @@ gated on an officially signed release APK. The current release deferral and
 resume steps are in [handoff.md](handoff.md); privacy design remains in
 [ADR-0005](docs/adr/0005-privacy-posture-fork-audit.md).
 
+## Suggested replies & your notifications
+
+Suggested replies (Phase 2, [ADR-0011](docs/adr/0011-opt-in-suggested-replies.md)) are off until
+you grant notification access — the system's own toggle is the only switch, so nothing is read
+by default and there is no hidden preference behind it.
+
+- **What is read:** the sender, the app, and the text of incoming message notifications, only
+  while notification access is on.
+- **What is kept:** the latest message per conversation, in RAM only, capped at five
+  conversations. Applying a reply forgets that conversation immediately. Message text never
+  touches disk, logs, backups, or telemetry — there is no storage path to keep it.
+- **What we never do:** send a message, mark anything read, or reply on your behalf. A
+  suggestion becomes editable text in your own editor; you review, edit, and send.
+- **What leaves the device:** nothing from the notification path, ever. Generating suggestions
+  with the offline fake is fully local; if you have configured your own provider, the explicit
+  generate tap sends the persona prompt and message text to that provider under the same
+  disclosure as rewrites ([ADR-0009](docs/adr/0009-pluggable-multi-provider-and-openrouter.md)).
+
 ## Maintained by robots (supervised)
 
 This repo is a showcase of AI-agent-driven engineering: agents write the
