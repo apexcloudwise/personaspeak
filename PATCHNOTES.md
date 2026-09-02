@@ -11,6 +11,7 @@ Newest first, like all respectable patch notes.
 ## 2026-09-01 — The Other Keyboard Moved In (Guest Wing, Not Master Bedroom)
 
 - Vendored FlorisBoard v0.5.2 as a second, evaluation IME host under `android/florisboard/` (ADR-0010): its own Gradle root, its own rent ledger, one `./gradlew` away from an installable APK. The ASK host remains the default and the only release path — suggestions still live only on one of the two.
+- CI now builds the second Gradle root on every ready PR and main push (`floris-host-build`): Java 21, Rust 1.83.0, four ABIs of native code, APK identity asserted but not uploaded. The guest wing pays its own heating bill.
 - Extracted the host-neutral IME layer into `:personaspeak-ime` (editor port with race guard, resolving provider, view-tree owners); both hosts now consume the same graph, and the ASK suite stays green (1269 tests, APK build, closure/ledger/single-APK gates).
 - Proved the FlorisBoard host end-to-end on the emulator: dedicated PersonaSpeak row above FlorisBoard's Smartbar, rewrite → review → apply verified in the app's own accessibility dump, settings surface rendering with all four characters. Gboard was restored to default afterward; no keyboard was left behind.
 

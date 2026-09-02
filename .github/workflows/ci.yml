@@ -181,3 +181,49 @@ jobs:
             android/**/build/test-results/**
           if-no-files-found: warn
           retention-days: 14
+
+  floris-host-build:
+    name: FlorisBoard second-host build
+    # Same draft-skip as android-build: the second Gradle root is costly to
+    # build (native Rust for four ABIs), so drafts get the cheap gates only.
+    # This job is ADR-0010's readiness-bar item 5 — without it, a broken
+    # floris root would surface only on a contributor's laptop.
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: gradle
+      # The floris root's lib/native builds its Rust crate through CMake,
+      # which looks for rustup/cargo in ~/.cargo/bin (lib/native/src/main/
+      # rust/CMakeLists.txt). Toolchain pinned to the same version as the
+      # vendored gradle/tools.versions.toml (rustToolchain = "1.83.0") —
+      # bump them together or the ledger owes an explanation.
+      - name: Install Rust 1.83.0
+        run: |
+          set -euo pipefail
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain 1.83.0
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+      - name: Build the second-host APK
+        working-directory: android/florisboard
+        run: |
+          set -euo pipefail
+          ./gradlew :app:assembleDebug -PpersonaspeakFlorisAppId=biz.pixelperfectstudios.personaspeak.floris
+      # Identity is asserted, the APK is NOT uploaded: a second artifact in
+      # the artifact tab would recreate exactly the two-APK ambiguity the
+      # canonical-upload policy exists to prevent. One release path, one
+      # artifact; this build is proof, not product.
+      - name: Second-host APK identity
+        working-directory: android/florisboard
+        run: |
+          set -euo pipefail
+          apk=app/build/outputs/apk/debug/app-debug.apk
+          test -f "$apk"
+          sha256sum "$apk"
