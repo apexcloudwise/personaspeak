@@ -219,7 +219,11 @@ jobs:
       - name: Install pinned CMake 4.0.2
         run: |
           set -euo pipefail
-          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "cmake;4.0.2" > /dev/null
+          # No `yes |` pipe: under pipefail the licence-feeder dying of
+          # SIGPIPE when sdkmanager exits would fail the step. Runner
+          # images ship accepted licences; the list_installed check below
+          # is the gate that says the install actually happened.
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "cmake;4.0.2" < /dev/null > /dev/null
           "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --list_installed 2>/dev/null | grep -q "cmake;4.0.2" || {
             echo "::error::cmake;4.0.2 not installed after sdkmanager run"; exit 1; }
       - name: Build the second-host APK
