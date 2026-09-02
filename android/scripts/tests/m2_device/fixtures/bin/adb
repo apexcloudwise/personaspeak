@@ -486,8 +486,8 @@ elif "install" in cmd and "pull" not in cmd:
     if os.environ.get("FAKE_ADB_INSTALL_FAIL"):
         sys.exit(1)
 elif "dumpsys package" in cmd and "personaspeak" in cmd:
-    print("versionName=1.13.1")
-    print("versionCode=1")
+    print("versionName=0.1.0")
+    print("versionCode=1000")
     print("signatures=PackageSignatures{c441f2a version:2, signatures:[847f3baa], past signatures:[]}")
 elif "wait-for-device" in cmd:
     pass
