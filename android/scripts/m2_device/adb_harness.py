@@ -124,9 +124,11 @@ KEYEVENT_BACK = "4"
 KEYEVENT_DEL = "67"
 
 # Package identity as the device reports it (2026-08-19 capability probe on
-# the pinned fixture; versionName is the vendored keyboard's own numbering).
-EXPECTED_VERSION_NAME = "1.13.1"
-EXPECTED_VERSION_CODE = "1"
+# the pinned fixture; version identity is PersonaSpeak's own numbering since
+# the Milestone 8 release identity — v0.1.0/1000 — replacing the vendored
+# keyboard's 1.13.1/1, which every post-M8 run would otherwise fail on).
+EXPECTED_VERSION_NAME = "0.1.0"
+EXPECTED_VERSION_CODE = "1000"
 # On-device PackageSignatures digest of the canonical APK's signing
 # cert, as dumpsys prints it. Corroboration only: this is a 32-bit
 # Signature.hashCode, not a cryptographic digest, so it can never be
