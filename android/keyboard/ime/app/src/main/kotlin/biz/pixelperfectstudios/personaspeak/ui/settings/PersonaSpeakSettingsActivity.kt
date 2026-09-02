@@ -11,6 +11,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.core.app.NotificationManagerCompat
 import biz.pixelperfectstudios.personaspeak.ime.PersonaSpeakBrain
 import biz.pixelperfectstudios.personaspeak.personas.PersonaId
 import biz.pixelperfectstudios.personaspeak.providers.OpenRouterModels
@@ -35,6 +36,7 @@ class PersonaSpeakSettingsActivity : ComponentActivity() {
         val initialDestination: SettingsDestination = when (destinationExtra) {
             DESTINATION_PERSONAS -> SettingsDestination.Personas
             DESTINATION_PROVIDERS -> SettingsDestination.ProviderSetup
+            DESTINATION_SUGGESTED_REPLIES -> SettingsDestination.SuggestedReplies
             DESTINATION_PERSONA_DETAIL -> {
                 if (personaIdExtra != null) {
                     SettingsDestination.PersonaDetail(PersonaId(personaIdExtra))
@@ -56,12 +58,25 @@ class PersonaSpeakSettingsActivity : ComponentActivity() {
                     personasRepo = personaRepo,
                     initialDestination = initialDestination,
                     providerConfigStore = providerStore,
+                    notificationAccessProbe = {
+                        NotificationManagerCompat.getEnabledListenerPackages(this)
+                            .contains(packageName)
+                    },
                 )
             }
             val state by viewModel.state.collectAsState()
 
             LaunchedEffect(Unit) {
                 viewModel.refreshProviderStatus()
+                viewModel.refreshSuggestedRepliesStatus()
+            }
+
+            // Returning from the system notification-access screen must
+            // refresh the live status on the Suggested replies screen.
+            LaunchedEffect(state.destination) {
+                if (state.destination is SettingsDestination.SuggestedReplies) {
+                    viewModel.refreshSuggestedRepliesStatus()
+                }
             }
 
             BackHandler(enabled = state.destination !is SettingsDestination.Home) {
@@ -69,6 +84,7 @@ class PersonaSpeakSettingsActivity : ComponentActivity() {
                     is SettingsDestination.PersonaDetail -> viewModel.navigateTo(SettingsDestination.Personas)
                     is SettingsDestination.Personas -> viewModel.navigateTo(SettingsDestination.Home)
                     is SettingsDestination.ProviderSetup -> viewModel.navigateTo(SettingsDestination.Home)
+                    is SettingsDestination.SuggestedReplies -> viewModel.navigateTo(SettingsDestination.Home)
                     else -> finish()
                 }
             }
@@ -91,6 +107,12 @@ class PersonaSpeakSettingsActivity : ComponentActivity() {
                         flags = Intent.FLAG_ACTIVITY_NEW_TASK
                     }
                     startActivity(askIntent)
+                },
+                onOpenNotificationAccessSettings = {
+                    // Reached only through the consent gate on SuggestedRepliesScreen.
+                    startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS).apply {
+                        flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                    })
                 },
                 onOpenEnableIme = {
                     val imeIntent = Intent(Settings.ACTION_INPUT_METHOD_SETTINGS).apply {
@@ -118,6 +140,7 @@ class PersonaSpeakSettingsActivity : ComponentActivity() {
         const val DESTINATION_PERSONAS = "personas"
         const val DESTINATION_PERSONA_DETAIL = "persona_detail"
         const val DESTINATION_PROVIDERS = "providers"
+        const val DESTINATION_SUGGESTED_REPLIES = "suggested_replies"
 
         fun createIntent(
             context: Context,

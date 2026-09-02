@@ -217,7 +217,7 @@ class ResolvingProviderTest {
                         // the numbered lines (ADR-0011 §6) — with decoration a
                         // real model might add.
                         return AdapterResult.Success(
-                            "1. On my way!\n\n2) Shall I bring dessert?\n- 3. See you at six."
+                            "1. On my way!\n\n2) Shall I bring dessert?\n* See you at six."
                         )
                     }
                 }

@@ -17,4 +17,7 @@ sealed interface SettingsDestination {
 
     /** Provider setup screen for configuring AI brain provider credentials and model. */
     data object ProviderSetup : SettingsDestination
+
+    /** Suggested replies screen (Phase 2): notification-access status, consent gate, privacy copy. */
+    data object SuggestedReplies : SettingsDestination
 }

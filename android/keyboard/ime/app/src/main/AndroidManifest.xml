@@ -63,6 +63,19 @@
                 android:resource="@xml/method" />
         </service>
 
+        <!-- PersonaSpeak suggested replies (Phase 2, ADR-0011): opt-in listener
+             for incoming message notifications. Bound by the system only
+             (BIND_NOTIFICATION_LISTENER_SERVICE); parses into a RAM-only
+             store. No read-marking, no remote-input replies, never sends. -->
+        <service
+            android:name="biz.pixelperfectstudios.personaspeak.ime.reply.ReplyNotificationListener"
+            android:exported="true"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
+
         <!-- ui activities -->
         <!-- settings ui activities -->
         <!-- PersonaSpeak Settings Activity -->

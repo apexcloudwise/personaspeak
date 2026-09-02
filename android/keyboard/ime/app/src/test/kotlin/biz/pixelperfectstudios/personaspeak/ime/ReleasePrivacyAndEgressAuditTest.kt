@@ -227,6 +227,136 @@ class ReleasePrivacyAndEgressAuditTest {
     }
 
     @Test
+    fun `suggested replies listener is opt-in system-bound and RAM-only per ADR-0011`() {
+        var current: File? = File(".").canonicalFile
+        var repoRoot: File? = null
+        while (current != null) {
+            if (File(current, "docs").isDirectory && File(current, "android").isDirectory) {
+                repoRoot = current
+                break
+            }
+            current = current.parentFile
+        }
+        assertNotNull("Could not find repository root", repoRoot)
+        val root = repoRoot!!
+
+        // 1. The manifest declares the listener, bound by the system only.
+        val manifest = File(root, "android/keyboard/ime/app/src/main/AndroidManifest.xml")
+        val manifestText = manifest.readText()
+        assertTrue(
+            "manifest must declare ReplyNotificationListener",
+            manifestText.contains("biz.pixelperfectstudios.personaspeak.ime.reply.ReplyNotificationListener"),
+        )
+        assertTrue(
+            "listener must require BIND_NOTIFICATION_LISTENER_SERVICE so only the system can bind it",
+            manifestText.contains(Regex("""android:permission="android\.permission\.BIND_NOTIFICATION_LISTENER_SERVICE"""")),
+        )
+        assertTrue(
+            "listener must carry the NotificationListenerService intent filter",
+            manifestText.contains(Regex("""<action android:name="android\.service\.notification\.NotificationListenerService" />""")),
+        )
+
+        // 2. The listener never logs content and never touches disk.
+        val listenerSource = File(
+            root,
+            "android/keyboard/ime/app/src/main/kotlin/biz/pixelperfectstudios/personaspeak/ime/reply/ReplyNotificationListener.kt",
+        )
+        assertTrue("ReplyNotificationListener source must exist", listenerSource.isFile)
+        val listenerText = listenerSource.readText()
+        for (forbidden in listOf("Log.", "println", "openFileOutput", "getExternalStorage", "File(", "SharedPreferences", "Room")) {
+            assertTrue(
+                "ReplyNotificationListener must not contain '$forbidden' — content never reaches logs or disk",
+                !listenerText.contains(forbidden),
+            )
+        }
+
+        // 3. The store has no Android and no disk surface — pure Kotlin, RAM only.
+        val storeSource = File(
+            root,
+            "android/personaspeak-ui/src/main/kotlin/biz/pixelperfectstudios/personaspeak/ui/reply/IncomingMessageStore.kt",
+        )
+        assertTrue("IncomingMessageStore source must exist", storeSource.isFile)
+        val storeText = storeSource.readText()
+        assertTrue(
+            "IncomingMessageStore must stay free of android.* imports — provably RAM-only",
+            !storeText.contains(Regex("""import android\.""")),
+        )
+        for (forbidden in listOf("Log.", "println", "File(", "openFileOutput", "SharedPreferences", "DataStore")) {
+            assertTrue(
+                "IncomingMessageStore must not contain '$forbidden' — no disk surface is the contract",
+                !storeText.contains(forbidden),
+            )
+        }
+
+        // 4. The listener writes only through the store's RAM contract.
+        assertTrue(
+            "listener must route parsed contexts through the RAM-only store",
+            listenerText.contains("IncomingMessageStore.instance.put"),
+        )
+        assertTrue(
+            "listener must wipe the store on disconnect/destroy",
+            listenerText.contains("clearAll()"),
+        )
+    }
+
+    @Test
+    fun `suggested replies privacy claims in README and settings stay matched to the code`() {
+        var current: File? = File(".").canonicalFile
+        var repoRoot: File? = null
+        while (current != null) {
+            if (File(current, "docs").isDirectory && File(current, "android").isDirectory) {
+                repoRoot = current
+                break
+            }
+            current = current.parentFile
+        }
+        assertNotNull("Could not find repository root", repoRoot)
+        val root = repoRoot!!
+
+        // README carries the load-bearing claims in plain language.
+        val readme = File(root, "README.md").readText()
+        assertTrue("README must carry the suggested-replies privacy section", readme.contains("Suggested replies & your notifications"))
+        assertTrue("README must state the RAM-only store", readme.contains("RAM only"))
+        assertTrue("README must state what we never do", readme.contains("never"))
+        assertTrue("README must link the governing ADR", readme.contains("ADR-0011"))
+
+        // The in-app consent gate discloses before the deep link, in the feature flow.
+        val screenSource = File(
+            root,
+            "android/personaspeak-ui/src/main/kotlin/biz/pixelperfectstudios/personaspeak/ui/settings/SuggestedRepliesScreen.kt",
+        )
+        assertTrue("SuggestedRepliesScreen source must exist", screenSource.isFile)
+        val screenText = screenSource.readText()
+        val consentIndex = screenText.indexOf("personaspeak_suggested_replies_consent_dialog")
+        val grantIndex = screenText.indexOf("ACTION_NOTIFICATION_LISTENER_SETTINGS")
+        // The screen itself must not deep-link directly: the deep link is
+        // owned by the activity and reached only after the consent gate.
+        assertTrue("SuggestedRepliesScreen must not embed the system deep link — consent gate routes through the activity", grantIndex == -1)
+        assertTrue("SuggestedRepliesScreen must carry the consent dialog", consentIndex != -1)
+        assertTrue(
+            "the screen must state the never-lines (no auto-send, no read-marking, no storage)",
+            screenText.contains("What we never do"),
+        )
+
+        // The activity's only path to the system screen is the consent-gated callback.
+        val activitySource = File(
+            root,
+            "android/keyboard/ime/app/src/main/kotlin/biz/pixelperfectstudios/personaspeak/ui/settings/PersonaSpeakSettingsActivity.kt",
+        )
+        val activityText = activitySource.readText()
+        assertTrue(
+            "the settings activity owns the deep link to notification-access settings",
+            activityText.contains("ACTION_NOTIFICATION_LISTENER_SETTINGS"),
+        )
+        val onGrantIndex = activityText.indexOf("onOpenNotificationAccessSettings = {")
+        val deepLinkIndex = activityText.indexOf("ACTION_NOTIFICATION_LISTENER_SETTINGS")
+        assertTrue(
+            "the deep link must live inside the consent-gated onOpenNotificationAccessSettings callback",
+            onGrantIndex in 0 until deepLinkIndex,
+        )
+    }
+
+    @Test
     fun `provider catalog contains approved defaults per ADR-0009`() {
         assertEquals("openrouter", ProviderCatalog.openrouter.id)
         assertEquals("https://openrouter.ai/api/v1", ProviderCatalog.openrouter.defaultBaseUrl)

@@ -20,6 +20,7 @@ data class SettingsState(
     val lastRewriteResult: AdapterResult? = null,
     val isSavingProvider: Boolean = false,
     val providerStatus: ProviderStatusSummary = ProviderStatusSummary.Unconfigured,
+    val suggestedRepliesEnabled: Boolean = false,
 ) {
 
     /**
