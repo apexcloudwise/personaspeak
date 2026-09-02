@@ -102,16 +102,27 @@ SHIFT_TAP = (81, 2072)
 # PersonaSpeak's panel row. No dump channel can observe it (uiautomator
 # is structurally blind to the IME window on API 34, issue #79): these
 # taps are pinned against the real layout and every one is verified
-# through the editor-text bridge before the journey trusts it. The row
-# is bottom-anchored, so the y survives the panel's Review expansion.
-REWRITE_TAP = (116, 1452)
-CANCEL_TAP = (180, 1452)
-APPLY_TAP = (105, 1452)
-DISMISS_TAP = (328, 1452)
+# through the editor-text bridge before the journey trusts it.
+# Recalibrated 2026-09-02 against the #87/#88 strip redesign (the last
+# green M2 run predated it): Resting is persona/mood chips left, the
+# Rewrite button right of center (text x 764-882) — the row's old left
+# end is now the persona chip, which opens the picker. Loading keeps
+# the compact height and shows spinner + persona·mood + Cancel (text
+# x 770-874). Review expands the window upward (measured top 1166 for
+# the journey's fixed draft) and lays its action row at y≈1390: Use
+# this leftmost (x 46-194), ↻ Again, then Dismiss (x ≈ 468-640). Every
+# coordinate below was effect-verified on the M2_Qual_Fixture:
+# rewrite→loading, cancel→resting with no review, apply→editor mutated
+# to the candidate, dismiss→resting.
+REWRITE_TAP = (823, 1414)
+CANCEL_TAP = (822, 1414)
+APPLY_TAP = (120, 1390)
+DISMISS_TAP = (560, 1390)
 # InputMethod window geometry (dumpsys window): the compact row's
 # touchable region tops out at y=1378; Review expands it upward past
-# y=1330. A region top below the compact line means the panel grew —
-# the machine-visible half of the review-ready signal; the candidate
+# y=1330 (measured 1166 on the 2026-09-02 recalibration probe). A
+# region top below the compact line means the panel grew — the
+# machine-visible half of the review-ready signal; the candidate
 # surface itself is screenshot-bound. (API 34 publishes this only as the
 # touchable region; the window frame itself is fill-parent in both
 # states — probe 2026-08-20.)

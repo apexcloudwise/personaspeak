@@ -8,6 +8,10 @@ while the context is hot.
 
 Newest first, like all respectable patch notes.
 
+## 2026-09-02 — The Strip Moved, the Pins Followed
+
+- The M2 device journey's four tap pins still pointed at the pre-redesign panel row: since the #87/#88 strip restyle (one day after the last green run), a "Rewrite" tap at the old coordinates landed on the persona chip, opened the picker, and failed the first window check. All four pins recalibrated on the M2_Qual_Fixture with effect verification (rewrite→loading, cancel→resting with no review, apply→editor mutated to the candidate, dismiss→resting). The fake toolchain now dispatches taps by panel state, because Rewrite and Cancel share the compact row's right-end slot — one pixel apart in the new pins. 361/361 suite green.
+
 ## 2026-09-02 — The Journey Harness Meets the New Name on the Door
 
 - The M2 device-journey harness still expected the vendored keyboard's versionName 1.13.1 (and a versionCode of 1 that passed only as a substring of 1000); every qualification run since the Milestone 8 v0.1.0/1000 identity failed at install. Pins updated to 0.1.0/1000 — the harness now checks the package the app actually ships as. 74/74 harness unit tests green.
