@@ -141,6 +141,11 @@ dependencies {
     implementation project(':core-personas')
     implementation project(':core-providers')
     implementation project(':personaspeak-data')
+    // Host-neutral IME graph (editor port, resolving provider, view-tree
+    // owners); the ASK-specific composition and row provider stay here.
+    // FakeInputConnection (main-source test double) rides along in the
+    // ...ime.testing package.
+    implementation project(':personaspeak-ime')
     implementation platform(libs.compose.bom)
     implementation libs.compose.ui
     implementation libs.compose.material3

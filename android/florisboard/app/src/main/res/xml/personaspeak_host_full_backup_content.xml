@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Legacy (<API 31) regime mirror of personaspeak_host_data_extraction_rules.xml. -->
+<full-backup-content>
+    <include domain="root" path="jetpref_datastore" />
+    <include domain="file" path="ime" />
+    <include domain="database" path="floris_user_dictionary" />
+    <exclude domain="file" path="personaspeak_secret.bin" />
+    <exclude domain="file" path="personaspeak_secret.bin.staging" />
+    <exclude domain="file" path="datastore/personaspeak_provider_config.preferences_pb" />
+</full-backup-content>

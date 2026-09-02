@@ -75,8 +75,11 @@ The replacement contract lands with the fork ADR. Until then, treat as binding:
   never scattered through inherited files — **upstream lines modified are rent
   paid forever**, one merge conflict each.
 - Current state:
-  [`docs/superpowers/specs/2026-07-20-fork-spike-checkpoint.md`](docs/superpowers/specs/2026-07-20-fork-spike-checkpoint.md)
-  and [`2026-07-20-keyboard-ux-design.md`](docs/superpowers/specs/2026-07-20-keyboard-ux-design.md).
+  [`docs/superpowers/specs/2026-07-20-fork-spike-checkpoint.md`](docs/superpowers/specs/2026-07-20-fork-spike-checkpoint.md),
+  [`2026-07-20-keyboard-ux-design.md`](docs/superpowers/specs/2026-07-20-keyboard-ux-design.md),
+  and, for the evaluation second host under `android/florisboard/`,
+  [ADR-0010](docs/adr/0010-florisboard-second-host.md) — the ASK host under
+  `keyboard/` stays the default and the release path.
 
 ## Workflow
 

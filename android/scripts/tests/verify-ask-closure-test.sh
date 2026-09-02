@@ -19,7 +19,8 @@ trap 'rm -rf "$tmp"' EXIT
 
 # Canonical Milestone 2 graph: 28 ASK logical paths (24 application/library/
 # build-test projects plus the four explicit parent projects) and the three
-# first-party libraries. LC_ALL=C sorted.
+# first-party libraries (:personaspeak-ime joined at the FlorisBoard-host
+# extraction, ADR-0010). LC_ALL=C sorted.
 canonical="$tmp/canonical.txt"
 cat > "$canonical" <<'EOF'
 :addons
@@ -53,6 +54,7 @@ cat > "$canonical" <<'EOF'
 :ime:voiceime
 :junit-sharding
 :personaspeak-data
+:personaspeak-ime
 :personaspeak-providers
 :personaspeak-ui
 EOF
@@ -66,7 +68,7 @@ while IFS= read -r p; do
   rel="${p#:}"
   rel="${rel//://}"
   case "$p" in
-    :core-personas | :core-providers | :personaspeak-ui | :personaspeak-data | :personaspeak-providers) dir="$fixture_root/$rel" ;;
+    :core-personas | :core-providers | :personaspeak-ui | :personaspeak-data | :personaspeak-ime | :personaspeak-providers) dir="$fixture_root/$rel" ;;
     *) dir="$fixture_root/keyboard/$rel" ;;
   esac
   mkdir -p "$dir"

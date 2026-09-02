@@ -181,3 +181,64 @@ jobs:
             android/**/build/test-results/**
           if-no-files-found: warn
           retention-days: 14
+
+  floris-host-build:
+    name: FlorisBoard second-host build
+    # Same draft-skip as android-build: the second Gradle root is costly to
+    # build (native Rust for four ABIs), so drafts get the cheap gates only.
+    # This job is ADR-0010's readiness-bar item 5 — without it, a broken
+    # floris root would surface only on a contributor's laptop.
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: gradle
+      # The floris root's lib/native builds its Rust crate through CMake,
+      # which looks for rustup/cargo in ~/.cargo/bin (lib/native/src/main/
+      # rust/CMakeLists.txt). Toolchain pinned to the same version as the
+      # vendored gradle/tools.versions.toml (rustToolchain = "1.83.0") —
+      # bump them together or the ledger owes an explanation.
+      - name: Install Rust 1.83.0
+        run: |
+          set -euo pipefail
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain 1.83.0
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+      # The vendored root pins cmake 4.0.2 (tools.versions.toml); hosted
+      # runners ship an older one and AGP does not auto-install it
+      # (CXX1300 on the first run). Installing the pinned version through
+      # sdkmanager keeps the vendored pin untouched — upstream rent stays
+      # upstream's shape, the runner meets it where it is.
+      - name: Install pinned CMake 4.0.2
+        run: |
+          set -euo pipefail
+          # No `yes |` pipe: under pipefail the licence-feeder dying of
+          # SIGPIPE when sdkmanager exits would fail the step. Runner
+          # images ship accepted licences; the list_installed check below
+          # is the gate that says the install actually happened.
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "cmake;4.0.2" < /dev/null > /dev/null
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --list_installed 2>/dev/null | grep -q "cmake;4.0.2" || {
+            echo "::error::cmake;4.0.2 not installed after sdkmanager run"; exit 1; }
+      - name: Build the second-host APK
+        working-directory: android/florisboard
+        run: |
+          set -euo pipefail
+          ./gradlew :app:assembleDebug -PpersonaspeakFlorisAppId=biz.pixelperfectstudios.personaspeak.floris
+      # Identity is asserted, the APK is NOT uploaded: a second artifact in
+      # the artifact tab would recreate exactly the two-APK ambiguity the
+      # canonical-upload policy exists to prevent. One release path, one
+      # artifact; this build is proof, not product.
+      - name: Second-host APK identity
+        working-directory: android/florisboard
+        run: |
+          set -euo pipefail
+          apk=app/build/outputs/apk/debug/app-debug.apk
+          test -f "$apk"
+          sha256sum "$apk"

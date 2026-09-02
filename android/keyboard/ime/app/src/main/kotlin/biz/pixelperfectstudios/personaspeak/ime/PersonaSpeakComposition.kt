@@ -10,52 +10,32 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.CreationExtras
-import biz.pixelperfectstudios.personaspeak.ime.editor.EditorSessionState
-import biz.pixelperfectstudios.personaspeak.ime.editor.InputConnectionEditorPort
-import biz.pixelperfectstudios.personaspeak.ime.host.ImeViewTreeOwners
 import biz.pixelperfectstudios.personaspeak.ime.host.PersonaSpeakRowProvider
-import biz.pixelperfectstudios.personaspeak.personas.PersonaId
-import biz.pixelperfectstudios.personaspeak.providers.FakeProvider
-import biz.pixelperfectstudios.personaspeak.ui.personas.AssetPersonaDocumentSource
-import biz.pixelperfectstudios.personaspeak.ui.personas.BundledPersonaRepository
-import biz.pixelperfectstudios.personaspeak.ui.rewrite.RewriteCoordinator
 import biz.pixelperfectstudios.personaspeak.ui.rewrite.RewritePanel
 import biz.pixelperfectstudios.personaspeak.ui.rewrite.RewritePanelViewModel
-import biz.pixelperfectstudios.personaspeak.ui.settings.PersonaSpeakSessionState
 import biz.pixelperfectstudios.personaspeak.ui.settings.PersonaSpeakSettingsActivity
 
 class PersonaSpeakComposition @JvmOverloads constructor(
     private val context: Context,
-    private val inputConnectionSupplier: () -> InputConnection?,
-    private val editorInfoSupplier: () -> EditorInfo?,
+    inputConnectionSupplier: () -> InputConnection?,
+    editorInfoSupplier: () -> EditorInfo?,
     private val contentInstaller: (ComposeView, @Composable () -> Unit) -> Unit = { view, content ->
         view.setContent(content)
     },
 ) {
-
-    private val sessionState = EditorSessionState()
-    private val editorPort = InputConnectionEditorPort(
-        sessionState = sessionState,
-        connectionSupplier = inputConnectionSupplier,
+    private val graph = PersonaSpeakImeGraph(
+        context = context,
+        inputConnectionSupplier = inputConnectionSupplier,
         editorInfoSupplier = editorInfoSupplier,
     )
-    private val resolvingProvider = ResolvingProvider(
-        store = PersonaSpeakBrain.createStore(context),
-        fallback = FakeProvider(),
-    )
-    private val personaRepo = BundledPersonaRepository(
-        AssetPersonaDocumentSource(context.assets),
-    )
-    private val coordinator = RewriteCoordinator(
-        personas = personaRepo,
-        editor = editorPort,
-        provider = resolvingProvider,
-    )
+    private val sessionState = graph.sessionState
+    private val resolvingProvider = graph.resolvingProvider
+    private val personaRepo = graph.personaRepo
+    private val coordinator = graph.coordinator
 
-    val owners = ImeViewTreeOwners()
+    val owners = graph.owners
     private val rowProvider = PersonaSpeakRowProvider(owners)
     private var container: com.anysoftkeyboard.keyboards.views.KeyboardViewContainerView? = null
     private var isAdded = false
@@ -71,10 +51,11 @@ class PersonaSpeakComposition @JvmOverloads constructor(
     }
 
     fun onStartInput(attribute: EditorInfo, restarting: Boolean) {
-        // Session starts here (first lifecycle callback in the input sequence)
-        // rather than in onStartInputView so the token is valid for any
-        // selection callbacks that fire between onStartInput and onStartInputView.
-        sessionState.start(editorInfoSupplier())
+        // Delegates to the graph: session starts here (first lifecycle
+        // callback in the input sequence) rather than in onStartInputView so
+        // the token is valid for any selection callbacks that fire between
+        // onStartInput and onStartInputView.
+        graph.onStartInput()
     }
 
     fun onStartInputView() {
@@ -93,15 +74,7 @@ class PersonaSpeakComposition @JvmOverloads constructor(
                     modelClass: Class<T>,
                     extras: CreationExtras,
                 ): T {
-                    val session = PersonaSpeakSessionState.instance
-                    return RewritePanelViewModel(
-                        coordinator = coordinator,
-                        personas = personaRepo,
-                        sessionState = session,
-                        initialPersonaId = session.activePersonaId,
-                        initialMood = session.defaultMood,
-                        savedStateHandle = SavedStateHandle(),
-                    ) as T
+                    return graph.createRewritePanelViewModel() as T
                 }
             },
         )[RewritePanelViewModel::class.java]

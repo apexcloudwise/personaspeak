@@ -172,6 +172,10 @@ echo "  - :personaspeak-ui carries no ASK imports"
 scan "ASK import in :personaspeak-ui" 'com\.anysoftkeyboard|com\.menny' \
     "$root/personaspeak-ui/src"
 
+echo "  - :personaspeak-ime carries no ASK imports"
+scan "ASK import in :personaspeak-ime" 'com\.anysoftkeyboard|com\.menny' \
+    "$root/personaspeak-ime/src"
+
 echo "  - rejected topology absent outside the vendored snapshot"
 scan "rejected topology present" \
     'switchBackToPreviousKeyboard|PersonaPanel|fun[[:space:]]+Onboarding[[:space:]]*\(' \
@@ -214,7 +218,8 @@ echo "  OK"
 echo "[8/12] unit tests (core, UI, ASK :ime:app, dedicated row)..."
 "$root/gradlew" -p "$root" \
     :core-personas:test :core-providers:test \
-    :personaspeak-ui:testDebugUnitTest :ime:app:testDebugUnitTest \
+    :personaspeak-ui:testDebugUnitTest :personaspeak-ime:testDebugUnitTest \
+    :ime:app:testDebugUnitTest \
     --console=plain --no-daemon --rerun-tasks
 echo "  OK"
 
@@ -257,6 +262,7 @@ for src in \
     "core-personas/build/test-results/test" \
     "core-providers/build/test-results/test" \
     "personaspeak-ui/build/test-results/testDebugUnitTest" \
+    "personaspeak-ime/build/test-results/testDebugUnitTest" \
     "keyboard/ime/app/build/test-results/testDebugUnitTest"; do
     if [ -d "$root/$src" ]; then
         dest="$archive/test-results/$(printf '%s' "$src" | tr '/' '_')"
