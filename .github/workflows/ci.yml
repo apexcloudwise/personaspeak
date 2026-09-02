@@ -211,6 +211,17 @@ jobs:
           set -euo pipefail
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain 1.83.0
           echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+      # The vendored root pins cmake 4.0.2 (tools.versions.toml); hosted
+      # runners ship an older one and AGP does not auto-install it
+      # (CXX1300 on the first run). Installing the pinned version through
+      # sdkmanager keeps the vendored pin untouched — upstream rent stays
+      # upstream's shape, the runner meets it where it is.
+      - name: Install pinned CMake 4.0.2
+        run: |
+          set -euo pipefail
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "cmake;4.0.2" > /dev/null
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --list_installed 2>/dev/null | grep -q "cmake;4.0.2" || {
+            echo "::error::cmake;4.0.2 not installed after sdkmanager run"; exit 1; }
       - name: Build the second-host APK
         working-directory: android/florisboard
         run: |
