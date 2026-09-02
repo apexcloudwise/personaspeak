@@ -63,13 +63,17 @@ KEY_COORDS = {
 # editor does not auto-capitalize (attempt-2 raw bytes, #82) — capitals
 # ride exactly this latch.
 SHIFT_COORDS = (81, 2072)
-REWRITE_TAP = (116, 1452)
-CANCEL_TAP = (180, 1452)
-APPLY_TAP = (105, 1452)
-DISMISS_TAP = (328, 1452)
+# 2026-09-02 recalibration against the #87/#88 strip layout: Rewrite
+# and Cancel share the compact row's right end; Use this and Dismiss
+# sit in Review's expanded action row — separate slots now, so the
+# shared-slot shortcut of the pre-redesign row is gone.
+REWRITE_TAP = (823, 1414)
+CANCEL_TAP = (822, 1414)
+APPLY_TAP = (120, 1390)
+DISMISS_TAP = (560, 1390)
 TAP_SLOP = 54  # half a 108px key cell
 COMPACT_TOP = 1378
-EXPANDED_TOP = 1283
+EXPANDED_TOP = 1166
 
 
 def _read(path):
@@ -293,27 +297,30 @@ def _run_tap(x, y):
     def _near(cx, cy):
         return abs(x - cx) <= TAP_SLOP and abs(y - cy) <= TAP_SLOP
     panel = _read(KB_FILE)
-    if _near(*REWRITE_TAP) or _near(*APPLY_TAP):
-        if panel == "":
-            if _read(STATE_FILE):
-                _write(KB_FILE, "LOADING")
-                _write(CAND_SRC_FILE, _read(STATE_FILE))
-        elif panel == "REVIEW":
-            if _read(STATE_FILE) == _read(CAND_SRC_FILE):
-                # Fresh candidate: exactly one mutation.
-                _write(STATE_FILE, CANDIDATE)
-                _write(KB_FILE, "APPLIED")
-            else:
-                # Stale: zero mutations, candidate retained in Review.
-                _write(KB_FILE, "STALE")
+    # State-first dispatch: since the strip redesign, Rewrite and Cancel
+    # occupy the same right-end slot of the compact row (one pixel apart
+    # in the recalibrated pins) — the panel state, not the coordinate,
+    # decides which control a tap there reaches, exactly like the real
+    # row. Use this and Dismiss sit in Review's action row, far apart.
+    if panel == "" and _near(*REWRITE_TAP):
+        if _read(STATE_FILE):
+            _write(KB_FILE, "LOADING")
+            _write(CAND_SRC_FILE, _read(STATE_FILE))
         return
-    if _near(*CANCEL_TAP):
-        if panel == "LOADING":
-            _write(KB_FILE, "")
+    if panel == "LOADING" and _near(*CANCEL_TAP):
+        _write(KB_FILE, "")
         return
-    if _near(*DISMISS_TAP):
-        if panel == "REVIEW":
-            _write(KB_FILE, "")
+    if panel == "REVIEW" and _near(*APPLY_TAP):
+        if _read(STATE_FILE) == _read(CAND_SRC_FILE):
+            # Fresh candidate: exactly one mutation.
+            _write(STATE_FILE, CANDIDATE)
+            _write(KB_FILE, "APPLIED")
+        else:
+            # Stale: zero mutations, candidate retained in Review.
+            _write(KB_FILE, "STALE")
+        return
+    if panel == "REVIEW" and _near(*DISMISS_TAP):
+        _write(KB_FILE, "")
         return
     # Key taps: the only insertion path, exactly the pinned geometry.
     shift = 60 if os.environ.get("FAKE_ADB_KEY_LAYOUT_SHIFTED") else 0

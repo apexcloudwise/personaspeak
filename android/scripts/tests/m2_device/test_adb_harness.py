@@ -169,7 +169,7 @@ class _DeviceModel:
         if self.panel == "LOADING":
             self.panel = "REVIEW"
         expanded = self.panel in ("REVIEW", "APPLIED", "STALE")
-        top = 1283 if (expanded and not self.never_expands) else 1378
+        top = 1166 if (expanded and not self.never_expands) else 1378
         return (
             "  Window #7 Window{213d245 u0 com.android.settings/com.android.settings.Settings}:\n"
             "    mOwnerUid=1000 showForAllUsers=false package=com.android.settings appop=NONE\n"
@@ -216,26 +216,29 @@ class _DeviceModel:
         def near(cx, cy):
             return abs(x - cx) <= 54 and abs(y - cy) <= 54
 
-        if near(116, 1452) or near(105, 1452):
-            if self.panel == "":
-                if self.editor:
-                    self.panel = "LOADING"
-                    self.candidate_source = self.editor
-            elif self.panel == "REVIEW":
-                if (self.editor == self.candidate_source
-                        or self.apply_mutates_stale):
-                    self.editor = CANDIDATE_REPHRASING
-                    self.panel = "APPLIED"
-                else:
-                    self.panel = "STALE"
+        # 2026-09-02 recalibration, state-first: Rewrite and Cancel
+        # share the compact row's right-end slot (the recalibrated pins
+        # are one pixel apart), so the panel state decides which control
+        # a tap there reaches — the same disambiguation the real row
+        # makes. Use this and Dismiss are far apart in Review's row.
+        if self.panel == "" and near(823, 1414):
+            if self.editor:
+                self.panel = "LOADING"
+                self.candidate_source = self.editor
             return
-        if near(180, 1452):
-            if self.panel == "LOADING":
-                self.panel = ""
+        if self.panel == "LOADING" and near(822, 1414):
+            self.panel = ""
             return
-        if near(328, 1452):
-            if self.panel == "REVIEW":
-                self.panel = ""
+        if self.panel == "REVIEW" and near(120, 1390):
+            if (self.editor == self.candidate_source
+                    or self.apply_mutates_stale):
+                self.editor = CANDIDATE_REPHRASING
+                self.panel = "APPLIED"
+            else:
+                self.panel = "STALE"
+            return
+        if self.panel == "REVIEW" and near(560, 1390):
+            self.panel = ""
             return
         # Sticky shift: one shot, releases on the next letter. No
         # auto-capitalization exists in this editor (attempt 2, #82).
@@ -1074,7 +1077,7 @@ class TestAdbHarness(unittest.TestCase):
         "    mOwnerUid=10192 showForAllUsers=false package=biz.pixelperfectstudios.personaspeak appop=NONE\n"
         "    mViewVisibility=0x0 mHaveFrame=true mObscured=false\n"
         "    mGivenContentInsets=[0,1155][0,0] mGivenVisibleInsets=[0,1155][0,0]\n"
-        "    touchable region=SkRegion((0,1283,1080,2400))\n"
+        "    touchable region=SkRegion((0,1166,1080,2400))\n"
         "    mHasSurface=true isReadyForDisplay()=true mWindowRemovalAllowed=false\n"
         "    Frames: parent=[0,128][1080,2400] display=[0,128][1080,2400] frame=[0,128][1080,2400] last=[0,128][1080,2400] insetsChanged=false\n"
         "    WindowStateAnimator{a8b0090 InputMethod}:\n"
@@ -1094,10 +1097,11 @@ class TestAdbHarness(unittest.TestCase):
 
     def test_window_frame_reads_real_probe_bytes(self):
         # The parser is pinned to the device's own bytes, not to the
-        # fake's rendering of them: compact 1378, expanded 1283 — the
-        # 95px upward growth that is the review signal.
+        # fake's rendering of them: compact 1378, expanded 1166 — the
+        # 212px upward growth that is the review signal (2026-09-02
+        # recalibration probe).
         for block, want in ((self._PROBE_IM_BLOCK_COMPACT, (1378, 2400)),
-                            (self._PROBE_IM_BLOCK_EXPANDED, (1283, 2400))):
+                            (self._PROBE_IM_BLOCK_EXPANDED, (1166, 2400))):
             with patch.object(self.harness, "_shell",
                               return_value=self._window_res(block)):
                 self.assertEqual(
