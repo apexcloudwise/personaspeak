@@ -37,6 +37,7 @@ personaspeak-android-lifecycle = "2.9.0"
 personaspeak-androidx-annotation = "1.9.1"
 personaspeak-androidx-datastore = "1.1.7"
 personaspeak-androidx-test-core = "1.7.0"
+personaspeak-androidx-test-runner = "1.7.0"
 personaspeak-junit = "4.13.2"
 personaspeak-robolectric = "4.16.1"
 personaspeak-snakeyaml = "2.3"
@@ -103,6 +104,7 @@ coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", ve
 datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "personaspeak-androidx-datastore" }
 androidx-annotation = { module = "androidx.annotation:annotation", version.ref = "personaspeak-androidx-annotation" }
 androidx-test-core = { module = "androidx.test:core", version.ref = "personaspeak-androidx-test-core" }
+androidx-test-runner = { module = "androidx.test:runner", version.ref = "personaspeak-androidx-test-runner" }
 junit = { group = "junit", name = "junit", version.ref = "personaspeak-junit" }
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
 lifecycle-viewmodel = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-ktx", version.ref = "personaspeak-android-lifecycle" }

@@ -11,6 +11,7 @@ from datetime import datetime, timezone
 
 from android.scripts.m2_device import evidence
 from android.scripts.m2_device.adb_harness import AdbHarness
+from android.scripts.m2_device.floris_harness import FlorisAdbHarness
 from android.scripts.m2_device.orchestrator import Orchestrator
 from android.scripts.m2_device.records import (
     ApprovalRecord,
@@ -21,6 +22,11 @@ from android.scripts.m2_device.records import (
     encode,
     record_digest,
 )
+
+_HOSTS = {
+    "ask": (AdbHarness, evidence.CANONICAL_ARTIFACTS),
+    "floris": (FlorisAdbHarness, evidence.FLORIS_CANONICAL_ARTIFACTS),
+}
 
 
 def _utc() -> str:
@@ -37,7 +43,8 @@ def cmd_capture(args: argparse.Namespace) -> int:
     if args.fixture_digests:
         with open(args.fixture_digests) as f:
             fixture_digests = json.load(f)
-    harness = AdbHarness(
+    harness_cls, canonical_artifacts = _HOSTS[args.host]
+    harness = harness_cls(
         run_dir=run_dir, apk_path=args.apk_path, repo_root=args.repo_root,
         fixture_root=args.fixture_root, fixture_digests=fixture_digests,
         headless=args.headless,
@@ -83,7 +90,7 @@ def cmd_capture(args: argparse.Namespace) -> int:
         print(f"qualification failed: {reason}", file=sys.stderr)
         return 1
     try:
-        evidence.enforce_canonical_set(manifest)
+        evidence.enforce_canonical_set(manifest, canonical_artifacts)
     except ValueError as e:
         print(f"qualification failed: {e}", file=sys.stderr)
         return 1
@@ -125,6 +132,7 @@ def cmd_finalize(args: argparse.Namespace) -> int:
     receipt = evidence.finalize(
         capture, approval, manifest, evidence_subdir,
         evidence_commit=args.evidence_commit,
+        canonical_artifacts=_HOSTS[args.host][1],
     )
     out = encode(receipt)
     if args.output:
@@ -170,6 +178,9 @@ def build_parser() -> argparse.ArgumentParser:
     cap.add_argument("--repo-root", required=True)
     cap.add_argument("--apk-path", required=True)
     cap.add_argument("--apk-sha256", required=True)
+    cap.add_argument("--host", choices=sorted(_HOSTS), default="ask",
+                     help="which IME host's journey to run "
+                          "(default: ask, the M2 journey)")
     cap.add_argument("--expected-head", default="")
     cap.add_argument("--fixture-root", default="",
                      help="AVD root holding M2_Qual_Fixture.avd "
@@ -191,6 +202,9 @@ def build_parser() -> argparse.ArgumentParser:
     fin.add_argument("--manifest", required=True)
     fin.add_argument("--run-dir", required=True)
     fin.add_argument("--evidence-commit", default="")
+    fin.add_argument("--host", choices=sorted(_HOSTS), default="ask",
+                     help="which host's canonical artifact set the "
+                          "manifest must match (default: ask)")
     fin.add_argument("--output", default=None)
     fin.set_defaults(func=cmd_finalize)
 

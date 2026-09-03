@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Instrumentation-only surface for the ADR-0003 real-InputConnection
+     tests. Never merged into any host app. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <activity
+            android:name="biz.pixelperfectstudios.personaspeak.ime.testing.ComposingTestActivity"
+            android:exported="false"
+            android:label="PersonaSpeak composing instrumentation" />
+    </application>
+</manifest>

@@ -9,6 +9,7 @@ android {
 
     defaultConfig {
         minSdk = 26
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     compileOptions {
@@ -47,4 +48,10 @@ dependencies {
     // installation path.
     testImplementation(platform(libs.compose.bom))
     testImplementation(libs.compose.ui)
+
+    // ADR-0003: the capture -> transform -> replace path needs a
+    // real-InputConnection test, not just unit tests against fakes.
+    androidTestImplementation(libs.kotlin.test)
+    androidTestImplementation(libs.androidx.test.core)
+    androidTestImplementation(libs.androidx.test.runner)
 }

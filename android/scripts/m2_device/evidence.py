@@ -62,12 +62,54 @@ CANONICAL_ARTIFACTS = frozenset(
 } | {CANONICAL_LEDGER_NAME, CANONICAL_EMULATOR_LOG_NAME}
 
 
-def enforce_canonical_set(manifest: dict[str, str]) -> None:
-    """The manifest must be exactly the canonical artifact set — no
-    missing, extra, renamed, or nested entries."""
+def _build_canonical_artifacts(png_names, hierarchy_labels) -> frozenset:
+    return (
+        frozenset(f"{n}.png" for n in png_names)
+        | {f"{CANONICAL_MP4_NAME}.mp4"}
+        | {f"{label}.xml" for label in hierarchy_labels}
+        | {CANONICAL_LEDGER_NAME, CANONICAL_EMULATOR_LOG_NAME}
+    )
+
+
+# FlorisBoard second-host journey (ADR-0010 P2): four product sessions
+# mirroring the ASK journey, plus the composing leg (draft typed
+# without the final period, per ADR-0003) and the settings-surface
+# session (the row's settings button launching the ported activity).
+FLORIS_CANONICAL_PNG_NAMES = (
+    "01-idle-typed", "02-loading-cancel", "03-review",
+    "04-applied", "05-dismissed", "06-stale",
+    "07-composing-typed", "08-composing-applied", "09-floris-settings",
+)
+FLORIS_CANONICAL_HIERARCHY_LABELS = (
+    "home_1", "focus_1", "typed_1", "after_cancel",
+    "home_2", "focus_2", "typed_2", "after_apply",
+    "home_3", "focus_3", "typed_3", "after_dismiss",
+    "home_4", "focus_4", "typed_4", "typed_stale", "after_stale",
+    "home_5", "focus_5", "typed_5", "after_composing",
+    "home_6", "focus_6", "floris_settings",
+    "verify_restore",
+)
+FLORIS_CANONICAL_ARTIFACTS = _build_canonical_artifacts(
+    FLORIS_CANONICAL_PNG_NAMES, FLORIS_CANONICAL_HIERARCHY_LABELS)
+# The mirrored sessions keep the ASK artifact names (01-idle-typed and
+# friends) so a shared step reads the same in both hosts' records; the
+# sets must still differ — a floris manifest carries the composing and
+# settings artifacts the ASK journey never produces, and finalize is
+# told the host explicitly, so overlap is unambiguous.
+assert FLORIS_CANONICAL_ARTIFACTS != CANONICAL_ARTIFACTS
+
+
+def enforce_canonical_set(
+    manifest: dict[str, str],
+    artifacts: frozenset = CANONICAL_ARTIFACTS,
+) -> None:
+    """The manifest must be exactly the given canonical artifact set —
+    no missing, extra, renamed, or nested entries. The default is the
+    ASK-journey set (byte-frozen by the #62/#64 acceptance matrix); the
+    floris journey passes its own."""
     actual = set(manifest)
-    missing = sorted(CANONICAL_ARTIFACTS - actual)
-    extra = sorted(actual - CANONICAL_ARTIFACTS)
+    missing = sorted(artifacts - actual)
+    extra = sorted(actual - artifacts)
     if missing:
         raise ValueError(f"canonical artifacts missing: {missing}")
     if extra:
@@ -318,6 +360,7 @@ def finalize(
     evidence_dir: str,
     *,
     evidence_commit: str = "",
+    canonical_artifacts: frozenset = CANONICAL_ARTIFACTS,
 ) -> FinalReceipt:
     """Produce the final receipt with every dimension derived from the
     exact bytes and the named capture steps. No caller-supplied verdict,
@@ -335,7 +378,7 @@ def finalize(
         raise ValueError("capture record has no manifest digest")
     if capture.manifest_digest != man_d:
         raise ValueError("capture-record manifest_digest does not match supplied manifest")
-    enforce_canonical_set(manifest)
+    enforce_canonical_set(manifest, canonical_artifacts)
     reject_nonflat(evidence_dir)
     for name in manifest:
         if "/" in name or ".." in name or os.path.isabs(name):

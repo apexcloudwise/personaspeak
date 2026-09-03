@@ -184,6 +184,23 @@ FIXTURE_FILES = {
 
 
 class AdbHarness:
+    # Host facts as overridable class attributes (defaults = the ASK
+    # host's module pins above, which stay authoritative for imports
+    # and the ASK golden argv sequence). The FlorisBoard second-host
+    # harness subclasses this and swaps exactly these; every shared
+    # phase then checks the second host's identity with the same code.
+    KEYBOARD_PACKAGE = KEYBOARD_PACKAGE
+    IME_COMPONENT = IME_COMPONENT
+    EXPECTED_VERSION_NAME = EXPECTED_VERSION_NAME
+    EXPECTED_VERSION_CODE = EXPECTED_VERSION_CODE
+    EXPECTED_SIGNER = EXPECTED_SIGNER
+    EXPECTED_SIGNER_CERT_SHA256 = EXPECTED_SIGNER_CERT_SHA256
+    KEY_COORDS = ASK_KEY_COORDS
+    SHIFT_TAP = SHIFT_TAP
+    IME_COMPACT_TOP = IME_COMPACT_TOP
+    IME_EXPANDED_MAX_TOP = IME_EXPANDED_MAX_TOP
+    SCREENSHOT_NAMES = SCREENSHOT_NAMES
+    HIERARCHY_LABELS = tuple(evidence.CANONICAL_HIERARCHY_LABELS)
 
     def __init__(
         self,
@@ -492,7 +509,7 @@ class AdbHarness:
             # error (the fake toolkit used to exit 0 here, hiding the
             # difference). rc=1 with output stays unknown state, which
             # must stop the run rather than guess.
-            pkg_res = self._shell("pm", "path", KEYBOARD_PACKAGE)
+            pkg_res = self._shell("pm", "path", self.KEYBOARD_PACKAGE)
             if pkg_res.remote_rc is None:
                 raise commands.RemoteAmbiguousError("pm path")
             pkg_out = pkg_res.transport.stdout.decode(
@@ -539,7 +556,7 @@ class AdbHarness:
         if prior.screen_width != SCREEN_WIDTH or prior.screen_height != SCREEN_HEIGHT:
             errors.append(f"screen size mismatch: got {prior.screen_width}x{prior.screen_height}")
         if prior.package_present:
-            errors.append(f"{KEYBOARD_PACKAGE} present before test")
+            errors.append(f"{self.KEYBOARD_PACKAGE} present before test")
 
         if prior.enabled_imes != EXPECTED_ENABLED_IMES:
             errors.append(f"IME list mismatch: got {prior.enabled_imes}")
@@ -616,7 +633,7 @@ class AdbHarness:
                 "install_apk", f"apksigner rc={certs.returncode}".encode())
         expected_line = (
             "Signer #1 certificate SHA-256 digest: "
-            f"{EXPECTED_SIGNER_CERT_SHA256}")
+            f"{self.EXPECTED_SIGNER_CERT_SHA256}")
         if expected_line not in certs.stdout.decode(
                 "utf-8", errors="replace").splitlines():
             return self._fail(
@@ -626,25 +643,25 @@ class AdbHarness:
         res = self._host("install", "-r", self.apk_path, timeout=120.0)
         if res.returncode != 0:
             return res
-        dump = self._shell("dumpsys", "package", KEYBOARD_PACKAGE)
+        dump = self._shell("dumpsys", "package", self.KEYBOARD_PACKAGE)
         if self._ambiguous(dump):
             return dump
         if self._rc_of(dump) != 0:
             return self._fail("install_apk", f"dumpsys rc={self._rc_of(dump)}".encode())
         out = dump.transport.stdout.decode("utf-8", errors="replace")
         errors = []
-        if f"versionName={EXPECTED_VERSION_NAME}" not in out:
-            errors.append(f"versionName mismatch: expected {EXPECTED_VERSION_NAME}")
-        if f"versionCode={EXPECTED_VERSION_CODE}" not in out:
-            errors.append(f"versionCode mismatch: expected {EXPECTED_VERSION_CODE}")
-        if EXPECTED_SIGNER not in out:
+        if f"versionName={self.EXPECTED_VERSION_NAME}" not in out:
+            errors.append(f"versionName mismatch: expected {self.EXPECTED_VERSION_NAME}")
+        if f"versionCode={self.EXPECTED_VERSION_CODE}" not in out:
+            errors.append(f"versionCode mismatch: expected {self.EXPECTED_VERSION_CODE}")
+        if self.EXPECTED_SIGNER not in out:
             errors.append("signer certificate mismatch")
         if errors:
             return self._fail("install_apk", "\n".join(errors).encode())
         return self._ok("install_apk", b"APK installed and identity verified.")
 
     def _dump_hierarchy(self, label: str) -> tuple[CommandResult, Any]:
-        if label not in evidence.CANONICAL_HIERARCHY_LABELS:
+        if label not in self.HIERARCHY_LABELS:
             # The code cannot express a non-canonical hierarchy name.
             raise RuntimeError(
                 f"hierarchy label {label!r} is not in the canonical set")
@@ -707,11 +724,11 @@ class AdbHarness:
         return str(x), str(y)
 
     def _enable_ime(self, steps) -> bool:
-        res = self._shell("ime", "enable", IME_COMPONENT)
+        res = self._shell("ime", "enable", self.IME_COMPONENT)
         return self._step(steps, "enable_ime", res)
 
     def _set_ime(self, steps) -> bool:
-        res = self._shell("ime", "set", IME_COMPONENT)
+        res = self._shell("ime", "set", self.IME_COMPONENT)
         return self._step(steps, "set_ime", res)
 
     def _verify_binding(self, steps, tag: str) -> bool:
@@ -726,7 +743,7 @@ class AdbHarness:
         out = res.transport.stdout.decode("utf-8", errors="replace")
         m = re.search(r"mCurMethodId=(\S+)", out)
         errors = []
-        if m is None or m.group(1) != IME_COMPONENT:
+        if m is None or m.group(1) != self.IME_COMPONENT:
             errors.append(f"mCurMethodId: {m.group(1) if m else 'absent'}")
         for flag in ("mHaveConnection", "mBoundToMethod", "mVisibleBound"):
             if f"{flag}=true" not in out:
@@ -753,7 +770,7 @@ class AdbHarness:
             if "InputMethod}" not in block.split("\n", 1)[0]:
                 continue
             errors = []
-            if f"package={KEYBOARD_PACKAGE}" not in block:
+            if f"package={self.KEYBOARD_PACKAGE}" not in block:
                 errors.append("window not owned by personaspeak package")
             if "HAS_DRAWN" not in block:
                 errors.append("window not drawn")
@@ -799,11 +816,11 @@ class AdbHarness:
             return False
         top = frame[0]
         if expanded:
-            ok = top <= IME_EXPANDED_MAX_TOP
-            detail = f"frame top {top} never rose above {IME_EXPANDED_MAX_TOP}"
+            ok = top <= self.IME_EXPANDED_MAX_TOP
+            detail = f"frame top {top} never rose above {self.IME_EXPANDED_MAX_TOP}"
         else:
-            ok = top == IME_COMPACT_TOP
-            detail = f"frame top {top} != compact {IME_COMPACT_TOP}"
+            ok = top == self.IME_COMPACT_TOP
+            detail = f"frame top {top} != compact {self.IME_COMPACT_TOP}"
         if not ok:
             self._step(steps, f"verify_ime_window_{tag}",
                        self._fail("window", detail.encode()))
@@ -893,7 +910,7 @@ class AdbHarness:
 
     def _tap_ask_key(self, steps, ch):
         key = ch.upper() if ch.isalpha() else ch
-        coord = ASK_KEY_COORDS.get(key)
+        coord = self.KEY_COORDS.get(key)
         if coord is None:
             self._step(steps, f"tap_key_{ch}",
                        self._fail(f"tap_{ch}", f"no coord for {ch}".encode()))
@@ -910,7 +927,7 @@ class AdbHarness:
             if ch.isupper():
                 if not self._step(steps, "tap_key_shift",
                                   self._shell("input", "tap",
-                                              *map(str, SHIFT_TAP))):
+                                              *map(str, self.SHIFT_TAP))):
                     return False
             if not self._tap_ask_key(steps, ch):
                 return False
@@ -1132,7 +1149,7 @@ class AdbHarness:
                 if not evidence.validate_mp4(vfh.read()):
                     errors.append("journey.mp4 invalid")
 
-        for name in SCREENSHOT_NAMES:
+        for name in self.SCREENSHOT_NAMES:
             path = os.path.join(evidence_dir, f"{name}.png")
             if not os.path.isfile(path):
                 errors.append(f"missing screenshot: {name}.png")
@@ -1143,8 +1160,8 @@ class AdbHarness:
 
         pngs = sorted(f for f in os.listdir(evidence_dir) if f.endswith(".png"))
         mp4s = sorted(f for f in os.listdir(evidence_dir) if f.endswith(".mp4"))
-        if len(pngs) != len(SCREENSHOT_NAMES):
-            errors.append(f"expected {len(SCREENSHOT_NAMES)} PNGs, found {len(pngs)}")
+        if len(pngs) != len(self.SCREENSHOT_NAMES):
+            errors.append(f"expected {len(self.SCREENSHOT_NAMES)} PNGs, found {len(pngs)}")
         if len(mp4s) != 1:
             errors.append(f"expected 1 MP4, found {len(mp4s)}")
 

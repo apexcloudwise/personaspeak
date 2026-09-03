@@ -39,6 +39,7 @@ class TestArchitecture(unittest.TestCase):
             'orchestrator.py',
             'records.py',
             'adb_harness.py',
+            'floris_harness.py',
         }
 
     def test_allowed_modules_only(self):
@@ -86,23 +87,33 @@ class TestArchitecture(unittest.TestCase):
             module_counts[name] = count
             total_lines += count
 
-        # adb_harness.py <= 1100 lines (2026-08-16: round-number raise at
-        # review suggestion — 997/1000 had no headroom; buys the #64/#62
-        # stages instead of one amendment per change)
+        # adb_harness.py <= 1120 lines (2026-09-03: +12 for the
+        # overridable host-fact class attributes that the FlorisBoard
+        # second-host journey subclasses — the 2026-08-16 1100 budget
+        # had 12 lines of headroom and the host-fact hooks consumed it)
         self.assertLessEqual(
             module_counts.get('adb_harness.py', 0),
-            1100,
-            f"adb_harness.py exceeds 1100 lines: {module_counts.get('adb_harness.py', 0)}"
+            1120,
+            f"adb_harness.py exceeds 1120 lines: {module_counts.get('adb_harness.py', 0)}"
         )
 
-        # total <= 2750 lines (2026-08-23: round-number raise for the
-        # #82 dry-run corrections — engine-log capture, post-restore
-        # settle, shift protocol, and diagnostic headless mode consume
-        # the 2026-08-16 headroom; stated in the correction PR)
+        # floris_harness.py <= 320 lines (2026-09-03: the FlorisBoard
+        # second-host journey — six sessions incl. the ADR-0003
+        # composing leg and the settings surface; identity pins and
+        # journey only, all shared phases inherited)
+        self.assertLessEqual(
+            module_counts.get('floris_harness.py', 0),
+            320,
+            f"floris_harness.py exceeds 320 lines: {module_counts.get('floris_harness.py', 0)}"
+        )
+
+        # total <= 3120 lines (2026-09-03: 2750 + the floris journey
+        # module (236) + the host-fact hooks (12) + the floris
+        # canonical-set block in evidence.py, rounded to headroom)
         self.assertLessEqual(
             total_lines,
-            2750,
-            f"Total production line count exceeds 2750 lines: {total_lines} ({module_counts})"
+            3120,
+            f"Total production line count exceeds 3120 lines: {total_lines} ({module_counts})"
         )
 
 
