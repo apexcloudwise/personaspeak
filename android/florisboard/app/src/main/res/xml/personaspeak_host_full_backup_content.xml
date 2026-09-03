@@ -1,10 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Legacy (<API 31) regime mirror of personaspeak_host_data_extraction_rules.xml. -->
-<full-backup-content>
+<!-- Legacy (<API 31) regime mirror of personaspeak_host_data_extraction_rules.xml.
+     The PersonaSpeak excludes sit outside FlorisBoard's backup allowlist, so
+     lint flags them as no-ops — they are deliberate: the allowlist already
+     keeps these paths out of backups today, and the named excludes keep
+     guarding the provider credential if the allowlist ever widens upstream.
+     tools:ignore="FullBackupContent" records that this redundancy is
+     intentional, not an oversight. -->
+<full-backup-content xmlns:tools="http://schemas.android.com/tools">
     <include domain="root" path="jetpref_datastore" />
     <include domain="file" path="ime" />
     <include domain="database" path="floris_user_dictionary" />
-    <exclude domain="file" path="personaspeak_secret.bin" />
-    <exclude domain="file" path="personaspeak_secret.bin.staging" />
-    <exclude domain="file" path="datastore/personaspeak_provider_config.preferences_pb" />
+    <exclude domain="file" path="personaspeak_secret.bin" tools:ignore="FullBackupContent" />
+    <exclude domain="file" path="personaspeak_secret.bin.staging" tools:ignore="FullBackupContent" />
+    <exclude domain="file" path="datastore/personaspeak_provider_config.preferences_pb" tools:ignore="FullBackupContent" />
 </full-backup-content>

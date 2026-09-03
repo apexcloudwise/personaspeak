@@ -5,21 +5,26 @@
      ciphertext is undecryptable off-device anyway (the AndroidKeyStore key
      is non-exportable), so exclusion is both the privacy story and the
      honest behavior. -->
-<data-extraction-rules>
+<data-extraction-rules xmlns:tools="http://schemas.android.com/tools">
+    <!-- The PersonaSpeak excludes sit outside FlorisBoard's backup allowlist,
+         so lint flags them as no-ops — they are deliberate: the allowlist
+         already keeps these paths out of backups today, and the named
+         excludes keep guarding the provider credential if the allowlist
+         ever widens upstream. -->
     <cloud-backup>
         <include domain="root" path="jetpref_datastore" />
         <include domain="file" path="ime" />
         <include domain="database" path="floris_user_dictionary" />
-        <exclude domain="file" path="personaspeak_secret.bin" />
-        <exclude domain="file" path="personaspeak_secret.bin.staging" />
-        <exclude domain="file" path="datastore/personaspeak_provider_config.preferences_pb" />
+        <exclude domain="file" path="personaspeak_secret.bin" tools:ignore="FullBackupContent" />
+        <exclude domain="file" path="personaspeak_secret.bin.staging" tools:ignore="FullBackupContent" />
+        <exclude domain="file" path="datastore/personaspeak_provider_config.preferences_pb" tools:ignore="FullBackupContent" />
     </cloud-backup>
     <device-transfer>
         <include domain="root" path="jetpref_datastore" />
         <include domain="file" path="ime" />
         <include domain="database" path="floris_user_dictionary" />
-        <exclude domain="file" path="personaspeak_secret.bin" />
-        <exclude domain="file" path="personaspeak_secret.bin.staging" />
-        <exclude domain="file" path="datastore/personaspeak_provider_config.preferences_pb" />
+        <exclude domain="file" path="personaspeak_secret.bin" tools:ignore="FullBackupContent" />
+        <exclude domain="file" path="personaspeak_secret.bin.staging" tools:ignore="FullBackupContent" />
+        <exclude domain="file" path="datastore/personaspeak_provider_config.preferences_pb" tools:ignore="FullBackupContent" />
     </device-transfer>
 </data-extraction-rules>

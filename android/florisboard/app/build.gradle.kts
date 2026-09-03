@@ -109,6 +109,23 @@ android {
         compose = true
     }
 
+    // PersonaSpeak second-host release signing (ADR-0010 P3): env-only,
+    // deliberately under PERSONASPEAK_FLORIS_RELEASE_* names so the ASK
+    // host's release keystore can never sign a Floris build. Without the
+    // env vars the release build stays unsigned — the secret-bearing run
+    // is a one-command owner step (generate-floris-release-keystore.sh
+    // produces a throwaway developer keystore out-of-tree).
+    val florisKeystorePath = System.getenv("PERSONASPEAK_FLORIS_RELEASE_KEYSTORE")
+    if (florisKeystorePath != null && file(florisKeystorePath).exists()) {
+        signingConfigs.maybeCreate("release").apply {
+            storeFile = file(florisKeystorePath)
+            storePassword = System.getenv("PERSONASPEAK_FLORIS_RELEASE_KEYSTORE_PASSWORD")
+            keyAlias = System.getenv("PERSONASPEAK_FLORIS_RELEASE_KEY_ALIAS")
+                ?: "personaspeak-floris"
+            keyPassword = System.getenv("PERSONASPEAK_FLORIS_RELEASE_KEY_PASSWORD")
+        }
+    }
+
     buildTypes {
         named("debug") {
             applicationIdSuffix = ".debug"
@@ -140,9 +157,19 @@ android {
         named("release") {
             versionNameSuffix = projectVersionNameSuffix
 
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+                // PersonaSpeak: snakeyaml's JVM-only java.beans references
+                // never run on Android; owned file, upstream rules untouched.
+                "proguard-personaspeak.pro",
+            )
             isMinifyEnabled = true
             isShrinkResources = true
+
+            if (florisKeystorePath != null && file(florisKeystorePath).exists()) {
+                signingConfig = signingConfigs.getByName("release")
+            }
 
             resValue("mipmap", "floris_app_icon", "@mipmap/ic_app_icon_stable")
             resValue("mipmap", "floris_app_icon_round", "@mipmap/ic_app_icon_stable_round")
