@@ -8,6 +8,10 @@ while the context is hot.
 
 Newest first, like all respectable patch notes.
 
+## 2026-09-04 — Weighing the Guest Wing (Protocol Included)
+
+- The hosts' first side-by-side numbers: on the pinned fixture, same boot, identical scripted typing→rewrite→apply sessions (both verified by editor readback), the Floris host costs ~49% more total PSS than ASK (150.3 MB vs 100.6 MB) and ~18% more private memory — the price of Compose chrome and jetpref, partly paid back by lazier APK paging (ASK's 61 MB APK maps in 39.6 MB of PSS; Floris's maps almost none). Latency got no number on purpose: tap-driven timing measures the harness, not the keyboard, and the record says so instead of inventing one. The blinded bake-off protocol is staged for the owner — with the blinding limits stated plainly, because two keyboards that look different cannot be fully blinded, only order-randomized and seal-rated.
+
 ## 2026-09-04 — The One-APK Law Meets the Second House
 
 - The single-APK gate now knows about the guest wing: `verify-single-apk.sh` keeps the unified root's law exactly (one APK at the canonical path, one application project) and names the two artifact classes a two-root repo legitimately produces — `florisboard/**` outputs (the evaluation root's own business) and first-party library androidTest APKs (test runners, not apps; the ADR-0003 suite leaves one behind on every local run — previously that dirtied the sweep). Lookalike directories and rogue app projects under the second root still fail. ADR-0010's consequences section now records the implemented decision instead of deferring it; 19 contract cases pin the behavior.
