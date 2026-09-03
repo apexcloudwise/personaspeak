@@ -8,6 +8,10 @@ while the context is hot.
 
 Newest first, like all respectable patch notes.
 
+## 2026-09-04 — The One-APK Law Meets the Second House
+
+- The single-APK gate now knows about the guest wing: `verify-single-apk.sh` keeps the unified root's law exactly (one APK at the canonical path, one application project) and names the two artifact classes a two-root repo legitimately produces — `florisboard/**` outputs (the evaluation root's own business) and first-party library androidTest APKs (test runners, not apps; the ADR-0003 suite leaves one behind on every local run — previously that dirtied the sweep). Lookalike directories and rogue app projects under the second root still fail. ADR-0010's consequences section now records the implemented decision instead of deferring it; 19 contract cases pin the behavior.
+
 ## 2026-09-03 — The Guest Wing's Privacy Interview
 
 - The FlorisBoard host gets its M7-bar privacy and egress audit (`docs/evidence/floris-host/privacy-and-egress-audit.md`): the vendored keyboard code performs zero direct network I/O — no HTTP client exists in the tree, no crash reporting, no telemetry; every egress byte either rides the opt-in, pinned-endpoint PersonaSpeak provider calls the ASK audit already qualified, or is one disclosed library-mediated exception (EmojiCompat may fetch font metadata from Google at startup on GMS devices, reachable because PersonaSpeak added INTERNET — upstream never had it; owner decides keep-or-disable).

@@ -100,12 +100,18 @@ Concretely:
 
 ## Consequences
 
-- **The repo now builds two Android apps.** `verify-single-apk.sh` still
-  gates the unified root (its scope is that root's project graph) but its
-  "exactly one APK under any outputs/" sweep will see FlorisBoard APKs after
-  a local second-host build. That interaction is documented here; scoping
-  the sweep (or promoting it to a two-root gate) is a promotion-time
-  decision, not a draft-PR one.
+- **The repo now builds two Android apps, and the single-APK gate is scoped
+  to match (P5, implemented 2026-09-04).** `verify-single-apk.sh` keeps the
+  unified root's law exactly — one APK at the canonical path, one
+  application project at `keyboard/ime/app/build.gradle` — and names two
+  tolerated artifact classes: `florisboard/**` outputs (the evaluation
+  second root's own business) and `*/build/outputs/apk/androidTest/**`
+  (first-party library instrumentation APKs — test runners, never
+  shippable; the `:personaspeak-ime` ADR-0003 suite produces one on any
+  local `connectedAndroidTest` run). A lookalike directory
+  (`florisboard-fake/`) or a stray app project under the second root is
+  still a finding; the second root may carry at most its one sanctioned
+  application project (`florisboard/app/build.gradle.kts`).
 - **Session isolation differs by host, deliberately.** The ASK host scopes
   panel state with per-session `ImeViewTreeOwners` (its IME window has no
   Compose owners); the FlorisBoard host rides the window's real
