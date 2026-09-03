@@ -1,0 +1,10 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<testsuite name="biz.pixelperfectstudios.personaspeak.ime.editor.RealInputConnectionComposingTest" tests="2" failures="0" errors="0" skipped="0" time="4.054" timestamp="2026-09-03T16:45:37" hostname="localhost">
+  <properties>
+    <property name="device" value="M2_Qual_Fixture(AVD) - 14" />
+    <property name="flavor" value="" />
+    <property name="project" value=":personaspeak-ime" />
+  </properties>
+  <testcase name="replaceOverLiveComposingSpanReplacesWholeDraft_LegacyPath" classname="biz.pixelperfectstudios.personaspeak.ime.editor.RealInputConnectionComposingTest" time="0.861" />
+  <testcase name="replaceOverLiveComposingSpanReplacesWholeDraft_Api34Path" classname="biz.pixelperfectstudios.personaspeak.ime.editor.RealInputConnectionComposingTest" time="1.115" />
+</testsuite>

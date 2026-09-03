@@ -1,0 +1,4027 @@
+[
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/emulator/emulator",
+      "-avd",
+      "M2_Qual_Fixture",
+      "-snapshot",
+      "m2_pristine",
+      "-no-snapshot-save",
+      "-port",
+      "5554",
+      "-gpu",
+      "swiftshader_indirect"
+    ],
+    "start_utc": "2026-09-03T17:07:46Z",
+    "end_utc": "2026-09-03T17:07:46Z",
+    "transport_rc": 0,
+    "remote_rc": null,
+    "timed_out": false,
+    "kind": "launch"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "wait-for-device"
+    ],
+    "start_utc": "2026-09-03T17:07:46Z",
+    "end_utc": "2026-09-03T17:07:52Z",
+    "transport_rc": 0,
+    "remote_rc": null,
+    "timed_out": false,
+    "kind": "host"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "getprop",
+      "sys.boot_completed"
+    ],
+    "start_utc": "2026-09-03T17:07:52Z",
+    "end_utc": "2026-09-03T17:07:53Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "getprop",
+      "ro.build.fingerprint"
+    ],
+    "start_utc": "2026-09-03T17:07:53Z",
+    "end_utc": "2026-09-03T17:07:53Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "getprop",
+      "ro.build.version.sdk"
+    ],
+    "start_utc": "2026-09-03T17:07:53Z",
+    "end_utc": "2026-09-03T17:07:53Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "wm",
+      "size"
+    ],
+    "start_utc": "2026-09-03T17:07:53Z",
+    "end_utc": "2026-09-03T17:07:53Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "pm",
+      "path",
+      "biz.pixelperfectstudios.personaspeak.floris.debug"
+    ],
+    "start_utc": "2026-09-03T17:07:53Z",
+    "end_utc": "2026-09-03T17:07:53Z",
+    "transport_rc": 1,
+    "remote_rc": 1,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "settings",
+      "get",
+      "secure",
+      "enabled_input_methods"
+    ],
+    "start_utc": "2026-09-03T17:07:53Z",
+    "end_utc": "2026-09-03T17:07:53Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "settings",
+      "get",
+      "secure",
+      "default_input_method"
+    ],
+    "start_utc": "2026-09-03T17:07:53Z",
+    "end_utc": "2026-09-03T17:07:53Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "getprop",
+      "persist.sys.timezone"
+    ],
+    "start_utc": "2026-09-03T17:07:53Z",
+    "end_utc": "2026-09-03T17:07:53Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "getprop",
+      "ro.product.locale"
+    ],
+    "start_utc": "2026-09-03T17:07:53Z",
+    "end_utc": "2026-09-03T17:07:53Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "getprop",
+      "ro.product.cpu.abi"
+    ],
+    "start_utc": "2026-09-03T17:07:53Z",
+    "end_utc": "2026-09-03T17:07:53Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "getprop",
+      "qemu.sf.lcd_density"
+    ],
+    "start_utc": "2026-09-03T17:07:53Z",
+    "end_utc": "2026-09-03T17:07:53Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "settings",
+      "get",
+      "global",
+      "window_animation_scale"
+    ],
+    "start_utc": "2026-09-03T17:07:53Z",
+    "end_utc": "2026-09-03T17:07:53Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "settings",
+      "get",
+      "global",
+      "transition_animation_scale"
+    ],
+    "start_utc": "2026-09-03T17:07:53Z",
+    "end_utc": "2026-09-03T17:07:53Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "settings",
+      "get",
+      "global",
+      "animator_duration_scale"
+    ],
+    "start_utc": "2026-09-03T17:07:53Z",
+    "end_utc": "2026-09-03T17:07:53Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "settings",
+      "get",
+      "secure",
+      "default_input_method"
+    ],
+    "start_utc": "2026-09-03T17:07:53Z",
+    "end_utc": "2026-09-03T17:07:53Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "install",
+      "-r",
+      "/Users/seraph/workspace/personaspeak-floris122/android/florisboard/app/build/outputs/apk/debug/app-debug.apk"
+    ],
+    "start_utc": "2026-09-03T17:07:54Z",
+    "end_utc": "2026-09-03T17:07:54Z",
+    "transport_rc": 0,
+    "remote_rc": null,
+    "timed_out": false,
+    "kind": "host"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "dumpsys",
+      "package",
+      "biz.pixelperfectstudios.personaspeak.floris.debug"
+    ],
+    "start_utc": "2026-09-03T17:07:54Z",
+    "end_utc": "2026-09-03T17:07:54Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "ime",
+      "enable",
+      "biz.pixelperfectstudios.personaspeak.floris.debug/dev.patrickgold.florisboard.FlorisImeService"
+    ],
+    "start_utc": "2026-09-03T17:07:54Z",
+    "end_utc": "2026-09-03T17:07:54Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "ime",
+      "set",
+      "biz.pixelperfectstudios.personaspeak.floris.debug/dev.patrickgold.florisboard.FlorisImeService"
+    ],
+    "start_utc": "2026-09-03T17:07:54Z",
+    "end_utc": "2026-09-03T17:07:54Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "am",
+      "start",
+      "-a",
+      "android.settings.SETTINGS"
+    ],
+    "start_utc": "2026-09-03T17:07:54Z",
+    "end_utc": "2026-09-03T17:07:55Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "uiautomator",
+      "dump",
+      "/sdcard/window_dump.xml"
+    ],
+    "start_utc": "2026-09-03T17:07:55Z",
+    "end_utc": "2026-09-03T17:07:58Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "pull",
+      "/sdcard/window_dump.xml",
+      "/Users/seraph/floris-journey-evidence/20260903T170746Z/artifacts/home_1.xml"
+    ],
+    "start_utc": "2026-09-03T17:07:58Z",
+    "end_utc": "2026-09-03T17:07:58Z",
+    "transport_rc": 0,
+    "remote_rc": null,
+    "timed_out": false,
+    "kind": "host"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "tap",
+      "540",
+      "659"
+    ],
+    "start_utc": "2026-09-03T17:07:58Z",
+    "end_utc": "2026-09-03T17:07:58Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "uiautomator",
+      "dump",
+      "/sdcard/window_dump.xml"
+    ],
+    "start_utc": "2026-09-03T17:07:58Z",
+    "end_utc": "2026-09-03T17:08:01Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "pull",
+      "/sdcard/window_dump.xml",
+      "/Users/seraph/floris-journey-evidence/20260903T170746Z/artifacts/focus_1.xml"
+    ],
+    "start_utc": "2026-09-03T17:08:01Z",
+    "end_utc": "2026-09-03T17:08:01Z",
+    "transport_rc": 0,
+    "remote_rc": null,
+    "timed_out": false,
+    "kind": "host"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "dumpsys",
+      "input_method"
+    ],
+    "start_utc": "2026-09-03T17:08:01Z",
+    "end_utc": "2026-09-03T17:08:02Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "dumpsys",
+      "window",
+      "windows"
+    ],
+    "start_utc": "2026-09-03T17:08:02Z",
+    "end_utc": "2026-09-03T17:08:02Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "tap",
+      "88",
+      "2054"
+    ],
+    "start_utc": "2026-09-03T17:08:02Z",
+    "end_utc": "2026-09-03T17:08:02Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "tap",
+      "486",
+      "1760"
+    ],
+    "start_utc": "2026-09-03T17:08:02Z",
+    "end_utc": "2026-09-03T17:08:02Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "tap",
+      "273",
+      "1760"
+    ],
+    "start_utc": "2026-09-03T17:08:02Z",
+    "end_utc": "2026-09-03T17:08:02Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "tap",
+      "109",
+      "1904"
+    ],
+    "start_utc": "2026-09-03T17:08:02Z",
+    "end_utc": "2026-09-03T17:08:02Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "tap",
+      "592",
+      "2200"
+    ],
+    "start_utc": "2026-09-03T17:08:02Z",
+    "end_utc": "2026-09-03T17:08:02Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "tap",
+      "109",
+      "1904"
+    ],
+    "start_utc": "2026-09-03T17:08:02Z",
+    "end_utc": "2026-09-03T17:08:02Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "tap",
+      "486",
+      "1760"
+    ],
+    "start_utc": "2026-09-03T17:08:02Z",
+    "end_utc": "2026-09-03T17:08:02Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "tap",
+      "592",
+      "2200"
+    ],
+    "start_utc": "2026-09-03T17:08:02Z",
+    "end_utc": "2026-09-03T17:08:02Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "tap",
+      "218",
+      "1904"
+    ],
+    "start_utc": "2026-09-03T17:08:02Z",
+    "end_utc": "2026-09-03T17:08:02Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "tap",
+      "808",
+      "1760"
+    ],
+    "start_utc": "2026-09-03T17:08:02Z",
+    "end_utc": "2026-09-03T17:08:02Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "tap",
+      "330",
+      "2054"
+    ],
+    "start_utc": "2026-09-03T17:08:02Z",
+    "end_utc": "2026-09-03T17:08:02Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "tap",
+      "853",
+      "2200"
+    ],
+    "start_utc": "2026-09-03T17:08:02Z",
+    "end_utc": "2026-09-03T17:08:02Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "uiautomator",
+      "dump",
+      "/sdcard/window_dump.xml"
+    ],
+    "start_utc": "2026-09-03T17:08:02Z",
+    "end_utc": "2026-09-03T17:08:05Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "pull",
+      "/sdcard/window_dump.xml",
+      "/Users/seraph/floris-journey-evidence/20260903T170746Z/artifacts/typed_1.xml"
+    ],
+    "start_utc": "2026-09-03T17:08:05Z",
+    "end_utc": "2026-09-03T17:08:05Z",
+    "transport_rc": 0,
+    "remote_rc": null,
+    "timed_out": false,
+    "kind": "host"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "screencap",
+      "-p",
+      "/sdcard/01-idle-typed.png"
+    ],
+    "start_utc": "2026-09-03T17:08:05Z",
+    "end_utc": "2026-09-03T17:08:05Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "pull",
+      "/sdcard/01-idle-typed.png",
+      "/Users/seraph/floris-journey-evidence/20260903T170746Z/artifacts/01-idle-typed.png"
+    ],
+    "start_utc": "2026-09-03T17:08:05Z",
+    "end_utc": "2026-09-03T17:08:05Z",
+    "transport_rc": 0,
+    "remote_rc": null,
+    "timed_out": false,
+    "kind": "host"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "tap",
+      "824",
+      "1605",
+      ";",
+      "sleep",
+      "0.15",
+      ";",
+      "input",
+      "tap",
+      "824",
+      "1605"
+    ],
+    "start_utc": "2026-09-03T17:08:05Z",
+    "end_utc": "2026-09-03T17:08:05Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "uiautomator",
+      "dump",
+      "/sdcard/window_dump.xml"
+    ],
+    "start_utc": "2026-09-03T17:08:05Z",
+    "end_utc": "2026-09-03T17:08:07Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "pull",
+      "/sdcard/window_dump.xml",
+      "/Users/seraph/floris-journey-evidence/20260903T170746Z/artifacts/after_cancel.xml"
+    ],
+    "start_utc": "2026-09-03T17:08:07Z",
+    "end_utc": "2026-09-03T17:08:07Z",
+    "transport_rc": 0,
+    "remote_rc": null,
+    "timed_out": false,
+    "kind": "host"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "dumpsys",
+      "window",
+      "windows"
+    ],
+    "start_utc": "2026-09-03T17:08:07Z",
+    "end_utc": "2026-09-03T17:08:07Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "screencap",
+      "-p",
+      "/sdcard/02-loading-cancel.png"
+    ],
+    "start_utc": "2026-09-03T17:08:07Z",
+    "end_utc": "2026-09-03T17:08:07Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "pull",
+      "/sdcard/02-loading-cancel.png",
+      "/Users/seraph/floris-journey-evidence/20260903T170746Z/artifacts/02-loading-cancel.png"
+    ],
+    "start_utc": "2026-09-03T17:08:07Z",
+    "end_utc": "2026-09-03T17:08:07Z",
+    "transport_rc": 0,
+    "remote_rc": null,
+    "timed_out": false,
+    "kind": "host"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "keyevent",
+      "4",
+      ";",
+      "input",
+      "keyevent",
+      "4"
+    ],
+    "start_utc": "2026-09-03T17:08:07Z",
+    "end_utc": "2026-09-03T17:08:07Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "am",
+      "start",
+      "-a",
+      "android.settings.SETTINGS"
+    ],
+    "start_utc": "2026-09-03T17:08:07Z",
+    "end_utc": "2026-09-03T17:08:07Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "uiautomator",
+      "dump",
+      "/sdcard/window_dump.xml"
+    ],
+    "start_utc": "2026-09-03T17:08:07Z",
+    "end_utc": "2026-09-03T17:08:10Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "pull",
+      "/sdcard/window_dump.xml",
+      "/Users/seraph/floris-journey-evidence/20260903T170746Z/artifacts/home_2.xml"
+    ],
+    "start_utc": "2026-09-03T17:08:10Z",
+    "end_utc": "2026-09-03T17:08:10Z",
+    "transport_rc": 0,
+    "remote_rc": null,
+    "timed_out": false,
+    "kind": "host"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "tap",
+      "540",
+      "659"
+    ],
+    "start_utc": "2026-09-03T17:08:10Z",
+    "end_utc": "2026-09-03T17:08:10Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "uiautomator",
+      "dump",
+      "/sdcard/window_dump.xml"
+    ],
+    "start_utc": "2026-09-03T17:08:10Z",
+    "end_utc": "2026-09-03T17:08:13Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "pull",
+      "/sdcard/window_dump.xml",
+      "/Users/seraph/floris-journey-evidence/20260903T170746Z/artifacts/focus_2.xml"
+    ],
+    "start_utc": "2026-09-03T17:08:13Z",
+    "end_utc": "2026-09-03T17:08:13Z",
+    "transport_rc": 0,
+    "remote_rc": null,
+    "timed_out": false,
+    "kind": "host"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "dumpsys",
+      "input_method"
+    ],
+    "start_utc": "2026-09-03T17:08:13Z",
+    "end_utc": "2026-09-03T17:08:13Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "dumpsys",
+      "window",
+      "windows"
+    ],
+    "start_utc": "2026-09-03T17:08:13Z",
+    "end_utc": "2026-09-03T17:08:13Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "tap",
+      "88",
+      "2054"
+    ],
+    "start_utc": "2026-09-03T17:08:13Z",
+    "end_utc": "2026-09-03T17:08:13Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "tap",
+      "486",
+      "1760"
+    ],
+    "start_utc": "2026-09-03T17:08:13Z",
+    "end_utc": "2026-09-03T17:08:13Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "tap",
+      "273",
+      "1760"
+    ],
+    "start_utc": "2026-09-03T17:08:13Z",
+    "end_utc": "2026-09-03T17:08:13Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "tap",
+      "109",
+      "1904"
+    ],
+    "start_utc": "2026-09-03T17:08:13Z",
+    "end_utc": "2026-09-03T17:08:13Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "tap",
+      "592",
+      "2200"
+    ],
+    "start_utc": "2026-09-03T17:08:13Z",
+    "end_utc": "2026-09-03T17:08:14Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "tap",
+      "109",
+      "1904"
+    ],
+    "start_utc": "2026-09-03T17:08:14Z",
+    "end_utc": "2026-09-03T17:08:14Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "tap",
+      "486",
+      "1760"
+    ],
+    "start_utc": "2026-09-03T17:08:14Z",
+    "end_utc": "2026-09-03T17:08:14Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "tap",
+      "592",
+      "2200"
+    ],
+    "start_utc": "2026-09-03T17:08:14Z",
+    "end_utc": "2026-09-03T17:08:14Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "tap",
+      "218",
+      "1904"
+    ],
+    "start_utc": "2026-09-03T17:08:14Z",
+    "end_utc": "2026-09-03T17:08:14Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "tap",
+      "808",
+      "1760"
+    ],
+    "start_utc": "2026-09-03T17:08:14Z",
+    "end_utc": "2026-09-03T17:08:14Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "tap",
+      "330",
+      "2054"
+    ],
+    "start_utc": "2026-09-03T17:08:14Z",
+    "end_utc": "2026-09-03T17:08:14Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "tap",
+      "853",
+      "2200"
+    ],
+    "start_utc": "2026-09-03T17:08:14Z",
+    "end_utc": "2026-09-03T17:08:14Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "uiautomator",
+      "dump",
+      "/sdcard/window_dump.xml"
+    ],
+    "start_utc": "2026-09-03T17:08:14Z",
+    "end_utc": "2026-09-03T17:08:16Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "pull",
+      "/sdcard/window_dump.xml",
+      "/Users/seraph/floris-journey-evidence/20260903T170746Z/artifacts/typed_2.xml"
+    ],
+    "start_utc": "2026-09-03T17:08:16Z",
+    "end_utc": "2026-09-03T17:08:16Z",
+    "transport_rc": 0,
+    "remote_rc": null,
+    "timed_out": false,
+    "kind": "host"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "tap",
+      "824",
+      "1605"
+    ],
+    "start_utc": "2026-09-03T17:08:16Z",
+    "end_utc": "2026-09-03T17:08:16Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "dumpsys",
+      "window",
+      "windows"
+    ],
+    "start_utc": "2026-09-03T17:08:17Z",
+    "end_utc": "2026-09-03T17:08:17Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "screencap",
+      "-p",
+      "/sdcard/03-review.png"
+    ],
+    "start_utc": "2026-09-03T17:08:17Z",
+    "end_utc": "2026-09-03T17:08:17Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "pull",
+      "/sdcard/03-review.png",
+      "/Users/seraph/floris-journey-evidence/20260903T170746Z/artifacts/03-review.png"
+    ],
+    "start_utc": "2026-09-03T17:08:17Z",
+    "end_utc": "2026-09-03T17:08:17Z",
+    "transport_rc": 0,
+    "remote_rc": null,
+    "timed_out": false,
+    "kind": "host"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "tap",
+      "120",
+      "1605"
+    ],
+    "start_utc": "2026-09-03T17:08:17Z",
+    "end_utc": "2026-09-03T17:08:17Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "uiautomator",
+      "dump",
+      "/sdcard/window_dump.xml"
+    ],
+    "start_utc": "2026-09-03T17:08:17Z",
+    "end_utc": "2026-09-03T17:08:19Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "pull",
+      "/sdcard/window_dump.xml",
+      "/Users/seraph/floris-journey-evidence/20260903T170746Z/artifacts/after_apply.xml"
+    ],
+    "start_utc": "2026-09-03T17:08:19Z",
+    "end_utc": "2026-09-03T17:08:19Z",
+    "transport_rc": 0,
+    "remote_rc": null,
+    "timed_out": false,
+    "kind": "host"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "screencap",
+      "-p",
+      "/sdcard/04-applied.png"
+    ],
+    "start_utc": "2026-09-03T17:08:19Z",
+    "end_utc": "2026-09-03T17:08:19Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "pull",
+      "/sdcard/04-applied.png",
+      "/Users/seraph/floris-journey-evidence/20260903T170746Z/artifacts/04-applied.png"
+    ],
+    "start_utc": "2026-09-03T17:08:19Z",
+    "end_utc": "2026-09-03T17:08:19Z",
+    "transport_rc": 0,
+    "remote_rc": null,
+    "timed_out": false,
+    "kind": "host"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "keyevent",
+      "4",
+      ";",
+      "input",
+      "keyevent",
+      "4"
+    ],
+    "start_utc": "2026-09-03T17:08:19Z",
+    "end_utc": "2026-09-03T17:08:19Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "am",
+      "start",
+      "-a",
+      "android.settings.SETTINGS"
+    ],
+    "start_utc": "2026-09-03T17:08:19Z",
+    "end_utc": "2026-09-03T17:08:20Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "uiautomator",
+      "dump",
+      "/sdcard/window_dump.xml"
+    ],
+    "start_utc": "2026-09-03T17:08:20Z",
+    "end_utc": "2026-09-03T17:08:22Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "pull",
+      "/sdcard/window_dump.xml",
+      "/Users/seraph/floris-journey-evidence/20260903T170746Z/artifacts/home_3.xml"
+    ],
+    "start_utc": "2026-09-03T17:08:22Z",
+    "end_utc": "2026-09-03T17:08:22Z",
+    "transport_rc": 0,
+    "remote_rc": null,
+    "timed_out": false,
+    "kind": "host"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "tap",
+      "540",
+      "659"
+    ],
+    "start_utc": "2026-09-03T17:08:22Z",
+    "end_utc": "2026-09-03T17:08:22Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "uiautomator",
+      "dump",
+      "/sdcard/window_dump.xml"
+    ],
+    "start_utc": "2026-09-03T17:08:22Z",
+    "end_utc": "2026-09-03T17:08:25Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "pull",
+      "/sdcard/window_dump.xml",
+      "/Users/seraph/floris-journey-evidence/20260903T170746Z/artifacts/focus_3.xml"
+    ],
+    "start_utc": "2026-09-03T17:08:25Z",
+    "end_utc": "2026-09-03T17:08:25Z",
+    "transport_rc": 0,
+    "remote_rc": null,
+    "timed_out": false,
+    "kind": "host"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "dumpsys",
+      "input_method"
+    ],
+    "start_utc": "2026-09-03T17:08:25Z",
+    "end_utc": "2026-09-03T17:08:25Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "dumpsys",
+      "window",
+      "windows"
+    ],
+    "start_utc": "2026-09-03T17:08:25Z",
+    "end_utc": "2026-09-03T17:08:25Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "tap",
+      "88",
+      "2054"
+    ],
+    "start_utc": "2026-09-03T17:08:25Z",
+    "end_utc": "2026-09-03T17:08:25Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "tap",
+      "486",
+      "1760"
+    ],
+    "start_utc": "2026-09-03T17:08:25Z",
+    "end_utc": "2026-09-03T17:08:25Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "tap",
+      "273",
+      "1760"
+    ],
+    "start_utc": "2026-09-03T17:08:25Z",
+    "end_utc": "2026-09-03T17:08:25Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "tap",
+      "109",
+      "1904"
+    ],
+    "start_utc": "2026-09-03T17:08:25Z",
+    "end_utc": "2026-09-03T17:08:25Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "tap",
+      "592",
+      "2200"
+    ],
+    "start_utc": "2026-09-03T17:08:25Z",
+    "end_utc": "2026-09-03T17:08:25Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "tap",
+      "109",
+      "1904"
+    ],
+    "start_utc": "2026-09-03T17:08:25Z",
+    "end_utc": "2026-09-03T17:08:26Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "tap",
+      "486",
+      "1760"
+    ],
+    "start_utc": "2026-09-03T17:08:26Z",
+    "end_utc": "2026-09-03T17:08:26Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "tap",
+      "592",
+      "2200"
+    ],
+    "start_utc": "2026-09-03T17:08:26Z",
+    "end_utc": "2026-09-03T17:08:26Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "tap",
+      "218",
+      "1904"
+    ],
+    "start_utc": "2026-09-03T17:08:26Z",
+    "end_utc": "2026-09-03T17:08:26Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "tap",
+      "808",
+      "1760"
+    ],
+    "start_utc": "2026-09-03T17:08:26Z",
+    "end_utc": "2026-09-03T17:08:26Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "tap",
+      "330",
+      "2054"
+    ],
+    "start_utc": "2026-09-03T17:08:26Z",
+    "end_utc": "2026-09-03T17:08:26Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "tap",
+      "853",
+      "2200"
+    ],
+    "start_utc": "2026-09-03T17:08:26Z",
+    "end_utc": "2026-09-03T17:08:26Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "uiautomator",
+      "dump",
+      "/sdcard/window_dump.xml"
+    ],
+    "start_utc": "2026-09-03T17:08:26Z",
+    "end_utc": "2026-09-03T17:08:28Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "pull",
+      "/sdcard/window_dump.xml",
+      "/Users/seraph/floris-journey-evidence/20260903T170746Z/artifacts/typed_3.xml"
+    ],
+    "start_utc": "2026-09-03T17:08:28Z",
+    "end_utc": "2026-09-03T17:08:28Z",
+    "transport_rc": 0,
+    "remote_rc": null,
+    "timed_out": false,
+    "kind": "host"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "tap",
+      "824",
+      "1605"
+    ],
+    "start_utc": "2026-09-03T17:08:28Z",
+    "end_utc": "2026-09-03T17:08:28Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "dumpsys",
+      "window",
+      "windows"
+    ],
+    "start_utc": "2026-09-03T17:08:28Z",
+    "end_utc": "2026-09-03T17:08:28Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "tap",
+      "560",
+      "1605"
+    ],
+    "start_utc": "2026-09-03T17:08:28Z",
+    "end_utc": "2026-09-03T17:08:28Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "uiautomator",
+      "dump",
+      "/sdcard/window_dump.xml"
+    ],
+    "start_utc": "2026-09-03T17:08:28Z",
+    "end_utc": "2026-09-03T17:08:30Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "pull",
+      "/sdcard/window_dump.xml",
+      "/Users/seraph/floris-journey-evidence/20260903T170746Z/artifacts/after_dismiss.xml"
+    ],
+    "start_utc": "2026-09-03T17:08:30Z",
+    "end_utc": "2026-09-03T17:08:30Z",
+    "transport_rc": 0,
+    "remote_rc": null,
+    "timed_out": false,
+    "kind": "host"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "dumpsys",
+      "window",
+      "windows"
+    ],
+    "start_utc": "2026-09-03T17:08:30Z",
+    "end_utc": "2026-09-03T17:08:30Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "screencap",
+      "-p",
+      "/sdcard/05-dismissed.png"
+    ],
+    "start_utc": "2026-09-03T17:08:30Z",
+    "end_utc": "2026-09-03T17:08:31Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "pull",
+      "/sdcard/05-dismissed.png",
+      "/Users/seraph/floris-journey-evidence/20260903T170746Z/artifacts/05-dismissed.png"
+    ],
+    "start_utc": "2026-09-03T17:08:31Z",
+    "end_utc": "2026-09-03T17:08:31Z",
+    "transport_rc": 0,
+    "remote_rc": null,
+    "timed_out": false,
+    "kind": "host"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "keyevent",
+      "4",
+      ";",
+      "input",
+      "keyevent",
+      "4"
+    ],
+    "start_utc": "2026-09-03T17:08:31Z",
+    "end_utc": "2026-09-03T17:08:31Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "am",
+      "start",
+      "-a",
+      "android.settings.SETTINGS"
+    ],
+    "start_utc": "2026-09-03T17:08:31Z",
+    "end_utc": "2026-09-03T17:08:31Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "uiautomator",
+      "dump",
+      "/sdcard/window_dump.xml"
+    ],
+    "start_utc": "2026-09-03T17:08:31Z",
+    "end_utc": "2026-09-03T17:08:33Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "pull",
+      "/sdcard/window_dump.xml",
+      "/Users/seraph/floris-journey-evidence/20260903T170746Z/artifacts/home_4.xml"
+    ],
+    "start_utc": "2026-09-03T17:08:33Z",
+    "end_utc": "2026-09-03T17:08:33Z",
+    "transport_rc": 0,
+    "remote_rc": null,
+    "timed_out": false,
+    "kind": "host"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "tap",
+      "540",
+      "659"
+    ],
+    "start_utc": "2026-09-03T17:08:33Z",
+    "end_utc": "2026-09-03T17:08:33Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "uiautomator",
+      "dump",
+      "/sdcard/window_dump.xml"
+    ],
+    "start_utc": "2026-09-03T17:08:33Z",
+    "end_utc": "2026-09-03T17:08:36Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "pull",
+      "/sdcard/window_dump.xml",
+      "/Users/seraph/floris-journey-evidence/20260903T170746Z/artifacts/focus_4.xml"
+    ],
+    "start_utc": "2026-09-03T17:08:36Z",
+    "end_utc": "2026-09-03T17:08:36Z",
+    "transport_rc": 0,
+    "remote_rc": null,
+    "timed_out": false,
+    "kind": "host"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "dumpsys",
+      "input_method"
+    ],
+    "start_utc": "2026-09-03T17:08:36Z",
+    "end_utc": "2026-09-03T17:08:36Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "dumpsys",
+      "window",
+      "windows"
+    ],
+    "start_utc": "2026-09-03T17:08:36Z",
+    "end_utc": "2026-09-03T17:08:36Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "tap",
+      "88",
+      "2054"
+    ],
+    "start_utc": "2026-09-03T17:08:36Z",
+    "end_utc": "2026-09-03T17:08:36Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "tap",
+      "486",
+      "1760"
+    ],
+    "start_utc": "2026-09-03T17:08:36Z",
+    "end_utc": "2026-09-03T17:08:36Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "tap",
+      "273",
+      "1760"
+    ],
+    "start_utc": "2026-09-03T17:08:36Z",
+    "end_utc": "2026-09-03T17:08:36Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "tap",
+      "109",
+      "1904"
+    ],
+    "start_utc": "2026-09-03T17:08:36Z",
+    "end_utc": "2026-09-03T17:08:36Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "tap",
+      "592",
+      "2200"
+    ],
+    "start_utc": "2026-09-03T17:08:36Z",
+    "end_utc": "2026-09-03T17:08:36Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "tap",
+      "109",
+      "1904"
+    ],
+    "start_utc": "2026-09-03T17:08:36Z",
+    "end_utc": "2026-09-03T17:08:36Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "tap",
+      "486",
+      "1760"
+    ],
+    "start_utc": "2026-09-03T17:08:36Z",
+    "end_utc": "2026-09-03T17:08:36Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "tap",
+      "592",
+      "2200"
+    ],
+    "start_utc": "2026-09-03T17:08:36Z",
+    "end_utc": "2026-09-03T17:08:36Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "tap",
+      "218",
+      "1904"
+    ],
+    "start_utc": "2026-09-03T17:08:36Z",
+    "end_utc": "2026-09-03T17:08:36Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "tap",
+      "808",
+      "1760"
+    ],
+    "start_utc": "2026-09-03T17:08:36Z",
+    "end_utc": "2026-09-03T17:08:36Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "tap",
+      "330",
+      "2054"
+    ],
+    "start_utc": "2026-09-03T17:08:36Z",
+    "end_utc": "2026-09-03T17:08:36Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "tap",
+      "853",
+      "2200"
+    ],
+    "start_utc": "2026-09-03T17:08:36Z",
+    "end_utc": "2026-09-03T17:08:36Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "uiautomator",
+      "dump",
+      "/sdcard/window_dump.xml"
+    ],
+    "start_utc": "2026-09-03T17:08:36Z",
+    "end_utc": "2026-09-03T17:08:38Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "pull",
+      "/sdcard/window_dump.xml",
+      "/Users/seraph/floris-journey-evidence/20260903T170746Z/artifacts/typed_4.xml"
+    ],
+    "start_utc": "2026-09-03T17:08:38Z",
+    "end_utc": "2026-09-03T17:08:38Z",
+    "transport_rc": 0,
+    "remote_rc": null,
+    "timed_out": false,
+    "kind": "host"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "tap",
+      "824",
+      "1605"
+    ],
+    "start_utc": "2026-09-03T17:08:38Z",
+    "end_utc": "2026-09-03T17:08:38Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "dumpsys",
+      "window",
+      "windows"
+    ],
+    "start_utc": "2026-09-03T17:08:39Z",
+    "end_utc": "2026-09-03T17:08:39Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "keyevent",
+      "67"
+    ],
+    "start_utc": "2026-09-03T17:08:39Z",
+    "end_utc": "2026-09-03T17:08:39Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "keyevent",
+      "67"
+    ],
+    "start_utc": "2026-09-03T17:08:39Z",
+    "end_utc": "2026-09-03T17:08:39Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "keyevent",
+      "67"
+    ],
+    "start_utc": "2026-09-03T17:08:39Z",
+    "end_utc": "2026-09-03T17:08:39Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "keyevent",
+      "67"
+    ],
+    "start_utc": "2026-09-03T17:08:39Z",
+    "end_utc": "2026-09-03T17:08:39Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "keyevent",
+      "67"
+    ],
+    "start_utc": "2026-09-03T17:08:39Z",
+    "end_utc": "2026-09-03T17:08:39Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "keyevent",
+      "67"
+    ],
+    "start_utc": "2026-09-03T17:08:39Z",
+    "end_utc": "2026-09-03T17:08:39Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "keyevent",
+      "67"
+    ],
+    "start_utc": "2026-09-03T17:08:39Z",
+    "end_utc": "2026-09-03T17:08:39Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "keyevent",
+      "67"
+    ],
+    "start_utc": "2026-09-03T17:08:39Z",
+    "end_utc": "2026-09-03T17:08:40Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "keyevent",
+      "67"
+    ],
+    "start_utc": "2026-09-03T17:08:40Z",
+    "end_utc": "2026-09-03T17:08:40Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "keyevent",
+      "67"
+    ],
+    "start_utc": "2026-09-03T17:08:40Z",
+    "end_utc": "2026-09-03T17:08:40Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "keyevent",
+      "67"
+    ],
+    "start_utc": "2026-09-03T17:08:40Z",
+    "end_utc": "2026-09-03T17:08:40Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "tap",
+      "88",
+      "2054"
+    ],
+    "start_utc": "2026-09-03T17:08:40Z",
+    "end_utc": "2026-09-03T17:08:40Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "tap",
+      "486",
+      "1760"
+    ],
+    "start_utc": "2026-09-03T17:08:40Z",
+    "end_utc": "2026-09-03T17:08:40Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "tap",
+      "273",
+      "1760"
+    ],
+    "start_utc": "2026-09-03T17:08:40Z",
+    "end_utc": "2026-09-03T17:08:40Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "tap",
+      "109",
+      "1904"
+    ],
+    "start_utc": "2026-09-03T17:08:40Z",
+    "end_utc": "2026-09-03T17:08:40Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "tap",
+      "592",
+      "2200"
+    ],
+    "start_utc": "2026-09-03T17:08:40Z",
+    "end_utc": "2026-09-03T17:08:40Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "tap",
+      "109",
+      "1904"
+    ],
+    "start_utc": "2026-09-03T17:08:40Z",
+    "end_utc": "2026-09-03T17:08:40Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "tap",
+      "486",
+      "1760"
+    ],
+    "start_utc": "2026-09-03T17:08:40Z",
+    "end_utc": "2026-09-03T17:08:40Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "tap",
+      "592",
+      "2200"
+    ],
+    "start_utc": "2026-09-03T17:08:40Z",
+    "end_utc": "2026-09-03T17:08:40Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "tap",
+      "218",
+      "1904"
+    ],
+    "start_utc": "2026-09-03T17:08:40Z",
+    "end_utc": "2026-09-03T17:08:40Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "tap",
+      "273",
+      "1760"
+    ],
+    "start_utc": "2026-09-03T17:08:40Z",
+    "end_utc": "2026-09-03T17:08:40Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "tap",
+      "541",
+      "2054"
+    ],
+    "start_utc": "2026-09-03T17:08:40Z",
+    "end_utc": "2026-09-03T17:08:40Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "tap",
+      "273",
+      "1760"
+    ],
+    "start_utc": "2026-09-03T17:08:40Z",
+    "end_utc": "2026-09-03T17:08:40Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "tap",
+      "752",
+      "2054"
+    ],
+    "start_utc": "2026-09-03T17:08:40Z",
+    "end_utc": "2026-09-03T17:08:40Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "tap",
+      "853",
+      "2200"
+    ],
+    "start_utc": "2026-09-03T17:08:40Z",
+    "end_utc": "2026-09-03T17:08:40Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "uiautomator",
+      "dump",
+      "/sdcard/window_dump.xml"
+    ],
+    "start_utc": "2026-09-03T17:08:40Z",
+    "end_utc": "2026-09-03T17:08:42Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "pull",
+      "/sdcard/window_dump.xml",
+      "/Users/seraph/floris-journey-evidence/20260903T170746Z/artifacts/typed_stale.xml"
+    ],
+    "start_utc": "2026-09-03T17:08:42Z",
+    "end_utc": "2026-09-03T17:08:42Z",
+    "transport_rc": 0,
+    "remote_rc": null,
+    "timed_out": false,
+    "kind": "host"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "tap",
+      "120",
+      "1605"
+    ],
+    "start_utc": "2026-09-03T17:08:42Z",
+    "end_utc": "2026-09-03T17:08:42Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "uiautomator",
+      "dump",
+      "/sdcard/window_dump.xml"
+    ],
+    "start_utc": "2026-09-03T17:08:42Z",
+    "end_utc": "2026-09-03T17:08:44Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "pull",
+      "/sdcard/window_dump.xml",
+      "/Users/seraph/floris-journey-evidence/20260903T170746Z/artifacts/after_stale.xml"
+    ],
+    "start_utc": "2026-09-03T17:08:44Z",
+    "end_utc": "2026-09-03T17:08:44Z",
+    "transport_rc": 0,
+    "remote_rc": null,
+    "timed_out": false,
+    "kind": "host"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "screencap",
+      "-p",
+      "/sdcard/06-stale.png"
+    ],
+    "start_utc": "2026-09-03T17:08:44Z",
+    "end_utc": "2026-09-03T17:08:44Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "pull",
+      "/sdcard/06-stale.png",
+      "/Users/seraph/floris-journey-evidence/20260903T170746Z/artifacts/06-stale.png"
+    ],
+    "start_utc": "2026-09-03T17:08:44Z",
+    "end_utc": "2026-09-03T17:08:44Z",
+    "transport_rc": 0,
+    "remote_rc": null,
+    "timed_out": false,
+    "kind": "host"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "keyevent",
+      "4",
+      ";",
+      "input",
+      "keyevent",
+      "4"
+    ],
+    "start_utc": "2026-09-03T17:08:44Z",
+    "end_utc": "2026-09-03T17:08:44Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "am",
+      "start",
+      "-a",
+      "android.settings.SETTINGS"
+    ],
+    "start_utc": "2026-09-03T17:08:44Z",
+    "end_utc": "2026-09-03T17:08:44Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "uiautomator",
+      "dump",
+      "/sdcard/window_dump.xml"
+    ],
+    "start_utc": "2026-09-03T17:08:44Z",
+    "end_utc": "2026-09-03T17:08:47Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "pull",
+      "/sdcard/window_dump.xml",
+      "/Users/seraph/floris-journey-evidence/20260903T170746Z/artifacts/home_5.xml"
+    ],
+    "start_utc": "2026-09-03T17:08:47Z",
+    "end_utc": "2026-09-03T17:08:47Z",
+    "transport_rc": 0,
+    "remote_rc": null,
+    "timed_out": false,
+    "kind": "host"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "tap",
+      "540",
+      "659"
+    ],
+    "start_utc": "2026-09-03T17:08:47Z",
+    "end_utc": "2026-09-03T17:08:47Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "uiautomator",
+      "dump",
+      "/sdcard/window_dump.xml"
+    ],
+    "start_utc": "2026-09-03T17:08:47Z",
+    "end_utc": "2026-09-03T17:08:50Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "pull",
+      "/sdcard/window_dump.xml",
+      "/Users/seraph/floris-journey-evidence/20260903T170746Z/artifacts/focus_5.xml"
+    ],
+    "start_utc": "2026-09-03T17:08:50Z",
+    "end_utc": "2026-09-03T17:08:50Z",
+    "transport_rc": 0,
+    "remote_rc": null,
+    "timed_out": false,
+    "kind": "host"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "dumpsys",
+      "input_method"
+    ],
+    "start_utc": "2026-09-03T17:08:50Z",
+    "end_utc": "2026-09-03T17:08:50Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "dumpsys",
+      "window",
+      "windows"
+    ],
+    "start_utc": "2026-09-03T17:08:50Z",
+    "end_utc": "2026-09-03T17:08:50Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "tap",
+      "88",
+      "2054"
+    ],
+    "start_utc": "2026-09-03T17:08:50Z",
+    "end_utc": "2026-09-03T17:08:50Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "tap",
+      "486",
+      "1760"
+    ],
+    "start_utc": "2026-09-03T17:08:50Z",
+    "end_utc": "2026-09-03T17:08:50Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "tap",
+      "273",
+      "1760"
+    ],
+    "start_utc": "2026-09-03T17:08:50Z",
+    "end_utc": "2026-09-03T17:08:50Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "tap",
+      "109",
+      "1904"
+    ],
+    "start_utc": "2026-09-03T17:08:50Z",
+    "end_utc": "2026-09-03T17:08:50Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "tap",
+      "592",
+      "2200"
+    ],
+    "start_utc": "2026-09-03T17:08:50Z",
+    "end_utc": "2026-09-03T17:08:50Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "tap",
+      "109",
+      "1904"
+    ],
+    "start_utc": "2026-09-03T17:08:50Z",
+    "end_utc": "2026-09-03T17:08:50Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "tap",
+      "486",
+      "1760"
+    ],
+    "start_utc": "2026-09-03T17:08:50Z",
+    "end_utc": "2026-09-03T17:08:50Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "tap",
+      "592",
+      "2200"
+    ],
+    "start_utc": "2026-09-03T17:08:50Z",
+    "end_utc": "2026-09-03T17:08:50Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "tap",
+      "218",
+      "1904"
+    ],
+    "start_utc": "2026-09-03T17:08:50Z",
+    "end_utc": "2026-09-03T17:08:50Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "tap",
+      "808",
+      "1760"
+    ],
+    "start_utc": "2026-09-03T17:08:50Z",
+    "end_utc": "2026-09-03T17:08:50Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "tap",
+      "330",
+      "2054"
+    ],
+    "start_utc": "2026-09-03T17:08:50Z",
+    "end_utc": "2026-09-03T17:08:50Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "uiautomator",
+      "dump",
+      "/sdcard/window_dump.xml"
+    ],
+    "start_utc": "2026-09-03T17:08:50Z",
+    "end_utc": "2026-09-03T17:08:52Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "pull",
+      "/sdcard/window_dump.xml",
+      "/Users/seraph/floris-journey-evidence/20260903T170746Z/artifacts/typed_5.xml"
+    ],
+    "start_utc": "2026-09-03T17:08:52Z",
+    "end_utc": "2026-09-03T17:08:52Z",
+    "transport_rc": 0,
+    "remote_rc": null,
+    "timed_out": false,
+    "kind": "host"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "screencap",
+      "-p",
+      "/sdcard/07-composing-typed.png"
+    ],
+    "start_utc": "2026-09-03T17:08:52Z",
+    "end_utc": "2026-09-03T17:08:52Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "pull",
+      "/sdcard/07-composing-typed.png",
+      "/Users/seraph/floris-journey-evidence/20260903T170746Z/artifacts/07-composing-typed.png"
+    ],
+    "start_utc": "2026-09-03T17:08:52Z",
+    "end_utc": "2026-09-03T17:08:52Z",
+    "transport_rc": 0,
+    "remote_rc": null,
+    "timed_out": false,
+    "kind": "host"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "tap",
+      "824",
+      "1605"
+    ],
+    "start_utc": "2026-09-03T17:08:52Z",
+    "end_utc": "2026-09-03T17:08:52Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "dumpsys",
+      "window",
+      "windows"
+    ],
+    "start_utc": "2026-09-03T17:08:53Z",
+    "end_utc": "2026-09-03T17:08:53Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "tap",
+      "120",
+      "1605"
+    ],
+    "start_utc": "2026-09-03T17:08:53Z",
+    "end_utc": "2026-09-03T17:08:53Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "uiautomator",
+      "dump",
+      "/sdcard/window_dump.xml"
+    ],
+    "start_utc": "2026-09-03T17:08:53Z",
+    "end_utc": "2026-09-03T17:08:56Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "pull",
+      "/sdcard/window_dump.xml",
+      "/Users/seraph/floris-journey-evidence/20260903T170746Z/artifacts/after_composing.xml"
+    ],
+    "start_utc": "2026-09-03T17:08:56Z",
+    "end_utc": "2026-09-03T17:08:56Z",
+    "transport_rc": 0,
+    "remote_rc": null,
+    "timed_out": false,
+    "kind": "host"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "screencap",
+      "-p",
+      "/sdcard/08-composing-applied.png"
+    ],
+    "start_utc": "2026-09-03T17:08:56Z",
+    "end_utc": "2026-09-03T17:08:56Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "pull",
+      "/sdcard/08-composing-applied.png",
+      "/Users/seraph/floris-journey-evidence/20260903T170746Z/artifacts/08-composing-applied.png"
+    ],
+    "start_utc": "2026-09-03T17:08:56Z",
+    "end_utc": "2026-09-03T17:08:56Z",
+    "transport_rc": 0,
+    "remote_rc": null,
+    "timed_out": false,
+    "kind": "host"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "keyevent",
+      "4",
+      ";",
+      "input",
+      "keyevent",
+      "4"
+    ],
+    "start_utc": "2026-09-03T17:08:56Z",
+    "end_utc": "2026-09-03T17:08:56Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "am",
+      "start",
+      "-a",
+      "android.settings.SETTINGS"
+    ],
+    "start_utc": "2026-09-03T17:08:56Z",
+    "end_utc": "2026-09-03T17:08:56Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "uiautomator",
+      "dump",
+      "/sdcard/window_dump.xml"
+    ],
+    "start_utc": "2026-09-03T17:08:56Z",
+    "end_utc": "2026-09-03T17:08:58Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "pull",
+      "/sdcard/window_dump.xml",
+      "/Users/seraph/floris-journey-evidence/20260903T170746Z/artifacts/home_6.xml"
+    ],
+    "start_utc": "2026-09-03T17:08:58Z",
+    "end_utc": "2026-09-03T17:08:58Z",
+    "transport_rc": 0,
+    "remote_rc": null,
+    "timed_out": false,
+    "kind": "host"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "tap",
+      "540",
+      "659"
+    ],
+    "start_utc": "2026-09-03T17:08:58Z",
+    "end_utc": "2026-09-03T17:08:58Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "uiautomator",
+      "dump",
+      "/sdcard/window_dump.xml"
+    ],
+    "start_utc": "2026-09-03T17:08:58Z",
+    "end_utc": "2026-09-03T17:09:01Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "pull",
+      "/sdcard/window_dump.xml",
+      "/Users/seraph/floris-journey-evidence/20260903T170746Z/artifacts/focus_6.xml"
+    ],
+    "start_utc": "2026-09-03T17:09:01Z",
+    "end_utc": "2026-09-03T17:09:01Z",
+    "transport_rc": 0,
+    "remote_rc": null,
+    "timed_out": false,
+    "kind": "host"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "dumpsys",
+      "input_method"
+    ],
+    "start_utc": "2026-09-03T17:09:01Z",
+    "end_utc": "2026-09-03T17:09:01Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "dumpsys",
+      "window",
+      "windows"
+    ],
+    "start_utc": "2026-09-03T17:09:01Z",
+    "end_utc": "2026-09-03T17:09:01Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "tap",
+      "997",
+      "1605"
+    ],
+    "start_utc": "2026-09-03T17:09:01Z",
+    "end_utc": "2026-09-03T17:09:01Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "uiautomator",
+      "dump",
+      "/sdcard/window_dump.xml"
+    ],
+    "start_utc": "2026-09-03T17:09:01Z",
+    "end_utc": "2026-09-03T17:09:03Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "pull",
+      "/sdcard/window_dump.xml",
+      "/Users/seraph/floris-journey-evidence/20260903T170746Z/artifacts/floris_settings.xml"
+    ],
+    "start_utc": "2026-09-03T17:09:03Z",
+    "end_utc": "2026-09-03T17:09:03Z",
+    "transport_rc": 0,
+    "remote_rc": null,
+    "timed_out": false,
+    "kind": "host"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "screencap",
+      "-p",
+      "/sdcard/09-floris-settings.png"
+    ],
+    "start_utc": "2026-09-03T17:09:03Z",
+    "end_utc": "2026-09-03T17:09:04Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "pull",
+      "/sdcard/09-floris-settings.png",
+      "/Users/seraph/floris-journey-evidence/20260903T170746Z/artifacts/09-floris-settings.png"
+    ],
+    "start_utc": "2026-09-03T17:09:04Z",
+    "end_utc": "2026-09-03T17:09:04Z",
+    "transport_rc": 0,
+    "remote_rc": null,
+    "timed_out": false,
+    "kind": "host"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "keyevent",
+      "4"
+    ],
+    "start_utc": "2026-09-03T17:09:04Z",
+    "end_utc": "2026-09-03T17:09:04Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "input",
+      "keyevent",
+      "4",
+      ";",
+      "input",
+      "keyevent",
+      "4"
+    ],
+    "start_utc": "2026-09-03T17:09:04Z",
+    "end_utc": "2026-09-03T17:09:04Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "screenrecord",
+      "--time-limit",
+      "30",
+      "/sdcard/journey.mp4"
+    ],
+    "start_utc": "2026-09-03T17:07:54Z",
+    "end_utc": "2026-09-03T17:09:04Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "pull",
+      "/sdcard/journey.mp4",
+      "/Users/seraph/floris-journey-evidence/20260903T170746Z/artifacts/journey.mp4"
+    ],
+    "start_utc": "2026-09-03T17:09:04Z",
+    "end_utc": "2026-09-03T17:09:04Z",
+    "transport_rc": 0,
+    "remote_rc": null,
+    "timed_out": false,
+    "kind": "host"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "emu",
+      "avd",
+      "snapshot",
+      "load",
+      "m2_pristine"
+    ],
+    "start_utc": "2026-09-03T17:09:04Z",
+    "end_utc": "2026-09-03T17:09:05Z",
+    "transport_rc": 0,
+    "remote_rc": null,
+    "timed_out": false,
+    "kind": "host"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "getprop",
+      "sys.boot_completed"
+    ],
+    "start_utc": "2026-09-03T17:09:05Z",
+    "end_utc": "2026-09-03T17:09:05Z",
+    "transport_rc": 1,
+    "remote_rc": null,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "getprop",
+      "sys.boot_completed"
+    ],
+    "start_utc": "2026-09-03T17:09:07Z",
+    "end_utc": "2026-09-03T17:09:07Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "getprop",
+      "sys.boot_completed"
+    ],
+    "start_utc": "2026-09-03T17:09:07Z",
+    "end_utc": "2026-09-03T17:09:07Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "getprop",
+      "ro.build.fingerprint"
+    ],
+    "start_utc": "2026-09-03T17:09:07Z",
+    "end_utc": "2026-09-03T17:09:07Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "getprop",
+      "ro.build.version.sdk"
+    ],
+    "start_utc": "2026-09-03T17:09:07Z",
+    "end_utc": "2026-09-03T17:09:07Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "wm",
+      "size"
+    ],
+    "start_utc": "2026-09-03T17:09:07Z",
+    "end_utc": "2026-09-03T17:09:07Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "pm",
+      "path",
+      "biz.pixelperfectstudios.personaspeak.floris.debug"
+    ],
+    "start_utc": "2026-09-03T17:09:07Z",
+    "end_utc": "2026-09-03T17:09:07Z",
+    "transport_rc": 1,
+    "remote_rc": 1,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "settings",
+      "get",
+      "secure",
+      "enabled_input_methods"
+    ],
+    "start_utc": "2026-09-03T17:09:07Z",
+    "end_utc": "2026-09-03T17:09:07Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "settings",
+      "get",
+      "secure",
+      "default_input_method"
+    ],
+    "start_utc": "2026-09-03T17:09:07Z",
+    "end_utc": "2026-09-03T17:09:07Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "shell",
+      "uiautomator",
+      "dump",
+      "/sdcard/window_dump.xml"
+    ],
+    "start_utc": "2026-09-03T17:09:07Z",
+    "end_utc": "2026-09-03T17:09:09Z",
+    "transport_rc": 0,
+    "remote_rc": 0,
+    "timed_out": false,
+    "kind": "shell"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/share/android-commandlinetools/platform-tools/adb",
+      "-s",
+      "emulator-5554",
+      "pull",
+      "/sdcard/window_dump.xml",
+      "/Users/seraph/floris-journey-evidence/20260903T170746Z/artifacts/verify_restore.xml"
+    ],
+    "start_utc": "2026-09-03T17:09:09Z",
+    "end_utc": "2026-09-03T17:09:09Z",
+    "transport_rc": 0,
+    "remote_rc": null,
+    "timed_out": false,
+    "kind": "host"
+  }
+]
