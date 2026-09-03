@@ -12,6 +12,10 @@ Newest first, like all respectable patch notes.
 
 - The FlorisBoard second-host decision is now Accepted (was Proposed): PR #122 merged with all five CI gates green — including the new `floris-host-build` job, which compiles four ABIs of Rust on every ready PR — the ASK-host device journey re-run 145/145 green on the branch head, and the structural gate (`verify-floris-host.sh`) following in the stack. The evaluation itself (promote, keep, or delete by 2026-12-01) remains governed by the addendum; the furniture is just no longer provisional.
 
+## 2026-09-02 — The Guest Wing Gets a Checklist
+
+- New `verify-floris-host.sh` gate pins the FlorisBoard second host's structural contract: provenance tag/commit recorded, every rent-ledger line names a real file, PersonaSpeak code stays inside its two recorded locations, the two Gradle roots stay isolated (six first-party modules mapped in, build dirs redirected, nothing floris in the unified root), and the property-less build keeps the pristine upstream applicationId. Nine-case contract test rides along, wired into CI's verifier fixture suite. The guest wing now has a smoke alarm, not just a heater.
+
 ## 2026-09-01 — The Other Keyboard Moved In (Guest Wing, Not Master Bedroom)
 
 - Vendored FlorisBoard v0.5.2 as a second, evaluation IME host under `android/florisboard/` (ADR-0010): its own Gradle root, its own rent ledger, one `./gradlew` away from an installable APK. The ASK host remains the default and the only release path — suggestions still live only on one of the two.
