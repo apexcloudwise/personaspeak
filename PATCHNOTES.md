@@ -8,6 +8,12 @@ while the context is hot.
 
 Newest first, like all respectable patch notes.
 
+## 2026-09-03 — The Guest Wing Learns to Sign Its Own Name (Nothing Else)
+
+- The FlorisBoard host's release path is now real infrastructure instead of a theory that had never been built: `assembleRelease` was broken on main since the graft (nine lint-vital errors on the merged backup rules, plus R8 tripping over snakeyaml's JVM-only `java.beans` references). The backup excludes now carry the lint ignore that documents their deliberate allowlist-redundancy, and the snakeyaml suppressions live in a first-party-owned `proguard-personaspeak.pro` — upstream rules stay byte-untouched.
+- Release signing reads `PERSONASPEAK_FLORIS_RELEASE_*` env vars only — deliberately distinct names, so the ASK host's release keystore can never sign a Floris build. The secret-bearing run remains a one-command owner step; `generate-floris-release-keystore.sh` produces a throwaway developer keystore for laptop proof, and a ten-case structural gate (`verify-floris-release.sh`, CI-wired) keeps the posture honest: env-only signing, no committed keystores, R8 on, credential backup-excludes intact.
+- Proof of work: signed release APK at 15.0 MB (debug is 37.8 — R8 earns its keep), certificate verified against the throwaway, and the PersonaSpeak layer survives shrinking with 234 named references in the dex.
+
 ## 2026-09-03 — The Guest Wing Gets Its Own Driving Test
 
 - The M2 device-journey machinery now runs the FlorisBoard host end to end: `--host floris` on the capture CLI drives a six-session journey (idle/cancel, review/apply, dismiss, stale, composing, settings surface) against the same pinned fixture, the same signer gate, and the same restore obligations as the ASK journey — 376/376 fake-toolchain suite green, every tap pin effect-verified on the fixture. The second host no longer qualifies by anecdote.
