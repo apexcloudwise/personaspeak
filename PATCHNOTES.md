@@ -8,6 +8,11 @@ while the context is hot.
 
 Newest first, like all respectable patch notes.
 
+## 2026-09-04 — The Engine Moves Out (Spike, Not Cutover)
+
+- ASK's prediction engine — dictionaries, next-word learning, and the suggest orchestration — now exists as a host-neutral pure-JVM module in its own third Gradle root (`android/engine/`), consumed as an artifact via composite build (proof included, `PROOF-LINE` and everything). The vendored AOSP English wordlist loads end-to-end through it: completions, typo corrections, and next-word learning with persistence, all unit-tested against the real 165k-word list. The ASK host is byte-for-byte untouched — this is a spike copy, not a cutover; the remaining-work estimate (native trie, storage SPIs, ASK consumption) lives in the module README.
+- One engine behavior documented the hard way: corrections are reachability-plus-scoring — the trie only returns words matching typed-or-nearby codes per position, then edit distance ranks them. A host that feeds only primary codes gets completions and no fixes; the Floris adapter (next segment) must supply nearby codes or corrections silently vanish. The silent-vanish kind of bug is why this note exists.
+
 ## 2026-09-04 — Weighing the Guest Wing (Protocol Included)
 
 - The hosts' first side-by-side numbers: on the pinned fixture, same boot, identical scripted typing→rewrite→apply sessions (both verified by editor readback), the Floris host costs ~49% more total PSS than ASK (150.3 MB vs 100.6 MB) and ~18% more private memory — the price of Compose chrome and jetpref, partly paid back by lazier APK paging (ASK's 61 MB APK maps in 39.6 MB of PSS; Floris's maps almost none). Latency got no number on purpose: tap-driven timing measures the harness, not the keyboard, and the record says so instead of inventing one. The blinded bake-off protocol is staged for the owner — with the blinding limits stated plainly, because two keyboards that look different cannot be fully blinded, only order-randomized and seal-rated.
