@@ -191,6 +191,27 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
 
+  engine-spike:
+    name: Engine spike (issue #124)
+    # JVM-only third root: tests + the composite-build consumption proof.
+    # The wrapper is borrowed from the floris root (the engine root ships
+    # no wrapper binary); -p points it at android/engine.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+      - name: Engine unit tests
+        working-directory: android/florisboard
+        run: ./gradlew -p ../engine :engine:test --console=plain
+      - name: Composite-build consumption proof
+        working-directory: android/florisboard
+        run: ./gradlew -p ../engine/consumer-proof :consumer:run --console=plain | grep -F "PROOF-LINE"
+
   floris-host-build:
     name: FlorisBoard second-host build
     # Same draft-skip as android-build: the second Gradle root is costly to
