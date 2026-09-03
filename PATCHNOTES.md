@@ -8,6 +8,12 @@ while the context is hot.
 
 Newest first, like all respectable patch notes.
 
+## 2026-09-03 — The Guest Wing's Privacy Interview
+
+- The FlorisBoard host gets its M7-bar privacy and egress audit (`docs/evidence/floris-host/privacy-and-egress-audit.md`): the vendored keyboard code performs zero direct network I/O — no HTTP client exists in the tree, no crash reporting, no telemetry; every egress byte either rides the opt-in, pinned-endpoint PersonaSpeak provider calls the ASK audit already qualified, or is one disclosed library-mediated exception (EmojiCompat may fetch font metadata from Google at startup on GMS devices, reachable because PersonaSpeak added INTERNET — upstream never had it; owner decides keep-or-disable).
+- One piece of upstream copy turned false the moment we added INTERNET: the extensions screen claimed "this app does not have Internet permission." It now says the true, permission-independent thing — updates are always checked manually in the browser. One string of rent, ledgered.
+- A nine-case gate (`verify-floris-audit.sh`, CI-wired) keeps the disclosures load-bearing: QUALIFIED status, the EmojiCompat admission, the journey-run citation, the honest string, and the rent line all fail CI if they drift.
+
 ## 2026-09-03 — The Guest Wing Learns to Sign Its Own Name (Nothing Else)
 
 - The FlorisBoard host's release path is now real infrastructure instead of a theory that had never been built: `assembleRelease` was broken on main since the graft (nine lint-vital errors on the merged backup rules, plus R8 tripping over snakeyaml's JVM-only `java.beans` references). The backup excludes now carry the lint ignore that documents their deliberate allowlist-redundancy, and the snakeyaml suppressions live in a first-party-owned `proguard-personaspeak.pro` — upstream rules stay byte-untouched.
