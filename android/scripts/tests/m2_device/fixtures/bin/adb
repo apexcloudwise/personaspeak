@@ -42,8 +42,56 @@ CANDIDATE = os.environ.get("FAKE_ADB_REPHRASING", "")
 SOURCE = "Tea at six."
 STALE = "Tea at seven."
 
-COMPONENT = "biz.pixelperfectstudios.personaspeak/com.menny.android.anysoftkeyboard.SoftKeyboard"
-KEYBOARD_PACKAGE = "biz.pixelperfectstudios.personaspeak"
+# Host selection: the floris journey runs the same fake toolchain with
+# the FlorisBoard host's mirrored pins (calibrated on the fixture
+# 2026-09-03; see floris_harness.py). Default stays the ASK host.
+HOST = os.environ.get("FAKE_ADB_HOST", "ask")
+
+if HOST == "floris":
+    COMPONENT = (
+        "biz.pixelperfectstudios.personaspeak.floris.debug"
+        "/dev.patrickgold.florisboard.FlorisImeService")
+    KEYBOARD_PACKAGE = "biz.pixelperfectstudios.personaspeak.floris.debug"
+    KEY_COORDS = {
+        "t": (486, 1760), "e": (273, 1760), "a": (109, 1904),
+        "s": (218, 1904), "i": (808, 1760), "x": (330, 2054),
+        "v": (541, 2054), "n": (752, 2054),
+        " ": (592, 2200), ".": (853, 2200),
+    }
+    SHIFT_COORDS = (88, 2054)
+    # Layout-position taps: the floris host draws the review card
+    # above the row while its touch targets stay in the row slot
+    # (visual/touch desync, P2 probe 2026-09-03), so the pins — and
+    # this fake — answer at the layout positions.
+    REWRITE_TAP = (824, 1605)
+    CANCEL_TAP = (824, 1605)
+    APPLY_TAP = (120, 1605)
+    DISMISS_TAP = (560, 1605)
+    SETTINGS_TAP = (997, 1605)
+    COMPACT_TOP = 1413
+    EXPANDED_TOP = 1148
+    VERSION_NAME = "0.5.2-debug+null"
+    VERSION_CODE = "117"
+else:
+    COMPONENT = "biz.pixelperfectstudios.personaspeak/com.menny.android.anysoftkeyboard.SoftKeyboard"
+    KEYBOARD_PACKAGE = "biz.pixelperfectstudios.personaspeak"
+    KEY_COORDS = {
+        "t": (486, 1794), "e": (270, 1794), "a": (108, 1932),
+        "s": (216, 1932), "i": (810, 1794), "x": (324, 2072),
+        "v": (540, 2072), "n": (756, 2072),
+        " ": (567, 2210), ".": (756, 2210),
+    }
+    SHIFT_COORDS = (81, 2072)
+    REWRITE_TAP = (823, 1414)
+    CANCEL_TAP = (822, 1414)
+    APPLY_TAP = (120, 1390)
+    DISMISS_TAP = (560, 1390)
+    SETTINGS_TAP = None
+    COMPACT_TOP = 1378
+    EXPANDED_TOP = 1166
+    VERSION_NAME = "0.1.0"
+    VERSION_CODE = "1000"
+
 EDITOR_RES_ID = "com.google.android.settings.intelligence:id/open_search_view_edit_text"
 EDITOR_HINT = "Search settings"
 SEARCH_BAR_RES_ID = "com.android.settings:id/search_action_bar"
@@ -53,27 +101,19 @@ SEARCH_BAR_RES_ID = "com.android.settings:id/search_action_bar"
 # real keyboard has.
 SEARCH_BAR_BOUNDS = (42, 591, 1038, 728)
 EDITOR_BOUNDS = (126, 149, 1080, 275)
-KEY_COORDS = {
-    "t": (486, 1794), "e": (270, 1794), "a": (108, 1932),
-    "s": (216, 1932), "i": (810, 1794), "x": (324, 2072),
-    "v": (540, 2072), "n": (756, 2072),
-    " ": (567, 2210), ".": (756, 2210),
-}
-# Row-3 sticky shift: one shot, releases after the next letter. The
-# editor does not auto-capitalize (attempt-2 raw bytes, #82) — capitals
-# ride exactly this latch.
-SHIFT_COORDS = (81, 2072)
-# 2026-09-02 recalibration against the #87/#88 strip layout: Rewrite
-# and Cancel share the compact row's right end; Use this and Dismiss
-# sit in Review's expanded action row — separate slots now, so the
-# shared-slot shortcut of the pre-redesign row is gone.
-REWRITE_TAP = (823, 1414)
-CANCEL_TAP = (822, 1414)
-APPLY_TAP = (120, 1390)
-DISMISS_TAP = (560, 1390)
 TAP_SLOP = 54  # half a 108px key cell
-COMPACT_TOP = 1378
-EXPANDED_TOP = 1166
+
+
+def _candidate_for(source):
+    """The fixture FakeProvider's contract, as the floris journey pins
+    it: echo the captured draft inside the butler sentence. The ASK
+    fake keeps its fixed constant (and env override) untouched."""
+    if HOST != "floris":
+        return CANDIDATE
+    return (
+        "I have taken the liberty, sir, of rephrasing your words: "
+        "\u201c" + source + "\u201d \u2014 though I must confess "
+        "the genuine article is still en route.")
 
 
 def _read(path):
@@ -136,7 +176,24 @@ def _write_mp4(path):
 def _render_hierarchy(duplicate_editor=False):
     """Host-app nodes only. The IME window — keys, panel, candidate —
     is structurally invisible to uiautomator on API 34 and must never
-    appear here (issue #79)."""
+    appear here (issue #79). The Floris settings activity is a normal
+    app window, so it does appear (floris journey session 6)."""
+    if _read(SCREEN_FILE) == "floris_settings":
+        pkg = KEYBOARD_PACKAGE
+        return (
+            '<hierarchy rotation="0">'
+            f'<node index="0" text="PersonaSpeak Settings" resource-id="" '
+            f'class="android.widget.TextView" package="{pkg}" bounds="[42,171][700,255]"/>'
+            f'<node index="1" text="Get started" resource-id="" '
+            f'class="android.widget.TextView" package="{pkg}" bounds="[42,300][400,360]"/>'
+            f'<node index="2" text="CHARACTERS" resource-id="" '
+            f'class="android.widget.TextView" package="{pkg}" bounds="[42,700][500,755]"/>'
+            f'<node index="3" text="THE BRAIN" resource-id="" '
+            f'class="android.widget.TextView" package="{pkg}" bounds="[42,1300][400,1355]"/>'
+            f'<node index="4" text="AI Brain" resource-id="" '
+            f'class="android.widget.TextView" package="{pkg}" bounds="[42,1400][300,1455]"/>'
+            '</hierarchy>'
+        )
     if _read(SCREEN_FILE) == "search":
         text = _read(STATE_FILE)
         shown = text if text else EDITOR_HINT
@@ -311,9 +368,19 @@ def _run_tap(x, y):
         _write(KB_FILE, "")
         return
     if panel == "REVIEW" and _near(*APPLY_TAP):
-        if _read(STATE_FILE) == _read(CAND_SRC_FILE):
-            # Fresh candidate: exactly one mutation.
-            _write(STATE_FILE, CANDIDATE)
+        src = _read(CAND_SRC_FILE)
+        if _read(STATE_FILE) == src:
+            # Fresh candidate: exactly one mutation. The floris fake
+            # mirrors the fixture provider's echo-the-draft contract;
+            # the composing-bug knob replays the pre-fix failure shape
+            # (the live composing word survives the replace), which the
+            # journey must catch through the editor-text bridge.
+            replacement = _candidate_for(src)
+            if (HOST == "floris"
+                    and os.environ.get("FAKE_FLORIS_COMPOSING_BUG")
+                    and not src.endswith(".")):
+                replacement = src.split()[-1] + replacement
+            _write(STATE_FILE, replacement)
             _write(KB_FILE, "APPLIED")
         else:
             # Stale: zero mutations, candidate retained in Review.
@@ -321,6 +388,12 @@ def _run_tap(x, y):
         return
     if panel == "REVIEW" and _near(*DISMISS_TAP):
         _write(KB_FILE, "")
+        return
+    # The row's settings button (floris journey session 6): launches
+    # the ported activity, a normal app window uiautomator can see.
+    if (SETTINGS_TAP is not None and panel == ""
+            and _near(*SETTINGS_TAP) and _read(SCREEN_FILE) == "search"):
+        _write(SCREEN_FILE, "floris_settings")
         return
     # Key taps: the only insertion path, exactly the pinned geometry.
     shift = 60 if os.environ.get("FAKE_ADB_KEY_LAYOUT_SHIFTED") else 0
@@ -347,6 +420,11 @@ def _run_tap(x, y):
 
 def _run_keyevent(code):
     if code == "4":  # BACK
+        if _read(SCREEN_FILE) == "floris_settings":
+            # First BACK closes the ported settings activity; the
+            # search screen (and its editor state) survives beneath.
+            _write(SCREEN_FILE, "search")
+            return
         if _read(SCREEN_FILE) == "search":
             n = int(_read(BACK_COUNT_FILE) or "0") + 1
             if n == 1:
@@ -493,8 +571,8 @@ elif "install" in cmd and "pull" not in cmd:
     if os.environ.get("FAKE_ADB_INSTALL_FAIL"):
         sys.exit(1)
 elif "dumpsys package" in cmd and "personaspeak" in cmd:
-    print("versionName=0.1.0")
-    print("versionCode=1000")
+    print("versionName=" + VERSION_NAME)
+    print("versionCode=" + VERSION_CODE)
     print("signatures=PackageSignatures{c441f2a version:2, signatures:[847f3baa], past signatures:[]}")
 elif "wait-for-device" in cmd:
     pass

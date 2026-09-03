@@ -156,6 +156,13 @@ jobs:
       - name: Milestone 8 verification gate
         shell: bash
         run: bash android/scripts/verify-milestone-8.sh android
+      # ADR-0003's real-InputConnection composing tests run on a device
+      # (evidence job, no emulator here), but they must never stop
+      # compiling — this step builds the instrumentation APK so drift
+      # is a red CI step, not a surprise during the next journey.
+      - name: Build the real-InputConnection instrumentation APK
+        working-directory: android
+        run: ./gradlew :personaspeak-ime:assembleDebugAndroidTest --console=plain
       - name: Canonical APK identity
         shell: bash
         run: |

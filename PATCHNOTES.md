@@ -8,6 +8,13 @@ while the context is hot.
 
 Newest first, like all respectable patch notes.
 
+## 2026-09-03 — The Guest Wing Gets Its Own Driving Test
+
+- The M2 device-journey machinery now runs the FlorisBoard host end to end: `--host floris` on the capture CLI drives a six-session journey (idle/cancel, review/apply, dismiss, stale, composing, settings surface) against the same pinned fixture, the same signer gate, and the same restore obligations as the ASK journey — 376/376 fake-toolchain suite green, every tap pin effect-verified on the fixture. The second host no longer qualifies by anecdote.
+- The composing-text regression now has on-device teeth per ADR-0003: a real-InputConnection instrumentation test in `:personaspeak-ime` builds a live composing span on a real editor and proves the replace consumes it whole (2/2 green on the fixture, both the API-34 `replaceText` path and the legacy one), plus a journey leg that types the draft without its final period through real Floris keys. The pre-fix failure shape is a fake-toolchain knob, so the catch itself is tested.
+- Calibration found a real bug on the way in (#131): the Floris host paints its review card ~300px above where the card's buttons actually respond — the P0 proof verified through the accessibility dump, which reports layout positions, so the desync was invisible to it. The journey drives the working layout positions and documents the trap; the fix moves the pins.
+- CI builds the instrumentation APK on every ready PR so the ADR-0003 tests can't silently stop compiling.
+
 ## 2026-09-03 — ADR-0010: Accepted
 
 - The FlorisBoard second-host decision is now Accepted (was Proposed): PR #122 merged with all five CI gates green — including the new `floris-host-build` job, which compiles four ABIs of Rust on every ready PR — the ASK-host device journey re-run 145/145 green on the branch head, and the structural gate (`verify-floris-host.sh`) following in the stack. The evaluation itself (promote, keep, or delete by 2026-12-01) remains governed by the addendum; the furniture is just no longer provisional.
